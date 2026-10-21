@@ -19,7 +19,7 @@ public sealed class BmesLpaImageService(WebRepository repo)
 {
     /// <summary>Public (no login) image URL; the viewer uses the same prefix for the "Original"
     /// link that opens the untouched original.</summary>
-    public const string ImageUrlPrefix = "https://bmes.bujeon.com/MES073261/GetImage?fileName=";
+    public const string ImageUrlPrefix = BmesGateway.LpaImageUrlPrefix;
 
     /// <summary>Longest side, in pixels. The thumbnail sits in a table cell; the view is
     /// what the popup shows, sized to fill a normal screen without paying for a 12 MP
@@ -64,18 +64,8 @@ public sealed class BmesLpaImageService(WebRepository repo)
     /// <summary>Download the original from BMES and re-encode it at both sizes.</summary>
     private static async Task<(byte[]? Thumb, byte[]? View)> DownloadPairAsync(string path)
     {
-        byte[] original;
-        try
-        {
-            using var response = await Http.GetAsync(ImageUrlPrefix + Uri.EscapeDataString(path));
-            if (!response.IsSuccessStatusCode) return (null, null);
-            // A deleted file comes back as an HTML error page with 200, so trust the type.
-            string? type = response.Content.Headers.ContentType?.MediaType;
-            if (type is null || !type.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-                return (null, null);
-            original = await response.Content.ReadAsByteArrayAsync();
-        }
-        catch { return (null, null); }
+        byte[]? original = await BmesGateway.FetchLpaImageAsync(Http, path);
+        if (original is null) return (null, null);
 
         byte[]? thumb = Resize(original, ThumbMaxPx, ThumbQuality);
         byte[]? view  = Resize(original, ViewMaxPx, ViewQuality);

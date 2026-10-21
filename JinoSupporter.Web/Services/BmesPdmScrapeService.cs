@@ -1,7 +1,3 @@
-using System.Net;
-using System.Text;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using Microsoft.Data.Sqlite;
 
 namespace JinoSupporter.Web.Services;
@@ -14,32 +10,7 @@ namespace JinoSupporter.Web.Services;
 /// </summary>
 public sealed class BmesPdmScrapeService(NgRateSettingsService settings)
 {
-    // HTTPS, matching BmesRoutingScrapeService: over plain http the anti-forgery cookie does
-    // not survive the redirect to https and the login POST fails validation.
-    private const string BaseUrl = "https://bmes.bujeon.com";
-
-    /// <summary>
-    /// Search condition captured from the BMES UI. PDTNO is sent as observed — the response
-    /// comes back with many different PDTNO values, so it does not appear to narrow the set.
-    /// </summary>
-    private const string SearchPayload =
-        """
-        {"Condition":{"LASTY":"L","SDATE":"1900-01-01","EDATE":"2050-12-31","PDMNO":"","PITTX":"","PDRTX":"","BMOTX":"","USEYN":"Y","PDTNO":"0001"}}
-        """;
-
-    // All columns observed in the MES073300/SearchList response.
-    private static readonly string[] Columns =
-    {
-        "APSTA", "APSTA_TX",
-        "PDMNO", "PDMVR", "PDMV",
-        "PDTNO", "PDTNO_TX",
-        "PDRTX", "PITTX", "PRRTX",
-        "BMONO", "BMONO_TX", "BMOTX",
-        "USEYN", "DELYN", "APPYN", "DETYN", "REVYN", "MODYN", "CWFYN",
-        "APKEY", "DESCR",
-        "ERNAM", "ERNAM_TX", "ERDAT",
-        "ARNAM_TX", "ARDAT",
-    };
+    private static string[] Columns => BmesGateway.PdmColumns;
 
     public string RawDbPath =>
         Path.Combine(settings.SettingsDbDirectory, "bmes_pdm_raw.db");
@@ -57,74 +28,24 @@ public sealed class BmesPdmScrapeService(NgRateSettingsService settings)
             return -1;
         }
 
-        using var handler = new HttpClientHandler
+        var opened = await BmesWebSession.OpenAsync(loginId, password, new BmesWebSessionOptions
         {
-            UseCookies = true,
-            CookieContainer = new CookieContainer(),
-            AutomaticDecompression = DecompressionMethods.All,
-        };
-        using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(300) };
-        client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
-
-        progress?.Report("Fetching verification token…");
-        string token = await GetTokenAsync(client);
-        if (string.IsNullOrEmpty(token))
+            Timeout      = TimeSpan.FromSeconds(300),
+            TokenMessage = "Fetching verification token…",
+            LoginMessage = "Logging in…",
+        }, progress);
+        if (opened.Session is null)
         {
-            progress?.Report("[ERROR] Failed to obtain token.");
+            progress?.Report(opened.Failure == BmesLoginFailure.Token
+                ? "[ERROR] Failed to obtain token."
+                : "[ERROR] Login failed — check credentials in Setting.");
             return -1;
         }
 
-        progress?.Report("Logging in…");
-        if (!await LoginAsync(client, token, loginId, password))
-        {
-            progress?.Report("[ERROR] Login failed — check credentials in Setting.");
-            return -1;
-        }
-
-        progress?.Report("Calling MES073300/SearchList…");
-        string json;
-        try
-        {
-            using var content = new StringContent(SearchPayload, Encoding.UTF8, "application/json");
-            var resp = await client.PostAsync($"{BaseUrl}/MES073300/SearchList", content);
-            if (!resp.IsSuccessStatusCode)
-            {
-                progress?.Report($"[ERROR] HTTP {(int)resp.StatusCode} {resp.StatusCode}");
-                return -1;
-            }
-            json = await resp.Content.ReadAsStringAsync();
-        }
-        catch (Exception ex)
-        {
-            progress?.Report($"[ERROR] Request failed: {ex.Message}");
-            return -1;
-        }
-
-        var rows = new List<Dictionary<string, string>>();
-        try
-        {
-            using var doc = JsonDocument.Parse(json);
-            if (!doc.RootElement.TryGetProperty("data", out var dataEl) ||
-                !dataEl.TryGetProperty("contents", out var contents) ||
-                contents.ValueKind != JsonValueKind.Array)
-            {
-                progress?.Report("[ERROR] Response has no data.contents array.");
-                return -1;
-            }
-
-            foreach (var item in contents.EnumerateArray())
-            {
-                var row = new Dictionary<string, string>(Columns.Length);
-                foreach (var col in Columns)
-                    row[col] = ReadStr(item, col);
-                rows.Add(row);
-            }
-        }
-        catch (Exception ex)
-        {
-            progress?.Report($"[ERROR] Parse failed: {ex.Message}");
-            return -1;
-        }
+        List<Dictionary<string, string>>? rows;
+        using (var session = opened.Session)
+            rows = await BmesGateway.FetchPdmRowsAsync(session, progress);
+        if (rows is null) return -1;
 
         progress?.Report($"Parsed {rows.Count:N0} rows. Saving to {Path.GetFileName(RawDbPath)}…");
         int saved = await Task.Run(() => SaveToSqlite(rows));
@@ -197,163 +118,23 @@ public sealed class BmesPdmScrapeService(NgRateSettingsService settings)
         if (string.IsNullOrWhiteSpace(loginId) || string.IsNullOrWhiteSpace(password))
             return BmesPdmDownload.Failed("BMES credentials not configured.");
 
-        using var handler = new HttpClientHandler
-        {
-            UseCookies = true,
-            CookieContainer = new CookieContainer(),
-            AutomaticDecompression = DecompressionMethods.All,
-        };
         // No default X-Requested-With here: the file action is reached by navigation in the
-        // BMES UI, and the header is only added to the two JSON calls below.
-        using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(300) };
-        client.DefaultRequestHeaders.Referrer = new Uri($"{BaseUrl}/MES073300");
-
-        string token = await GetTokenAsync(client);
-        if (string.IsNullOrEmpty(token))
-            return BmesPdmDownload.Failed("Failed to obtain verification token.");
-        if (!await LoginAsync(client, token, loginId, password))
-            return BmesPdmDownload.Failed("Login failed — check credentials in Setting.");
-
-        string version = string.IsNullOrWhiteSpace(pdmvr) ? "0" : pdmvr.Trim();
-
-        // 1. SearchDetail — locate the attached file.
-        progress?.Report("Reading drawing detail…");
-        string detailJson;
-        try
+        // BMES UI, and the header is only added to the two JSON calls in the gateway.
+        var opened = await BmesWebSession.OpenAsync(loginId, password, new BmesWebSessionOptions
         {
-            string payload = JsonSerializer.Serialize(new
-            {
-                Condition = new { PDMNO = docNo, PDMVR = version },
-            });
-            var resp = await PostJsonAsync(client, $"{BaseUrl}/MES073300/SearchDetail", payload);
-            if (!resp.IsSuccessStatusCode)
-                return BmesPdmDownload.Failed($"SearchDetail HTTP {(int)resp.StatusCode}.");
-            detailJson = await resp.Content.ReadAsStringAsync();
-        }
-        catch (Exception ex)
+            Timeout    = TimeSpan.FromSeconds(300),
+            Referrer   = new Uri($"{BmesWebSession.BaseUrl}/MES073300"),
+            AjaxHeader = false,
+        });
+        if (opened.Session is null)
         {
-            return BmesPdmDownload.Failed("SearchDetail failed: " + ex.Message);
+            return BmesPdmDownload.Failed(opened.Failure == BmesLoginFailure.Token
+                ? "Failed to obtain verification token."
+                : "Login failed — check credentials in Setting.");
         }
 
-        string pattx, pattp, folder, physical, fileVersion;
-        try
-        {
-            using var doc = JsonDocument.Parse(detailJson);
-            if (!doc.RootElement.TryGetProperty("Files", out var files) ||
-                files.ValueKind != JsonValueKind.Array ||
-                files.GetArrayLength() == 0)
-            {
-                return BmesPdmDownload.Failed($"{docNo} has no attached file.");
-            }
-
-            // Prefer a usable DWG; otherwise fall back to the first attachment.
-            JsonElement pick = files[0];
-            foreach (var file in files.EnumerateArray())
-            {
-                bool usable = !string.Equals(ReadStr(file, "USEYN"), "N", StringComparison.OrdinalIgnoreCase);
-                if (usable && ReadStr(file, "PATTP").Equals("DWG", StringComparison.OrdinalIgnoreCase))
-                {
-                    pick = file;
-                    break;
-                }
-            }
-
-            pattx = ReadStr(pick, "PATTX");
-            pattp = ReadStr(pick, "PATTP");
-            folder = ReadStr(pick, "P_FOLDE");
-            physical = ReadStr(pick, "P_PATTX");
-
-            // The file carries its own revision, which is not always the version asked for.
-            fileVersion = ReadStr(pick, "PDMVR");
-            if (string.IsNullOrWhiteSpace(fileVersion))
-                fileVersion = version;
-        }
-        catch (Exception ex)
-        {
-            return BmesPdmDownload.Failed("SearchDetail parse failed: " + ex.Message);
-        }
-
-        // 2. DownloadCheck — the server refuses the file unless this passes first.
-        progress?.Report($"Checking download permission for {pattx}…");
-        try
-        {
-            string payload = JsonSerializer.Serialize(new
-            {
-                Download = new
-                {
-                    PDMNO = docNo,
-                    PDMVR = fileVersion,
-                    PATTX = pattx,
-                    P_FOLDE = folder,
-                    P_PATTX = physical,
-                },
-            });
-            var resp = await PostJsonAsync(client, $"{BaseUrl}/MES073300/DownloadCheck", payload);
-            string body = await resp.Content.ReadAsStringAsync();
-            if (!resp.IsSuccessStatusCode)
-                return BmesPdmDownload.Failed($"DownloadCheck HTTP {(int)resp.StatusCode}.");
-
-            using var doc = JsonDocument.Parse(body);
-            string result = doc.RootElement.TryGetProperty("Result", out var r) ? r.GetString() ?? "" : "";
-            if (!string.Equals(result, "S", StringComparison.OrdinalIgnoreCase))
-            {
-                string msg = doc.RootElement.TryGetProperty("Msg", out var m) ? m.GetString() ?? "" : "";
-                return BmesPdmDownload.Failed($"DownloadCheck refused: {result} {msg}".Trim());
-            }
-        }
-        catch (Exception ex)
-        {
-            return BmesPdmDownload.Failed("DownloadCheck failed: " + ex.Message);
-        }
-
-        // 3. The file itself — a form-encoded POST, not JSON, using Download[...] field names.
-        progress?.Report($"Downloading {pattx}…");
-        try
-        {
-            using var form = new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-                ["Download[PDMNO]"] = docNo,
-                ["Download[PDMVR]"] = fileVersion,
-                ["Download[PATTX]"] = pattx,
-                ["Download[P_FOLDE]"] = folder,
-                ["Download[P_PATTX]"] = physical,
-            });
-            var resp = await client.PostAsync($"{BaseUrl}/MES073300/Download", form);
-            if (!resp.IsSuccessStatusCode)
-                return BmesPdmDownload.Failed($"Download HTTP {(int)resp.StatusCode}.");
-
-            // A failure comes back as an HTML error page rather than a non-200 status.
-            string mediaType = resp.Content.Headers.ContentType?.MediaType ?? string.Empty;
-            if (resp.Content.Headers.ContentDisposition is null &&
-                mediaType.Contains("html", StringComparison.OrdinalIgnoreCase))
-            {
-                return BmesPdmDownload.Failed("Download returned an HTML page instead of a file.");
-            }
-
-            byte[] bytes = await resp.Content.ReadAsByteArrayAsync();
-            if (bytes.Length == 0)
-                return BmesPdmDownload.Failed("Download returned an empty body.");
-
-            string fileName = resp.Content.Headers.ContentDisposition?.FileNameStar
-                ?? resp.Content.Headers.ContentDisposition?.FileName?.Trim('"')
-                ?? (string.IsNullOrWhiteSpace(pattx) ? $"{docNo}.{pattp}" : pattx);
-
-            return BmesPdmDownload.Ok(fileName, bytes);
-        }
-        catch (Exception ex)
-        {
-            return BmesPdmDownload.Failed("Download failed: " + ex.Message);
-        }
-    }
-
-    private static Task<HttpResponseMessage> PostJsonAsync(HttpClient client, string url, string payload)
-    {
-        var request = new HttpRequestMessage(HttpMethod.Post, url)
-        {
-            Content = new StringContent(payload, Encoding.UTF8, "application/json"),
-        };
-        request.Headers.Add("X-Requested-With", "XMLHttpRequest");
-        return client.SendAsync(request);
+        using var session = opened.Session;
+        return await BmesGateway.DownloadPdmDrawingAsync(session, docNo, pdmvr, progress);
     }
 
     /// <summary>
@@ -510,56 +291,6 @@ public sealed class BmesPdmScrapeService(NgRateSettingsService settings)
 
         tx.Commit();
         return saved;
-    }
-
-    private static string ReadStr(JsonElement obj, string key)
-    {
-        if (!obj.TryGetProperty(key, out var prop)) return string.Empty;
-        return prop.ValueKind switch
-        {
-            JsonValueKind.Null => string.Empty,
-            JsonValueKind.String => prop.GetString() ?? string.Empty,
-            _ => prop.ToString(),
-        };
-    }
-
-    private static async Task<string> GetTokenAsync(HttpClient client)
-    {
-        try
-        {
-            string html = await client.GetStringAsync(BaseUrl);
-            var m = Regex.Match(html,
-                @"<input[^>]+name=""__RequestVerificationToken""[^>]+value=""([^""]+)""",
-                RegexOptions.IgnoreCase);
-            if (!m.Success)
-                m = Regex.Match(html,
-                    @"<input[^>]+value=""([^""]+)""[^>]+name=""__RequestVerificationToken""",
-                    RegexOptions.IgnoreCase);
-            return m.Success ? m.Groups[1].Value : string.Empty;
-        }
-        catch { return string.Empty; }
-    }
-
-    private static async Task<bool> LoginAsync(
-        HttpClient client, string token, string id, string password)
-    {
-        var content = new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["UserInfo.USRID"] = id,
-            ["UserInfo.PWNO"] = password,
-            ["UserInfo.LANG"] = "EN",
-            ["UserInfo.FACCO"] = "GN",
-            ["UserInfo.STYPE"] = "P",
-            ["UserInfo.VTYPE"] = "P",
-            ["__RequestVerificationToken"] = token,
-        });
-        try
-        {
-            var response = await client.PostAsync(BaseUrl + "/MES000000/LoginCheck", content);
-            string body = await response.Content.ReadAsStringAsync();
-            return body.Contains("\"Result\":\"M\"");
-        }
-        catch { return false; }
     }
 }
 
