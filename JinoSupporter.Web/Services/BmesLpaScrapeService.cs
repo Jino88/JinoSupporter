@@ -1,7 +1,3 @@
-using System.Text;
-using System.Text.Json;
-using System.Text.RegularExpressions;
-
 namespace JinoSupporter.Web.Services;
 
 /// <summary>
@@ -17,11 +13,7 @@ namespace JinoSupporter.Web.Services;
 /// </summary>
 public sealed class BmesLpaScrapeService(NgRateSettingsService settings)
 {
-    private const string BaseUrl        = "https://bmes.bujeon.com";
-    private const string ListEndpoint   = "/MES073260/SearchList";
-    private const string DetailEndpoint = "/MES073261/SearchList";
-
-    /// <summary>Search conditions. Defaults mirror the "all records" query.</summary>
+        /// <summary>Search conditions. Defaults mirror the "all records" query.</summary>
     public sealed record LpaQuery
     {
         public string Facco   { get; init; } = "GN";
@@ -58,44 +50,12 @@ public sealed class BmesLpaScrapeService(NgRateSettingsService settings)
         public string Lcitm { get; init; } = "";
     }
 
-    private static object ListCondition(LpaQuery query) => new
-    {
-        Condition = new
-        {
-            FACCO    = query.Facco,
-            AUDAT_FR = query.DateFrom,
-            AUDAT_TO = query.DateTo,
-            LQRNO    = query.Lqrno,
-            LQBNO    = query.Lqbno,
-            AULOC    = query.Auloc,
-            IMPLV    = query.Implv,
-            DICNO    = query.Dicno,
-            LASEQ    = query.Laseq,
-            CHKER    = query.Chker,
-            ZSTAT    = query.Zstat,
-            USEYN    = query.UseYn,
-        },
-    };
-
-    private static object DetailCondition(LpaDetailQuery query) => new
-    {
-        Condition = new
-        {
-            LQRNO = query.Lqrno,
-            FACCO = query.Facco,
-            DICNO = query.Dicno,
-            AULOC = query.Auloc,
-            IMPLV = query.Implv,
-            LCITM = query.Lcitm,
-        },
-    };
-
     public async Task<LpaResult> FetchAsync(LpaQuery query, IProgress<string>? progress = null)
     {
         var (session, error) = await OpenSessionAsync(progress);
         if (session is null) return LpaResult.Fail(error!);
         using (session)
-            return await PostSearchAsync(session, ListEndpoint, ListCondition(query), progress);
+            return await BmesGateway.FetchLpaListAsync(session, query, progress);
     }
 
     public async Task<LpaResult> FetchDetailAsync(LpaDetailQuery query, IProgress<string>? progress = null)
@@ -103,7 +63,7 @@ public sealed class BmesLpaScrapeService(NgRateSettingsService settings)
         var (session, error) = await OpenSessionAsync(progress);
         if (session is null) return LpaResult.Fail(error!);
         using (session)
-            return await PostSearchAsync(session, DetailEndpoint, DetailCondition(query), progress);
+            return await BmesGateway.FetchLpaDetailAsync(session, query, progress);
     }
 
     /// <summary>
@@ -151,7 +111,7 @@ public sealed class BmesLpaScrapeService(NgRateSettingsService settings)
                 {
                     // No per-call progress: the batch reports its own count instead, which
                     // is the only number that means anything across hundreds of lookups.
-                    LpaResult r = await PostSearchAsync(session, DetailEndpoint, DetailCondition(q), null);
+                    LpaResult r = await BmesGateway.FetchLpaDetailAsync(session, q, null);
                     int n = Interlocked.Increment(ref done);
                     if (n % 10 == 0 || n == queries.Count)
                     {
@@ -170,202 +130,22 @@ public sealed class BmesLpaScrapeService(NgRateSettingsService settings)
         return results;
     }
 
-    /// <summary>An authenticated BMES connection: cookie container + logged-in session.</summary>
-    private sealed class Session(HttpClientHandler handler, HttpClient client) : IDisposable
+    /// <summary>Opens the shared BMES session. Returns the error text on failure.</summary>
+    private async Task<(BmesWebSession? Session, string? Error)> OpenSessionAsync(IProgress<string>? progress)
     {
-        public HttpClient Client { get; } = client;
-
-        public void Dispose()
+        var opened = await BmesWebSession.OpenAsync(settings.LoginId, settings.Password, new BmesWebSessionOptions
         {
-            Client.Dispose();
-            handler.Dispose();
-        }
-    }
+            Timeout      = TimeSpan.FromSeconds(300),
+            TokenMessage = "Fetching verification token…",
+            LoginMessage = "Logging in…",
+        }, progress);
+        if (opened.Session is not null) return (opened.Session, null);
 
-    /// <summary>GET verification token → POST login. Returns the error text on failure.</summary>
-    private async Task<(Session? Session, string? Error)> OpenSessionAsync(IProgress<string>? progress)
-    {
-        string loginId  = settings.LoginId;
-        string password = settings.Password;
-        if (string.IsNullOrWhiteSpace(loginId) || string.IsNullOrWhiteSpace(password))
-            return (null, "BMES credentials are not configured. Set them in Setting.");
-
-        var handler = new HttpClientHandler
+        return (null, opened.Failure switch
         {
-            UseCookies      = true,
-            CookieContainer = new System.Net.CookieContainer(),
-        };
-        var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(300) };
-        client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
-        var session = new Session(handler, client);
-
-        progress?.Report("Fetching verification token…");
-        string token = await GetTokenAsync(client);
-        if (string.IsNullOrEmpty(token))
-        {
-            session.Dispose();
-            return (null, "Failed to obtain the verification token from BMES.");
-        }
-
-        progress?.Report("Logging in…");
-        if (!await LoginAsync(client, token, loginId, password))
-        {
-            session.Dispose();
-            return (null, "BMES login failed — check the credentials in Setting.");
-        }
-
-        return (session, null);
-    }
-
-    /// <summary>JSON POST → generic row parse, on an already-authenticated session. Shared by
-    /// both endpoints, which differ only in path and condition object.</summary>
-    private static async Task<LpaResult> PostSearchAsync(
-        Session session, string endpoint, object condition, IProgress<string>? progress)
-    {
-        string payload = JsonSerializer.Serialize(condition);
-
-        progress?.Report($"Calling {endpoint}…");
-        HttpResponseMessage response;
-        try
-        {
-            using var content = new StringContent(payload, Encoding.UTF8, "application/json");
-            response = await session.Client.PostAsync(BaseUrl + endpoint, content);
-        }
-        catch (Exception ex)
-        {
-            return LpaResult.Fail($"Request failed: {ex.Message}");
-        }
-
-        if (!response.IsSuccessStatusCode)
-            return LpaResult.Fail($"HTTP {(int)response.StatusCode} {response.StatusCode}");
-
-        string json = await response.Content.ReadAsStringAsync();
-        try
-        {
-            var (columns, rows) = ParseRows(json);
-            progress?.Report($"✓ {rows.Count:N0} row(s), {columns.Count} column(s).");
-            return new LpaResult(columns, rows, null);
-        }
-        catch (Exception ex)
-        {
-            return LpaResult.Fail($"Failed to parse the response: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Pulls the row array out of the response and flattens it.
-    ///
-    /// The wrapper shape is not documented and differs between BMES endpoints
-    /// (<c>data.contents</c>, <c>data</c>, a bare array…), so rather than guessing a path
-    /// this walks the whole document and takes the largest array of objects it finds. On
-    /// a result payload that is the row set by a wide margin — metadata arrays alongside
-    /// it are short.
-    /// </summary>
-    private static (List<string> Columns, List<IReadOnlyDictionary<string, string>> Rows) ParseRows(string json)
-    {
-        using var doc = JsonDocument.Parse(json);
-
-        JsonElement? best = null;
-        int bestCount = 0;
-        FindLargestObjectArray(doc.RootElement, 0, ref best, ref bestCount);
-
-        var columns = new List<string>();
-        var seen    = new HashSet<string>(StringComparer.Ordinal);
-        var rows    = new List<IReadOnlyDictionary<string, string>>();
-        if (best is not { } array) return (columns, rows);
-
-        foreach (JsonElement item in array.EnumerateArray())
-        {
-            if (item.ValueKind != JsonValueKind.Object) continue;
-            // Case-insensitive: callers look columns up by name and BMES casing varies.
-            var row = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (JsonProperty prop in item.EnumerateObject())
-            {
-                if (seen.Add(prop.Name)) columns.Add(prop.Name);
-                row[prop.Name] = Stringify(prop.Value);
-            }
-            rows.Add(row);
-        }
-
-        return (columns, rows);
-    }
-
-    private const int MaxScanDepth = 8;
-
-    private static void FindLargestObjectArray(
-        JsonElement element, int depth, ref JsonElement? best, ref int bestCount)
-    {
-        if (depth > MaxScanDepth) return;
-
-        switch (element.ValueKind)
-        {
-            case JsonValueKind.Array:
-                int objects = 0;
-                foreach (JsonElement item in element.EnumerateArray())
-                    if (item.ValueKind == JsonValueKind.Object) objects++;
-
-                if (objects > bestCount)
-                {
-                    best = element;
-                    bestCount = objects;
-                }
-                // Rows can still be nested one level deeper (e.g. grouped results).
-                foreach (JsonElement item in element.EnumerateArray())
-                    FindLargestObjectArray(item, depth + 1, ref best, ref bestCount);
-                break;
-
-            case JsonValueKind.Object:
-                foreach (JsonProperty prop in element.EnumerateObject())
-                    FindLargestObjectArray(prop.Value, depth + 1, ref best, ref bestCount);
-                break;
-        }
-    }
-
-    private static string Stringify(JsonElement value) => value.ValueKind switch
-    {
-        JsonValueKind.Null or JsonValueKind.Undefined => string.Empty,
-        JsonValueKind.String => value.GetString() ?? string.Empty,
-        JsonValueKind.True   => "Y",
-        JsonValueKind.False  => "N",
-        _ => value.ToString(),
-    };
-
-    private static async Task<string> GetTokenAsync(HttpClient client)
-    {
-        try
-        {
-            string html = await client.GetStringAsync(BaseUrl);
-            var m = Regex.Match(html,
-                @"<input[^>]+name=""__RequestVerificationToken""[^>]+value=""([^""]+)""",
-                RegexOptions.IgnoreCase);
-            if (!m.Success)
-                m = Regex.Match(html,
-                    @"<input[^>]+value=""([^""]+)""[^>]+name=""__RequestVerificationToken""",
-                    RegexOptions.IgnoreCase);
-            return m.Success ? m.Groups[1].Value : string.Empty;
-        }
-        catch { return string.Empty; }
-    }
-
-    private static async Task<bool> LoginAsync(
-        HttpClient client, string token, string id, string password)
-    {
-        var content = new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["UserInfo.USRID"] = id,
-            ["UserInfo.PWNO"]  = password,
-            ["UserInfo.LANG"]  = "EN",
-            ["UserInfo.FACCO"] = "GN",
-            ["UserInfo.STYPE"] = "P",
-            ["UserInfo.VTYPE"] = "P",
-            ["__RequestVerificationToken"] = token,
+            BmesLoginFailure.MissingCredentials => "BMES credentials are not configured. Set them in Setting.",
+            BmesLoginFailure.Token              => "Failed to obtain the verification token from BMES.",
+            _                                   => "BMES login failed — check the credentials in Setting.",
         });
-        try
-        {
-            var response = await client.PostAsync(BaseUrl + "/MES000000/LoginCheck", content);
-            string body  = await response.Content.ReadAsStringAsync();
-            return body.Contains("\"Result\":\"M\"");
-        }
-        catch { return false; }
     }
 }

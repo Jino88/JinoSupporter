@@ -260,8 +260,7 @@ public sealed class FCostService(NgRateSettingsService settings, AppActivityLogg
                 TokenMessage = "RAW backfill: login token",
                 LoginMessage = $"RAW backfill: login as {id}",
             },
-            LogTo(progress),
-            cancellationToken);
+            LogTo(progress));
         if (!login.Succeeded)
         {
             string msg = login.Failure == BmesLoginFailure.Token
