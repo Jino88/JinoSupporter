@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -20,13 +19,16 @@ public sealed class NgRateService(
     private readonly NgRateSettingsService _settings = settings;
     private readonly AppActivityLogger _activity = activity;
     private readonly BmesSettingsSyncService _settingsSync = settingsSync;
-    private const string BaseUrl = "https://bmes.bujeon.com";
     private const string DailyCacheSubdirectory = "daily";
     private const string MonthlyCacheSubdirectory = "monthly";
     private static readonly object ReusableDbLock = new();
     private static ReusableDb? _lastReusableDb;
     private static readonly TimeSpan RecentRangeReuseTtl = TimeSpan.FromMinutes(15);
     private static readonly TimeSpan RecentSourceCacheTtl = TimeSpan.FromMinutes(15);
+    // Dates within this many days of today may still change on BMES, so their cache
+    // is only trusted for RecentSourceCacheTtl. A snapshot taken while a date was
+    // still inside this window is never treated as final, even after the date ages out.
+    private const int RecentWindowDays = 2;
 
     private sealed record ReusableDb(
         DateTime StartDate,
@@ -34,7 +36,6 @@ public sealed class NgRateService(
         string LineShiftFilterKey,
         DateTimeOffset CachedAt,
         string DbPath);
-    private sealed record BmesLoginResult(bool Succeeded, string Diagnostic);
 
     /// <summary>Mirrors a progress message to both the UI and the Debug/launching-console output.
     /// Use this for every status line so you can diagnose stalls live in the dotnet console
@@ -44,32 +45,6 @@ public sealed class NgRateService(
         _activity.Log("NgRate", msg);
         progress?.Report(msg);
     }
-
-    // BMES API column name → internal column name (merged from DataMaker CONSTANT._columnMap + ListSTRManager)
-    private static readonly Dictionary<string, string> ApiColumnMap =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            ["AUFNR"]    = "WORKORDER",
-            ["WERKS"]    = "PLANT",
-            ["VERID_TX"] = "PRODUCTION_LINE",
-            ["ZSHIF"]    = "Shift",
-            ["WDATE"]    = "PRODUCT_DATE",
-            ["MATNR"]    = "MATERIALCODE",
-            ["MAKTX"]    = "MATERIALNAME",
-            ["KTSCH"]    = "PROCESSCODE",
-            ["KTSCH_TX"] = "PROCESSNAME",
-            ["ZCODE"]    = "NGCODE",
-            ["ZCODE_TX"] = "NGNAME",
-            ["INQTY_O"]  = "QTYINPUT",
-            ["USEYN"]    = "USE",
-            ["NGQTY_O"]  = "QTYNG",
-            ["INQTY"]    = "INPUTQUANTITY",
-            ["NGQTY"]    = "NGQUANTITY",
-            ["PLNFL"]    = "WORKODER",
-            ["VORNR"]    = "ACTIVITYNO",
-            ["ERNAM"]    = "LASTREGPERSON",
-            ["ERDAT"]    = "LASTREGDATE",
-        };
 
     // OrginalTable column order (per DataMaker CONSTANT.ListSTRManager)
     private static readonly string[] OrgTableColumns =
@@ -136,7 +111,7 @@ public sealed class NgRateService(
         // · Recent three days   → reuse monthly cache for a short TTL
         // · Otherwise           → use monthly DB cache if present, else fetch
         // Recent three days use monthly cache markers for a short TTL.
-        var recentCutoff = DateTime.Today.AddDays(-2);
+        var recentCutoff = DateTime.Today.AddDays(-RecentWindowDays);
         var allDates = Enumerable
             .Range(0, (int)(endDate.Date - startDate.Date).TotalDays + 1)
             .Select(i => startDate.Date.AddDays(i))
@@ -179,29 +154,22 @@ public sealed class NgRateService(
                 return null;
             }
 
-            using var handler = new HttpClientHandler
-            {
-                UseCookies      = true,
-                CookieContainer = new CookieContainer(),
-            };
-            using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(300) };
-            client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
-
-            progress?.Report("Fetching verification token…");
-            string token = await GetTokenAsync(client);
-            if (string.IsNullOrEmpty(token))
-            {
-                progress?.Report("[ERROR] Failed to obtain token.");
-                return null;
-            }
-
-            progress?.Report("Logging in to BMES…");
-            BmesLoginResult login = await LoginAsync(client, token, loginId, password);
+            BmesLoginOutcome login = await BmesWebSession.OpenAsync(
+                loginId, password,
+                new BmesWebSessionOptions
+                {
+                    TokenMessage = "Fetching verification token…",
+                    LoginMessage = "Logging in to BMES…",
+                },
+                progress);
             if (!login.Succeeded)
             {
-                progress?.Report($"[ERROR] Login failed — {login.Diagnostic}");
+                progress?.Report(login.Failure == BmesLoginFailure.Token
+                    ? "[ERROR] Failed to obtain token."
+                    : $"[ERROR] Login failed — {login.Diagnostic}");
                 return null;
             }
+            using BmesWebSession session = login.Session!;
             progress?.Report("Login successful.");
 
             // Merge consecutive dates into ranges; split the request when the sequence breaks
@@ -228,8 +196,8 @@ public sealed class NgRateService(
                 string e     = end.ToString("yyyy-MM-dd");
                 string label = start == end ? $"{start:MM/dd}" : $"{start:MM/dd} – {end:MM/dd}";
                 progress?.Report($"Fetching {label}… ({fetched + 1}/{ranges.Count})");
-                var fetch3200 = FetchRawRowsAsync(client, "3200", s, e, progress);
-                var fetch3220 = FetchRawRowsAsync(client, "3220", s, e, progress);
+                var fetch3200 = BmesGateway.FetchNgRecordsAsync(session, "3200", s, e, progress);
+                var fetch3220 = BmesGateway.FetchNgRecordsAsync(session, "3220", s, e, progress);
                 await Task.WhenAll(fetch3200, fetch3220);
                 var rows3200 = await fetch3200;
                 var rows3220 = await fetch3220;
@@ -329,7 +297,7 @@ public sealed class NgRateService(
                 && cached.StartDate == startDate.Date
                 && cached.EndDate == endDate.Date
                 && string.Equals(cached.LineShiftFilterKey, lineShiftFilterKey, StringComparison.Ordinal)
-                && (endDate.Date < DateTime.Today.AddDays(-2) ||
+                && (endDate.Date < DateTime.Today.AddDays(-RecentWindowDays) ||
                     DateTimeOffset.Now - cached.CachedAt <= RecentRangeReuseTtl)
                 && File.Exists(cached.DbPath))
             {
@@ -535,20 +503,30 @@ public sealed class NgRateService(
                         continue;
                     }
 
-                    if (date.Date < recentCutoff.Date)
+                    string cachedAtText = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+                    if (!DateTime.TryParseExact(
+                            cachedAtText,
+                            "yyyy-MM-dd HH:mm:ss",
+                            CultureInfo.InvariantCulture,
+                            DateTimeStyles.None,
+                            out DateTime cachedAt))
+                    {
+                        continue;
+                    }
+
+                    // Final only when the snapshot was taken after the date left the
+                    // recent window. A marker written on the date itself (e.g. a morning
+                    // run before quantities were entered) or written ahead of the date
+                    // (a range that reached into the future) must be fetched once more
+                    // the first time the date is requested as settled history.
+                    bool settledSnapshot = cachedAt.Date > date.Date.AddDays(RecentWindowDays);
+                    if (date.Date < recentCutoff.Date && settledSnapshot)
                     {
                         result.Add(dateText);
                         continue;
                     }
 
-                    string cachedAtText = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
-                    if (DateTime.TryParseExact(
-                            cachedAtText,
-                            "yyyy-MM-dd HH:mm:ss",
-                            CultureInfo.InvariantCulture,
-                            DateTimeStyles.None,
-                            out DateTime cachedAt) &&
-                        DateTime.Now - cachedAt <= RecentSourceCacheTtl)
+                    if (DateTime.Now - cachedAt <= RecentSourceCacheTtl)
                     {
                         result.Add(dateText);
                     }
@@ -840,115 +818,6 @@ public sealed class NgRateService(
             }
         }
         catch { }
-    }
-
-    // ── Private: HTTP ───────────────────────────────────────────────────────────
-
-    private static async Task<string> GetTokenAsync(HttpClient client)
-    {
-        try
-        {
-            string html = await client.GetStringAsync(BaseUrl);
-            // Also handle the "value before name" pattern
-            var m = Regex.Match(html,
-                @"<input[^>]+name=""__RequestVerificationToken""[^>]+value=""([^""]+)""",
-                RegexOptions.IgnoreCase);
-            if (!m.Success)
-                m = Regex.Match(html,
-                    @"<input[^>]+value=""([^""]+)""[^>]+name=""__RequestVerificationToken""",
-                    RegexOptions.IgnoreCase);
-            return m.Success ? m.Groups[1].Value : string.Empty;
-        }
-        catch { return string.Empty; }
-    }
-
-    private static async Task<BmesLoginResult> LoginAsync(
-        HttpClient client, string token, string id, string password)
-    {
-        var content = new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["UserInfo[USRID]"] = id,
-            ["UserInfo[PWNO]"]  = password,
-            ["UserInfo[LANG]"]  = "EN",
-            ["UserInfo[FACCO]"] = "GN",
-            ["UserInfo[STYPE]"] = "P",
-            ["UserInfo[VTYPE]"] = "P",
-            ["__RequestVerificationToken"] = token,
-        });
-        try
-        {
-            var response = await client.PostAsync(BaseUrl + "/MES000000/LoginCheck", content);
-            string body  = await response.Content.ReadAsStringAsync();
-            return new BmesLoginResult(
-                body.Contains("\"Result\":\"M\""),
-                BuildLoginDiagnostic(response, body));
-        }
-        catch (Exception ex) { return new BmesLoginResult(false, $"request error: {ex.GetType().Name}"); }
-    }
-
-    private static string BuildLoginDiagnostic(HttpResponseMessage response, string body)
-    {
-        string status = $"HTTP {(int)response.StatusCode} {response.ReasonPhrase}".Trim();
-        Match result = Regex.Match(body, "\"Result\"\\s*:\\s*\"([^\"]*)\"", RegexOptions.IgnoreCase);
-        Match message = Regex.Match(body, "\"(?:Message|ErrorMessage)\"\\s*:\\s*\"([^\"]*)\"", RegexOptions.IgnoreCase);
-        if (result.Success) status += $", Result={result.Groups[1].Value}";
-        if (message.Success) status += $", Message={SanitizeLoginMessage(message.Groups[1].Value)}";
-        return status;
-    }
-
-    private static string SanitizeLoginMessage(string value)
-    {
-        string normalized = Regex.Replace(value, @"\s+", " ").Trim();
-        return normalized.Length <= 160 ? normalized : normalized[..160] + "...";
-    }
-
-    private static async Task<List<Dictionary<string, string>>?> FetchRawRowsAsync(
-        HttpClient client, string werks, string start, string end,
-        IProgress<string>? progress)
-    {
-        string url = $"{BaseUrl}/MES020210/SearchList?perPage=" +
-                     $"&Condition.WERKS={werks}&Condition.SDATE={start}" +
-                     $"&Condition.EDATE={end}&Condition.INPYN=N&Condition.USEYN=Y&page=1";
-        try
-        {
-            var response = await client.GetAsync(url);
-            if (!response.IsSuccessStatusCode)
-            {
-                progress?.Report($"[WARN] WERKS {werks} response error: {response.StatusCode}");
-                return null;
-            }
-
-            string json = await response.Content.ReadAsStringAsync();
-            using var doc      = JsonDocument.Parse(json);
-            var       contents = doc.RootElement.GetProperty("data").GetProperty("contents");
-
-            var rows = new List<Dictionary<string, string>>();
-            foreach (var item in contents.EnumerateArray())
-            {
-                var row = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var prop in item.EnumerateObject())
-                {
-                    if (prop.Name.Equals("VERID", StringComparison.OrdinalIgnoreCase))
-                        continue; // skip removed column
-
-                    string colName = ApiColumnMap.TryGetValue(prop.Name, out string? mapped)
-                        ? mapped : prop.Name;
-
-                    row[colName] = prop.Value.ValueKind == JsonValueKind.Null
-                        ? string.Empty
-                        : prop.Value.ToString();
-                }
-                rows.Add(row);
-            }
-
-            progress?.Report($"  WERKS {werks}: {rows.Count:N0} rows");
-            return rows;
-        }
-        catch (Exception ex)
-        {
-            progress?.Report($"[WARN] WERKS {werks} parse error: {ex.Message}");
-            return null;
-        }
     }
 
     // ── Private: data processing ─────────────────────────────────────────────────
