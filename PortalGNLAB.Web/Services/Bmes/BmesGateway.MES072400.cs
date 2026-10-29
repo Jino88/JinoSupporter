@@ -9,82 +9,66 @@ public static partial class BmesGateway
     /// from BottomGridColumnList that tells us what date / week / month each COLnnnn means.</summary>
     public sealed record BmesFCostResponse(List<FCostRow> Rows, List<FCostColumnMeta> Columns);
 
+    /// <summary>The API call for MES072400: AI_TOOL_00001 view P (Main-line F-Cost grid, daily = 7 days + 4 weeks +
+    /// 3 months in COL0001..COL0014), plant GN like the screen call.</summary>
+    public static Dictionary<string, object> FCostParameters(DateTime sdate) => new()
+    {
+        ["ZTYPE"] = "P",
+        ["SDATE"] = sdate.ToString("yyyy-MM-dd"),
+        ["ZGUBN"] = "D",
+        ["FACCO"] = "GN",
+    };
+
     /// <summary>
     /// MES072400 — F-Cost (input amount, F-Cost and F-Cost rate per model and material)
-    /// for one query date, with 14 pre-aggregated period columns (COL0001..COL0014).
+    /// for one query date, with 14 pre-aggregated period columns (COL0001..COL0014),
+    /// from PLATFORM_API (AI_TOOL_00001, view P).
     /// Returns the rows (INAMT/FCOST/FRATE triplets, metadata copied down) and the
     /// per-response column metadata, or null when the call or the parse failed.
     /// </summary>
     public static async Task<BmesFCostResponse?> FetchFCostAsync(
         BmesWebSession session, DateTime sdate, IProgress<string>? progress)
     {
-        // Query string mirrors what the BMES UI sends (captured via DevTools).
-        // ZGUBN=D (day), ZTYPE=A (all), L_FACCO=GN (factory) — all empty filters left blank.
-        string url =
-            $"{BmesWebSession.BaseUrl}/MES072400/SearchList?perPage=" +
-            $"&Condition.SDATE={sdate:yyyy-MM-dd}" +
-            "&Condition.ZGUBN=D" +
-            "&Condition.ZTYPE=A" +
-            "&L_FACCO%5B0%5D=GN" +
-            "&L_DIVIS%5B0%5D=" +
-            "&L_CATEG%5B0%5D=" +
-            "&L_PRODU%5B0%5D=" +
-            "&L_ITEMS%5B0%5D=" +
-            "&L_MODEL%5B0%5D=" +
-            "&L_SERIE%5B0%5D=" +
-            "&L_MODEL2%5B0%5D=" +
-            "&L_VERID%5B0%5D=" +
-            "&L_MATNR%5B0%5D=" +
-            "&REMEM=N&page=1";
-
         try
         {
-            var response = await session.Client.GetAsync(url);
-            if (!response.IsSuccessStatusCode)
-            {
-                progress?.Report($"[WARN] F-Cost response error: {response.StatusCode}");
-                return null;
-            }
+            BmesApiResult result = await BmesApi.ExecuteAsync(
+                RequireApiCredentials(session), "AI_TOOL_00001", FCostParameters(sdate));
+            BmesFCostResponse response = FCostFromResult(result);
 
-            string json = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(json);
-
-            // Server returns { result, message, data: { contents: [...] } }
-            var root = doc.RootElement;
-            if (root.TryGetProperty("result", out var ok) && ok.ValueKind == JsonValueKind.False)
-            {
-                progress?.Report("[WARN] BMES returned result=false");
-                return null;
-            }
-
-            var dataObj  = root.GetProperty("data");
-            var contents = dataObj.GetProperty("contents");
-            var rows     = new List<FCostRow>(capacity: contents.GetArrayLength());
-
-            foreach (var item in contents.EnumerateArray())
-            {
-                rows.Add(ParseFCostRow(item));
-            }
-
-            // BMES emits each Material as a strict INAMT → FCOST → FRATE triplet but blanks
-            // out the metadata text fields on the FCOST/FRATE continuation rows (visual de-dup
-            // for their own UI). Forward-fill from the most recent INAMT so every saved row
-            // is self-contained and any later DB query / export sees the full Material context.
-            ForwardFillFCostTriplets(rows);
-
-            // BottomGridColumnList tells us what date / week / month each COLnnnn represents
-            // for THIS response. Older / newer queries shift the mapping (today moves), so we
-            // persist it alongside the rows rather than hard-coding it.
-            var columns = ParseFCostColumnMeta(dataObj);
-
-            progress?.Report($"  F-Cost: {rows.Count:N0} rows · {columns.Count} column meta");
-            return new BmesFCostResponse(rows, columns);
+            progress?.Report($"  F-Cost: {response.Rows.Count:N0} rows · {response.Columns.Count} column meta");
+            return response;
         }
         catch (Exception ex)
         {
-            progress?.Report($"[WARN] F-Cost parse error: {ex.Message}");
+            progress?.Report($"[WARN] F-Cost API error: {ex.Message}");
             return null;
         }
+    }
+
+    /// <summary>Tool answer (view P) → rows + period column metadata. The grid is the result set with COL0001..COL0014
+    /// and ZTYPE; the period columns come from the set with ZCOLN / ZPVTT / PDATE (what BottomGridColumnList was).</summary>
+    public static BmesFCostResponse FCostFromResult(BmesApiResult result)
+    {
+        BmesApiResultSet? grid = BmesToolRows.FindSet(result, "COL0001", "ZTYPE", "TSORT");
+        if (grid is null) return new BmesFCostResponse([], []);
+        BmesApiResultSet? periods = BmesToolRows.FindSet(result, "ZCOLN", "PDATE");
+
+        using JsonDocument doc = JsonDocument.Parse(BmesToolRows.ToSearchListJson(grid, periods));
+        JsonElement dataObj = doc.RootElement.GetProperty("data");
+        var rows = new List<FCostRow>(capacity: grid.Rows.Count);
+        foreach (var item in dataObj.GetProperty("contents").EnumerateArray())
+            rows.Add(ParseFCostRow(item));
+
+        // BMES emits each Material as a strict INAMT → FCOST → FRATE triplet but blanks
+        // out the metadata text fields on the FCOST/FRATE continuation rows (visual de-dup
+        // for their own UI). Forward-fill from the most recent INAMT so every saved row
+        // is self-contained and any later DB query / export sees the full Material context.
+        ForwardFillFCostTriplets(rows);
+
+        // The period columns tell what date / week / month each COLnnnn represents for THIS
+        // answer. Older / newer queries shift the mapping (today moves), so it is persisted
+        // alongside the rows rather than hard-coded.
+        return new BmesFCostResponse(rows, ParseFCostColumnMeta(dataObj));
     }
 
     /// <summary>Reads the response's BottomGridColumnList — one entry per COLnnnn — and

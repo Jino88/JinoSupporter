@@ -8,7 +8,13 @@ namespace PortalGNLAB.Web.Services;
 /// through a session opened here and then through <see cref="BmesGateway"/>, so when BMES
 /// hands out a real API only this folder (Services/Bmes) has to change.
 ///
-/// Flow (same as the BMES login page): read the anti-forgery token from the home page,
+/// Data screens that have a PLATFORM_API Tool are served through <see cref="BmesApi"/> using the
+/// credentials <see cref="BmesApiCredentialProvider"/> resolves, so opening a session does NOT log
+/// in to the web. The web login happens lazily, the first time a screen that still needs web
+/// parsing calls <see cref="EnsureWebLoginAsync"/> (IPG, material master, routing master, PDM,
+/// worker attendance, LPA photos).
+///
+/// Web flow (same as the BMES login page): read the anti-forgery token from the home page,
 /// post it with the configured credentials to MES000000/LoginCheck, keep the cookie.
 /// Each session gets its own cookie container; browser cookies or copied SSO tokens are
 /// never used.
@@ -19,78 +25,110 @@ public sealed class BmesWebSession : IDisposable
     public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(300);
 
     private readonly HttpClientHandler _handler;
+    private readonly HttpClient _client;
+    private readonly BmesWebSessionOptions _options;
+    private readonly SemaphoreSlim _loginLock = new(1, 1);
+    private bool _webLoggedIn;
+    private (bool Ok, BmesLoginFailure Failure, string Diagnostic)? _webLoginFailure;
 
-    public HttpClient Client { get; }
+    /// <summary>The login the caller gave to <see cref="OpenAsync"/> (BMES web login).</summary>
+    public string LoginId { get; }
+    public string Password { get; }
 
-    private BmesWebSession(BmesWebSessionOptions options)
+    /// <summary>The web client. Only valid after <see cref="EnsureWebLoginAsync"/> succeeded.</summary>
+    public HttpClient Client => _webLoggedIn
+        ? _client
+        : throw new InvalidOperationException("BMES web session is not logged in; call EnsureWebLoginAsync first.");
+
+    /// <summary>PLATFORM_API login for this session (settings API login, else this session's web login); null when none.</summary>
+    public BmesApiCredentials? ApiCredentials => BmesApiCredentialProvider.Resolve(LoginId, Password);
+
+    private BmesWebSession(string loginId, string password, BmesWebSessionOptions options)
     {
+        LoginId = loginId;
+        Password = password;
+        _options = options;
         _handler = new HttpClientHandler
         {
             UseCookies = true,
             CookieContainer = new CookieContainer(),
             AutomaticDecompression = options.AutomaticDecompression,
         };
-        Client = new HttpClient(_handler) { Timeout = options.Timeout ?? DefaultTimeout };
+        _client = new HttpClient(_handler) { Timeout = options.Timeout ?? DefaultTimeout };
         if (options.AjaxHeader)
-            Client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+            _client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
         if (options.Referrer is not null)
-            Client.DefaultRequestHeaders.Referrer = options.Referrer;
+            _client.DefaultRequestHeaders.Referrer = options.Referrer;
     }
 
-    /// <summary>Opens a logged-in session. On failure the result carries no session and
-    /// says which step failed, so callers can keep their own error wording.
-    /// Like every BMES login before the gateway existed, a timeout or cancellation during
-    /// login is a failed step, not an exception.</summary>
-    public static async Task<BmesLoginOutcome> OpenAsync(
+    /// <summary>Opens a session. No server call happens here: API calls log in on their first use and
+    /// the web login waits for <see cref="EnsureWebLoginAsync"/>. The result carries no session only when
+    /// neither the BMES web login nor an API login is configured.</summary>
+    public static Task<BmesLoginOutcome> OpenAsync(
         string loginId,
         string password,
         BmesWebSessionOptions? options = null,
         IProgress<string>? progress = null,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(loginId) || string.IsNullOrWhiteSpace(password))
-            return BmesLoginOutcome.Failed(BmesLoginFailure.MissingCredentials, "BMES credentials are not configured.");
+        bool webLogin = !string.IsNullOrWhiteSpace(loginId) && !string.IsNullOrWhiteSpace(password);
+        if (!webLogin && !BmesApiCredentialProvider.HasApiLogin)
+            return Task.FromResult(BmesLoginOutcome.Failed(BmesLoginFailure.MissingCredentials, "BMES credentials are not configured."));
 
-        options ??= new BmesWebSessionOptions();
-        var session = new BmesWebSession(options);
+        var session = new BmesWebSession(loginId ?? string.Empty, password ?? string.Empty, options ?? new BmesWebSessionOptions());
+        return Task.FromResult(new BmesLoginOutcome(session, BmesLoginFailure.None, string.Empty));
+    }
+
+    /// <summary>Logs in to the BMES web (once per session) for screens that are still parsed from web pages.
+    /// A failure is remembered so a later call does not log in again.</summary>
+    public async Task<BmesLoginOutcome> EnsureWebLoginAsync(
+        IProgress<string>? progress = null, CancellationToken cancellationToken = default)
+    {
+        await _loginLock.WaitAsync(cancellationToken);
         try
         {
-            if (options.TokenMessage is { Length: > 0 } tokenMessage) progress?.Report(tokenMessage);
-            string token = await session.GetTokenAsync(cancellationToken);
+            if (_webLoggedIn) return new BmesLoginOutcome(this, BmesLoginFailure.None, string.Empty);
+            if (_webLoginFailure is { } failed) return BmesLoginOutcome.Failed(failed.Failure, failed.Diagnostic);
+
+            if (string.IsNullOrWhiteSpace(LoginId) || string.IsNullOrWhiteSpace(Password))
+                return Remember(BmesLoginFailure.MissingCredentials, "BMES web credentials are not configured (this screen has no API Tool).");
+
+            if (_options.TokenMessage is { Length: > 0 } tokenMessage) progress?.Report(tokenMessage);
+            string token = await GetTokenAsync(cancellationToken);
             if (string.IsNullOrEmpty(token))
-            {
-                session.Dispose();
-                return BmesLoginOutcome.Failed(BmesLoginFailure.Token, "Failed to read BMES login token.");
-            }
+                return Remember(BmesLoginFailure.Token, "Failed to read BMES login token.");
 
-            if (options.LoginMessage is { Length: > 0 } loginMessage) progress?.Report(loginMessage);
-            (bool ok, string diagnostic) = await session.LoginAsync(token, loginId, password, cancellationToken);
-            if (!ok)
-            {
-                session.Dispose();
-                return BmesLoginOutcome.Failed(BmesLoginFailure.Login, diagnostic);
-            }
+            if (_options.LoginMessage is { Length: > 0 } loginMessage) progress?.Report(loginMessage);
+            (bool ok, string diagnostic) = await LoginAsync(token, LoginId, Password, cancellationToken);
+            if (!ok) return Remember(BmesLoginFailure.Login, diagnostic);
 
-            return new BmesLoginOutcome(session, BmesLoginFailure.None, string.Empty);
+            _webLoggedIn = true;
+            return new BmesLoginOutcome(this, BmesLoginFailure.None, string.Empty);
         }
-        catch
+        finally
         {
-            session.Dispose();
-            throw;
+            _loginLock.Release();
         }
+    }
+
+    private BmesLoginOutcome Remember(BmesLoginFailure failure, string diagnostic)
+    {
+        _webLoginFailure = (false, failure, diagnostic);
+        return BmesLoginOutcome.Failed(failure, diagnostic);
     }
 
     public void Dispose()
     {
-        Client.Dispose();
+        _client.Dispose();
         _handler.Dispose();
+        _loginLock.Dispose();
     }
 
     private async Task<string> GetTokenAsync(CancellationToken cancellationToken)
     {
         try
         {
-            string html = await Client.GetStringAsync(BaseUrl, cancellationToken);
+            string html = await _client.GetStringAsync(BaseUrl, cancellationToken);
             // The token input may list name before value or value before name.
             Match m = Regex.Match(html,
                 @"<input[^>]+name=""__RequestVerificationToken""[^>]+value=""([^""]+)""",
@@ -119,7 +157,7 @@ public sealed class BmesWebSession : IDisposable
         });
         try
         {
-            using var response = await Client.PostAsync(BaseUrl + "/MES000000/LoginCheck", content, cancellationToken);
+            using var response = await _client.PostAsync(BaseUrl + "/MES000000/LoginCheck", content, cancellationToken);
             string body = await response.Content.ReadAsStringAsync(cancellationToken);
             bool ok = body.Contains("\"Result\":\"M\"", StringComparison.OrdinalIgnoreCase);
             return (ok, BuildLoginDiagnostic(response, body));

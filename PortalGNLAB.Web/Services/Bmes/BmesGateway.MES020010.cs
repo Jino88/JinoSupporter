@@ -13,6 +13,12 @@ public static partial class BmesGateway
     public static async Task<List<BmesMaterial>?> FetchMaterialsAsync(
         BmesWebSession session, IProgress<string>? progress = null, CancellationToken cancellationToken = default)
     {
+        if (await WebLoginErrorAsync(session, progress, cancellationToken) is { } loginError)
+        {
+            progress?.Report($"[ERROR] {loginError}");
+            return null;
+        }
+
         progress?.Report("Calling MES020010/SearchList…");
         string url =
             $"{BmesWebSession.BaseUrl}/MES020010/SearchList?perPage=" +

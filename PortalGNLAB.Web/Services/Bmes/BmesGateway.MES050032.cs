@@ -21,6 +21,8 @@ public static partial class BmesGateway
     {
         string normalizedPeriodCode = NormalizeIpgPeriodCode(periodCode);
         string payload = BuildIpgSearchListPayload(queryDate, normalizedPeriodCode);
+        if (await WebLoginErrorAsync(session, null, cancellationToken) is { } loginError)
+            throw new InvalidOperationException(loginError);
         using var content = new StringContent(payload, Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await session.Client.PostAsync(
             BmesWebSession.BaseUrl + "/MES050032/SearchList",

@@ -187,6 +187,7 @@ if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
 
 var app = builder.Build();
 BmesApiCredentialProvider.Configure(app.Services.GetRequiredService<NgRateSettingsService>());  // PLATFORM_API login for BmesGateway
+BmesApiCredentialProvider.Configure(app.Services.GetRequiredService<NgRateSettingsService>());  // PLATFORM_API login for BmesGateway
 
 // Seed default admin user if no users exist
 var repo = app.Services.GetRequiredService<WebRepository>();

@@ -1,31 +1,119 @@
-using System.Text;
-using System.Text.Json;
-
 namespace PortalGNLAB.Web.Services;
 
 public static partial class BmesGateway
 {
-    private const string LpaListEndpoint   = "/MES073260/SearchList";
-    private const string LpaDetailEndpoint = "/MES073261/SearchList";
+    private const string LpaTool = "AI_TOOL_00027";
 
     /// <summary>
-    /// MES073260/SearchList — LPA audit list (JSON body).
-    /// Input: logged-in session and the search conditions. Output: generic rows (every property
-    /// of the returned objects becomes a column, ordered by first appearance) or a failed result
-    /// carrying the error text.
+    /// MES073260/SearchList — LPA audit list, from PLATFORM_API (AI_TOOL_00027, view C: one row per audit with
+    /// OK / NG / N/A counts). Ranges longer than 31 days are fetched in 31-day windows, one call each.
+    /// Output: generic rows (every column of the Tool answer, in order) or a failed result carrying the error text.
     /// </summary>
-    public static Task<BmesLpaScrapeService.LpaResult> FetchLpaListAsync(
+    public static async Task<BmesLpaScrapeService.LpaResult> FetchLpaListAsync(
         BmesWebSession session, BmesLpaScrapeService.LpaQuery query, IProgress<string>? progress = null)
-        => PostLpaSearchAsync(session, LpaListEndpoint, LpaListCondition(query), progress);
+    {
+        progress?.Report("Calling AI_TOOL_00027 (LPA audit list)…");
+        try
+        {
+            BmesApiCredentials credentials = RequireApiCredentials(session);
+            DateTime from = DateTime.Parse(BmesToolRows.ToIsoDate(query.DateFrom));
+            DateTime to = DateTime.Parse(BmesToolRows.ToIsoDate(query.DateTo));
+
+            var columns = new List<string>();
+            var rows = new List<IReadOnlyDictionary<string, string>>();
+            foreach (var (windowStart, windowEnd) in BmesToolRows.SplitPeriod(from, to))
+            {
+                BmesApiResult result = await BmesApi.ExecuteAsync(credentials, LpaTool, LpaListParameters(query, windowStart, windowEnd));
+                var (windowColumns, windowRows) = LpaRowsFromResult(result, "LQRNO", "AUDAT");
+                foreach (string column in windowColumns)
+                    if (!columns.Contains(column)) columns.Add(column);
+                rows.AddRange(windowRows);
+            }
+
+            rows = FilterLpaUseYn(rows, query.UseYn);
+            progress?.Report($"✓ {rows.Count:N0} row(s), {columns.Count} column(s).");
+            return new BmesLpaScrapeService.LpaResult(columns, rows, null);
+        }
+        catch (Exception ex)
+        {
+            return BmesLpaScrapeService.LpaResult.Fail($"BMES API request failed: {ex.Message}");
+        }
+    }
 
     /// <summary>
-    /// MES073261/SearchList — LPA checklist behind one LQRNO (JSON body).
-    /// Input: logged-in session and the detail conditions. Output: same generic rows as
-    /// <see cref="FetchLpaListAsync"/>. Safe to call concurrently on one session.
+    /// MES073261/SearchList — LPA checklist behind one LQRNO, from PLATFORM_API (AI_TOOL_00027, view D).
+    /// Output: same generic rows as <see cref="FetchLpaListAsync"/> (ZIMAG_TX still lists the photo paths;
+    /// the photos themselves come from <see cref="FetchLpaImageAsync"/>).
     /// </summary>
-    public static Task<BmesLpaScrapeService.LpaResult> FetchLpaDetailAsync(
+    public static async Task<BmesLpaScrapeService.LpaResult> FetchLpaDetailAsync(
         BmesWebSession session, BmesLpaScrapeService.LpaDetailQuery query, IProgress<string>? progress = null)
-        => PostLpaSearchAsync(session, LpaDetailEndpoint, LpaDetailCondition(query), progress);
+    {
+        progress?.Report("Calling AI_TOOL_00027 (LPA checklist)…");
+        try
+        {
+            BmesApiResult result = await BmesApi.ExecuteAsync(
+                RequireApiCredentials(session), LpaTool, LpaDetailParameters(query));
+            var (columns, rows) = LpaRowsFromResult(result, "LQRNO", "LCITM");
+            progress?.Report($"✓ {rows.Count:N0} row(s), {columns.Count} column(s).");
+            return new BmesLpaScrapeService.LpaResult(columns, rows, null);
+        }
+        catch (Exception ex)
+        {
+            return BmesLpaScrapeService.LpaResult.Fail($"BMES API request failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>View C parameters; empty conditions are left out so the Tool applies its own defaults.</summary>
+    public static Dictionary<string, object> LpaListParameters(
+        BmesLpaScrapeService.LpaQuery query, DateTime from, DateTime to)
+    {
+        var parameters = new Dictionary<string, object>
+        {
+            ["ZTYPE"] = "C",
+            ["SDATE"] = from.ToString("yyyy-MM-dd"),
+            ["EDATE"] = to.ToString("yyyy-MM-dd"),
+        };
+        void Add(string name, string value) { if (!string.IsNullOrWhiteSpace(value)) parameters[name] = value.Trim(); }
+        Add("FACCO", query.Facco);
+        Add("LQRNO", query.Lqrno);
+        Add("LQBNO", query.Lqbno);
+        Add("AULOC", query.Auloc);
+        Add("IMPLV", query.Implv);
+        Add("DICNO", query.Dicno);
+        Add("LASEQ", query.Laseq);
+        Add("CHKER", query.Chker);
+        Add("ZSTAT", query.Zstat);
+        return parameters;
+    }
+
+    /// <summary>View D parameters (LQRNO exact; IMPLV and LCITM narrow the items).</summary>
+    public static Dictionary<string, object> LpaDetailParameters(BmesLpaScrapeService.LpaDetailQuery query)
+    {
+        var parameters = new Dictionary<string, object> { ["ZTYPE"] = "D", ["LQRNO"] = query.Lqrno.Trim() };
+        if (!string.IsNullOrWhiteSpace(query.Implv)) parameters["IMPLV"] = query.Implv.Trim();
+        if (!string.IsNullOrWhiteSpace(query.Lcitm)) parameters["LCITM"] = query.Lcitm.Trim();
+        return parameters;
+    }
+
+    /// <summary>Tool answer → generic rows: the result set that has the given key columns.</summary>
+    public static (List<string> Columns, List<IReadOnlyDictionary<string, string>> Rows) LpaRowsFromResult(
+        BmesApiResult result, params string[] keyColumns)
+    {
+        BmesApiResultSet? set = BmesToolRows.FindSet(result, keyColumns);
+        return set is null ? ([], []) : BmesToolRows.ToGenericRows(set);
+    }
+
+    /// <summary>The screen's USEYN condition (Y = in use). The Tool has no such parameter, so it is applied here;
+    /// a row without a USEYN value is kept.</summary>
+    public static List<IReadOnlyDictionary<string, string>> FilterLpaUseYn(
+        List<IReadOnlyDictionary<string, string>> rows, string useYn)
+    {
+        if (string.IsNullOrWhiteSpace(useYn)) return rows;
+        return rows
+            .Where(r => !r.TryGetValue("USEYN", out string? value) || value.Length == 0
+                        || value.Equals(useYn.Trim(), StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
 
     /// <summary>
     /// MES073261/GetImage — one LPA result photo. Anonymous: no session, any HttpClient works.
@@ -49,149 +137,4 @@ public static partial class BmesGateway
 
     /// <summary>Public (no login) image URL prefix; the viewer also uses it for the "Original" link.</summary>
     public const string LpaImageUrlPrefix = BmesWebSession.BaseUrl + "/MES073261/GetImage?fileName=";
-
-    private static object LpaListCondition(BmesLpaScrapeService.LpaQuery query) => new
-    {
-        Condition = new
-        {
-            FACCO    = query.Facco,
-            AUDAT_FR = query.DateFrom,
-            AUDAT_TO = query.DateTo,
-            LQRNO    = query.Lqrno,
-            LQBNO    = query.Lqbno,
-            AULOC    = query.Auloc,
-            IMPLV    = query.Implv,
-            DICNO    = query.Dicno,
-            LASEQ    = query.Laseq,
-            CHKER    = query.Chker,
-            ZSTAT    = query.Zstat,
-            USEYN    = query.UseYn,
-        },
-    };
-
-    private static object LpaDetailCondition(BmesLpaScrapeService.LpaDetailQuery query) => new
-    {
-        Condition = new
-        {
-            LQRNO = query.Lqrno,
-            FACCO = query.Facco,
-            DICNO = query.Dicno,
-            AULOC = query.Auloc,
-            IMPLV = query.Implv,
-            LCITM = query.Lcitm,
-        },
-    };
-
-    /// <summary>JSON POST → generic row parse, on an already-authenticated session. Shared by
-    /// both endpoints, which differ only in path and condition object.</summary>
-    private static async Task<BmesLpaScrapeService.LpaResult> PostLpaSearchAsync(
-        BmesWebSession session, string endpoint, object condition, IProgress<string>? progress)
-    {
-        string payload = JsonSerializer.Serialize(condition);
-
-        progress?.Report($"Calling {endpoint}…");
-        HttpResponseMessage response;
-        try
-        {
-            using var content = new StringContent(payload, Encoding.UTF8, "application/json");
-            response = await session.Client.PostAsync(BmesWebSession.BaseUrl + endpoint, content);
-        }
-        catch (Exception ex)
-        {
-            return BmesLpaScrapeService.LpaResult.Fail($"Request failed: {ex.Message}");
-        }
-
-        if (!response.IsSuccessStatusCode)
-            return BmesLpaScrapeService.LpaResult.Fail($"HTTP {(int)response.StatusCode} {response.StatusCode}");
-
-        string json = await response.Content.ReadAsStringAsync();
-        try
-        {
-            var (columns, rows) = ParseLpaRows(json);
-            progress?.Report($"✓ {rows.Count:N0} row(s), {columns.Count} column(s).");
-            return new BmesLpaScrapeService.LpaResult(columns, rows, null);
-        }
-        catch (Exception ex)
-        {
-            return BmesLpaScrapeService.LpaResult.Fail($"Failed to parse the response: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Pulls the row array out of the response and flattens it.
-    ///
-    /// The wrapper shape is not documented and differs between BMES endpoints
-    /// (<c>data.contents</c>, <c>data</c>, a bare array…), so rather than guessing a path
-    /// this walks the whole document and takes the largest array of objects it finds. On
-    /// a result payload that is the row set by a wide margin — metadata arrays alongside
-    /// it are short.
-    /// </summary>
-    private static (List<string> Columns, List<IReadOnlyDictionary<string, string>> Rows) ParseLpaRows(string json)
-    {
-        using var doc = JsonDocument.Parse(json);
-
-        JsonElement? best = null;
-        int bestCount = 0;
-        FindLpaLargestObjectArray(doc.RootElement, 0, ref best, ref bestCount);
-
-        var columns = new List<string>();
-        var seen    = new HashSet<string>(StringComparer.Ordinal);
-        var rows    = new List<IReadOnlyDictionary<string, string>>();
-        if (best is not { } array) return (columns, rows);
-
-        foreach (JsonElement item in array.EnumerateArray())
-        {
-            if (item.ValueKind != JsonValueKind.Object) continue;
-            // Case-insensitive: callers look columns up by name and BMES casing varies.
-            var row = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (JsonProperty prop in item.EnumerateObject())
-            {
-                if (seen.Add(prop.Name)) columns.Add(prop.Name);
-                row[prop.Name] = StringifyLpa(prop.Value);
-            }
-            rows.Add(row);
-        }
-
-        return (columns, rows);
-    }
-
-    private const int LpaMaxScanDepth = 8;
-
-    private static void FindLpaLargestObjectArray(
-        JsonElement element, int depth, ref JsonElement? best, ref int bestCount)
-    {
-        if (depth > LpaMaxScanDepth) return;
-
-        switch (element.ValueKind)
-        {
-            case JsonValueKind.Array:
-                int objects = 0;
-                foreach (JsonElement item in element.EnumerateArray())
-                    if (item.ValueKind == JsonValueKind.Object) objects++;
-
-                if (objects > bestCount)
-                {
-                    best = element;
-                    bestCount = objects;
-                }
-                // Rows can still be nested one level deeper (e.g. grouped results).
-                foreach (JsonElement item in element.EnumerateArray())
-                    FindLpaLargestObjectArray(item, depth + 1, ref best, ref bestCount);
-                break;
-
-            case JsonValueKind.Object:
-                foreach (JsonProperty prop in element.EnumerateObject())
-                    FindLpaLargestObjectArray(prop.Value, depth + 1, ref best, ref bestCount);
-                break;
-        }
-    }
-
-    private static string StringifyLpa(JsonElement value) => value.ValueKind switch
-    {
-        JsonValueKind.Null or JsonValueKind.Undefined => string.Empty,
-        JsonValueKind.String => value.GetString() ?? string.Empty,
-        JsonValueKind.True   => "Y",
-        JsonValueKind.False  => "N",
-        _ => value.ToString(),
-    };
 }

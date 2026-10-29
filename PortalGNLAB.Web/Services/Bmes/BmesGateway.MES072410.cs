@@ -5,40 +5,43 @@ namespace PortalGNLAB.Web.Services;
 
 public static partial class BmesGateway
 {
+    /// <summary>The API call for MES072410: AI_TOOL_00001 view G (Core Part F-Cost grid, daily = 7 days + 4 weeks +
+    /// 3 months), plant GN like the screen call.</summary>
+    public static Dictionary<string, object> CorePartsParameters(DateTime queryDate) => new()
+    {
+        ["ZTYPE"] = "G",
+        ["SDATE"] = queryDate.ToString("yyyy-MM-dd"),
+        ["ZGUBN"] = "D",
+        ["FACCO"] = "GN",
+    };
+
     /// <summary>
-    /// MES072410 core-parts F-COST.
-    /// Input: <paramref name="queryDate"/> (Condition.SDATE, daily mode ZGUBN=D, plant GN, all other filters empty).
+    /// MES072410 core-parts F-COST from PLATFORM_API (AI_TOOL_00001, view G).
+    /// Input: <paramref name="queryDate"/> (SDATE, daily mode ZGUBN=D, plant GN).
     /// Output: rows (INAMT / FCOST / FRATE triplets with Col0001..Col0014 values), the period column
-    /// metadata and the column count. Throws on HTTP failure or a response without data.contents.
+    /// metadata and the column count. Throws <see cref="BmesApiException"/> on an API failure.
     /// </summary>
     public static async Task<FCostCorePartsParseResult> FetchCoreParts(
         BmesWebSession session,
         DateTime queryDate,
         CancellationToken cancellationToken = default)
     {
-        string url =
-            $"{BmesWebSession.BaseUrl}/MES072410/SearchList?perPage=" +
-            $"&Condition.SDATE={queryDate:yyyy-MM-dd}" +
-            "&Condition.ZGUBN=D" +
-            "&L_FACCO%5B0%5D=GN" +
-            "&L_DIVIS%5B0%5D=" +
-            "&L_CATEG%5B0%5D=" +
-            "&L_PRODU%5B0%5D=" +
-            "&L_ITEMS%5B0%5D=" +
-            "&L_MODEL%5B0%5D=" +
-            "&L_SERIE%5B0%5D=" +
-            "&L_MODEL2%5B0%5D=" +
-            "&L_VERID%5B0%5D=" +
-            "&L_MATNR%5B0%5D=" +
-            "&REMEM=N&page=1";
-
-        using HttpResponseMessage response = await session.Client.GetAsync(url, cancellationToken);
-        string json = await response.Content.ReadAsStringAsync(cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return ParseCorePartsSearchList(json);
+        BmesApiResult result = await BmesApi.ExecuteAsync(
+            RequireApiCredentials(session), "AI_TOOL_00001", CorePartsParameters(queryDate),
+            cancellationToken: cancellationToken);
+        return CorePartsFromResult(result);
     }
 
-    internal static FCostCorePartsParseResult ParseCorePartsSearchList(string json)
+    /// <summary>Tool answer (view G) → the same parse the screen's SearchList went through: the grid is the result set
+    /// with CPTYP_TX / COL0001, the period columns the set with ZCOLN / PDATE. An empty answer gives no rows.</summary>
+    public static FCostCorePartsParseResult CorePartsFromResult(BmesApiResult result)
+    {
+        BmesApiResultSet? grid = BmesToolRows.FindSet(result, "CPTYP_TX", "COL0001", "ZTYPE");
+        if (grid is null) return new FCostCorePartsParseResult([], [], 0);
+        return ParseCorePartsSearchList(BmesToolRows.ToSearchListJson(grid, BmesToolRows.FindSet(result, "ZCOLN", "PDATE")));
+    }
+
+    public static FCostCorePartsParseResult ParseCorePartsSearchList(string json)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(json);
 

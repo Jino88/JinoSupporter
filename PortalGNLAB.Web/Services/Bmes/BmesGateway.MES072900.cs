@@ -16,6 +16,9 @@ public static partial class BmesGateway
         DateTime date,
         CancellationToken cancellationToken = default)
     {
+        if (await WebLoginErrorAsync(session, null, cancellationToken) is { } loginError)
+            throw new InvalidOperationException(loginError);
+
         string dateStr = date.ToString("yyyy-MM-dd");
         var bodyObj = new
         {
@@ -50,6 +53,9 @@ public static partial class BmesGateway
         WorkerStatusService.DepartmentRecord department,
         CancellationToken cancellationToken = default)
     {
+        if (await WebLoginErrorAsync(session, null, cancellationToken) is { } loginError)
+            throw new InvalidOperationException(loginError);
+
         string dateStr = date.ToString("yyyy-MM-dd");
         var bodyObj = new
         {

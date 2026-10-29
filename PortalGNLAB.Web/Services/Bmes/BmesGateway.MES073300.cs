@@ -37,6 +37,12 @@ public static partial class BmesGateway
     public static async Task<List<Dictionary<string, string>>?> FetchPdmRowsAsync(
         BmesWebSession session, IProgress<string>? progress = null, CancellationToken cancellationToken = default)
     {
+        if (await WebLoginErrorAsync(session, progress, cancellationToken) is { } loginError)
+        {
+            progress?.Report($"[ERROR] {loginError}");
+            return null;
+        }
+
         progress?.Report("Calling MES073300/SearchList…");
         string json;
         try
@@ -94,6 +100,9 @@ public static partial class BmesGateway
     public static async Task<BmesPdmDownload> DownloadPdmDrawingAsync(
         BmesWebSession session, string docNo, string pdmvr, IProgress<string>? progress = null)
     {
+        if (await WebLoginErrorAsync(session, progress, CancellationToken.None) is { } loginError)
+            return BmesPdmDownload.Failed(loginError);
+
         string version = string.IsNullOrWhiteSpace(pdmvr) ? "0" : pdmvr.Trim();
 
         // 1. SearchDetail — locate the attached file.

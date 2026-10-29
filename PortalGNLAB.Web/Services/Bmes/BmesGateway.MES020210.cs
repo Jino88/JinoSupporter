@@ -1,10 +1,9 @@
-using System.Text.Json;
-
 namespace PortalGNLAB.Web.Services;
 
 public static partial class BmesGateway
 {
-    // BMES API column name → internal column name (merged from DataMaker CONSTANT._columnMap + ListSTRManager)
+    // Tool column name → internal column name (merged from DataMaker CONSTANT._columnMap + ListSTRManager).
+    // AI_TOOL_00055 view S returns the MES020210 screen's own column names, so this is the same map as before.
     private static readonly Dictionary<string, string> NgRecordColumnMap =
         new(StringComparer.OrdinalIgnoreCase)
         {
@@ -30,9 +29,29 @@ public static partial class BmesGateway
             ["ERDAT"]    = "LASTREGDATE",
         };
 
+    /// <summary>The API call for MES020210: AI_TOOL_00055 view S (saved input / NG per W/O × process × NG code).
+    /// FRDAT..STDAT is the W/O date range; INPYN is left out so unsaved rows are listed like the screen's INPYN=N.</summary>
+    public static Dictionary<string, object> NgRecordParameters(string werks, DateTime start, DateTime end) => new()
+    {
+        ["ZTYPE"] = "S",
+        ["WERKS"] = werks,
+        ["FRDAT"] = start.ToString("yyyy-MM-dd"),
+        ["STDAT"] = end.ToString("yyyy-MM-dd"),
+    };
+
+    /// <summary>Tool answer → rows keyed by the app's internal column names (the removed VERID column is dropped).
+    /// Every row is kept, including USEYN other than Y (e.g. H): the screen call returned them too, and its totals
+    /// match the Tool's (checked 2026-10-27 plant 3200: 3,727 rows, input 26,474,836).</summary>
+    public static List<Dictionary<string, string>> NgRecordRowsFromResult(BmesApiResult result)
+    {
+        BmesApiResultSet? set = BmesToolRows.FindSet(result, "AUFNR", "WDATE", "NGQTY_O");
+        return set is null ? [] : BmesToolRows.ToRowDictionaries(set, NgRecordColumnMap, "VERID");
+    }
+
     /// <summary>
     /// MES020210 — NG records (input and NG quantity per work order, process and NG code)
-    /// for one plant over a date range.
+    /// for one plant over a date range, from PLATFORM_API (AI_TOOL_00055, view S).
+    /// Ranges longer than 31 days are fetched in 31-day windows, one call each.
     /// </summary>
     /// <param name="werks">Plant code, e.g. 3200 or 3220.</param>
     /// <param name="start">First production date, yyyy-MM-dd.</param>
@@ -44,39 +63,15 @@ public static partial class BmesGateway
         BmesWebSession session, string werks, string start, string end,
         IProgress<string>? progress)
     {
-        string url = $"{BmesWebSession.BaseUrl}/MES020210/SearchList?perPage=" +
-                     $"&Condition.WERKS={werks}&Condition.SDATE={start}" +
-                     $"&Condition.EDATE={end}&Condition.INPYN=N&Condition.USEYN=Y&page=1";
         try
         {
-            var response = await session.Client.GetAsync(url);
-            if (!response.IsSuccessStatusCode)
-            {
-                progress?.Report($"[WARN] WERKS {werks} response error: {response.StatusCode}");
-                return null;
-            }
-
-            string json = await response.Content.ReadAsStringAsync();
-            using var doc      = JsonDocument.Parse(json);
-            var       contents = doc.RootElement.GetProperty("data").GetProperty("contents");
-
+            BmesApiCredentials credentials = RequireApiCredentials(session);
             var rows = new List<Dictionary<string, string>>();
-            foreach (var item in contents.EnumerateArray())
+            foreach (var (windowStart, windowEnd) in BmesToolRows.SplitPeriod(DateTime.Parse(start), DateTime.Parse(end)))
             {
-                var row = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var prop in item.EnumerateObject())
-                {
-                    if (prop.Name.Equals("VERID", StringComparison.OrdinalIgnoreCase))
-                        continue; // skip removed column
-
-                    string colName = NgRecordColumnMap.TryGetValue(prop.Name, out string? mapped)
-                        ? mapped : prop.Name;
-
-                    row[colName] = prop.Value.ValueKind == JsonValueKind.Null
-                        ? string.Empty
-                        : prop.Value.ToString();
-                }
-                rows.Add(row);
+                BmesApiResult result = await BmesApi.ExecuteAsync(
+                    credentials, "AI_TOOL_00055", NgRecordParameters(werks, windowStart, windowEnd));
+                rows.AddRange(NgRecordRowsFromResult(result));
             }
 
             progress?.Report($"  WERKS {werks}: {rows.Count:N0} rows");
@@ -84,7 +79,7 @@ public static partial class BmesGateway
         }
         catch (Exception ex)
         {
-            progress?.Report($"[WARN] WERKS {werks} parse error: {ex.Message}");
+            progress?.Report($"[WARN] WERKS {werks} API error: {ex.Message}");
             return null;
         }
     }
