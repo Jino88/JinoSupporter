@@ -99,9 +99,11 @@ function stackedChart(labels, series, { w = 860, h = 260, target = null } = {}) 
     });
     g += `<text x="${x(i)}" y="${h - 9}" text-anchor="middle" font-size="10.5" fill="#64748b">${lab}</text>`;
   });
-  const line = totals.map((t, i) => `${i ? "L" : "M"}${x(i)},${y(t) - 8}`).join("");
-  g += `<path d="${line}" fill="none" stroke="#0f172a" stroke-width="1.6" stroke-dasharray="0" opacity=".75"/>`;
+  // blank labels are gaps between blocks: the total line breaks there
+  const line = totals.map((t, i) => (labels[i] === "" ? "" : `${i && labels[i - 1] !== "" ? "L" : "M"}${x(i)},${y(t) - 8}`)).join("");
+  g += `<path d="${line}" fill="none" stroke="#0f172a" stroke-width="1.6" opacity=".75"/>`;
   totals.forEach((t, i) => {
+    if (labels[i] === "") return;
     g += `<circle cx="${x(i)}" cy="${y(t) - 8}" r="3" fill="#fff" stroke="#0f172a" stroke-width="1.5"/>`;
     if (i === totals.length - 1) g += `<text x="${x(i)}" y="${y(t) - 16}" text-anchor="middle" font-size="11" font-weight="700" fill="#0f172a">${fmt(t)}</text>`;
   });
@@ -109,7 +111,7 @@ function stackedChart(labels, series, { w = 860, h = 260, target = null } = {}) 
     g += `<line x1="${pad.l}" x2="${w - pad.r}" y1="${y(target)}" y2="${y(target)}" stroke="#dc2626" stroke-dasharray="5 4" stroke-width="1.2"/>`;
     g += `<text x="${w - pad.r}" y="${y(target) - 5}" text-anchor="end" font-size="10.5" font-weight="600" fill="#dc2626">Target ${fmt(target)}</text>`;
   }
-  return `<svg viewBox="0 0 ${w} ${h}" width="100%" preserveAspectRatio="none" style="display:block">${g}</svg>`;
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" style="display:block">${g}</svg>`;
 }
 
 /** Simple multi-line chart. series: [{name,color,values,dashed}] */
@@ -165,3 +167,48 @@ const typeColor = (name) => (TYPES.find((t) => t.name === name) || { color: "#94
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("i[data-icon]").forEach((el) => (el.outerHTML = icon(el.dataset.icon, 15)));
 });
+
+// ── v2: the original pivot tables (label columns + Date | Week | Month blocks with spacer columns) ──
+const PT_CLASS = { "Sub Assy": "sub", "Main Assy": "main", "Function": "func", "Final Visual": "vis", "OQC": "oqc", "IPG": "ipg" };
+const ptBadge = (t) => `<span class="ptb ${PT_CLASS[t] || "ipg"}">${t}</span>`;
+const DATES = ["10-15", "10-16", "10-17", "10-18", "10-19", "10-20", "10-21", "10-22", "10-23", "10-24", "10-25", "10-26", "10-27", "10-28"];
+const WEEKS = ["W40", "W41", "W42", "W43"];
+const MONTHS = ["2026-08", "2026-09", "2026-10"];
+
+/** Deterministic sample series around base (0 → shown as "-"). */
+function series(base, n, seed, zeroEvery = 0) {
+  return Array.from({ length: n }, (_, i) => {
+    if (zeroEvery && (i + seed) % zeroEvery === 0) return 0;
+    return Math.max(0, Math.round(base * (0.7 + 0.6 * Math.abs(Math.sin((i + 1) * (seed + 1) * 0.83)))));
+  });
+}
+
+/**
+ * labels: [{h: header, cls?: "", w?: "min-width"}]; rows: [{cls, cells: [html...], base, seed, zero}]
+ * opts.dates / weeks / months: headers (pass [] to hide a block).
+ */
+function pivotTable(labels, rows, { dates = DATES, weeks = WEEKS, months = MONTHS } = {}) {
+  const blocks = [["Date", dates, "date"], ["Week", weeks, "week"], ["Month", months, "month"]].filter((b) => b[1].length);
+  const nLab = labels.length;
+  let head = `<tr class="blocks"><th class="lb first" colspan="${nLab}"></th>`;
+  blocks.forEach(([name, cols, k], i) => {
+    head += `<th class="b-${k}" colspan="${cols.length}">${name}</th>`;
+    if (i < blocks.length - 1) head += `<th class="sp"></th>`;
+  });
+  head += `</tr><tr class="cols">${labels.map((l, i) => `<th class="lb ${i === 0 ? "first" : ""}" style="${l.w ? `min-width:${l.w}` : ""}">${l.h}</th>`).join("")}`;
+  blocks.forEach(([, cols, k], i) => {
+    head += cols.map((c, j) => `<th class="c-${k} ${i === blocks.length - 1 && j === cols.length - 1 ? "last" : ""}">${c}</th>`).join("");
+    if (i < blocks.length - 1) head += `<th class="sp"></th>`;
+  });
+  head += `</tr>`;
+  const body = rows.map((r) => {
+    let tr = `<tr class="${r.cls || ""}">${r.cells.map((c, i) => `<td class="lb ${i === 0 ? "first" : ""}">${c}</td>`).join("")}`;
+    blocks.forEach(([, cols], bi) => {
+      const vals = series(r.base, cols.length, (r.seed || 1) + bi * 3, r.zero || 0);
+      tr += vals.map((v, j) => `<td class="${v ? "" : "z"} ${bi === blocks.length - 1 && j === cols.length - 1 ? "last" : ""}">${v ? fmt(v) : "-"}</td>`).join("");
+      if (bi < blocks.length - 1) tr += `<td class="sp"></td>`;
+    });
+    return tr + `</tr>`;
+  }).join("");
+  return `<div class="tbl-wrap"><table class="pv"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+}

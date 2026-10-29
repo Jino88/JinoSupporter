@@ -5,25 +5,40 @@
 <title>BMES Report — redesign mockup</title>
 <link rel="stylesheet" href="mockup.css" />
 <style>
-  .meta { display: flex; gap: 18px; font-size: 11.5px; color: var(--muted); }
-  .meta b { color: var(--ink-2); font-weight: 600; }
-  .viewbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 10px 16px; margin-bottom: 14px; }
-  .viewbar .sep { width: 1px; height: 22px; background: var(--line); }
-  .viewbar label { font-size: 11.5px; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 8px; }
-  .viewbar .inp { height: 30px; width: 80px; }
-  .viewbar .grow { flex: 1; }
-  .tabs.big button { padding: 11px 16px; font-size: 13px; }
-  .tgt { padding: 16px 18px; display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; }
-  .tgt h3 { margin: 0; font-size: 13.5px; }
-  .tgt .sub { font-size: 11.5px; color: var(--muted); grid-column: 1; }
-  .ring { grid-row: 1 / span 3; grid-column: 2; }
-  .tgt .nums { grid-column: 1; display: flex; gap: 14px; margin-top: 6px; font-size: 12px; color: var(--muted); }
-  .tgt .nums b { display: block; font-size: 16px; color: var(--ink); font-variant-numeric: tabular-nums; }
-  .status-ok { color: var(--good); } .status-warn { color: var(--warn); } .status-bad { color: var(--bad); }
-  .rank-b { width: 22px; height: 22px; border-radius: 6px; background: #f1f5f9; display: inline-grid; place-items: center; font-weight: 700; font-size: 11px; color: var(--muted); }
-  .rank-b.r1 { background: #0f172a; color: #fff; }
-  td .spk { display: inline-block; vertical-align: middle; }
-  .t .type-row td { background: #f8fafc; font-weight: 700; }
+  .setup { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 14px; margin-bottom: 14px; }
+  .setup-b { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+  .row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+  .stages { display: flex; flex-direction: column; gap: 7px; }
+  .stage { display: grid; grid-template-columns: 120px 1fr 40px; gap: 10px; align-items: center; font-size: 12px; }
+  .stage .bar-track { margin: 0; height: 7px; }
+  .stage b { text-align: right; font-variant-numeric: tabular-nums; }
+  .viewer { overflow: hidden; }
+  .v-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 16px 18px 12px; border-bottom: 1px solid var(--line); }
+  .v-eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; color: var(--accent); }
+  .v-head h2 { margin: 4px 0 4px; font-size: 19px; }
+  .v-ctx { color: var(--muted); font-size: 12px; }
+  .v-meta { display: flex; gap: 18px; font-size: 11.5px; color: var(--muted); }
+  .v-meta b { display: block; color: var(--ink); font-weight: 600; font-size: 12px; }
+  .toolbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 10px 18px; background: #f8fafc; border-bottom: 1px solid var(--line); }
+  .toolbar label { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; color: var(--muted); }
+  .toolbar .inp { height: 28px; width: 64px; }
+  .toolbar .grp { display: flex; align-items: center; gap: 8px; padding-left: 14px; border-left: 1px solid var(--line); }
+  .toolbar .grow { flex: 1; }
+  .v-tabs { padding: 0 18px; margin: 0; }
+  .v-body { padding: 14px 18px 18px; background: #f8fafc; }
+  .v-body .card { box-shadow: none; }
+  .note { font-size: 11.5px; color: var(--muted); margin: 0 0 10px; }
+  .model-h { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 16px; background: #fbfcfe; border-bottom: 1px solid var(--line); }
+  .model-h h3 { margin: 0; font-size: 12.5px; }
+  .model-h span { font-size: 11px; color: var(--muted); }
+  table.pv tr.r-vis td { background: #fafaff; font-weight: 600; color: var(--accent-ink); }
+  table.pv thead tr.per th { text-align: center; color: var(--ink-2); font-weight: 700; border-bottom: 0; padding-bottom: 2px; }
+  table.pv thead tr.per th.pg { background: #eef2ff; border-radius: 6px 6px 0 0; color: #4338ca; }
+  .meta-dl { display: flex; gap: 22px; padding: 10px 16px; border-bottom: 1px solid var(--line); font-size: 12px; }
+  .meta-dl dt { font-size: 10.5px; color: var(--muted); font-weight: 600; }
+  .meta-dl dd { margin: 2px 0 0; font-weight: 700; }
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .actions { margin: 0; padding: 8px 16px 12px 34px; font-size: 12px; color: var(--ink-2); }
 </style>
 </head>
 <body>
@@ -34,146 +49,164 @@
     <header class="ph">
       <div>
         <div class="ph-crumb">BMES <span class="faint">›</span> <b>Report</b></div>
-        <h1>BMES Integrated Report</h1>
-        <div class="ph-sub">
-          <span>2026-08-01 – 2026-10-28</span><span class="dot-sep">·</span>
-          <span class="chips"><span class="chip on">MSM-X316</span><span class="chip on">MSM-X318</span><span class="chip on">J69 Speaker</span></span>
-        </div>
-      </div>
-      <div class="ph-actions" style="flex-direction:column;align-items:flex-end;gap:10px">
-        <div style="display:flex;gap:8px">
-          <button class="btn"><i data-icon="download"></i> Excel</button>
-          <button class="btn"><i data-icon="download"></i> HTML</button>
-          <button class="btn primary"><i data-icon="refresh"></i> Rebuild report</button>
-        </div>
-        <div class="meta"><span>Generated <b>10-29 08:14</b></span><span>Calc <b>v7</b></span><span>Schema <b>2</b></span></div>
+        <h1>Report</h1>
       </div>
     </header>
 
-    <div class="tabs big" id="tabs"></div>
-
-    <section class="card viewbar">
-      <label>Hide rows below <input class="inp" value="100" /> ppm</label>
-      <span class="sep"></span>
-      <label>Columns <span class="seg"><button>Date</button><button class="on">Week</button><button>Month</button></span></label>
-      <span class="sep"></span>
-      <label>Show <select class="inp" style="width:auto"><option>Last 8 weeks</option><option>Last 12 weeks</option><option>All</option></select></label>
-      <span class="grow"></span>
-      <span class="muted" style="font-size:11.5px">Sorted by W43 · worst first</span>
-    </section>
-
-    <section class="grid g-4" id="targets"></section>
-    <div style="height:14px"></div>
-
-    <section class="grid g-3-1">
+    <!-- Same setup panel as today: Period + Sub Groups picker + progress stages / log -->
+    <section class="setup">
       <div class="card">
-        <div class="card-h"><h2>Weekly PPM by group <span class="hint">dashed = target</span></h2><div class="legend" id="lg"></div></div>
-        <div class="card-b" id="trend"></div>
-      </div>
-      <div class="card">
-        <div class="card-h"><h2>F-Cost · W43</h2><span class="muted">USD</span></div>
-        <div class="card-b">
-          <div class="kpi-value" style="font-size:28px">$18,420</div>
-          <div class="kpi-foot" style="margin-bottom:14px"><span class="delta down">▼ −$2,130</span><span>vs W42 · 0.41% of input</span></div>
-          <div class="bars" id="fcost"></div>
+        <div class="sec-h"><h2>Report Setup</h2><div class="tools"><span class="pill"><span class="led"></span>BMES: Credentials OK</span></div></div>
+        <div class="setup-b">
+          <div class="row"><div class="field"><label>Period</label><div class="row" style="gap:6px"><input class="inp" value="2026-08-01" style="width:120px" /><span class="faint">→</span><input class="inp" value="2026-10-28" style="width:120px" /><button class="btn">Today</button></div></div></div>
+          <div>
+            <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px"><div class="field"><label>Sub Groups</label></div><div class="row" style="align-items:center"><div class="seg"><button class="on">Speaker</button><button>Receiver</button><button>Motor</button></div><button class="lnk">Refresh</button></div></div>
+            <div class="chips"><span class="chip on">MSM-X316 · X316B</span><span class="chip on">MSM-X316 · X316C</span><span class="chip on">MSM-X318 · X318A</span><span class="chip">MSM-X318 · X318B</span><span class="chip">J69 · J69NAG</span></div>
+          </div>
+          <div class="row" style="justify-content:flex-end"><button class="btn primary">Get Report</button></div>
         </div>
       </div>
+      <div class="card">
+        <div class="sec-h"><h2>Progress / Log</h2><div class="tools"><b style="font-size:13px">100%</b><button class="lnk mute">Clear</button></div></div>
+        <div class="setup-b"><div class="stages" id="stages"></div></div>
+      </div>
     </section>
 
-    <div style="height:14px"></div>
-
-    <section class="card">
-      <div class="card-h"><h2>Weekly summary <span class="hint">Group → Model → Process type · PPM</span></h2></div>
-      <div class="card-b flush"><div class="tbl-wrap"><table class="t" id="summary"></table></div></div>
-    </section>
-
-    <div style="height:14px"></div>
-
-    <section class="card">
-      <div class="card-h"><h2>Top defects <span class="hint">line-shift × process × NG name</span></h2></div>
-      <div class="card-b flush"><div class="tbl-wrap"><table class="t" id="defects"></table></div></div>
+    <!-- The report viewer (iframe today): header, viewer toolbar, 8 tabs -->
+    <section class="card viewer">
+      <div class="v-head">
+        <div><div class="v-eyebrow">BMES INTEGRATED REPORT</div><h2>BMES Integrated Report</h2>
+          <div class="v-ctx">2026-08-01 → 2026-10-28 · MSM-X316, MSM-X318</div></div>
+        <div class="v-meta"><span>Generated<b>10-29 08:14</b></span><span>Calculation<b>v7</b></span><span>Schema<b>2</b></span></div>
+      </div>
+      <div class="toolbar">
+        <label>Minimum PPM <input class="inp" value="100" /></label>
+        <div class="grp"><span style="font-size:11.5px;font-weight:600;color:var(--muted)">Periods shown</span>
+          <label>Day <input class="inp" value="7" /></label><label>Week <input class="inp" value="4" /></label><label>Month <input class="inp" value="3" /></label></div>
+        <span class="grow"></span>
+        <button class="btn">Defaults</button><button class="btn">Print</button>
+      </div>
+      <div class="tabs v-tabs" id="tabs"></div>
+      <div class="v-body" id="body"></div>
     </section>
 
   </div></main>
 </div>
-<div class="sample-note">Mockup · sample data</div>
+<div class="sample-note">Mockup · sample data · same tables as the current report</div>
 
 <script src="mockup.js"></script>
 <script>
   renderRail("report");
-  document.getElementById("tabs").innerHTML = ["Daily", "Weekly", "KPI", "Cause share", "F-Cost", "F-Cost (all)", "Target defect rate", "Target (all)"]
-    .map((t) => `<button class="${t === "Weekly" ? "on" : ""}">${t}</button>`).join("");
 
-  const ring = (p, color) => {
-    const r = 24, c = 2 * Math.PI * r, len = Math.min(p, 100) / 100 * c;
-    return `<svg class="ring" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="${r}" fill="none" stroke="#eef2f7" stroke-width="7"/>
-      <circle cx="32" cy="32" r="${r}" fill="none" stroke="${color}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${len} ${c}" transform="rotate(-90 32 32)"/>
-      <text x="32" y="36" text-anchor="middle" font-size="12.5" font-weight="700" fill="#0f172a">${p}%</text></svg>`;
+  document.getElementById("stages").innerHTML = [["NG data", 100], ["Routing / Reason", 100], ["F-Cost", 100], ["Build report", 100]]
+    .map(([n, p]) => `<div class="stage"><span>${n}</span><div class="bar-track"><div class="bar-fill" style="width:${p}%;background:var(--good)"></div></div><b>${p}%</b></div>`).join("");
+
+  const D7 = ["10-22", "10-23", "10-24", "10-25", "10-26", "10-27", "10-28"];
+  const W4 = ["W40", "W41", "W42", "W43"], M3 = ["2026-08", "2026-09", "2026-10"];
+  const num = (v, unit) => (v == null || v === 0 ? '<span class="z">-</span>' : unit === "usd" ? "$" + fmt(v) : unit === "pct" ? v.toFixed(2) + "%" : fmt(v));
+
+  /** Generic report table. heads: label headers; periods: [{h, sub: [col names]}] or flat; rows: {cls, cells, vals:[[...per period...]]} */
+  function table(labels, periods, subs, rows) {
+    const many = subs.length > 1;
+    let h = "";
+    if (many) h += `<tr class="per"><th class="lb first" colspan="${labels.length}"></th>${periods.map((p) => `<th class="pg" colspan="${subs.length}">${p}</th><th class="sp"></th>`).join("")}</tr>`;
+    h += `<tr class="cols">${labels.map((l, i) => `<th class="lb ${i ? "" : "first"}" style="${l.w ? "min-width:" + l.w : ""}">${l.h}</th>`).join("")}`;
+    h += periods.map((p, pi) => subs.map((s) => `<th>${many ? s.h : p + (s.h ? " " + s.h : "")}</th>`).join("") + (many && pi < periods.length - 1 ? `<th class="sp"></th>` : many ? `<th class="sp"></th>` : "")).join("") + `</tr>`;
+    const b = rows.map((r) => `<tr class="${r.cls || ""}">${r.cells.map((c, i) => `<td class="lb ${i ? "" : "first"}">${c}</td>`).join("")}` +
+      periods.map((p, pi) => subs.map((s, si) => `<td>${num(r.vals ? r.vals(pi, si) : 0, s.unit)}</td>`).join("") + (many ? `<td class="sp"></td>` : "")).join("") + `</tr>`).join("");
+    return `<div class="tbl-wrap"><table class="pv"><thead>${h}</thead><tbody>${b}</tbody></table></div>`;
+  }
+  const sec = (title, count, inner, extra = "") => `<section class="card sec"><div class="sec-h"><h2>${title}${count != null ? `<span class="cnt">${count}</span>` : ""}</h2></div>${extra}${inner}</section>`;
+  const v = (base, seed) => (pi, si) => series(base, 20, seed + si * 7)[pi];
+  const ind = (d, t) => `<span style="padding-left:${d * 16}px"></span>${t}`;
+
+  const TABS = {
+    "Daily": () => {
+      const sumRows = [
+        { cls: "r-total", cells: ["Total", "total"], base: 1700 }, { cells: [ind(1, "MSM-X316"), "group"], base: 2200 }, { cells: [ind(2, "MSM-X316B"), "model"], base: 2600 },
+        { cls: "r-sub", cells: [ind(3, "Main Assy"), "process · Main Assy"], base: 1000 }, { cls: "r-sub", cells: [ind(3, "Function"), "process · Function"], base: 600 },
+        { cells: [ind(1, "MSM-X318"), "group"], base: 1450 },
+      ].map((r, i) => ({ ...r, vals: (pi, si) => [series(52000, 9, i + 1)[pi], series(r.base * 0.052, 9, i + 3)[pi], series(r.base, 9, i + 5)[pi]][si] }));
+      let html = sec("Daily summary", sumRows.length, table([{ h: "Item", w: "190px" }, { h: "Level", w: "140px" }], D7, [{ h: "Input" }, { h: "NG" }, { h: "PPM" }], sumRows));
+      const models = [["MSM-X316", "MSM-X316B", 4], ["MSM-X318", "MSM-X318A", 3]];
+      const reasonRows = (seed) => [
+        { cells: ["1", "Material", ptBadge("Main Assy"), "Voice coil bonding", "Glue overflow"], vals: v(820, seed) },
+        { cells: ["2", "Process / Equipment", ptBadge("Function"), "R&B test", "Rub & Buzz"], vals: v(520, seed + 1) },
+        { cells: ["3", "Operator", ptBadge("Final Visual"), "Final appearance", "Scratch"], vals: v(300, seed + 2) },
+        { cls: "r-total", cells: ["-", "Total", "-", "-", "-"], vals: v(1700, seed + 3) },
+        { cls: "r-vis", cells: ["", "Visible total (current filter)", "", "", ""], vals: v(1640, seed + 4) },
+      ];
+      html += sec("Defect causes by model", models.length, models.map(([g, m, n], i) =>
+        `<div class="model-h"><h3>${g} · ${m}</h3><span>${n} line shifts</span></div>` +
+        table([{ h: "Rank", w: "44px" }, { h: "Cause", w: "150px" }, { h: "Process", w: "92px" }, { h: "Process name", w: "150px" }, { h: "NG", w: "120px" }], D7, [{ h: "PPM" }], reasonRows(i * 9))).join(""));
+      return html;
+    },
+    "Weekly": () => {
+      const t = [
+        { cls: "r-total", cells: ["MSM-X316", "group", "2,600", "1,800", "13.0%"], vals: v(2450, 1) }, { cells: [ind(1, "MSM-X316B"), "model", "2,800", "1,900", "8.9%"], vals: v(2700, 2) },
+        { cls: "r-sub", cells: [ind(2, "3200.MSM-X316B.L1"), "model · line shift", "3,000", "2,000", "-"], vals: v(3000, 3) }, { cls: "r-total", cells: ["MSM-X318", "group", "1,700", "1,200", "59.4%"], vals: v(1420, 4) },
+      ];
+      const s = [{ cells: ["MSM-X316", "group"], cls: "r-group", vals: v(2450, 5) }, { cells: [ind(1, "MSM-X316B"), "model"], vals: v(2700, 6) }, { cls: "r-sub", cells: [ind(2, "Main Assy"), "process · Main Assy"], vals: v(1000, 7) }, { cls: "r-sub", cells: [ind(2, "Function"), "process · Function"], vals: v(600, 8) }];
+      const tr = [{ cells: ["MSM-X316 total", "MSM-X316"], vals: v(2450, 9) }, { cells: ["MSM-X318 total", "MSM-X318"], vals: v(1420, 10) }];
+      const td = [["1", "3200.MSM-X316B.L1", "Main Assy", "Voice coil bonding", "Glue overflow", 860], ["2", "3200.MSM-X318A.L2", "Final Visual", "Final appearance", "Scratch", 620], ["3", "3200.MSM-X316B.L1", "Function", "R&B test", "Rub & Buzz", 540]]
+        .map((r, i) => ({ cells: [`<span class="rank ${i ? "" : "r1"}">${r[0]}</span>`, r[1], ptBadge(r[2]), r[3], `<b>${r[4]}</b>`], vals: v(r[5], 11 + i) }));
+      return sec("Weekly target", t.length, table([{ h: "Item", w: "200px" }, { h: "Kind", w: "130px" }, { h: "Baseline PPM" }, { h: "Target PPM" }, { h: "Achievement" }], W4, [{ h: "PPM" }], t)) +
+        sec("Hierarchy summary", s.length, table([{ h: "Item", w: "200px" }, { h: "Level / Process", w: "150px" }], W4, [{ h: "PPM" }], s)) +
+        sec("Trend series", tr.length, table([{ h: "Series", w: "200px" }, { h: "Group", w: "120px" }], W4, [{ h: "PPM" }], tr)) +
+        sec("Top Defects", td.length, table([{ h: "Rank", w: "44px" }, { h: "Line Shift", w: "160px" }, { h: "Process Type", w: "100px" }, { h: "Process", w: "150px" }, { h: "NG", w: "120px" }], W4, [{ h: "PPM" }], td));
+    },
+    "KPI": () => {
+      const metric = (name, type, base, target, unit, seed) => sec(name, 3,
+        `<dl class="meta-dl"><div><dt>Type</dt><dd>${type}</dd></div><div><dt>Baseline</dt><dd>${base}</dd></div><div><dt>Target</dt><dd>${target}</dd></div></dl>` +
+        table([{ h: "Metric", w: "140px" }, { h: "Kind", w: "80px" }, { h: "Annual" }], M3, [{ h: "", unit }], [
+          { cells: ["Actual", "actual", unit === "pct" ? "0.18%" : "$212,400"], vals: (pi) => (unit === "pct" ? 0.16 + 0.02 * pi : series(18000, 9, seed)[pi]) },
+          { cells: ["Target", "target", unit === "pct" ? "0.12%" : "$150,000"], vals: () => (unit === "pct" ? 0.12 : 12500) },
+          { cells: ["Baseline", "baseline", unit === "pct" ? "0.22%" : "$240,000"], vals: () => (unit === "pct" ? 0.22 : 20000) },
+        ].map((r) => ({ ...r, vals: (pi) => (typeof r.vals === "function" ? (r.vals.length ? r.vals(pi, 0) : r.vals()) : 0) }))));
+      return `<div class="kpi-grid">${metric("Defect rate", "rate", "0.22%", "0.12%", "pct", 1)}${metric("F-Cost", "cost", "$240,000", "$150,000", "usd", 2)}</div>`;
+    },
+    "Cause share": () => {
+      const rows = [
+        ["MSM-X316B", "Main Assy", "Voice coil bonding", "Glue overflow", "1", "Material", "48%"], ["MSM-X316B", "Function", "R&B test", "Rub & Buzz", "2", "Process / Equipment", "31%"],
+        ["MSM-X316B", "Final Visual", "Final appearance", "Scratch", "3", "Operator", "21%"],
+      ].map((r, i) => ({ cells: [`<b>${r[0]}</b>`, ptBadge(r[1]), r[2], r[3], r[4], r[5], r[6]], vals: (pi, si) => series([820, 520, 300][i] * (si ? 0.5 : 1), 9, i + si + 1)[pi] }));
+      rows.push({ cls: "r-total", cells: ["MSM-X316B", "-", "-", "-", "-", "Subtotal", "100%"], vals: (pi, si) => series(1640 * (si ? 0.5 : 1), 9, 7)[pi] });
+      const mm = [{ cells: ["MSM-X316B"], vals: v(2600, 3) }, { cells: ["MSM-X318A"], vals: v(1450, 4) }];
+      return sec("Cause share", rows.length, table([{ h: "Model", w: "110px" }, { h: "Type", w: "92px" }, { h: "Process", w: "140px" }, { h: "NG", w: "110px" }, { h: "No." }, { h: "Cause", w: "140px" }, { h: "Share" }], M3, [{ h: "PPM" }, { h: "Weighted PPM" }], rows)) +
+        sec("Model monthly PPM", mm.length, table([{ h: "Model", w: "160px" }], M3, [{ h: "PPM" }], mm));
+    },
+    "F-Cost": (all) => {
+      const P = all ? ["W36", "W37", "W38", "W39", ...W4] : W4;
+      const tt = [{ cells: ["Input"], vals: v(410000, 1) }, { cells: ["F-COST (USD)"], vals: v(18400, 2), u: "usd" }, { cells: ["F-COST Rate"], vals: (pi) => 0.3 + 0.05 * Math.sin(pi + 1), u: "pct" }];
+      const tot = `<div class="tbl-wrap"><table class="pv"><thead><tr class="cols"><th class="lb first" style="min-width:140px">Metric</th>${P.map((p) => `<th>${p}</th>`).join("")}</tr></thead><tbody>${tt.map((r) => `<tr><td class="lb first">${r.cells[0]}</td>${P.map((_, pi) => `<td>${num(r.vals(pi, 0), r.u)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+      const trend = [{ cells: ["MSM-X316", "MSM-X316B", "Glue overflow"] }, { cells: ["MSM-X316", "MSM-X316B", "Rub & Buzz"] }, { cells: ["MSM-X318", "MSM-X318A", "Scratch"] }]
+        .map((r, i) => ({ ...r, vals: (pi, si) => [series(120000, 9, i + 1)[pi], series(3000, 9, i + 2)[pi], series(600, 9, i + 3)[pi], 10 + ((pi + i) % 4) * 6.5][si] }));
+      const hier = [{ cells: ["MSM-X316", "MSM-X316", "-", "-", "4"] }, { cells: [ind(1, "X316B"), "MSM-X316", "MSM-X316B", "Glue overflow", "2"] }]
+        .map((r, i) => ({ ...r, vals: (pi, si) => [series(200000, 9, i + 4)[pi], series(9800, 9, i + 5)[pi], 0.4 + 0.1 * Math.sin(pi + i)][si] }));
+      return `<p class="note">${all ? "All periods" : "Recent periods"} · Regular F-COST · USD</p>` +
+        sec("F-COST totals", null, tot) +
+        sec("Model / NG trend", trend.length, table([{ h: "Group", w: "100px" }, { h: "Model", w: "110px" }, { h: "NG Group", w: "120px" }], P, [{ h: "Input" }, { h: "F-COST", unit: "usd" }, { h: "NG PPM" }, { h: "Share", unit: "pct" }], trend)) +
+        sec("F-COST hierarchy", hier.length, table([{ h: "Item", w: "120px" }, { h: "Group", w: "90px" }, { h: "Model", w: "100px" }, { h: "NG Group", w: "110px" }, { h: "Matched" }], P, [{ h: "Input" }, { h: "F-COST", unit: "usd" }, { h: "Rate", unit: "pct" }], hier)) +
+        sec("Material", 2, table([{ h: "Name", w: "160px" }, { h: "Product Group" }, { h: "Model No" }, { h: "Material" }, { h: "VERID" }], P, [{ h: "Input" }, { h: "F-COST", unit: "usd" }, { h: "Rate", unit: "pct" }],
+          [{ cells: ["MSM-X316B ASSY", "Speaker", "X316B", "P-S-151100800", "0001"], vals: (pi, si) => [series(90000, 9, 1)[pi], series(4200, 9, 2)[pi], 0.45][si] }, { cells: ["MSM-X318A ASSY", "Speaker", "X318A", "P-S-151100912", "0002"], vals: (pi, si) => [series(60000, 9, 3)[pi], series(2100, 9, 4)[pi], 0.33][si] }])) +
+        sec("Unmapped Material", 0, `<p class="note" style="padding:12px 16px;margin:0">No data to show.</p>`) +
+        sec("Raw Material F-COST", null, `<p class="note" style="padding:12px 16px;margin:0">Exchange rates and the raw material VND breakdown keep their current tables.</p>`);
+    },
+    "Target defect rate": (all) => {
+      const P = all ? ["W36", "W37", "W38", "W39", ...W4] : W4;
+      const rows = [{ cls: "r-total", cells: ["Total actual", "-", "-"], vals: v(1700, 1) }, { cells: ["MSM-X316B", "1,900", "8.9%"], vals: v(2700, 2) }, { cells: ["MSM-X318A", "1,200", "59.4%"], vals: v(1420, 3) }];
+      return `<p class="note">${all ? "All periods" : "Recent periods"} · Target defect rate</p>` +
+        sec("Target basis", null, `<dl class="meta-dl"><div><dt>Default baseline</dt><dd>0.22%</dd></div><div><dt>Default target 1</dt><dd>0.15%</dd></div><div><dt>Default target 2</dt><dd>0.12%</dd></div></dl><ol class="actions"><li>Voice coil glue dispensing — nozzle change (W44)</li><li>R&B test fixture re-check</li></ol>`) +
+        sec("Target defect rate", rows.length, table([{ h: "Model", w: "150px" }, { h: "Target PPM" }, { h: "Achievement" }], P, [{ h: "Actual PPM" }], rows));
+    },
   };
-  const targets = [
-    { n: "All selected", base: 2200, tgt: 1500, now: 1725, p: 68, c: "#4f46e5", s: "status-warn", st: "On track" },
-    { n: "MSM-X316", base: 2600, tgt: 1800, now: 2498, p: 13, c: "#dc2626", s: "status-bad", st: "Behind" },
-    { n: "MSM-X318", base: 1700, tgt: 1200, now: 1403, p: 59, c: "#d97706", s: "status-warn", st: "On track" },
-    { n: "J69 Speaker", base: 1500, tgt: 1000, now: 924, p: 100, c: "#059669", s: "status-ok", st: "Achieved" },
-  ];
-  document.getElementById("targets").innerHTML = targets.map((t) => `
-    <div class="card tgt">
-      <h3>${t.n}</h3>${ring(t.p, t.c)}
-      <span class="sub">Target achievement · <b class="${t.s}">${t.st}</b></span>
-      <div class="nums"><span>Baseline<b>${fmt(t.base)}</b></span><span>Target<b>${fmt(t.tgt)}</b></span><span>W43<b>${fmt(t.now)}</b></span></div>
-    </div>`).join("");
-
-  const weeks = ["W36", "W37", "W38", "W39", "W40", "W41", "W42", "W43"];
-  const groups = [
-    { name: "MSM-X316", color: "#dc2626", values: [2620, 2580, 2610, 2550, 2470, 2440, 2380, 2498] },
-    { name: "MSM-X318", color: "#d97706", values: [1690, 1650, 1600, 1560, 1520, 1480, 1450, 1403] },
-    { name: "J69 Speaker", color: "#059669", values: [1480, 1400, 1300, 1210, 1100, 1020, 980, 924] },
-  ];
-  document.getElementById("lg").innerHTML = groups.map((g) => `<span><i style="background:${g.color}"></i>${g.name}</span>`).join("");
-  document.getElementById("trend").innerHTML = lineChart(weeks, [...groups,
-    { name: "t1", color: "#dc2626", values: weeks.map(() => 1800), dashed: true },
-    { name: "t2", color: "#d97706", values: weeks.map(() => 1200), dashed: true },
-    { name: "t3", color: "#059669", values: weeks.map(() => 1000), dashed: true }], { w: 860, h: 250 });
-
-  document.getElementById("fcost").innerHTML = [
-    { n: "MSM-X316", v: 9800, c: "#dc2626" }, { n: "MSM-X318", v: 5120, c: "#d97706" }, { n: "J69 Speaker", v: 3500, c: "#059669" },
-  ].map((r) => `<div class="bar-row" style="grid-template-columns:minmax(0,1fr) 80px"><div class="bar-name"><b>${r.n}</b><div class="bar-track"><div class="bar-fill" style="width:${r.v / 98}%;background:${r.c}"></div></div></div><span class="bar-val">$${fmt(r.v)}</span></div>`).join("");
-
-  const rows = [
-    { lvl: 0, n: "MSM-X316", v: [2550, 2470, 2440, 2380, 2498] },
-    { lvl: 1, n: "Main Assy", t: "Main Assy", v: [980, 950, 940, 900, 1060] },
-    { lvl: 1, n: "Function", t: "Function", v: [610, 590, 600, 580, 640] },
-    { lvl: 1, n: "Final Visual", t: "Final Visual", v: [560, 540, 520, 510, 450] },
-    { lvl: 1, n: "Sub Assy", t: "Sub Assy", v: [330, 320, 310, 330, 300] },
-    { lvl: 0, n: "MSM-X318", v: [1560, 1520, 1480, 1450, 1403] },
-    { lvl: 0, n: "J69 Speaker", v: [1210, 1100, 1020, 980, 924] },
-  ];
-  const wk5 = weeks.slice(-5);
-  document.getElementById("summary").innerHTML = `
-    <thead><tr><th class="l" style="min-width:220px">Group / Process type</th>${wk5.map((w) => `<th>${w}</th>`).join("")}<th>Change</th><th class="l">Trend</th></tr></thead>
-    <tbody>${rows.map((r) => {
-      const d = r.v.at(-1) - r.v.at(-2);
-      return `<tr class="lvl-${r.lvl}"><td>${r.lvl === 0 ? `<span class="tree-caret">▾</span>${r.n}` : `<span class="pt"><i style="background:${typeColor(r.t)}"></i>${r.n}</span>`}</td>
-        ${r.v.map((v) => `<td class="n"><span class="heat" style="${heat(v, r.lvl ? 1100 : 2600)}">${fmt(v)}</span></td>`).join("")}
-        <td><span class="delta ${deltaClass(d)}">${signed(d)}</span></td><td class="l"><span class="spk">${sparkline(r.v, { w: 90, h: 24, color: d > 0 ? "#dc2626" : "#059669", fill: false })}</span></td></tr>`;
-    }).join("")}</tbody>`;
-
-  const defects = [
-    { ls: "X316B · L1 Day", t: "Main Assy", p: "Voice coil bonding", ng: "Glue overflow", v: [420, 450, 440, 450, 860] },
-    { ls: "X318 · L2 Night", t: "Final Visual", p: "Final appearance", ng: "Scratch", v: [480, 470, 450, 440, 620] },
-    { ls: "X316B · L1 Day", t: "Function", p: "R&B test", ng: "Rub & Buzz", v: [380, 400, 390, 380, 540] },
-    { ls: "J69 · L1 Day", t: "Sub Assy", p: "Frame welding", ng: "Welding offset", v: [190, 200, 180, 190, 330] },
-    { ls: "X318 · L2 Night", t: "Function", p: "SPL measure", ng: "SPL low", v: [200, 190, 170, 180, 300] },
-    { ls: "X316B · L2 Day", t: "Main Assy", p: "Magnet attach", ng: "Coil short", v: [260, 240, 250, 230, 210] },
-  ];
-  document.getElementById("defects").innerHTML = `
-    <thead><tr><th class="l">#</th><th class="l">Line-shift</th><th class="l">Type</th><th class="l">Process</th><th class="l">NG name</th>${wk5.map((w) => `<th>${w}</th>`).join("")}<th>Change</th></tr></thead>
-    <tbody>${defects.map((r, i) => {
-      const d = r.v.at(-1) - r.v.at(-2);
-      return `<tr><td><span class="rank-b ${i === 0 ? "r1" : ""}">${i + 1}</span></td><td class="l"><b>${r.ls}</b></td><td class="l"><span class="pt"><i style="background:${typeColor(r.t)}"></i>${r.t}</span></td>
-        <td class="l">${r.p}</td><td class="l">${r.ng}</td>${r.v.map((v) => `<td class="n"><span class="heat" style="${heat(v, 900)}">${fmt(v)}</span></td>`).join("")}
-        <td><span class="delta ${deltaClass(d)}">${signed(d)}</span></td></tr>`;
-    }).join("")}</tbody>`;
+  const NAMES = [["Daily", "Daily"], ["Weekly", "Weekly"], ["KPI", "KPI"], ["Cause share", "Cause share"], ["F-Cost", "F-Cost"], ["F-Cost (all)", "F-Cost", true], ["Target defect rate", "Target defect rate"], ["Target (all)", "Target defect rate", true]];
+  const show = (i) => {
+    document.getElementById("tabs").innerHTML = NAMES.map((n, j) => `<button class="${i === j ? "on" : ""}" data-i="${j}">${n[0]}</button>`).join("");
+    document.getElementById("body").innerHTML = TABS[NAMES[i][1]](NAMES[i][2]);
+    document.querySelectorAll("#tabs button").forEach((b) => (b.onclick = () => show(+b.dataset.i)));
+  };
+  show(+(new URLSearchParams(location.search).get("tab") || 0));
 </script>
 </body>
 </html>
