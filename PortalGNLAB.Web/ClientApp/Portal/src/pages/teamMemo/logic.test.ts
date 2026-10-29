@@ -1,25 +1,254 @@
 import { describe, expect, it } from "vitest";
-import { avatarColor, initials, markdownToHtml, newestFirst, scopedFolders, canDropFolder, countsByFolder, filterMemos, spanOf, weekdays, calendarItems, ago, size, headerDiffers } from "./logic";
+import {
+  avatarColor,
+  initials,
+  markdownToHtml,
+  newestFirst,
+  scopedFolders,
+  canDropFolder,
+  countsByFolder,
+  filterMemos,
+  spanOf,
+  weekdays,
+  calendarItems,
+  ago,
+  size,
+  headerDiffers,
+} from "./logic";
 import { MemoTranslator } from "./translator";
 import type { Entry, Folder, Memo, Summary } from "./types";
-const folder = (id: string, parentId: string | null = null, flags: Partial<Folder> = {}): Folder => ({ id, parentId, name: id, path: id, ordinal: 0, isPlan: false, isHidden: false, ...flags });
-const memo = (id: string, patch: Partial<Summary> = {}): Summary => ({ id, folderId: null, title: id, kind: "Task", status: "Todo", owner: "", tags: "", startDate: null, dueDate: null, isPinned: false, updatedBy: "", updatedAt: "2026-10-01", createdAt: "2026-10-01", entryCount: 0, commentCount: 0, participants: [], lastCommentBy: null, lastCommentBody: null, lastCommentIsResult: false, lastActivityAt: null, repeatWeekdays: "", repeatUntil: null, scheduleStartAt: null, scheduleEndAt: null, scheduleAllDay: false, ...patch });
+const folder = (
+  id: string,
+  parentId: string | null = null,
+  flags: Partial<Folder> = {},
+): Folder => ({
+  id,
+  parentId,
+  name: id,
+  path: id,
+  ordinal: 0,
+  isPlan: false,
+  isHidden: false,
+  ...flags,
+});
+const memo = (id: string, patch: Partial<Summary> = {}): Summary => ({
+  id,
+  folderId: null,
+  title: id,
+  kind: "Task",
+  status: "Todo",
+  owner: "",
+  tags: "",
+  startDate: null,
+  dueDate: null,
+  isPinned: false,
+  updatedBy: "",
+  updatedAt: "2026-10-01",
+  createdAt: "2026-10-01",
+  entryCount: 0,
+  commentCount: 0,
+  participants: [],
+  lastCommentBy: null,
+  lastCommentBody: null,
+  lastCommentIsResult: false,
+  lastActivityAt: null,
+  repeatWeekdays: "",
+  repeatUntil: null,
+  scheduleStartAt: null,
+  scheduleEndAt: null,
+  scheduleAllDay: false,
+  ...patch,
+});
 describe("TeamMemoUi ports", () => {
-    it("keeps initials and case-insensitive stable avatar colors", () => { expect(initials(" Jane.Doe ")).toBe("JD"); expect(initials("alex")).toBe("AL"); expect(initials("")).toBe("?"); expect(avatarColor("JANE")).toBe(avatarColor("jane")); });
-    it("formats age and attachment sizes", () => { expect(ago("2026-10-01T12:00:00", new Date("2026-10-01T12:35:00").getTime())).toBe("35m ago"); expect(size(0)).toBe("1 KB"); expect(size(1572864)).toBe("1.5 MB"); });
-    it("encodes hostile markdown while retaining tables, lists and emphasis", () => { const html = markdownToHtml('# Heading\n\n<script>alert(1)</script> **bold** `x`\n\n- one\n1. two\n\n| Key | Value |\n| -- | -- |\n| a | <img onerror=x> |'); expect(html).toContain("<h3>Heading</h3>"); expect(html).toContain("<strong>bold</strong>"); expect(html).toContain("<code>x</code>"); expect(html).toContain("<ul><li>one</li></ul><ol>"); expect(html).toContain("<table>"); expect(html).not.toContain("<script>"); expect(html).not.toContain("<img"); });
-    it("sorts entry groups newest first, retaining lead and children", () => { const e = (id: string, date: string, depth = 0) => ({ id, entryDate: date, depth } as Entry); expect(newestFirst([e("lead", "2020-01-01"), e("old", "2026-01-01"), e("child", "2026-11-01", 1), e("new", "2026-02-01")]).map(e => e.id)).toEqual(["lead", "new", "old", "child"]); });
-    it("compares only editable headers for optimistic conflict detection", () => { const a = { title: "A", status: "Todo", revision: 1 } as Memo; expect(headerDiffers(a, { ...a, status: "Done", revision: 2 })).toBe(false); expect(headerDiffers(a, { ...a, title: "Changed" })).toBe(true); });
+  it("keeps initials and case-insensitive stable avatar colors", () => {
+    expect(initials(" Jane.Doe ")).toBe("JD");
+    expect(initials("alex")).toBe("AL");
+    expect(initials("")).toBe("?");
+    expect(avatarColor("JANE")).toBe(avatarColor("jane"));
+  });
+  it("formats age and attachment sizes", () => {
+    expect(
+      ago("2026-10-01T12:00:00", new Date("2026-10-01T12:35:00").getTime()),
+    ).toBe("35m ago");
+    expect(size(0)).toBe("1 KB");
+    expect(size(1572864)).toBe("1.5 MB");
+  });
+  it("encodes hostile markdown while retaining tables, lists and emphasis", () => {
+    const html = markdownToHtml(
+      "# Heading\n\n<script>alert(1)</script> **bold** `x`\n\n- one\n1. two\n\n| Key | Value |\n| -- | -- |\n| a | <img onerror=x> |",
+    );
+    expect(html).toContain("<h3>Heading</h3>");
+    expect(html).toContain("<strong>bold</strong>");
+    expect(html).toContain("<code>x</code>");
+    expect(html).toContain("<ul><li>one</li></ul><ol>");
+    expect(html).toContain("<table>");
+    expect(html).not.toContain("<script>");
+    expect(html).not.toContain("<img");
+  });
+  it("sorts entry groups newest first, retaining lead and children", () => {
+    const e = (id: string, date: string, depth = 0) =>
+      ({ id, entryDate: date, depth }) as Entry;
+    expect(
+      newestFirst([
+        e("lead", "2020-01-01"),
+        e("old", "2026-01-01"),
+        e("child", "2026-11-01", 1),
+        e("new", "2026-02-01"),
+      ]).map((e) => e.id),
+    ).toEqual(["lead", "new", "old", "child"]);
+  });
+  it("compares only editable headers for optimistic conflict detection", () => {
+    const a = { title: "A", status: "Todo", revision: 1 } as Memo;
+    expect(headerDiffers(a, { ...a, status: "Done", revision: 2 })).toBe(false);
+    expect(headerDiffers(a, { ...a, title: "Changed" })).toBe(true);
+  });
 });
 describe("memo tree, filters and schedules", () => {
-    it("excludes hidden and plan descendants and blocks cycles", () => { const f = [folder("work"), folder("plan", null, { isPlan: true }), folder("child", "plan"), folder("hidden", null, { isHidden: true }), folder("secret", "hidden")]; expect(scopedFolders(f, false).map(x => x.id)).toEqual(["work"]); expect(scopedFolders(f, true).map(x => x.id)).toEqual(["plan", "child"]); expect(canDropFolder(f, "plan", "child")).toBe(false); expect(canDropFolder(f, "plan", null)).toBe(true); });
-    it("counts ancestors and filters by participants, folder path and overdue dates", () => { const f = [folder("parent"), folder("child", "parent", { path: "Parent/Quality" })]; const m = [memo("m", { folderId: "child", participants: ["Jane"], dueDate: "2026-10-01" }), memo("closed", { status: "Done", dueDate: "2026-10-01" })]; expect(countsByFolder(m, f).get("parent")).toBe(1); expect(filterMemos(m, f, "Mine", "quality", "JANE", u => u, "2026-10-29").map(x => x.id)).toEqual(["m"]); expect(filterMemos(m, f, "Overdue", "", "", u => u, "2026-10-29").map(x => x.id)).toEqual(["m"]); });
-    it("extends overdue/open work to today while closed spans stay fixed", () => { expect(spanOf(memo("m", { startDate: "2026-10-01", dueDate: "2026-10-05" }), "2026-10-29")).toEqual({ start: "2026-10-01", end: "2026-10-29" }); expect(spanOf(memo("m", { status: "Done", startDate: "2026-10-01" }), "2026-10-29")).toEqual({ start: "2026-10-01", end: "2026-10-01" }); });
-    it("bounds weekly repeats by anchor and repeat-until; spans include both ends", () => { expect(weekdays("1,3,3,7,,x")).toEqual([1, 3]); const items = calendarItems([memo("repeat", { repeatWeekdays: "1,3", startDate: "2026-10-05", repeatUntil: "2026-10-07" }), memo("span", { startDate: "2026-10-06", dueDate: "2026-10-07" })], "2026-10-01", "2026-10-10", true); expect(items.filter(i => i.memo.id === "repeat").map(i => i.day)).toEqual(["2026-10-05", "2026-10-07"]); expect(items.filter(i => i.kind === "Span")).toHaveLength(2); expect(calendarItems([memo("due", { dueDate: "2026-10-01" })], "2026-10-01", "2026-10-10", false)).toEqual([]); });
+  it("excludes hidden and plan descendants and blocks cycles", () => {
+    const f = [
+      folder("work"),
+      folder("plan", null, { isPlan: true }),
+      folder("child", "plan"),
+      folder("hidden", null, { isHidden: true }),
+      folder("secret", "hidden"),
+    ];
+    expect(scopedFolders(f, false).map((x) => x.id)).toEqual(["work"]);
+    expect(scopedFolders(f, true).map((x) => x.id)).toEqual(["plan", "child"]);
+    expect(canDropFolder(f, "plan", "child")).toBe(false);
+    expect(canDropFolder(f, "plan", null)).toBe(true);
+  });
+  it("counts ancestors and filters by participants, folder path and overdue dates", () => {
+    const f = [
+      folder("parent"),
+      folder("child", "parent", { path: "Parent/Quality" }),
+    ];
+    const m = [
+      memo("m", {
+        folderId: "child",
+        participants: ["Jane"],
+        dueDate: "2026-10-01",
+      }),
+      memo("closed", { status: "Done", dueDate: "2026-10-01" }),
+    ];
+    expect(countsByFolder(m, f).get("parent")).toBe(1);
+    expect(
+      filterMemos(m, f, "Mine", "quality", "JANE", (u) => u, "2026-10-29").map(
+        (x) => x.id,
+      ),
+    ).toEqual(["m"]);
+    expect(
+      filterMemos(m, f, "Overdue", "", "", (u) => u, "2026-10-29").map(
+        (x) => x.id,
+      ),
+    ).toEqual(["m"]);
+  });
+  it("extends overdue/open work to today while closed spans stay fixed", () => {
+    expect(
+      spanOf(
+        memo("m", { startDate: "2026-10-01", dueDate: "2026-10-05" }),
+        "2026-10-29",
+      ),
+    ).toEqual({ start: "2026-10-01", end: "2026-10-29" });
+    expect(
+      spanOf(
+        memo("m", { status: "Done", startDate: "2026-10-01" }),
+        "2026-10-29",
+      ),
+    ).toEqual({ start: "2026-10-01", end: "2026-10-01" });
+  });
+  it("bounds weekly repeats by anchor and repeat-until; spans include both ends", () => {
+    expect(weekdays("1,3,3,7,,x")).toEqual([1, 3]);
+    const items = calendarItems(
+      [
+        memo("repeat", {
+          repeatWeekdays: "1,3",
+          startDate: "2026-10-05",
+          repeatUntil: "2026-10-07",
+        }),
+        memo("span", { startDate: "2026-10-06", dueDate: "2026-10-07" }),
+      ],
+      "2026-10-01",
+      "2026-10-10",
+      true,
+    );
+    expect(
+      items.filter((i) => i.memo.id === "repeat").map((i) => i.day),
+    ).toEqual(["2026-10-05", "2026-10-07"]);
+    expect(items.filter((i) => i.kind === "Span")).toHaveLength(2);
+    expect(
+      calendarItems(
+        [memo("due", { dueDate: "2026-10-01" })],
+        "2026-10-01",
+        "2026-10-10",
+        false,
+      ),
+    ).toEqual([]);
+  });
 });
 describe("TeamMemoTranslator port", () => {
-    it("treats prototype property names as source text", async () => { const tr = new MemoTranslator({ cached: async () => ({}), fetch: async () => ({}) }, () => { }); await tr.refresh("en", ["toString", "__proto__"]); expect(tr.t("toString")).toBe("toString"); expect(tr.t("__proto__")).toBe("__proto__"); });
-    it("paints cache, fetches only missing letter text, and resets to original", async () => { let fetched: string[] = []; const tr = new MemoTranslator({ cached: async () => ({ hello: "Hello" }), fetch: async (_lang, texts) => { fetched = texts; return { world: "World" }; } }, () => { }); await tr.refresh("en", ["hello", "world", "world", "123", ""]); expect(fetched).toEqual(["world"]); expect(tr.t("world")).toBe("World"); expect(tr.busy).toBe(false); await tr.refresh("", []); expect(tr.t("world")).toBe("world"); });
-    it("ignores stale language responses", async () => { let finish!: (value: Record<string, string>) => void; const tr = new MemoTranslator({ cached: async () => ({}), fetch: async (lang) => lang === "ko" ? new Promise(resolve => { finish = resolve; }) : { hello: "Hello" } }, () => { }); const old = tr.refresh("ko", ["hello"]); await Promise.resolve(); await tr.refresh("en", ["hello"]); finish({ hello: "Old" }); await old; expect(tr.t("hello")).toBe("Hello"); expect(tr.lang).toBe("en"); });
-    it("reports fetch errors while leaving the original available", async () => { const tr = new MemoTranslator({ cached: async () => ({}), fetch: async () => { throw new Error("offline"); } }, () => { }); await tr.refresh("en", ["hello"]); expect(tr.error).toContain("offline"); expect(tr.t("hello")).toBe("hello"); expect(tr.pending).toBe(0); });
+  it("treats prototype property names as source text", async () => {
+    const tr = new MemoTranslator(
+      { cached: async () => ({}), fetch: async () => ({}) },
+      () => {},
+    );
+    await tr.refresh("en", ["toString", "__proto__"]);
+    expect(tr.t("toString")).toBe("toString");
+    expect(tr.t("__proto__")).toBe("__proto__");
+  });
+  it("paints cache, fetches only missing letter text, and resets to original", async () => {
+    let fetched: string[] = [];
+    const tr = new MemoTranslator(
+      {
+        cached: async () => ({ hello: "Hello" }),
+        fetch: async (_lang, texts) => {
+          fetched = texts;
+          return { world: "World" };
+        },
+      },
+      () => {},
+    );
+    await tr.refresh("en", ["hello", "world", "world", "123", ""]);
+    expect(fetched).toEqual(["world"]);
+    expect(tr.t("world")).toBe("World");
+    expect(tr.busy).toBe(false);
+    await tr.refresh("", []);
+    expect(tr.t("world")).toBe("world");
+  });
+  it("ignores stale language responses", async () => {
+    let finish!: (value: Record<string, string>) => void;
+    const tr = new MemoTranslator(
+      {
+        cached: async () => ({}),
+        fetch: async (lang) =>
+          lang === "ko"
+            ? new Promise((resolve) => {
+                finish = resolve;
+              })
+            : { hello: "Hello" },
+      },
+      () => {},
+    );
+    const old = tr.refresh("ko", ["hello"]);
+    await Promise.resolve();
+    await tr.refresh("en", ["hello"]);
+    finish({ hello: "Old" });
+    await old;
+    expect(tr.t("hello")).toBe("Hello");
+    expect(tr.lang).toBe("en");
+  });
+  it("reports fetch errors while leaving the original available", async () => {
+    const tr = new MemoTranslator(
+      {
+        cached: async () => ({}),
+        fetch: async () => {
+          throw new Error("offline");
+        },
+      },
+      () => {},
+    );
+    await tr.refresh("en", ["hello"]);
+    expect(tr.error).toContain("offline");
+    expect(tr.t("hello")).toBe("hello");
+    expect(tr.pending).toBe(0);
+  });
 });
