@@ -19,15 +19,6 @@
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.5" />
   </ItemGroup>
 
-  <!-- DRM-cleaner C# wrapper lives next to its Python CLI (External/ExcelDrmCli/).
-       Linked here so callers see ExcelDrm.ExcelDrmCleaner without a separate
-       assembly reference. The actual conversion runs in Python via subprocess. -->
-  <ItemGroup>
-    <Compile Include="..\External\ExcelDrmCli\ExcelDrmCleaner.cs">
-      <Link>Services\ExcelDrmCleaner.cs</Link>
-    </Compile>
-  </ItemGroup>
-
   <ItemGroup>
     <Content Include="..\AI_PROMPTS\**\*">
       <Link>AI_PROMPTS\%(RecursiveDir)%(Filename)%(Extension)</Link>
@@ -42,7 +33,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
     </None>
-    <Content Include="tools\input_data_excel_com_extract.py">
+    <Content Include="tools\input_data_excel_com_extract.py" Condition="Exists('tools\input_data_excel_com_extract.py')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
     </Content>

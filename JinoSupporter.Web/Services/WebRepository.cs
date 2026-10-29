@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 
@@ -5009,6 +5009,35 @@ public sealed class WebRepository
         grantAiPrompt.Parameters.AddWithValue("@inputBatchMenu", AppMenus.DiInputBatch);
         grantAiPrompt.ExecuteNonQuery();
 
+        // Team memo is for everyone who can sign in: grant it once to every role that already
+        // has permissions, so existing installs get the menu without an admin visiting Users.
+        using SqliteCommand grantTeamMemo = conn.CreateCommand();
+        grantTeamMemo.Transaction = tx;
+        grantTeamMemo.CommandText = """
+            INSERT OR IGNORE INTO MenuPermissions (Role, MenuId)
+            SELECT DISTINCT Role, @newMenu
+            FROM MenuPermissions
+            WHERE NOT EXISTS (SELECT 1 FROM AppMigrations WHERE Name = @migration);
+            INSERT OR IGNORE INTO AppMigrations (Name, AppliedAt) VALUES (@migration, datetime('now'));
+            """;
+        grantTeamMemo.Parameters.AddWithValue("@newMenu", AppMenus.TeamMemo);
+        grantTeamMemo.Parameters.AddWithValue("@migration", "grant-team-memo-2026-10-03");
+        grantTeamMemo.ExecuteNonQuery();
+
+        // Review report writer: offered once to every role that already has permissions.
+        using SqliteCommand grantReviewReport = conn.CreateCommand();
+        grantReviewReport.Transaction = tx;
+        grantReviewReport.CommandText = """
+            INSERT OR IGNORE INTO MenuPermissions (Role, MenuId)
+            SELECT DISTINCT Role, @newMenu
+            FROM MenuPermissions
+            WHERE NOT EXISTS (SELECT 1 FROM AppMigrations WHERE Name = @migration);
+            INSERT OR IGNORE INTO AppMigrations (Name, AppliedAt) VALUES (@migration, datetime('now'));
+            """;
+        grantReviewReport.Parameters.AddWithValue("@newMenu", AppMenus.ReviewReport);
+        grantReviewReport.Parameters.AddWithValue("@migration", "grant-review-report-2026-10-03");
+        grantReviewReport.ExecuteNonQuery();
+
         using SqliteCommand grantDailyTest = conn.CreateCommand();
         grantDailyTest.Transaction = tx;
         grantDailyTest.CommandText = """
@@ -5067,15 +5096,22 @@ public sealed class WebRepository
         grantBmesTest5.Parameters.AddWithValue("@modelGroupMenu", AppMenus.BmesMakeModelGroup);
         grantBmesTest5.ExecuteNonQuery();
 
-        using SqliteCommand grantQrBakoData = conn.CreateCommand();
-        grantQrBakoData.Transaction = tx;
-        grantQrBakoData.CommandText = "INSERT OR IGNORE INTO MenuPermissions (Role, MenuId) VALUES (@role, @menu);";
-        grantQrBakoData.Parameters.AddWithValue("@menu", AppMenus.QrBakoData);
-        var qrRole = grantQrBakoData.Parameters.Add("@role", SqliteType.Text);
-        foreach (string role in AppRoles.All)
+        // The QR group reads one shared TCDB connection and shows no BMES cost data, so
+        // every role gets all four entries — including roles whose permissions were
+        // customised before AIRLEAK/GAUSS/SUMMARY existed.
+        using SqliteCommand grantQrData = conn.CreateCommand();
+        grantQrData.Transaction = tx;
+        grantQrData.CommandText = "INSERT OR IGNORE INTO MenuPermissions (Role, MenuId) VALUES (@role, @menu);";
+        var qrMenu = grantQrData.Parameters.Add("@menu", SqliteType.Text);
+        var qrRole = grantQrData.Parameters.Add("@role", SqliteType.Text);
+        foreach (string menuId in new[] { AppMenus.QrSummary, AppMenus.QrBakoData, AppMenus.QrAirleakData, AppMenus.QrGaussData })
         {
-            qrRole.Value = role;
-            grantQrBakoData.ExecuteNonQuery();
+            qrMenu.Value = menuId;
+            foreach (string role in AppRoles.All)
+            {
+                qrRole.Value = role;
+                grantQrData.ExecuteNonQuery();
+            }
         }
 
         // DAILY REPORT doubles as the post-login landing page, so every role needs it

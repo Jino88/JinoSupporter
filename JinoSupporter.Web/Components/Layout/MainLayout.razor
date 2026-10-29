@@ -1,5 +1,6 @@
 @inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Routing
+@using JinoSupporter.Web.Services
 @inject ConnectedUsersService UsersService
 @inject UserCircuitHandler    CircuitHandler
 @inject WebRepository         Repo
@@ -8,21 +9,26 @@
 @implements IDisposable
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
+    @* A popup window (chrome=off) shows one record and has no tab bar to come back with,
+       so it drops the rail and the tab strip and gives the page the whole window. *@
+    @if (!Chromeless)
+    {
+        <div class="sidebar">
+            <NavMenu />
 
-        <!-- Connected users panel -->
-        <div class="connected-panel">
-            <div class="connected-label">
-                <span class="dot"></span>
-                <span>@UsersService.Count connected</span>
+            <!-- Connected users panel -->
+            <div class="connected-panel" title="@string.Join(", ", UsersService.Users.Select(u => u.Name))">
+                <div class="connected-label">
+                    <span class="dot"></span>
+                    <span>@UsersService.Count online</span>
+                </div>
+                @foreach (UserInfo u in UsersService.Users)
+                {
+                    <div class="user-row">@u.Name</div>
+                }
             </div>
-            @foreach (UserInfo u in UsersService.Users)
-            {
-                <div class="user-row">@u.Name</div>
-            }
         </div>
-    </div>
+    }
 
     <main>
         <AuthorizeView>
@@ -30,7 +36,7 @@
                 @* Browser-style tab strip: a tab is opened for each page you navigate to,
                    clicking a tab navigates to it, and × closes it. Navigation-based — switching
                    re-navigates, so a page's in-progress state is not kept across tabs. *@
-                @if (_tabs.Count > 0)
+                @if (_tabs.Count > 0 && !Chromeless)
                 {
                     <div class="app-tabs">
                         @foreach (TabEntry tab in _tabs)
@@ -75,6 +81,10 @@
 
     private readonly List<TabEntry> _tabs = new();
     private string _activeUrl = string.Empty;
+
+    /// <summary>True while the page is being shown in its own window; see <see cref="ShellChrome"/>.</summary>
+    private bool Chromeless => ShellChrome.IsHidden(Nav.Uri);
+
     private DotNetObjectReference<MainLayout>? _selfRef;
 
     protected override async Task OnInitializedAsync()

@@ -5067,15 +5067,22 @@ public sealed class WebRepository
         grantBmesTest5.Parameters.AddWithValue("@modelGroupMenu", AppMenus.BmesMakeModelGroup);
         grantBmesTest5.ExecuteNonQuery();
 
-        using SqliteCommand grantQrBakoData = conn.CreateCommand();
-        grantQrBakoData.Transaction = tx;
-        grantQrBakoData.CommandText = "INSERT OR IGNORE INTO MenuPermissions (Role, MenuId) VALUES (@role, @menu);";
-        grantQrBakoData.Parameters.AddWithValue("@menu", AppMenus.QrBakoData);
-        var qrRole = grantQrBakoData.Parameters.Add("@role", SqliteType.Text);
-        foreach (string role in AppRoles.All)
+        // The QR group reads one shared TCDB connection and shows no BMES cost data, so
+        // every role gets all four entries — including roles whose permissions were
+        // customised before AIRLEAK/GAUSS/SUMMARY existed.
+        using SqliteCommand grantQrData = conn.CreateCommand();
+        grantQrData.Transaction = tx;
+        grantQrData.CommandText = "INSERT OR IGNORE INTO MenuPermissions (Role, MenuId) VALUES (@role, @menu);";
+        var qrMenu = grantQrData.Parameters.Add("@menu", SqliteType.Text);
+        var qrRole = grantQrData.Parameters.Add("@role", SqliteType.Text);
+        foreach (string menuId in new[] { AppMenus.QrSummary, AppMenus.QrBakoData, AppMenus.QrAirleakData, AppMenus.QrGaussData })
         {
-            qrRole.Value = role;
-            grantQrBakoData.ExecuteNonQuery();
+            qrMenu.Value = menuId;
+            foreach (string role in AppRoles.All)
+            {
+                qrRole.Value = role;
+                grantQrData.ExecuteNonQuery();
+            }
         }
 
         // DAILY REPORT doubles as the post-login landing page, so every role needs it

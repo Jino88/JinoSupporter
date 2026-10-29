@@ -27,6 +27,10 @@ public sealed class NgRateService(
     private static ReusableDb? _lastReusableDb;
     private static readonly TimeSpan RecentRangeReuseTtl = TimeSpan.FromMinutes(15);
     private static readonly TimeSpan RecentSourceCacheTtl = TimeSpan.FromMinutes(15);
+    // Dates within this many days of today may still change on BMES, so their cache
+    // is only trusted for RecentSourceCacheTtl. A snapshot taken while a date was
+    // still inside this window is never treated as final, even after the date ages out.
+    private const int RecentWindowDays = 2;
 
     private sealed record ReusableDb(
         DateTime StartDate,
@@ -136,7 +140,7 @@ public sealed class NgRateService(
         // · Recent three days   → reuse monthly cache for a short TTL
         // · Otherwise           → use monthly DB cache if present, else fetch
         // Recent three days use monthly cache markers for a short TTL.
-        var recentCutoff = DateTime.Today.AddDays(-2);
+        var recentCutoff = DateTime.Today.AddDays(-RecentWindowDays);
         var allDates = Enumerable
             .Range(0, (int)(endDate.Date - startDate.Date).TotalDays + 1)
             .Select(i => startDate.Date.AddDays(i))
@@ -329,7 +333,7 @@ public sealed class NgRateService(
                 && cached.StartDate == startDate.Date
                 && cached.EndDate == endDate.Date
                 && string.Equals(cached.LineShiftFilterKey, lineShiftFilterKey, StringComparison.Ordinal)
-                && (endDate.Date < DateTime.Today.AddDays(-2) ||
+                && (endDate.Date < DateTime.Today.AddDays(-RecentWindowDays) ||
                     DateTimeOffset.Now - cached.CachedAt <= RecentRangeReuseTtl)
                 && File.Exists(cached.DbPath))
             {
@@ -535,20 +539,30 @@ public sealed class NgRateService(
                         continue;
                     }
 
-                    if (date.Date < recentCutoff.Date)
+                    string cachedAtText = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+                    if (!DateTime.TryParseExact(
+                            cachedAtText,
+                            "yyyy-MM-dd HH:mm:ss",
+                            CultureInfo.InvariantCulture,
+                            DateTimeStyles.None,
+                            out DateTime cachedAt))
+                    {
+                        continue;
+                    }
+
+                    // Final only when the snapshot was taken after the date left the
+                    // recent window. A marker written on the date itself (e.g. a morning
+                    // run before quantities were entered) or written ahead of the date
+                    // (a range that reached into the future) must be fetched once more
+                    // the first time the date is requested as settled history.
+                    bool settledSnapshot = cachedAt.Date > date.Date.AddDays(RecentWindowDays);
+                    if (date.Date < recentCutoff.Date && settledSnapshot)
                     {
                         result.Add(dateText);
                         continue;
                     }
 
-                    string cachedAtText = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
-                    if (DateTime.TryParseExact(
-                            cachedAtText,
-                            "yyyy-MM-dd HH:mm:ss",
-                            CultureInfo.InvariantCulture,
-                            DateTimeStyles.None,
-                            out DateTime cachedAt) &&
-                        DateTime.Now - cachedAt <= RecentSourceCacheTtl)
+                    if (DateTime.Now - cachedAt <= RecentSourceCacheTtl)
                     {
                         result.Add(dateText);
                     }

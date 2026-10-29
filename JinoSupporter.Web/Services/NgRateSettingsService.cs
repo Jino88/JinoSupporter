@@ -771,7 +771,9 @@ public sealed class NgRateSettingsService
 
     /// <summary>
     /// Returns distinct LineShift values from OrginalTable rows whose MATERIALNAME
-    /// matches the given value. Scans the same set of *.db files as GetAllLineShifts.
+    /// matches the given value. Scans the top-level, "daily" and "monthly" *.db
+    /// files, so a model that only ran in an earlier period still offers its
+    /// shift groups to the Model Group editor.
     /// </summary>
     public List<string> GetLineShiftsByMaterialName(string materialName)
     {
@@ -788,11 +790,12 @@ public sealed class NgRateSettingsService
                              Path.GetFileName(f), "ngrate_settings.db",
                              StringComparison.OrdinalIgnoreCase)));
         }
-        var dailyDir = Path.Combine(dbDir, "daily");
-        if (Directory.Exists(dailyDir))
+        foreach (var sub in new[] { "daily", "monthly" })
         {
+            var subDir = Path.Combine(dbDir, sub);
+            if (!Directory.Exists(subDir)) continue;
             files.AddRange(
-                Directory.EnumerateFiles(dailyDir, "*.db", SearchOption.TopDirectoryOnly)
+                Directory.EnumerateFiles(subDir, "*.db", SearchOption.TopDirectoryOnly)
                          .Where(f => !string.Equals(
                              Path.GetFileName(f), "ngrate_settings.db",
                              StringComparison.OrdinalIgnoreCase)));

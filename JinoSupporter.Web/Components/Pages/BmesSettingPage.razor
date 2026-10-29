@@ -10,7 +10,9 @@
 @inject BmesSettingsSyncService  BmesSettingsSync
 @inject WebRepository            Repo
 @inject AiProviderSettingsService AiProviders
-@inject QrBakoDataService        QrBakoData
+@inject QrTestDataService        QrBakoData
+@inject QrModelCodeService       QrModelCodes
+@inject TeamMemoService          TeamMemos
 
 <PageTitle>Setting</PageTitle>
 
@@ -79,6 +81,16 @@
                                    placeholder="@CodexApiService.DefaultTranslateModel"
                                    @bind="_codexTranslateModel" />
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold mb-1">Translate Reasoning Effort</label>
+                            <select class="form-select form-select-sm" @bind="_codexTranslateEffort">
+                                @foreach (string effort in CodexApiService.ReasoningEfforts)
+                                {
+                                    <option value="@effort">@effort</option>
+                                }
+                            </select>
+                            <div class="form-text small">Codex Luna (@CodexApiService.LunaModel) at low is the default. Team Memo AI Summary always uses Luna / low.</div>
+                        </div>
                         <button class="btn btn-primary btn-sm" @onclick="SaveCodexAsync" disabled="@_codexSaving">
                             @(_codexSaving ? "Saving..." : "Save")
                         </button>
@@ -117,6 +129,45 @@
                         </button>
                         @if (_aiProviderSaved) { <span class="ms-2 text-success fw-semibold small">Saved.</span> }
                         @if (!string.IsNullOrEmpty(_aiProviderError)) { <div class="small text-danger mt-2">@_aiProviderError</div> }
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+<div class="card setting-card">
+    <div class="card-header fw-semibold small">Team Memo DB <span class="text-muted fw-normal">· Work Memo reads and writes the WorkHub memo DB directly — the web and WorkHub share one database</span></div>
+                    <div class="card-body">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-lg-5 col-md-12">
+                                <label class="form-label small fw-semibold mb-1">Memo DB (WorkHub jinomemo.db)</label>
+                                <input class="form-control form-control-sm font-monospace" placeholder="@TeamMemoService.DefaultDbPath" @bind="_tmDbPath" />
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <label class="form-label small fw-semibold mb-1">Attachments folder <span class="text-muted fw-normal">(blank = DB folder\\attachments, same as WorkHub)</span></label>
+                                <input class="form-control form-control-sm font-monospace" @bind="_tmAttachDir" />
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <label class="form-label small fw-semibold mb-1">Author shown for WorkHub edits</label>
+                                <select class="form-select form-select-sm" @bind="_tmWorkHubAuthor">
+                                    <option value="WorkHub">WorkHub</option>
+                                    @foreach (var u in Repo.GetAllUsers())
+                                    {
+                                        <option value="@u.Username">@(string.IsNullOrWhiteSpace(u.DisplayName) ? u.Username : $"{u.DisplayName} ({u.Username})")</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mt-3 flex-wrap">
+                            <div class="form-check form-switch me-2 mb-0">
+                                <input class="form-check-input" type="checkbox" id="tmAutoTr" @bind="_tmAutoTranslate" />
+                                <label class="form-check-label small" for="tmAutoTr" title="After any change, translate new memo text into English, Korean and Vietnamese in the background (Codex Luna, low). Already translated text is never sent again.">Auto-translate memos (EN/KO/VI)</label>
+                            </div>
+                            <button class="btn btn-primary btn-sm" @onclick="SaveTeamMemoStore">Save</button>
+                            <button class="btn btn-outline-primary btn-sm" @onclick="CheckTeamMemoStore">Test connection</button>
+                            @if (!string.IsNullOrEmpty(_tmStatus)) { <span class="small @(_tmOk ? "text-success" : "text-danger")">@_tmStatus</span> }
+                            <span class="small text-muted">Old web memos: @(Repo.GetSetting("TeamMemo:MigratedToMemoDb") ?? "not moved yet (runs once at start)")</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -191,6 +242,81 @@
                                     <span class="small fw-semibold @(_qrBakoError ? "text-danger" : "text-success")">@_qrBakoMsg</span>
                                 }
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+                <div class="card setting-card">
+                    <div class="card-header fw-semibold small">
+                        QR Model Codes
+                        <span class="text-muted fw-normal">
+                            · characters 11-12 of the QR name the model — J69NAG1GD0<b>37</b>00009 is code 37
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted mb-2">
+                            The QR pages filter by this table. It is the only model marker the three stations agree on:
+                            BKTD writes <code>3200.MSM-X316.L1.M1.V01.260922</code> in <code>Model</code> while ALTD and
+                            GSTD write <code>3200.MSM-X316B.L1.M1.JIG1</code> in <code>ST_Information</code>.
+                        </p>
+                        <table class="table table-sm align-middle mb-2" style="max-width:34rem;">
+                            <thead>
+                                <tr>
+                                    <th style="width:7rem;" class="small">Code</th>
+                                    <th class="small">Model name</th>
+                                    <th style="width:5rem;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (_qrModelCodes.Count == 0)
+                                {
+                                    <tr>
+                                        <td colspan="3" class="small text-muted">
+                                            No model is defined; the QR pages will only offer "All models".
+                                        </td>
+                                    </tr>
+                                }
+                                @for (int i = 0; i < _qrModelCodes.Count; i++)
+                                {
+                                    int index = i;
+                                    <tr>
+                                        <td>
+                                            <input class="form-control form-control-sm font-monospace"
+                                                   maxlength="2"
+                                                   placeholder="37"
+                                                   @bind="_qrModelCodes[index].Code" />
+                                        </td>
+                                        <td>
+                                            <input class="form-control form-control-sm"
+                                                   placeholder="MSM-X316B"
+                                                   @bind="_qrModelCodes[index].Name" />
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-outline-danger btn-sm"
+                                                    type="button"
+                                                    @onclick="() => _qrModelCodes.RemoveAt(index)">Remove</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-outline-secondary btn-sm"
+                                    type="button"
+                                    @onclick="() => _qrModelCodes.Add(new QrModelCode())">Add model</button>
+                            <button class="btn btn-primary btn-sm" @onclick="SaveQrModelCodes" disabled="@_qrModelSaving">
+                                @if (_qrModelSaving)
+                                { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                Save
+                            </button>
+                            @if (!string.IsNullOrWhiteSpace(_qrModelMsg))
+                            {
+                                <span class="small fw-semibold @(_qrModelError ? "text-danger" : "text-success")">@_qrModelMsg</span>
+                            }
+                            <span class="small text-muted ms-auto">@QrModelCodes.SettingsPath</span>
                         </div>
                     </div>
                 </div>
@@ -764,6 +890,7 @@
 
     private string _codexApiKey         = string.Empty;
     private string _codexTranslateModel = CodexApiService.DefaultTranslateModel;
+    private string _codexTranslateEffort = CodexApiService.DefaultReasoningEffort;
     private bool   _showCodexKey;
     private bool   _codexSaving;
     private bool   _codexSaved;
@@ -781,6 +908,12 @@
     private bool   _qrBakoTesting;
     private string _qrBakoMsg = string.Empty;
     private bool   _qrBakoError;
+
+    /// <summary>Editable copy of the QR model table; only Save writes it back.</summary>
+    private List<QrModelCode> _qrModelCodes = [];
+    private bool   _qrModelSaving;
+    private string _qrModelMsg = string.Empty;
+    private bool   _qrModelError;
 
     private List<RoutingRow> _routingRows = [];
     private List<ReasonRow>  _reasonRows  = [];
@@ -841,9 +974,50 @@
     private BmesMaterial?  _latest;
     private int            _materialCount;
 
+    // Team memo DB (shared with WorkHub)
+    private string  _tmDbPath = "";
+    private string  _tmAttachDir = "";
+    private string  _tmWorkHubAuthor = "WorkHub";
+    private bool    _tmAutoTranslate = true;
+    private string? _tmStatus;
+    private bool    _tmOk;
+
+    private void LoadTeamMemoStore()
+    {
+        _tmDbPath = TeamMemos.DbPath;
+        _tmAttachDir = Repo.GetSetting("TeamMemo:MemoAttachmentsDir") ?? "";
+        _tmWorkHubAuthor = TeamMemos.WorkHubAuthor;
+        _tmAutoTranslate = Repo.GetSetting(TeamMemoBackgroundService.AutoTranslateKey) != "0";
+    }
+
+    private void SaveTeamMemoStore()
+    {
+        TeamMemos.SaveStoreSettings(
+            string.IsNullOrWhiteSpace(_tmDbPath) ? TeamMemoService.DefaultDbPath : _tmDbPath, _tmAttachDir, _tmWorkHubAuthor);
+        Repo.SetSetting(TeamMemoBackgroundService.AutoTranslateKey, _tmAutoTranslate ? "1" : "0");
+        CheckTeamMemoStore();
+    }
+
+    private void CheckTeamMemoStore()
+    {
+        try
+        {
+            int memos = TeamMemos.ListMemos().Count;
+            int folders = TeamMemos.GetFolders().Count;
+            _tmStatus = $"Connected — {memos} memos, {folders} folders. Attachments: {TeamMemos.AttachmentsRoot}";
+            _tmOk = true;
+        }
+        catch (Exception ex)
+        {
+            _tmStatus = ex.Message;
+            _tmOk = false;
+        }
+    }
+
     protected override void OnInitialized()
     {
         CopyAppPathFromCurrent();
+        LoadTeamMemoStore();
         _apiKey = Repo.GetSetting("Claude:ApiKey") ?? string.Empty;
         _codexApiKey = Repo.GetSetting("OpenAI:ApiKey")
             ?? Repo.GetSetting("Codex:ApiKey")
@@ -851,7 +1025,11 @@
         _codexTranslateModel = Repo.GetSetting("OpenAI:TranslateModel")
             ?? Repo.GetSetting("Codex:TranslateModel")
             ?? CodexApiService.DefaultTranslateModel;
+        _codexTranslateEffort = Repo.GetSetting("OpenAI:TranslateEffort") is { Length: > 0 } savedEffort
+            ? savedEffort
+            : CodexApiService.DefaultReasoningEffort;
         _aiProviders = AiProviders.GetSnapshot();
+        _qrModelCodes = QrModelCodes.Codes.ToList();
         _snap        = NgRateSettings.GetSnapshot();
         _routingRows = NgRateSettings.GetRoutingRows();
         _reasonRows  = NgRateSettings.GetReasonRows();
@@ -893,6 +1071,7 @@
                 : _codexTranslateModel.Trim();
             Repo.SetSetting("OpenAI:ApiKey", _codexApiKey.Trim());
             Repo.SetSetting("OpenAI:TranslateModel", model);
+            Repo.SetSetting("OpenAI:TranslateEffort", _codexTranslateEffort);
             if (!string.IsNullOrWhiteSpace(_codexApiKey))
             {
                 _aiProviders.CodexApiEnabled = true;
@@ -1036,6 +1215,35 @@
         _pathsForm = AppPathsService.ApplyUnifiedDbDirectory(_pathsForm);
     }
 
+    /// <summary>
+    /// Writes the QR model table. Blank codes and duplicates are dropped by the service, so the
+    /// saved list is read back afterwards rather than kept as typed — otherwise the page would
+    /// keep showing a row the QR pages are not using.
+    /// </summary>
+    private void SaveQrModelCodes()
+    {
+        if (_qrModelSaving) return;
+        _qrModelSaving = true;
+        _qrModelMsg = string.Empty;
+        _qrModelError = false;
+
+        try
+        {
+            QrModelCodes.Save(_qrModelCodes);
+            _qrModelCodes = QrModelCodes.Codes.ToList();
+            _qrModelMsg = $"{_qrModelCodes.Count:N0} model(s) saved.";
+        }
+        catch (Exception ex)
+        {
+            _qrModelError = true;
+            _qrModelMsg = ex.Message;
+        }
+        finally
+        {
+            _qrModelSaving = false;
+        }
+    }
+
     private async Task SaveQrBakoDbAsync() =>
         await SaveQrBakoDbCoreAsync(showSavedMessage: true);
 
@@ -1081,8 +1289,11 @@
             if (!await SaveQrBakoDbCoreAsync(showSavedMessage: false))
                 return;
 
-            await QrBakoData.TestConnectionAsync();
-            _qrBakoMsg = "Connected to TCDB.dbo.BKTD.";
+            // One connection serves all three QR tables, so probe each of them —
+            // otherwise a permission gap on ALTD/GSTD only shows up on the pages.
+            foreach (QrTestTableDef table in QrTestTables.All)
+                await QrBakoData.TestConnectionAsync(table);
+            _qrBakoMsg = "Connected to TCDB (dbo.BKTD, dbo.ALTD, dbo.GSTD).";
         }
         catch (Exception ex)
         {

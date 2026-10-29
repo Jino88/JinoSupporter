@@ -1,0 +1,2133 @@
+@using System.Globalization
+@using JinoSupporter.Web.Services
+@inject QrTestDataService QrData
+@inject QrModelCodeService QrModelCodes
+@inject QrViewPreferenceService QrViewPrefs
+@inject IJSRuntime JS
+@implements IDisposable
+
+<div class="qr-date-browser">
+    <header class="qr-titlebar">
+        <div>
+            <div class="qr-kicker">@Kicker</div>
+            <h1>@Table.MenuLabel</h1>
+            <p>@Description</p>
+        </div>
+        <div class="qr-actions">
+            <span class="qr-connection">@ConnectionLabel</span>
+            <button class="qr-btn qr-primary"
+                    type="button"
+                    @onclick="RefreshAsync"
+                    disabled="@(_busy || !QrData.IsConfigured)">
+                @if (_busy)
+                {
+                    <span class="qr-spinner" aria-hidden="true"></span>
+                    <span>Loading</span>
+                }
+                else
+                {
+                    <span>Refresh</span>
+                }
+            </button>
+            <button class="qr-btn"
+                    type="button"
+                    title="Two sheets: the newest test per QR, and every row of the selected dates"
+                    @onclick="ExportExcelAsync"
+                    disabled="@(_busy || _exporting || _result is null || _result.Rows.Count == 0)">
+                @if (_exporting)
+                {
+                    <span class="qr-spinner" aria-hidden="true"></span>
+                    <span>Exporting</span>
+                }
+                else
+                {
+                    <span>XLSX</span>
+                }
+            </button>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <div class="qr-alert qr-danger">@_error</div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_notice))
+    {
+        <div class="qr-alert qr-warning">@_notice</div>
+    }
+
+    @if (_result is not null && !string.IsNullOrWhiteSpace(_result.WarningMessage))
+    {
+        <div class="qr-alert qr-warning">@_result.WarningMessage</div>
+    }
+
+    @if (!QrData.IsConfigured)
+    {
+        <div class="qr-alert qr-warning">QR DB password is not configured on the server.</div>
+    }
+
+    @if (_busy && _result is null)
+    {
+        <div class="qr-state-panel">
+            <span class="qr-spinner" aria-hidden="true"></span>
+            <span>Loading the date list from TCDB.@Table.DisplayTable</span>
+        </div>
+    }
+    else if (_result is null)
+    {
+        <div class="qr-state-panel">No data loaded.</div>
+    }
+    else
+    {
+        <div class="qr-browser-grid" aria-busy="@_busy.ToString().ToLowerInvariant()">
+            <aside class="qr-date-panel">
+                <div class="qr-section-head">
+                    <div>
+                        <strong>Test dates</strong>
+                        <span>@_selectedDates.Count.ToString("N0") selected</span>
+                    </div>
+                    <small>TestTime · multi-select</small>
+                </div>
+
+                <div class="qr-date-list">
+                    @if (_result.Dates.Count == 0)
+                    {
+                        <div class="qr-empty">No dates to show.</div>
+                    }
+                    else
+                    {
+                        @foreach (var date in _result.Dates)
+                        {
+                            <label class="@DateOptionClass(date.Date)">
+                                <input class="qr-date-check"
+                                       type="checkbox"
+                                       checked="@_selectedDates.Contains(date.Date)"
+                                       disabled="@_busy"
+                                       @onchange="async _ => await ToggleDateAsync(date.Date)" />
+                                <span class="qr-date-label">@FormatDate(date.Date)</span>
+                                <span class="qr-date-count">@date.RowCount.ToString("N0") rows</span>
+                            </label>
+                        }
+                    }
+                </div>
+            </aside>
+
+            <section class="qr-data-panel">
+                <div class="qr-section-head qr-table-head">
+                    <div>
+                        <strong>@SelectedDatesLabel</strong>
+                        <span>Test data</span>
+                    </div>
+                    <div class="qr-row-summary">
+                        <span>Shown @VisibleGroups.Count.ToString("N0") QR@(IsFiltered ? $" of {_rowGroups.Count:N0}" : string.Empty)</span>
+                        <span>Fetched @_result.Rows.Count.ToString("N0") rows</span>
+                        @if (_result.TotalRows is long totalRows)
+                        {
+                            <span>DB total @totalRows.ToString("N0") rows</span>
+                        }
+                        @if (_result.ExcludedRows is long excludedRows)
+                        {
+                            <span class="@(excludedRows > 0 ? "qr-excluded" : string.Empty)">Excluded @excludedRows.ToString("N0") rows</span>
+                        }
+                        <span>@_result.Columns.Count.ToString("N0") columns</span>
+                        @if (_result.ValidTotalRows is long validTotal && validTotal > _result.Rows.Count)
+                        {
+                            <b>Limited to the latest @_result.MaxRows.ToString("N0") rows · QR groups follow the shown range</b>
+                        }
+                    </div>
+                </div>
+
+                @if (DisplaySummary is QrTestDataSummary summary)
+                {
+                    <div class="@(IsFiltered ? "qr-summary-grid qr-summary-filtered" : "qr-summary-grid")"
+                         aria-label="@(IsFiltered ? "QR summary for the filtered rows" : "QR summary for the selected dates")">
+                        <article class="qr-summary-card">
+                            <span>Input count@(IsFiltered ? " · filtered" : string.Empty)</span>
+                            <strong>@summary.InputCount.ToString("N0")</strong>
+                            <small>@InputCountNote</small>
+                        </article>
+                        <article class="qr-summary-card">
+                            <span>NG count@(IsFiltered ? " · filtered" : string.Empty)</span>
+                            <strong>@summary.NgCount.ToString("N0")</strong>
+                            <small>@NgCountNote</small>
+                        </article>
+                        <article class="qr-summary-card">
+                            <span>NG Rate@(IsFiltered ? " · filtered" : string.Empty)</span>
+                            <strong>@FormatPpm(summary.NgRatePpm)</strong>
+                            <small>NG ÷ Input × 1,000,000 (ppm)</small>
+                        </article>
+                    </div>
+                }
+
+                @* One failing QR usually trips several items at once — 47% of them over the week of
+                   2026-09-17 — so each item carries its own total, and unfolding it shows how that
+                   total splits between failing alone and failing with others. A combination sits
+                   under every item it contains, which is why the totals sum past the NG count. *@
+                @if (_ngItemGroups.Count > 0 || _ngUnspecified > 0)
+                {
+                    <div class="qr-ng-items" aria-label="NG items, unfold one to see its combinations">
+                        <div class="qr-ng-head">
+                            <strong>NG by item</strong>
+                            <span>
+                                @_ngRowCount.ToString("N0") NG QR shown · @_ngItemTotalSum.ToString("N0") item NG in
+                                @_ngComboCount.ToString("N0") combinations
+                                @if (_ngMultiCount > 0)
+                                {
+                                    <b> · @_ngMultiCount.ToString("N0") failed 2+ items</b>
+                                }
+                                · click an item to unfold what it failed with
+                            </span>
+                        </div>
+                        <div class="qr-ng-list">
+                            @foreach (NgItemGroup group in _ngItemGroups)
+                            {
+                                bool expanded = _expandedNgItems.Contains(group.Label);
+                                <span class="@(expanded ? "qr-ng-group qr-ng-open" : "qr-ng-group")">
+                                    <button class="qr-ng-chip qr-ng-parent"
+                                            type="button"
+                                            aria-expanded="@expanded.ToString().ToLowerInvariant()"
+                                            title="@group.Label failed on @group.Total.ToString("N0") of the QR shown, alone or with other items"
+                                            @onclick="() => ToggleNgItem(group.Label)">
+                                        <span aria-hidden="true">@(expanded ? "−" : "+")</span>
+                                        <b>@group.Label</b>
+                                        <i>@group.Total.ToString("N0")</i>
+                                    </button>
+                                    @if (expanded)
+                                    {
+                                        @foreach ((string label, int count) in group.Children)
+                                        {
+                                            <span class="qr-ng-chip qr-ng-child"
+                                                  title="@(label == "alone"
+                                                      ? $"{count:N0} QR failed {group.Label} and nothing else"
+                                                      : $"{count:N0} QR failed {group.Label} together with {label[2..]}")">
+                                                <b>@label</b>
+                                                <i>@count.ToString("N0")</i>
+                                            </span>
+                                        }
+                                    }
+                                </span>
+                            }
+                            @if (_ngUnspecified > 0)
+                            {
+                                <span class="qr-ng-chip qr-ng-other" title="Failed the unit verdict without any item column flagged">
+                                    <b>Unspecified</b>
+                                    <i>@_ngUnspecified.ToString("N0")</i>
+                                </span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="qr-search-bar">
+                    @* Without this the page is stuck on the configured default, and a multi-date
+                       selection silently reports only the newest rows that fit under it. *@
+                    <label class="qr-maxrows">
+                        <span>Max rows</span>
+                        <select disabled="@_busy" @onchange="OnMaxRowsChanged">
+                            <option value="0" selected="@_autoMaxRows">Auto · fit the dates</option>
+                            @foreach (int option in MaxRowOptions)
+                            {
+                                <option value="@option" selected="@(!_autoMaxRows && option == _maxRows)">@option.ToString("N0")</option>
+                            }
+                        </select>
+                        @if (_autoMaxRows)
+                        {
+                            <small class="qr-maxrows-auto">@_maxRows.ToString("N0")</small>
+                        }
+                    </label>
+
+                    @* Model comes from the QR itself (characters 11-12), not from a column: BKTD
+                       spells it in Model and ALTD/GSTD in ST_Information, and the two never match
+                       as strings. The names come from the table on the Setting page. *@
+                    <label class="qr-model-field">
+                        <span>Model</span>
+                        <select disabled="@(_busy || _productIdIndex < 0)" @onchange="OnModelChanged">
+                            <option value="" selected="@(_modelCode.Length == 0)">All models</option>
+                            @foreach (ModelOption option in _modelOptions)
+                            {
+                                <option value="@option.Code" selected="@(option.Code == _modelCode)">@option.Label</option>
+                            }
+                        </select>
+                        @if (_productIdIndex < 0)
+                        {
+                            <small class="qr-model-note">no ProductID column</small>
+                        }
+                        else if (_modelOptions.Count == 0)
+                        {
+                            <small class="qr-model-note">Setting → QR Model Codes is empty</small>
+                        }
+                    </label>
+                    @* Active column filters are named here as well as highlighted in the header:
+                       when one of them empties the table, the reason has to stay visible. *@
+                    @foreach ((int columnIndex, string text) in ActiveColumnFilters)
+                    {
+                        <button class="qr-filter-chip" type="button"
+                                title="Clear this column filter"
+                                @onclick="() => ClearColumnFilter(columnIndex)">
+                            <b>@ColumnFilterLabel(columnIndex)</b>
+                            <span>@text</span>
+                            <i aria-hidden="true">×</i>
+                        </button>
+                    }
+                    @if (IsFiltered)
+                    {
+                        <button class="qr-btn qr-search-clear" type="button" @onclick="ShowAll">Show all</button>
+                    }
+                    @if (_focusProductId.Length > 0)
+                    {
+                        <span class="qr-focus-note" title="Opened from QR SUMMARY">FROM QR SUMMARY · @_focusProductId</span>
+                    }
+                </div>
+
+                <div class="qr-table-wrap">
+                    @if (_result.Columns.Count == 0)
+                    {
+                        <div class="qr-empty">The query returned no columns.</div>
+                    }
+                    else if (_selectedDates.Count == 0)
+                    {
+                        <div class="qr-empty">Select a test date on the left.</div>
+                    }
+                    else if (_result.Rows.Count == 0)
+                    {
+                        <div class="qr-empty">No data for the selected dates.</div>
+                    }
+                    else
+                    {
+                        <table class="qr-data-table">
+                            <thead>
+                                <tr>
+                                    <th class="qr-expand-head">
+                                        <span>QR</span>
+                                        <small>group</small>
+                                    </th>
+                                    @* The per-column filter lives inside the header cell rather than in a
+                                       row of its own: the header is sticky at top:0, and a second sticky
+                                       row would need an offset equal to a header height that changes with
+                                       the column names. *@
+                                    @foreach (ColumnSlot slot in _columnSlots)
+                                    {
+                                        int filterKey = slot.Column is null ? QrTestColumnLayout.TestDateIndex : slot.ColumnIndex;
+                                        if (slot.Column is null)
+                                        {
+                                            <th class="qr-test-date-head">
+                                                <span>Test date</span>
+                                                <small>@DisplayCell(_result.SortColumnName)</small>
+                                                <input @key="@ColumnFilterKey(filterKey)"
+                                                       class="@ColumnFilterClass(filterKey)" type="search"
+                                                       placeholder="filter" aria-label="Filter by test date"
+                                                       value=""
+                                                       @oninput="args => OnColumnFilterInput(filterKey, args)" />
+                                            </th>
+                                        }
+                                        else
+                                        {
+                                            <th title="@slot.Column.DataType">
+                                                <span>@slot.Column.Name</span>
+                                                <small>@slot.Column.DataType</small>
+                                                <input @key="@ColumnFilterKey(filterKey)"
+                                                       class="@ColumnFilterClass(filterKey)" type="search"
+                                                       placeholder="filter" aria-label="Filter by @slot.Column.Name"
+                                                       value=""
+                                                       @oninput="args => OnColumnFilterInput(filterKey, args)" />
+                                            </th>
+                                        }
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @* A filter that matches nothing must not take the header with it —
+                                   the filter boxes live in the header, so hiding the table would
+                                   leave no way to clear the filter that emptied it. *@
+                                @if (_lines.Count == 0)
+                                {
+                                    <tr>
+                                        <td class="qr-no-match" colspan="@(_columnSlots.Count + 1)">
+                                            No row matches the current filters. Clear a highlighted filter box above, or press Show all.
+                                        </td>
+                                    </tr>
+                                }
+                                @* Virtualize keeps the render batch small: this table is up to 67
+                                   columns wide, so a few thousand QR would push hundreds of
+                                   thousands of cells over the SignalR circuit on every keystroke.
+                                   Expanded rounds are flattened into the same list so every item
+                                   stays exactly one <tr> and the spacer arithmetic holds. *@
+                                <Virtualize Items="_lines" Context="line" ItemSize="32" SpacerElement="tr" OverscanCount="12">
+                                    <tr class="@LineClass(line)" id="@(line.IsChild ? null : RowElementId(line.Group.Key))">
+                                        <td class="qr-expand-cell">
+                                            @if (line.IsChild)
+                                            {
+                                                <span class="qr-child-mark" aria-label="Additional test row for the same QR">└</span>
+                                            }
+                                            else if (line.Group.Rows.Count > 1)
+                                            {
+                                                <button class="qr-group-toggle"
+                                                        type="button"
+                                                        aria-expanded="@line.Expanded.ToString().ToLowerInvariant()"
+                                                        title="@(line.Expanded ? "Collapse rows for this QR" : "Expand rows for this QR")"
+                                                        @onclick="() => ToggleGroup(line.Group.Key)">
+                                                    <span aria-hidden="true">@(line.Expanded ? "−" : "+")</span>
+                                                    <b>@line.Group.Rows.Count.ToString("N0")</b>
+                                                </button>
+                                            }
+                                        </td>
+                                        @foreach (ColumnSlot slot in _columnSlots)
+                                        {
+                                            if (slot.Column is null)
+                                            {
+                                                <td class="qr-test-date">@FormatRowDate(line.Row.TestDate)</td>
+                                            }
+                                            else
+                                            {
+                                                string value = CellValue(line.Row, slot.ColumnIndex);
+                                                <td class="@CellClass(slot.Column, value)">@DisplayCell(value)</td>
+                                            }
+                                        }
+                                    </tr>
+                                </Virtualize>
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </section>
+        </div>
+    }
+</div>
+
+<style>
+    .qr-date-browser {
+        display: flex;
+        min-height: 32rem;
+        height: calc(var(--view-h, 100vh) - 6.2rem);
+        margin: -0.25rem -0.5rem 0;
+        padding: 0.8rem 1rem 1rem;
+        flex-direction: column;
+        overflow: hidden;
+        background: var(--plane, #e8eaee);
+        color: var(--ink, #0f1319);
+        font-family: var(--sans, "Segoe UI", "Malgun Gothic", sans-serif);
+    }
+
+    .qr-titlebar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.7rem;
+        flex: 0 0 auto;
+    }
+
+    .qr-kicker {
+        margin-bottom: 0.2rem;
+        color: var(--crit, #c8342a);
+        font-family: var(--mono, Bahnschrift, Consolas, monospace);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+    }
+
+    .qr-titlebar h1 {
+        margin: 0;
+        font-size: 1.12rem;
+        line-height: 1.25;
+    }
+
+    .qr-titlebar p {
+        margin: 0.16rem 0 0;
+        color: var(--ink-2, #4a5461);
+        font-size: 0.76rem;
+    }
+
+    .qr-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.4rem;
+        min-width: 0;
+    }
+
+    .qr-connection {
+        max-width: 24rem;
+        margin-right: 0.25rem;
+        overflow: hidden;
+        color: var(--ink-3, #7f8a98);
+        font-family: var(--mono, Bahnschrift, Consolas, monospace);
+        font-size: 0.66rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .qr-btn {
+        display: inline-flex;
+        min-height: 1.9rem;
+        padding: 0.32rem 0.72rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel, #fff);
+        color: var(--ink, #0f1319);
+        font: 700 0.7rem var(--sans, "Segoe UI", sans-serif);
+        cursor: pointer;
+    }
+
+    .qr-btn:hover:not(:disabled) {
+        background: var(--panel-2, #f5f6f9);
+        border-color: var(--ink, #0f1319);
+    }
+
+    .qr-btn.qr-primary {
+        border-color: var(--signal, #16202b);
+        background: var(--signal, #16202b);
+        color: var(--panel, #fff);
+    }
+
+    .qr-btn:disabled,
+    .qr-date-option.qr-disabled {
+        cursor: default;
+        opacity: 0.55;
+    }
+
+    .qr-spinner {
+        display: inline-block;
+        width: 0.78rem;
+        height: 0.78rem;
+        border: 2px solid var(--line-2, #c6ccd5);
+        border-top-color: currentColor;
+        border-radius: 50%;
+        animation: qr-spin 0.75s linear infinite;
+    }
+
+    .qr-alert,
+    .qr-state-panel {
+        margin-bottom: 0.65rem;
+        padding: 0.58rem 0.72rem;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel, #fff);
+        color: var(--ink-2, #4a5461);
+        font-size: 0.76rem;
+    }
+
+    .qr-state-panel {
+        display: flex;
+        min-height: 8rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+    }
+
+    .qr-alert.qr-danger {
+        border-color: var(--crit, #c8342a);
+        background: var(--crit-wash, #fbedec);
+        color: var(--crit, #c8342a);
+    }
+
+    .qr-alert.qr-warning {
+        border-color: var(--line-2, #c6ccd5);
+        background: var(--panel-2, #f5f6f9);
+    }
+
+    .qr-browser-grid {
+        display: grid;
+        min-height: 0;
+        flex: 1 1 auto;
+        grid-template-columns: 15rem minmax(0, 1fr);
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel, #fff);
+    }
+
+    .qr-date-panel,
+    .qr-data-panel {
+        display: flex;
+        min-width: 0;
+        min-height: 0;
+        flex-direction: column;
+    }
+
+    .qr-date-panel {
+        border-right: 1px solid var(--line-2, #c6ccd5);
+        background: var(--panel-2, #f5f6f9);
+    }
+
+    .qr-section-head {
+        display: flex;
+        min-height: 2.75rem;
+        padding: 0.55rem 0.68rem;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        border-bottom: 1px solid var(--line-2, #c6ccd5);
+        background: var(--panel-2, #f5f6f9);
+    }
+
+    .qr-section-head > div:first-child {
+        display: flex;
+        align-items: baseline;
+        gap: 0.42rem;
+    }
+
+    .qr-section-head strong {
+        font-size: 0.8rem;
+    }
+
+    .qr-section-head span,
+    .qr-section-head small {
+        color: var(--ink-3, #7f8a98);
+        font-size: 0.68rem;
+    }
+
+    .qr-date-list {
+        min-height: 0;
+        padding: 0.38rem;
+        flex: 1 1 auto;
+        overflow: auto;
+    }
+
+    .qr-date-option {
+        display: flex;
+        width: 100%;
+        min-height: 2.35rem;
+        padding: 0.42rem 0.5rem;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        border: 1px solid transparent;
+        border-radius: 2px;
+        background: transparent;
+        color: var(--ink, #0f1319);
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .qr-date-option + .qr-date-option {
+        margin-top: 0.18rem;
+    }
+
+    .qr-date-option:hover:not(.qr-disabled) {
+        border-color: var(--line-2, #c6ccd5);
+        background: var(--panel, #fff);
+    }
+
+    .qr-date-option.qr-selected {
+        border-color: var(--signal, #16202b);
+        background: var(--signal, #16202b);
+        color: var(--panel, #fff);
+    }
+
+    .qr-date-check {
+        width: 0.9rem;
+        height: 0.9rem;
+        margin: 0;
+        flex: 0 0 auto;
+        accent-color: var(--signal, #16202b);
+    }
+
+    .qr-date-label {
+        margin-right: auto;
+        font-family: var(--mono, Bahnschrift, Consolas, monospace);
+        font-size: 0.72rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .qr-date-count {
+        color: var(--ink-3, #7f8a98);
+        font-size: 0.66rem;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .qr-selected .qr-date-count {
+        color: var(--panel-3, #eceef2);
+    }
+
+    .qr-table-head {
+        flex: 0 0 auto;
+    }
+
+    .qr-row-summary {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .qr-row-summary b {
+        color: var(--warn-ink, #92610a);
+        font-size: 0.68rem;
+    }
+
+    .qr-row-summary .qr-excluded {
+        color: var(--warn-ink, #92610a);
+        font-weight: 700;
+    }
+
+    .qr-search-bar {
+        display: flex;
+        padding: 0.4rem 0.55rem;
+        align-items: center;
+        gap: 0.6rem;
+        flex: 0 0 auto;
+        border-bottom: 1px solid var(--line, #dfe3e9);
+        background: var(--panel-2, #f5f6f9);
+    }
+
+    .qr-maxrows {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex: 0 0 auto;
+    }
+
+    .qr-maxrows span {
+        color: var(--ink-3, #7f8a98);
+        font: 700 0.63rem var(--mono, Bahnschrift, Consolas, monospace);
+        letter-spacing: 0.04em;
+    }
+
+    .qr-maxrows-auto {
+        color: var(--ink-3, #7f8a98);
+        font: 0.64rem var(--mono, Bahnschrift, Consolas, monospace);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .qr-maxrows select {
+        padding: 0.26rem 0.4rem;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel, #fff);
+        color: var(--ink, #0f1319);
+        font: 0.72rem var(--mono, Bahnschrift, Consolas, monospace);
+    }
+
+    .qr-model-field {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 0.4rem;
+        flex: 0 0 auto;
+    }
+
+    .qr-model-field span {
+        color: var(--ink-3, #7f8a98);
+        font: 700 0.63rem var(--mono, Bahnschrift, Consolas, monospace);
+        letter-spacing: 0.04em;
+    }
+
+    .qr-model-field select {
+        min-width: 13rem;
+        padding: 0.26rem 0.4rem;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel, #fff);
+        color: var(--ink, #0f1319);
+        font: 0.72rem var(--mono, Bahnschrift, Consolas, monospace);
+    }
+
+    .qr-model-note {
+        color: var(--warn-ink, #92610a);
+        font-size: 0.62rem;
+    }
+
+    /* Pushes Show all and the chips to the right of the bar now that nothing stretches. */
+    .qr-search-bar .qr-search-clear {
+        margin-left: auto;
+    }
+
+    .qr-search-clear {
+        min-height: 1.6rem;
+        padding: 0.2rem 0.6rem;
+        flex: 0 0 auto;
+    }
+
+    .qr-filter-chip {
+        display: inline-flex;
+        padding: 0.16rem 0.4rem;
+        align-items: baseline;
+        gap: 0.3rem;
+        flex: 0 0 auto;
+        max-width: 16rem;
+        overflow: hidden;
+        border: 1px solid var(--signal, #16202b);
+        border-radius: 2px;
+        background: #fff6d6;
+        color: var(--ink, #0f1319);
+        font: 0.66rem var(--mono, Bahnschrift, Consolas, monospace);
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    .qr-filter-chip b { font-weight: 700; }
+    .qr-filter-chip span { overflow: hidden; text-overflow: ellipsis; }
+    .qr-filter-chip i { font-style: normal; font-weight: 700; }
+    .qr-filter-chip:hover { background: #ffe9a3; }
+
+    .qr-focus-note {
+        padding: 0.2rem 0.5rem;
+        flex: 0 0 auto;
+        border: 1px solid var(--signal, #16202b);
+        border-radius: 2px;
+        color: var(--signal, #16202b);
+        font: 700 0.62rem var(--mono, Bahnschrift, Consolas, monospace);
+        letter-spacing: 0.03em;
+        white-space: nowrap;
+    }
+
+    .qr-table-wrap {
+        min-width: 0;
+        min-height: 0;
+        flex: 1 1 auto;
+        overflow: auto;
+        background: var(--panel, #fff);
+    }
+
+    /* The QR a deep link points at. The outline survives the zebra and result-colour rules
+       below because it paints the row box, not the cell background. */
+    .qr-data-table tr.qr-focus-row td {
+        box-shadow: inset 0 2px 0 var(--signal, #16202b), inset 0 -2px 0 var(--signal, #16202b);
+        font-weight: 800;
+    }
+
+    .qr-data-table {
+        width: max-content;
+        min-width: 100%;
+        border-collapse: collapse;
+        background: var(--panel, #fff);
+        font-size: 0.69rem;
+    }
+
+    .qr-data-table th,
+    .qr-data-table td {
+        height: 2rem;
+        padding: 0.34rem 0.48rem;
+        border: 1px solid var(--line, #dde1e7);
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .qr-data-table th {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        border-bottom-color: var(--line-2, #c6ccd5);
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
+        font-weight: 700;
+    }
+
+    .qr-data-table th span,
+    .qr-data-table th small {
+        display: block;
+    }
+
+    .qr-data-table th small {
+        margin-top: 0.08rem;
+        color: var(--ink-3, #7f8a98);
+        font-family: var(--mono, Bahnschrift, Consolas, monospace);
+        font-size: 0.58rem;
+        font-weight: 400;
+    }
+
+    .qr-data-table th input.qr-col-filter {
+        display: block;
+        width: 100%;
+        min-width: 3.6rem;
+        margin-top: 0.22rem;
+        padding: 0.1rem 0.28rem;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel, #fff);
+        color: var(--ink, #0f1319);
+        font: 0.66rem var(--mono, Bahnschrift, Consolas, monospace);
+    }
+
+    .qr-data-table td.qr-no-match {
+        padding: 1.4rem 0.6rem;
+        color: var(--ink-2, #4a5461);
+        text-align: center;
+        white-space: normal;
+    }
+
+    /* An active column filter stays obvious once the eye has moved down the table. */
+    .qr-data-table th input.qr-col-filter.qr-on {
+        border-color: var(--signal, #16202b);
+        background: #fff6d6;
+        font-weight: 700;
+    }
+
+    .qr-data-table tbody tr:nth-child(even) td {
+        background: color-mix(in srgb, var(--panel-2, #f5f6f9) 48%, var(--panel, #fff));
+    }
+
+    .qr-data-table tbody tr:hover td {
+        background: var(--panel-3, #eceef2);
+    }
+
+    .qr-data-table th:first-child,
+    .qr-data-table td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        border-right-color: var(--line-2, #c6ccd5);
+        background: var(--panel, #fff);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .qr-data-table th:first-child {
+        z-index: 4;
+        background: var(--panel-2, #f5f6f9);
+    }
+
+    .qr-data-table th:nth-child(2),
+    .qr-data-table td:nth-child(2) {
+        position: sticky;
+        left: 3.7rem;
+        z-index: 2;
+        border-right-color: var(--line-2, #c6ccd5);
+        background: var(--panel, #fff);
+    }
+
+    .qr-summary-grid {
+        display: grid;
+        flex: 0 0 auto;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        border-bottom: 1px solid var(--line-2, #c6ccd5);
+        background: var(--panel, #fff);
+    }
+
+    .qr-summary-card {
+        display: grid;
+        min-height: 4.4rem;
+        padding: 0.55rem 0.7rem;
+        align-content: center;
+        gap: 0.12rem;
+        border-right: 1px solid var(--line, #dde1e7);
+        background: var(--panel, #fff);
+    }
+
+    .qr-summary-card:last-child {
+        border-right: 0;
+    }
+
+    /* Same wash as an active filter chip, so it is obvious at a glance that the cards are
+       reporting the filtered rows rather than the whole date selection. */
+    .qr-summary-filtered .qr-summary-card {
+        background: #fff6d6;
+    }
+
+    .qr-summary-filtered .qr-summary-card span {
+        color: var(--warn-ink, #92610a);
+        font-weight: 700;
+    }
+
+    .qr-ng-items {
+        flex: 0 0 auto;
+        padding: 0.45rem 0.7rem 0.55rem;
+        border-bottom: 1px solid var(--line-2, #c6ccd5);
+        background: var(--panel, #fff);
+    }
+
+    .qr-ng-head {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .qr-ng-head strong {
+        font-size: 0.7rem;
+    }
+
+    .qr-ng-head span {
+        color: var(--ink-3, #7f8a98);
+        font-size: 0.64rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .qr-ng-head b {
+        color: var(--warn-ink, #92610a);
+        font-weight: 700;
+    }
+
+    .qr-ng-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        /* An unfolded item grows downward; without this every other chip on the strip would
+           stretch to match its height. */
+        align-items: flex-start;
+    }
+
+    .qr-ng-chip {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.35rem;
+        padding: 0.14rem 0.42rem;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--crit-wash, #fbedec);
+        font: 0.66rem var(--mono, Bahnschrift, Consolas, monospace);
+        white-space: nowrap;
+    }
+
+    .qr-ng-chip b {
+        color: var(--ink, #0f1319);
+        font-weight: 700;
+    }
+
+    .qr-ng-chip i {
+        color: var(--crit, #c8342a);
+        font-style: normal;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .qr-ng-chip.qr-ng-other {
+        background: var(--panel-2, #f5f6f9);
+    }
+
+    /* An item and the combinations it unfolds into stay in one box, so a wrap never leaves a
+       child sitting under a different item than the one it belongs to. Unfolding runs downward
+       in a single column: the labels stack, which is what makes the split readable. */
+    .qr-ng-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.22rem;
+        padding: 0;
+    }
+
+    .qr-ng-group.qr-ng-open {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.16rem;
+        padding: 0.12rem;
+        border: 1px dashed var(--line-2, #c6ccd5);
+        border-radius: 3px;
+        background: var(--panel-2, #f5f6f9);
+    }
+
+    /* Label left, count right, so a column of children reads as one table. */
+    .qr-ng-group.qr-ng-open .qr-ng-chip {
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
+
+    .qr-ng-group.qr-ng-open .qr-ng-child {
+        margin-left: 0.7rem;
+        border-left: 2px solid var(--line-2, #c6ccd5);
+    }
+
+    .qr-ng-chip.qr-ng-parent {
+        cursor: pointer;
+        font: 0.66rem var(--mono, Bahnschrift, Consolas, monospace);
+    }
+
+    .qr-ng-chip.qr-ng-parent:hover {
+        border-color: var(--signal, #16202b);
+    }
+
+    .qr-ng-chip.qr-ng-parent > span {
+        color: var(--ink-3, #7f8a98);
+        font-weight: 700;
+    }
+
+    /* Plainer than the item chip: a child is a slice of the number to its left, not a peer. */
+    .qr-ng-chip.qr-ng-child {
+        background: var(--panel, #fff);
+    }
+
+    .qr-ng-chip.qr-ng-child i {
+        color: var(--ink-2, #4a5461);
+    }
+
+    .qr-summary-card span,
+    .qr-summary-card small {
+        color: var(--ink-3, #7f8a98);
+        font-size: 0.64rem;
+    }
+
+    .qr-summary-card strong {
+        color: var(--ink, #0f1319);
+        font: 800 1.05rem var(--mono, Bahnschrift, Consolas, monospace);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .qr-data-table th:nth-child(2) {
+        z-index: 4;
+        background: var(--panel-2, #f5f6f9);
+    }
+
+    .qr-data-table .qr-expand-head,
+    .qr-data-table .qr-expand-cell {
+        width: 3.7rem;
+        min-width: 3.7rem;
+        padding-right: 0.3rem;
+        padding-left: 0.3rem;
+        text-align: center;
+    }
+
+    .qr-data-table .qr-test-date-head,
+    .qr-data-table .qr-test-date {
+        width: 6.3rem;
+        min-width: 6.3rem;
+        text-align: center;
+        font-family: var(--mono, Bahnschrift, Consolas, monospace);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .qr-data-table .qr-test-date {
+        color: var(--ink-2, #4a5461);
+        font-weight: 700;
+    }
+
+    .qr-group-toggle {
+        display: inline-flex;
+        min-width: 2.9rem;
+        min-height: 1.45rem;
+        padding: 0.12rem 0.3rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.22rem;
+        border: 1px solid var(--signal, #16202b);
+        border-radius: 2px;
+        background: var(--panel, #fff);
+        color: var(--signal, #16202b);
+        font: 700 0.65rem var(--mono, Bahnschrift, Consolas, monospace);
+        cursor: pointer;
+    }
+
+    .qr-group-toggle:hover {
+        background: var(--signal, #16202b);
+        color: var(--panel, #fff);
+    }
+
+    .qr-child-row .qr-expand-cell {
+        border-left: 3px solid var(--signal, #16202b);
+        background: var(--panel-3, #eceef2);
+    }
+
+    .qr-child-mark {
+        display: inline-block;
+        padding-left: 0.45rem;
+        color: var(--ink-2, #4a5461);
+        font: 700 0.72rem var(--mono, Bahnschrift, Consolas, monospace);
+    }
+
+    .qr-data-table tbody tr:nth-child(even) td:first-child,
+    .qr-data-table tbody tr:nth-child(even) td:nth-child(2) {
+        background: var(--panel-2, #f5f6f9);
+    }
+
+    .qr-data-table tbody tr:hover td:first-child,
+    .qr-data-table tbody tr:hover td:nth-child(2) {
+        background: var(--panel-3, #eceef2);
+    }
+
+    .qr-data-table td.qr-num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .qr-data-table td.qr-result-pass {
+        background: var(--ok-wash, #eaf1f9);
+        color: var(--ok, #1f5fa8);
+        font-weight: 800;
+        text-align: center;
+    }
+
+    .qr-data-table td.qr-result-fail {
+        background: var(--crit-wash, #fbedec);
+        color: var(--crit, #c8342a);
+        font-weight: 800;
+        text-align: center;
+    }
+
+    .qr-empty {
+        display: flex;
+        min-height: 7rem;
+        padding: 1rem;
+        align-items: center;
+        justify-content: center;
+        color: var(--ink-3, #7f8a98);
+        font-size: 0.74rem;
+        text-align: center;
+    }
+
+    @@keyframes qr-spin {
+        to { transform: rotate(360deg); }
+    }
+
+    @@media (max-width: 900px) {
+        .qr-date-browser {
+            height: auto;
+            min-height: 32rem;
+            overflow: visible;
+        }
+
+        .qr-titlebar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .qr-actions {
+            justify-content: flex-start;
+        }
+
+        .qr-browser-grid {
+            min-height: 38rem;
+            grid-template-columns: 11.5rem minmax(0, 1fr);
+        }
+
+        .qr-connection {
+            display: none;
+        }
+    }
+</style>
+
+@code {
+    /// <summary>Which TCDB table to browse; see <see cref="QrTestTables"/>.</summary>
+    [Parameter, EditorRequired] public string TableKey { get; set; } = QrTestTables.BakoKey;
+
+    /// <summary>Red label above the title.</summary>
+    [Parameter] public string Kicker { get; set; } = string.Empty;
+
+    /// <summary>One line under the title explaining what the table holds.</summary>
+    [Parameter] public string Description { get; set; } = string.Empty;
+
+    /// <summary>Test date to preselect, yyyy-MM-dd. Set when QR SUMMARY deep links into this page.</summary>
+    [Parameter] public string? FocusDate { get; set; }
+
+    /// <summary>Product ID to search, highlight and scroll to once the rows are loaded.</summary>
+    [Parameter] public string? FocusProductId { get; set; }
+
+    private QrTestTableDef Table => QrTestTables.Resolve(TableKey);
+
+    private string? _loadedTableKey;
+    private QrTestDataResult? _result;
+    private IReadOnlyList<ColumnSlot> _columnSlots = [];
+    private IReadOnlyList<QrRowGroup> _rowGroups = [];
+    private IReadOnlyList<QrRowGroup> _visibleGroups = [];
+
+    /// <summary>
+    /// Input count, NG count and NG Rate over the rows the filters left on screen; null while
+    /// nothing is filtered, when the cards fall back to the server aggregate for the whole date
+    /// selection. Without it the cards keep reporting every QR of the selected dates while the
+    /// grid below has been narrowed to one model or one shift, so the two numbers on screen stop
+    /// describing the same set of QR.
+    /// </summary>
+    private QrTestDataSummary? _filteredSummary;
+
+    /// <summary>Database index of the TestResult column, or -1 when the table has none.</summary>
+    private int _testResultIndex = -1;
+
+    /// <summary>Database index of the ProductID column, or -1 when the table has none. The model
+    /// filter reads the code out of this cell, so without it the dropdown is disabled.</summary>
+    private int _productIdIndex = -1;
+
+    /// <summary>Model code currently filtered on; empty means every model.
+    /// <see cref="QrModelCodeService.UnmappedCode"/> selects the QR the table does not name.</summary>
+    private string _modelCode = string.Empty;
+
+    /// <summary>What the dropdown offers for the rows that were actually fetched.</summary>
+    private IReadOnlyList<ModelOption> _modelOptions = [];
+
+    /// <summary>Codes the settings table names, used to decide what falls into "Other".</summary>
+    private readonly HashSet<string> _knownCodes = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>One entry of the model dropdown.</summary>
+    private sealed record ModelOption(string Code, string Label);
+
+    /// <summary>The per-item verdict columns — every <c>&lt;item&gt;_Result</c> except the unit's own
+    /// TestResult. BKTD carries 14 of them (FRF, Polarity, SPL1, SPL2, THD, ImpLimit, Imp2kHz, F0,
+    /// RB_Limit, RB_1..3, SEQ3_Spectrum, SEQ4_RB); a table without any hides the breakdown.</summary>
+    private IReadOnlyList<(int Index, string Label)> _ngItemColumns = [];
+
+    /// <summary>
+    /// NG on screen as item totals, each holding the combinations it took part in. A combination
+    /// of two items sits under both of them, so the children of one item add up to that item's
+    /// total but the totals across items add up higher than the NG QR count.
+    /// </summary>
+    private IReadOnlyList<NgItemGroup> _ngItemGroups = [];
+
+    /// <summary>Which item groups are unfolded; the label is the key.</summary>
+    private readonly HashSet<string> _expandedNgItems = new(StringComparer.Ordinal);
+
+    /// <summary>How many distinct item combinations those QR fall into.</summary>
+    private int _ngComboCount;
+
+    /// <summary>Item totals added up — larger than the NG QR count whenever units fail several items.</summary>
+    private int _ngItemTotalSum;
+
+    /// <param name="Label">The item column, e.g. RB_Limit.</param>
+    /// <param name="Total">QR on screen that failed it, alone or with others.</param>
+    /// <param name="Children">How that total splits: "alone", then each set it failed together with.</param>
+    private sealed record NgItemGroup(string Label, int Total, IReadOnlyList<(string Label, int Count)> Children);
+
+    /// <summary>NG QR on screen, and how many of them tripped more than one item.</summary>
+    private int _ngRowCount;
+    private int _ngMultiCount;
+
+    /// <summary>NG QR whose item columns name nothing; kept visible instead of silently dropped.</summary>
+    private int _ngUnspecified;
+
+    /// <summary>The visible groups flattened to one entry per rendered row. Concrete List:
+    /// Virtualize needs ICollection&lt;T&gt;.</summary>
+    private List<DataLine> _lines = [];
+    private readonly HashSet<string> _expandedProductIds = new(StringComparer.Ordinal);
+    private readonly HashSet<DateOnly> _selectedDates = [];
+
+    /// <summary>Per-column filter text, keyed by database column index; the derived test-date
+    /// column uses <see cref="QrTestColumnLayout.TestDateIndex"/>.</summary>
+    private readonly Dictionary<int, string> _columnFilters = [];
+
+    /// <summary>Per-column render key counter; bumped to recreate one cleared filter box.</summary>
+    private readonly Dictionary<int, int> _columnEpochs = [];
+    private string _error = string.Empty;
+    private string _notice = string.Empty;
+    private string _search = string.Empty;
+
+    /// <summary>
+    /// The key that recreates the column filter boxes. Echoing the typed text back on every
+    /// keystroke is what garbles fast typing on Blazor Server — the server writes a value the
+    /// user has already typed past — so the boxes render a fixed empty <c>value</c> and only a
+    /// bump of this epoch makes the browser pick up a reset the component performed.
+    /// </summary>
+    private int _filterEpoch;
+
+    /// <summary>How long typing has to settle before the table is re-filtered.</summary>
+    private const int FilterSettleMs = 220;
+
+    private CancellationTokenSource? _filterSettle;
+    private string _focusProductId = string.Empty;
+    private string _focusRowId = string.Empty;
+    private bool _focusScrolled;
+    private bool _scrollPending;
+    private int _maxRows;
+
+    /// <summary>Fit the cap to whatever the selected dates hold, instead of a fixed Max rows.
+    /// <see cref="_maxRows"/> then carries what the last fetch resolved it to.</summary>
+    private bool _autoMaxRows;
+    private bool _busy;
+    private bool _exporting;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Re-fetch when the host page swaps the table under the same component instance.
+        if (string.Equals(_loadedTableKey, Table.Key, StringComparison.Ordinal))
+            return;
+
+        _loadedTableKey = Table.Key;
+        _result = null;
+        _columnSlots = [];
+        _rowGroups = [];
+        _visibleGroups = [];
+        _filteredSummary = null;
+        _testResultIndex = -1;
+        _productIdIndex = -1;
+        _ngItemColumns = [];
+        _ngItemGroups = [];
+        _expandedNgItems.Clear();
+        _modelCode = string.Empty;
+        _modelOptions = [];
+        _lines = [];
+        _expandedProductIds.Clear();
+        _selectedDates.Clear();
+        _columnFilters.Clear();
+        _columnEpochs.Clear();
+        _filterEpoch++;
+        // Auto unless a fixed cap was picked on one of the QR data pages; the configured default
+        // is only what the select falls back to before the first fetch resolves the real number.
+        _autoMaxRows = QrViewPrefs.MaxRows <= 0;
+        _maxRows = _autoMaxRows
+            ? QrData.DefaultMaxRows
+            : QrViewPreferenceService.Resolve(QrViewPrefs.MaxRows, QrData.DefaultMaxRows);
+
+        // A deep link from QR SUMMARY names one QR on one date. Searching for it as well as
+        // highlighting it means the row is on screen even when the date holds thousands of QR.
+        _focusProductId = (FocusProductId ?? string.Empty).Trim();
+        _focusRowId = string.Empty;
+        _focusScrolled = false;
+        _search = _focusProductId;
+
+        if (QrData.IsConfigured)
+            await LoadAsync(TryParseDate(FocusDate, out DateOnly focusDate) ? [focusDate] : null);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_scrollPending || _focusRowId.Length == 0)
+            return;
+
+        _scrollPending = false;
+        try
+        {
+            await JS.InvokeVoidAsync("jinoQr.focusRow", _focusRowId);
+        }
+        catch (JSException)
+        {
+            // The row is only a convenience; a failed scroll must not break the page.
+        }
+    }
+
+    private string ConnectionLabel
+    {
+        get
+        {
+            var snapshot = QrData.Snapshot;
+            return $"{snapshot.Server},{snapshot.Port} / {snapshot.Database} / {snapshot.UserId}";
+        }
+    }
+
+    private string SelectedDatesLabel
+    {
+        get
+        {
+            if (_selectedDates.Count == 0)
+                return "No date selected";
+
+            DateOnly latest = _selectedDates.Max();
+            if (_selectedDates.Count == 1)
+                return FormatDate(latest);
+
+            DateOnly oldest = _selectedDates.Min();
+            return $"{_selectedDates.Count:N0} dates · {oldest:yyyy-MM-dd} ~ {latest:yyyy-MM-dd}";
+        }
+    }
+
+    /// <summary>
+    /// Row caps offered on the page. The configured default is folded in so the select always
+    /// shows what is actually in force, whatever the server was set to.
+    /// </summary>
+    private IEnumerable<int> MaxRowOptions =>
+        // In Auto the number in force is whatever the dates happened to hold, which is not a
+        // choice worth offering back — it would litter the list with values like 1,502.
+        new[] { 500, 1000, 2000, 5000, 10000, 20000, _autoMaxRows ? 0 : _maxRows }
+            .Where(value => value > 0)
+            .Distinct()
+            .OrderBy(value => value);
+
+    private async Task OnMaxRowsChanged(ChangeEventArgs args)
+    {
+        if (_busy || !int.TryParse(Convert.ToString(args.Value, CultureInfo.InvariantCulture), out int value))
+            return;
+
+        // 0 is the Auto entry; the resolved number comes back on the result.
+        bool auto = value <= 0;
+        if (auto == _autoMaxRows && (auto || value == _maxRows))
+            return;
+
+        _autoMaxRows = auto;
+        if (!auto)
+            _maxRows = value;
+
+        QrViewPrefs.SetMaxRows(auto ? QrViewPreferenceService.AutoValue : value);
+        await LoadAsync(_selectedDates);
+    }
+
+    private async Task RefreshAsync() => await LoadAsync(_selectedDates);
+
+    private async Task ToggleDateAsync(DateOnly date)
+    {
+        if (_busy)
+            return;
+
+        HashSet<DateOnly> nextDates = _selectedDates.ToHashSet();
+        if (!nextDates.Add(date))
+            nextDates.Remove(date);
+        await LoadAsync(nextDates);
+    }
+
+    private async Task LoadAsync(IEnumerable<DateOnly>? dates = null)
+    {
+        if (_busy)
+            return;
+
+        _busy = true;
+        _error = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            QrTestDataResult result = await QrData.FetchAsync(new QrTestDataQuery
+            {
+                Table = Table,
+                MaxRows = _maxRows,
+                AutoMaxRows = _autoMaxRows,
+                TestDates = (dates ?? _selectedDates).Distinct().ToArray(),
+            });
+            _result = result;
+            _columnSlots = BuildColumnSlots(Table, result);
+            _testResultIndex = QrTestColumnLayout.FindColumnIndex(result.Columns, "TestResult");
+            _productIdIndex = QrTestColumnLayout.FindColumnIndex(result.Columns, "ProductID");
+            _ngItemColumns = BuildNgItemColumns(result.Columns);
+            _rowGroups = BuildRowGroups(result);
+            BuildModelOptions();
+            _expandedProductIds.Clear();
+            _selectedDates.Clear();
+            foreach (DateOnly selectedDate in result.SelectedDates)
+                _selectedDates.Add(selectedDate);
+            _maxRows = result.MaxRows;
+            ApplySearch();
+            ApplyFocus();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Writes the workbook from its own unlimited read of the selected dates, not from the grid:
+    /// the grid stops at Max rows and at whatever the model and column filters leave, and an export
+    /// that inherited either would quietly under-report the period.
+    /// </summary>
+    private async Task ExportExcelAsync()
+    {
+        if (_exporting || _result is null || _result.Rows.Count == 0)
+            return;
+
+        _exporting = true;
+        _error = string.Empty;
+        _notice = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            QrTestDataResult full = await QrData.FetchAsync(new QrTestDataQuery
+            {
+                Table = Table,
+                AllRows = true,
+                TestDates = _selectedDates.ToArray(),
+            });
+
+            byte[] bytes = QrTestDataExcelExporter.Build(Table, full);
+            string dateText = ExportDateText();
+            string fileName = $"QR_{Table.Station}_DATA_{Table.Key}_{dateText}_{DateTime.Now:HHmmss}.xlsx";
+            await BrowserDownload.DownloadBytesAsync(JS, fileName, bytes, QrTestDataExcelExporter.ContentType);
+
+            if (full.Rows.Count >= QrTestDataService.ExportMaxRows)
+            {
+                _notice = $"The export stops at {QrTestDataService.ExportMaxRows:N0} rows, which the selected dates reached. "
+                        + "Select fewer dates to get the whole period in one file.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _exporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private string DateOptionClass(DateOnly date)
+    {
+        var classes = new List<string> { "qr-date-option" };
+        if (_selectedDates.Contains(date))
+            classes.Add("qr-selected");
+        if (_busy)
+            classes.Add("qr-disabled");
+        return string.Join(' ', classes);
+    }
+
+    private string ExportDateText()
+    {
+        if (_selectedDates.Count == 0)
+            return "no_date";
+
+        DateOnly latest = _selectedDates.Max();
+        if (_selectedDates.Count == 1)
+            return latest.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+
+        DateOnly oldest = _selectedDates.Min();
+        return $"{oldest:yyyyMMdd}-{latest:yyyyMMdd}_{_selectedDates.Count}dates";
+    }
+
+    private void ToggleGroup(string key)
+    {
+        if (!_expandedProductIds.Add(key))
+            _expandedProductIds.Remove(key);
+
+        BuildLines();
+    }
+
+    /// <summary>One rendered table row: a QR's newest test, or one of its other rounds when unfolded.</summary>
+    private sealed record DataLine(QrRowGroup Group, QrTestDataRow Row, bool IsChild, bool Expanded);
+
+    private void BuildLines()
+    {
+        var lines = new List<DataLine>(_visibleGroups.Count);
+        foreach (QrRowGroup group in _visibleGroups)
+        {
+            bool expanded = group.Rows.Count > 1 && _expandedProductIds.Contains(group.Key);
+            lines.Add(new DataLine(group, group.Rows[0], false, expanded));
+            if (!expanded)
+                continue;
+
+            for (int index = 1; index < group.Rows.Count; index++)
+                lines.Add(new DataLine(group, group.Rows[index], true, true));
+        }
+        _lines = lines;
+    }
+
+    private string LineClass(DataLine line)
+    {
+        if (line.IsChild)
+            return "qr-child-row";
+
+        return string.Equals(RowElementId(line.Group.Key), _focusRowId, StringComparison.Ordinal)
+            ? "qr-primary-row qr-focus-row"
+            : "qr-primary-row";
+    }
+
+    private IReadOnlyList<QrRowGroup> VisibleGroups => _visibleGroups;
+
+    private bool IsFiltered =>
+        _search.Trim().Length > 0
+        || _modelCode.Length > 0
+        || _columnFilters.Values.Any(value => value.Trim().Length > 0);
+
+    private string ColumnFilter(int columnIndex) =>
+        _columnFilters.TryGetValue(columnIndex, out string? value) ? value : string.Empty;
+
+    private string ColumnFilterClass(int columnIndex) =>
+        ColumnFilter(columnIndex).Trim().Length > 0 ? "qr-col-filter qr-on" : "qr-col-filter";
+
+    /// <summary>The dropdown filters immediately — unlike typing, one pick is one pass.</summary>
+    private void OnModelChanged(ChangeEventArgs args)
+    {
+        _modelCode = (Convert.ToString(args.Value, CultureInfo.InvariantCulture) ?? string.Empty).Trim();
+        CancelFilterSettle();
+        ApplySearch();
+    }
+
+    private void OnColumnFilterInput(int columnIndex, ChangeEventArgs args)
+    {
+        _columnFilters[columnIndex] = Convert.ToString(args.Value, CultureInfo.InvariantCulture) ?? string.Empty;
+        QueueFilter();
+    }
+
+    /// <summary>
+    /// Re-filters once typing settles. Every keystroke otherwise rescans every fetched row
+    /// across every column — at 20,000 rows and 67 columns that is over a million comparisons
+    /// per character, and the circuit is what waits for it.
+    /// </summary>
+    private void QueueFilter()
+    {
+        CancelFilterSettle();
+        var settle = new CancellationTokenSource();
+        _filterSettle = settle;
+        _ = FilterWhenSettledAsync(settle.Token);
+    }
+
+    private async Task FilterWhenSettledAsync(CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(FilterSettleMs, token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        if (token.IsCancellationRequested)
+            return;
+
+        await InvokeAsync(() =>
+        {
+            ApplySearch();
+            StateHasChanged();
+        });
+    }
+
+    private void CancelFilterSettle()
+    {
+        _filterSettle?.Cancel();
+        _filterSettle?.Dispose();
+        _filterSettle = null;
+    }
+
+    private IEnumerable<(int ColumnIndex, string Text)> ActiveColumnFilters =>
+        _columnFilters
+            .Where(entry => entry.Value.Trim().Length > 0)
+            .OrderBy(entry => entry.Key)
+            .Select(entry => (entry.Key, entry.Value.Trim()));
+
+    private string ColumnFilterLabel(int columnIndex) =>
+        columnIndex == QrTestColumnLayout.TestDateIndex
+            ? "Test date"
+            : _result is not null && columnIndex >= 0 && columnIndex < _result.Columns.Count
+                ? _result.Columns[columnIndex].Name
+                : $"#{columnIndex}";
+
+    /// <summary>Only this box is recreated: bumping the shared epoch would blank the text the
+    /// user still has in the other filters, which the browser — not the server — is holding.</summary>
+    private void ClearColumnFilter(int columnIndex)
+    {
+        _columnFilters.Remove(columnIndex);
+        _columnEpochs[columnIndex] = ColumnEpoch(columnIndex) + 1;
+        ApplySearch();
+    }
+
+    private int ColumnEpoch(int columnIndex) =>
+        _columnEpochs.TryGetValue(columnIndex, out int epoch) ? epoch : 0;
+
+    private string ColumnFilterKey(int columnIndex) =>
+        $"qr-cf-{columnIndex}-{_filterEpoch}-{ColumnEpoch(columnIndex)}";
+
+    private void ShowAll()
+    {
+        CancelFilterSettle();
+        _search = string.Empty;
+        _modelCode = string.Empty;
+        _columnFilters.Clear();
+        _columnEpochs.Clear();
+        _filterEpoch++;
+        ApplySearch();
+    }
+
+    /// <summary>
+    /// Filters row by row and regroups what survives, so a column filter such as
+    /// TestResult = FAIL leaves only the failing rounds rather than every round of a QR that
+    /// failed once. The QR grouping, its expand state and the deep-link highlight all key off
+    /// the group key, which is carried over unchanged.
+    /// </summary>
+    private void ApplySearch()
+    {
+        if (!IsFiltered)
+        {
+            _visibleGroups = _rowGroups;
+        }
+        else
+        {
+            var filtered = new List<QrRowGroup>();
+            foreach (QrRowGroup group in _rowGroups)
+            {
+                List<QrTestDataRow> kept = group.Rows.Where(RowMatches).ToList();
+                if (kept.Count == 0)
+                    continue;
+
+                var match = new QrRowGroup(group.Key);
+                match.Rows.AddRange(kept);
+                filtered.Add(match);
+            }
+
+            _visibleGroups = filtered;
+        }
+
+        BuildFilteredSummary();
+        BuildNgBreakdown();
+        BuildLines();
+    }
+
+    /// <summary>
+    /// Totals the NG on screen per item, and splits each total by what the item failed together
+    /// with. A QR that trips three items is counted under all three — the tester records no
+    /// primary item, so there is nothing to pick between them — which is why the item totals sum
+    /// higher than the NG QR count while the children of any one item add up to its own total.
+    /// </summary>
+    private void BuildNgBreakdown()
+    {
+        _ngItemGroups = [];
+        _ngComboCount = 0;
+        _ngItemTotalSum = 0;
+        _ngRowCount = 0;
+        _ngMultiCount = 0;
+        _ngUnspecified = 0;
+        if (_ngItemColumns.Count == 0 || _testResultIndex < 0)
+            return;
+
+        // [item index][what it failed with] → QR. The item order inside a key follows the table,
+        // so the same set of failures always produces the same label.
+        var splits = new Dictionary<string, int>[_ngItemColumns.Count];
+        var totals = new int[_ngItemColumns.Count];
+        for (int index = 0; index < splits.Length; index++)
+            splits[index] = new Dictionary<string, int>(StringComparer.Ordinal);
+
+        var combos = new HashSet<string>(StringComparer.Ordinal);
+        var failed = new List<int>(_ngItemColumns.Count);
+        foreach (QrRowGroup group in _visibleGroups)
+        {
+            // The newest surviving row is the verdict in force, the same row the NG count uses.
+            QrTestDataRow row = group.Rows[0];
+            if (!IsFail(CellValue(row, _testResultIndex)))
+                continue;
+
+            _ngRowCount++;
+            failed.Clear();
+            for (int index = 0; index < _ngItemColumns.Count; index++)
+            {
+                if (IsFail(CellValue(row, _ngItemColumns[index].Index)))
+                    failed.Add(index);
+            }
+
+            if (failed.Count == 0)
+            {
+                _ngUnspecified++;
+                continue;
+            }
+
+            if (failed.Count > 1)
+                _ngMultiCount++;
+
+            combos.Add(string.Join(" + ", failed.Select(index => _ngItemColumns[index].Label)));
+            foreach (int index in failed)
+            {
+                totals[index]++;
+
+                // The child is named after the *other* items, so a chip under RB_Limit does not
+                // repeat "RB_Limit" in every one of its own children.
+                string others = string.Join(
+                    " + ",
+                    failed.Where(other => other != index).Select(other => _ngItemColumns[other].Label));
+                Dictionary<string, int> split = splits[index];
+                split[others] = split.TryGetValue(others, out int seen) ? seen + 1 : 1;
+            }
+        }
+
+        _ngComboCount = combos.Count;
+        _ngItemTotalSum = totals.Sum();
+        _ngItemGroups = _ngItemColumns
+            .Select((column, index) => new NgItemGroup(
+                column.Label,
+                totals[index],
+                splits[index]
+                    // "alone" first, then the heaviest pairings: the base rate of an item is what
+                    // the eye is looking for before the ways it cascades.
+                    .OrderBy(entry => entry.Key.Length == 0 ? 0 : 1)
+                    .ThenByDescending(entry => entry.Value)
+                    .ThenBy(entry => entry.Key, StringComparer.Ordinal)
+                    .Select(entry => (Label: entry.Key.Length == 0 ? "alone" : "+ " + entry.Key, entry.Value))
+                    .ToList()))
+            .Where(group => group.Total > 0)
+            .OrderByDescending(group => group.Total)
+            .ThenBy(group => group.Label, StringComparer.Ordinal)
+            .ToList();
+
+        // Nothing should stay unfolded once its item drops out of the filtered rows.
+        _expandedNgItems.RemoveWhere(label => !_ngItemGroups.Any(group => string.Equals(group.Label, label, StringComparison.Ordinal)));
+    }
+
+    private void ToggleNgItem(string label)
+    {
+        if (!_expandedNgItems.Add(label))
+            _expandedNgItems.Remove(label);
+    }
+
+    /// <summary>
+    /// The per-item verdict columns, in table order. Matched by the <c>_Result</c> suffix rather
+    /// than by a hardcoded list, so an item added to the tester shows up without a code change.
+    /// </summary>
+    private static IReadOnlyList<(int Index, string Label)> BuildNgItemColumns(IReadOnlyList<QrTestDataColumn> columns)
+    {
+        var items = new List<(int, string)>();
+        for (int index = 0; index < columns.Count; index++)
+        {
+            string name = columns[index].Name;
+            if (string.Equals(name, "TestResult", StringComparison.OrdinalIgnoreCase)
+                || !name.EndsWith("_Result", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            items.Add((index, name[..^"_Result".Length]));
+        }
+
+        return items;
+    }
+
+    /// <summary>The cards follow the filters; with none active they keep the server aggregate,
+    /// which covers the whole date selection instead of only the fetched rows.</summary>
+    private QrTestDataSummary? DisplaySummary => IsFiltered ? _filteredSummary : _result?.Summary;
+
+    /// <summary>
+    /// Counts one input per QR left on screen, and one NG per QR whose newest surviving row is a
+    /// fail. Rows stay newest-first through filtering, so <c>Rows[0]</c> is the verdict in force
+    /// for that QR within the filtered set — the same rule the server aggregate applies to the
+    /// whole selection.
+    /// </summary>
+    private void BuildFilteredSummary()
+    {
+        // No server summary means the table has no ProductID or no TestResult column, and the
+        // cards are not rendered at all; a filtered count would be the only number on screen.
+        if (!IsFiltered || _result?.Summary is null)
+        {
+            _filteredSummary = null;
+            return;
+        }
+
+        long ngCount = 0;
+        if (_testResultIndex >= 0)
+        {
+            foreach (QrRowGroup group in _visibleGroups)
+            {
+                if (IsFail(CellValue(group.Rows[0], _testResultIndex)))
+                    ngCount++;
+            }
+        }
+
+        _filteredSummary = new QrTestDataSummary(_visibleGroups.Count, ngCount);
+    }
+
+    /// <summary>Where the Input count came from: the filtered rows, the shown range, or the whole selection.</summary>
+    private string InputCountNote => IsFiltered
+        ? "Current filter · duplicate ProductID excluded"
+        : _result?.HitMaxRows == true
+            ? "Shown range · duplicate ProductID excluded"
+            : "Duplicate ProductID excluded";
+
+    private string NgCountNote => IsFiltered
+        ? "Current filter · latest TestTime"
+        : _result?.HitMaxRows == true
+            ? "Shown range · latest TestTime"
+            : "Latest TestTime result";
+
+    /// <summary>
+    /// The model dropdown matches the code inside the QR; each column box matches only its own
+    /// cell; <see cref="_search"/> is set by a QR SUMMARY deep link and matches any cell.
+    /// Every active filter has to hold, so they narrow the table together.
+    /// </summary>
+    private bool RowMatches(QrTestDataRow row)
+    {
+        if (_modelCode.Length > 0 && !MatchesModel(row))
+            return false;
+
+        string term = _search.Trim();
+        if (term.Length > 0
+            && !row.Values.Any(value => value.Contains(term, StringComparison.OrdinalIgnoreCase)))
+        {
+            return false;
+        }
+
+        foreach ((int columnIndex, string filter) in _columnFilters)
+        {
+            string needle = filter.Trim();
+            if (needle.Length == 0)
+                continue;
+
+            string cell = columnIndex == QrTestColumnLayout.TestDateIndex
+                ? FormatRowDate(row.TestDate)
+                : CellValue(row, columnIndex);
+            if (!cell.Contains(needle, StringComparison.OrdinalIgnoreCase))
+                return false;
+        }
+
+        return true;
+    }
+
+    private bool MatchesModel(QrTestDataRow row)
+    {
+        if (_productIdIndex < 0)
+            return false;
+
+        string code = QrModelCodeService.ExtractCode(CellValue(row, _productIdIndex));
+
+        // "Other" is everything the settings table does not name — including a QR too short to
+        // carry a code at all, which is exactly what someone picking it is looking for.
+        return string.Equals(_modelCode, QrModelCodeService.UnmappedCode, StringComparison.Ordinal)
+            ? !_knownCodes.Contains(code)
+            : string.Equals(code, _modelCode, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Builds the dropdown from the settings table, keeping only the models the fetched rows
+    /// actually contain and counting the QR behind each one — a model that is on the list but not
+    /// on the selected dates would otherwise look like a filter that silently empties the table.
+    /// </summary>
+    private void BuildModelOptions()
+    {
+        _knownCodes.Clear();
+        _modelOptions = [];
+        if (_productIdIndex < 0)
+            return;
+
+        var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (QrModelCode entry in QrModelCodes.Codes)
+        {
+            _knownCodes.Add(entry.Code);
+            names[entry.Code] = string.IsNullOrWhiteSpace(entry.Name) ? entry.Code : entry.Name;
+        }
+
+        var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        int unmapped = 0;
+        foreach (QrRowGroup group in _rowGroups)
+        {
+            string code = QrModelCodeService.ExtractCode(CellValue(group.Rows[0], _productIdIndex));
+            if (_knownCodes.Contains(code))
+                counts[code] = counts.TryGetValue(code, out int seen) ? seen + 1 : 1;
+            else
+                unmapped++;
+        }
+
+        var options = new List<ModelOption>();
+        foreach ((string code, string name) in names.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+        {
+            if (counts.TryGetValue(code, out int count))
+                options.Add(new ModelOption(code, $"{name} ({code}) · {count:N0} QR"));
+        }
+
+        if (unmapped > 0)
+            options.Add(new ModelOption(QrModelCodeService.UnmappedCode, $"Other · {unmapped:N0} QR"));
+
+        _modelOptions = options;
+
+        // A model that is no longer on the list must not keep filtering invisibly.
+        if (_modelCode.Length > 0 && !options.Any(option => string.Equals(option.Code, _modelCode, StringComparison.OrdinalIgnoreCase)))
+            _modelCode = string.Empty;
+    }
+
+    /// <summary>
+    /// Points the highlight at the deep-linked QR and unfolds it when it has several rounds.
+    /// The scroll runs once per page load; later reloads keep the highlight but leave the
+    /// scroll position where the user put it.
+    /// </summary>
+    private void ApplyFocus()
+    {
+        _focusRowId = string.Empty;
+        if (_focusProductId.Length == 0)
+            return;
+
+        QrRowGroup? match = _rowGroups.FirstOrDefault(group =>
+            string.Equals(group.Key, $"product:{_focusProductId}", StringComparison.OrdinalIgnoreCase));
+        if (match is null)
+        {
+            _error = $"{_focusProductId} has no row on the selected date in {Table.DisplayTable}.";
+            return;
+        }
+
+        if (match.Rows.Count > 1)
+        {
+            _expandedProductIds.Add(match.Key);
+            BuildLines();
+        }
+
+        _focusRowId = RowElementId(match.Key);
+        if (!_focusScrolled)
+        {
+            _focusScrolled = true;
+            _scrollPending = true;
+        }
+    }
+
+    /// <summary>Stable DOM id for a QR group; punctuation is dropped so it is a valid id.</summary>
+    private static string RowElementId(string key) =>
+        "qr-row-" + new string(key.Where(char.IsLetterOrDigit).ToArray());
+
+    private static bool TryParseDate(string? value, out DateOnly parsed) =>
+        DateOnly.TryParseExact(
+            value?.Trim(),
+            "yyyy-MM-dd",
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out parsed);
+
+    /// <summary>The shared layout, mapped onto the slots this table renders.</summary>
+    private static IReadOnlyList<ColumnSlot> BuildColumnSlots(QrTestTableDef table, QrTestDataResult result) =>
+        QrTestColumnLayout.Build(table, result.Columns)
+            .Select(index => index == QrTestColumnLayout.TestDateIndex
+                ? ColumnSlot.TestDate
+                : new ColumnSlot(index, result.Columns[index]))
+            .ToList();
+
+    private static string CellValue(QrTestDataRow row, int columnIndex) =>
+        columnIndex >= 0 && columnIndex < row.Values.Count ? row.Values[columnIndex] : string.Empty;
+
+    /// <summary>One rendered column. A null <c>Column</c> is the derived test-date column.</summary>
+    private sealed record ColumnSlot(int ColumnIndex, QrTestDataColumn? Column)
+    {
+        public static ColumnSlot TestDate { get; } = new(-1, null);
+    }
+
+    private static IReadOnlyList<QrRowGroup> BuildRowGroups(QrTestDataResult result)
+    {
+        int productIdIndex = QrTestColumnLayout.FindColumnIndex(result.Columns, "ProductID");
+        if (productIdIndex < 0)
+            return result.Rows
+                .Select((row, index) => QrRowGroup.Single($"row:{index}", row))
+                .ToList();
+
+        var groups = new List<QrRowGroup>();
+        var byProductId = new Dictionary<string, QrRowGroup>(StringComparer.OrdinalIgnoreCase);
+        for (int rowIndex = 0; rowIndex < result.Rows.Count; rowIndex++)
+        {
+            QrTestDataRow row = result.Rows[rowIndex];
+            string productId = productIdIndex < row.Values.Count ? row.Values[productIdIndex].Trim() : string.Empty;
+            if (string.IsNullOrWhiteSpace(productId))
+            {
+                groups.Add(QrRowGroup.Single($"row:{rowIndex}", row));
+                continue;
+            }
+
+            if (!byProductId.TryGetValue(productId, out QrRowGroup? group))
+            {
+                group = new QrRowGroup($"product:{productId}");
+                byProductId.Add(productId, group);
+                groups.Add(group);
+            }
+            group.Rows.Add(row);
+        }
+
+        return groups;
+    }
+
+    // Invariant, so the weekday stays English regardless of the server's locale.
+    private static string FormatDate(DateOnly date) =>
+        date.ToDateTime(TimeOnly.MinValue).ToString("yyyy-MM-dd (ddd)", CultureInfo.InvariantCulture);
+
+    private static string FormatRowDate(DateOnly? date) =>
+        date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "-";
+
+    private static string FormatPpm(double? value) =>
+        value is double ppm
+            ? $"{ppm.ToString("N0", CultureInfo.CurrentCulture)} ppm"
+            : "-";
+
+    private static string DisplayCell(string value) =>
+        string.IsNullOrWhiteSpace(value) ? "-" : value;
+
+    private string CellClass(QrTestDataColumn column, string value)
+    {
+        string numericClass = QrTestColumnLayout.IsNumeric(column.DataType) ? "qr-num" : string.Empty;
+        if (!column.Name.EndsWith("Result", StringComparison.OrdinalIgnoreCase))
+            return numericClass;
+
+        string resultClass = IsFail(value)
+            ? "qr-result-fail"
+            : IsPass(value) ? "qr-result-pass" : string.Empty;
+        return string.Join(' ', new[] { numericClass, resultClass }.Where(x => !string.IsNullOrWhiteSpace(x)));
+    }
+
+    // GSTD spells its verdict "1"/"0" and ALTD spells a leak "AL", so the pass/fail
+    // words come from the table definition instead of being hardcoded here.
+    private bool IsPass(string value) => Table.IsPass(value);
+
+    private bool IsFail(string value) => Table.IsFail(value);
+
+    public void Dispose() => CancelFilterSettle();
+
+    private sealed class QrRowGroup(string key)
+    {
+        public string Key { get; } = key;
+        public List<QrTestDataRow> Rows { get; } = [];
+
+        public static QrRowGroup Single(string key, QrTestDataRow row)
+        {
+            var group = new QrRowGroup(key);
+            group.Rows.Add(row);
+            return group;
+        }
+    }
+}

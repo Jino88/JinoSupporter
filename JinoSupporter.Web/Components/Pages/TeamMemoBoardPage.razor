@@ -1,0 +1,380 @@
+@page "/memo/board"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using System.Globalization
+@using System.Security.Claims
+@using JinoSupporter.Web.Services
+@inject TeamMemoService Memos
+@inject WebRepository Repo
+@inject MenuPermissionService Permissions
+@inject TeamMemoTranslationService Translations
+@inject TeamMemoLanguageState LangState
+@implements IDisposable
+
+<PageTitle>Memo Board</PageTitle>
+<TeamMemoStyles />
+
+@if (!_authorized)
+{
+    <div class="tm-empty">@(_loaded ? "You do not have permission to open Work Memo." : "Loading…")</div>
+}
+else
+{
+<div class="tm-page">
+    <div class="tm-boardwrap">
+        <div class="tm-bar">
+            <b>Team Memo</b>
+            <TeamMemoLanguageBar Translator="_tr" />
+            <div class="tm-seg">
+                <button class="@(_showSchedule ? "on" : "")" @onclick="() => _showSchedule = !_showSchedule">Schedule</button>
+            </div>
+            <input class="tm-input" style="width:220px;" placeholder="Search…" @bind="_search" @bind:event="oninput" />
+            @foreach (string f in Filters)
+            {
+                <span class="tm-chip @(_filter == f ? "on" : "")" @onclick="() => _filter = f">@f</span>
+            }
+            <select class="tm-input" style="width:200px;" @bind="_folderFilter">
+                <option value="">All folders</option>
+                @foreach (var f in _folders.OrderBy(f => f.Path, StringComparer.CurrentCultureIgnoreCase)) { <option value="@f.Id">@f.Path</option> }
+            </select>
+            <a class="tm-btn" style="margin-left:auto;text-decoration:none;" href="memo">☰ Tree view</a>
+        </div>
+
+        @{ var visible = VisibleMemos(); }
+
+        @if (_showSchedule)
+        {
+            <div class="tm-gantt">
+                @{
+                    int days = _monthStart.AddMonths(1).DayNumber - _monthStart.DayNumber;
+                    DateOnly monthEnd = _monthStart.AddDays(days - 1);
+                    var rows = visible.Where(m => SpanOf(m) is { } s && s.Start <= monthEnd && s.End >= _monthStart)
+                                      .OrderBy(m => SpanOf(m)!.Value.Start).ToList();
+                    double Pct(DateOnly d) => (d.DayNumber - _monthStart.DayNumber) * 100.0 / days;
+                    DateOnly today = TeamMemoUi.Today;
+                }
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <button class="tm-btn tm-btn-ghost" @onclick="() => _monthStart = _monthStart.AddMonths(-1)">‹</button>
+                    <b>@_monthStart.ToString("MMMM yyyy", CultureInfo.InvariantCulture)</b>
+                    <button class="tm-btn tm-btn-ghost" @onclick="() => _monthStart = _monthStart.AddMonths(1)">›</button>
+                    <button class="tm-btn tm-btn-ghost tm-small" @onclick="() => _monthStart = new DateOnly(today.Year, today.Month, 1)">Today</button>
+                    <span class="tm-muted tm-small" style="margin-left:auto;">@rows.Count scheduled · bars run Start → Due (open-ended up to today)</span>
+                </div>
+                <div class="tm-gaxis">
+                    <span></span>
+                    <div class="tm-track">
+                        @for (int d = 0; d < days; d += 7)
+                        {
+                            <span class="tm-gday" style="left:@Css(d * 100.0 / days)%;">@_monthStart.AddDays(d).ToString("MM-dd", CultureInfo.InvariantCulture)</span>
+                        }
+                    </div>
+                </div>
+                @if (rows.Count == 0)
+                {
+                    <div class="tm-muted tm-small" style="padding:6px 0;">No memo with a start or due date in this month.</div>
+                }
+                @foreach (var m in rows)
+                {
+                    var span = SpanOf(m)!.Value;
+                    DateOnly from = span.Start < _monthStart ? _monthStart : span.Start;
+                    DateOnly to = span.End > monthEnd ? monthEnd : span.End;
+                    string color = m.IsOverdue(today) ? "#d97706" : TeamMemoStatus.IsClosed(m.Status) ? "#16a34a" : TeamMemoUi.AvatarColor(m.Owner);
+                    <div class="tm-grow" @key="m.Id">
+                        <span class="tm-gname" title="@m.Title" @onclick="() => Select(m.Id)">@_tr.T(m.Title)</span>
+                        <div class="tm-track">
+                            @for (int d = 0; d < days; d++)
+                            {
+                                var dow = _monthStart.AddDays(d).DayOfWeek;
+                                if (dow is DayOfWeek.Saturday or DayOfWeek.Sunday)
+                                {
+                                    <span class="tm-gcol we" style="left:@Css(d * 100.0 / days)%;width:@Css(100.0 / days)%;"></span>
+                                }
+                            }
+                            @if (today >= _monthStart && today <= monthEnd)
+                            {
+                                <span class="tm-gtoday" style="left:@Css(Pct(today) + 50.0 / days)%;"></span>
+                            }
+                            <span class="tm-gbar" title="@m.Title · @TeamMemoUi.Ymd(span.Start) → @TeamMemoUi.Ymd(span.End) · @Display(m.Owner)"
+                                  style="left:@Css(Pct(from))%;width:@Css(Math.Max(100.0 / days, Pct(to) - Pct(from) + 100.0 / days))%;background:@color;@(_selectedId == m.Id ? "outline:2px solid #0f172a;" : "")"
+                                  @onclick="() => Select(m.Id)"></span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        <div class="tm-cols">
+            @foreach (string status in TeamMemoStatus.All)
+            {
+                var cards = visible.Where(m => m.Status == status).ToList();
+                <div class="tm-col @(_dragOver == status ? "drop" : "")"
+                     ondragover="event.preventDefault();"
+                     @ondragenter="() => _dragOver = status"
+                     @ondrop="() => DropOn(status)">
+                    <div class="tm-col-hd"><span>@TeamMemoStatus.Label(status)</span><span class="tm-muted">@cards.Count</span></div>
+                    @foreach (var m in cards)
+                    {
+                        <div class="tm-kc @(_selectedId == m.Id ? "sel" : "")" @key="m.Id" draggable="true"
+                             @ondragstart="() => _dragId = m.Id" @ondragend="() => _dragOver = null"
+                             @onclick="() => Select(m.Id)">
+                            <div class="tm-path">@(FolderPath(m.FolderId) is { Length: > 0 } p ? p : "Unfiled")</div>
+                            <div class="tm-kt">@(m.IsPinned ? "📌 " : "")@_tr.T(m.Title)</div>
+                            @if (!string.IsNullOrWhiteSpace(m.LastCommentBody))
+                            {
+                                <div class="tm-last @(m.LastCommentIsResult ? "res" : "")">
+                                    <b>@(m.LastCommentIsResult ? "Result" : Display(m.LastCommentBy ?? ""))</b>: @_tr.T(m.LastCommentBody)
+                                </div>
+                            }
+                            <div class="tm-kf">
+                                <span class="tm-avs">
+                                    @foreach (string who in m.Participants.Take(4)) { <TeamMemoAvatar Name="@who" Size="20" /> }
+                                </span>
+                                @if (m.IsOverdue(TeamMemoUi.Today))
+                                {
+                                    <span class="tm-pill tm-pill-late">@(TeamMemoUi.Today.DayNumber - m.DueDate!.Value.DayNumber)d over</span>
+                                }
+                                else if (m.DueDate is { } due)
+                                {
+                                    <span>Due @TeamMemoUi.Md(due)</span>
+                                }
+                                <span style="margin-left:auto;">@(m.EntryCount > 0 ? $"⏱ {m.EntryCount}" : "") @(m.CommentCount > 0 ? $"💬 {m.CommentCount}" : "")</span>
+                            </div>
+                        </div>
+                    }
+                    @if (cards.Count == 0) { <div class="tm-muted tm-small" style="padding:8px 4px;">Drop a card here</div> }
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (_memo is not null)
+    {
+        <aside class="tm-drawer">
+            <div class="tm-drawer-hd">
+                <div class="tm-crumb">
+                    <span>@(FolderPath(_memo.FolderId) is { Length: > 0 } fp ? fp : "Unfiled")</span>
+                    <span style="margin-left:auto;display:flex;gap:4px;">
+                        <a class="tm-btn tm-btn-ghost" href="memo?id=@_memo.Id" title="Open in the full editor">⤢</a>
+                        <button class="tm-btn tm-btn-ghost" title="Close" @onclick="Close">✕</button>
+                    </span>
+                </div>
+                <div style="font-size:18px;font-weight:700;margin:6px 0;" title="@_memo.Title">@_tr.T(_memo.Title)</div>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <select class="tm-input" style="width:130px;" value="@_memo.Status" @onchange="ChangeStatus">
+                        @foreach (string s in TeamMemoStatus.All) { <option value="@s">@TeamMemoStatus.Label(s)</option> }
+                    </select>
+                    <span class="tm-small tm-muted">
+                        @TeamMemoUi.Md(_memo.StartDate) → @TeamMemoUi.Md(_memo.DueDate)
+                        @if (!string.IsNullOrWhiteSpace(_memo.Owner)) { <text> · owner <b>@Display(_memo.Owner)</b></text> }
+                    </span>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_memo.Description))
+                {
+                    <div class="tm-body tm-small" style="margin-top:8px;">@_tr.T(_memo.Description)</div>
+                }
+            </div>
+            <div class="tm-drawer-bd">
+                <TeamMemoAiSummaryPanel Memo="_memo" CurrentUser="@_user" DisplayName="Display" Translate="_tr.T" OnChanged="Reload" />
+                <TeamMemoTimeline Memo="_memo" CurrentUser="@_user" IsAdmin="_isAdmin" DisplayName="Display" Translate="_tr.T" OnChanged="Reload" />
+            </div>
+        </aside>
+    }
+</div>
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "id")] public string? QueryId { get; set; }
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
+
+    private static readonly string[] Filters = ["Everyone", "Mine", "Overdue"];
+
+    private bool _loaded, _authorized, _isAdmin;
+    private bool _showSchedule = true;
+    private string _user = "";
+    private string _search = "";
+    private string _filter = "Everyone";
+    private string _folderFilter = "";
+    private DateOnly _monthStart = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+
+    private List<TeamMemoFolder> _folders = new();
+    private Dictionary<string, TeamMemoFolder> _folderById = new(StringComparer.Ordinal);
+    private List<TeamMemoSummary> _memos = new();
+    private Dictionary<string, string> _displayNames = new(StringComparer.OrdinalIgnoreCase);
+
+    private string? _selectedId;
+    private TeamMemo? _memo;
+    private TeamMemoTranslator _tr = default!;
+    private bool _trDirty = true;
+    private string? _dragId;
+    private string? _dragOver;
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthenticationState auth = await AuthState;
+        _user = auth.User.Identity?.Name ?? "";
+        _isAdmin = string.Equals(auth.User.FindFirst(ClaimTypes.Role)?.Value, AppRoles.Admin, StringComparison.OrdinalIgnoreCase);
+        _authorized = Permissions.IsAllowed(auth.User, AppMenus.TeamMemo);
+        _loaded = true;
+        _tr = new TeamMemoTranslator(Translations, () => InvokeAsync(StateHasChanged));
+        if (!_authorized) return;
+
+        foreach (UserRecord u in Repo.GetAllUsers())
+            _displayNames[u.Username] = string.IsNullOrWhiteSpace(u.DisplayName) ? u.Username : u.DisplayName;
+
+        LoadList();
+        if (QueryId is { Length: > 0 } id) Select(id);
+        Memos.Changed += OnMemosChanged;
+        LangState.Changed += OnLangChanged;
+        TeamMemoTranslationService.Translated += OnLangChanged;
+    }
+
+    public void Dispose()
+    {
+        Memos.Changed -= OnMemosChanged;
+        LangState.Changed -= OnLangChanged;
+        TeamMemoTranslationService.Translated -= OnLangChanged;
+    }
+
+    private void OnLangChanged() => _ = InvokeAsync(() => { _trDirty = true; StateHasChanged(); });
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!_trDirty || !_authorized || _tr is null) return;
+        _trDirty = false;
+        bool wasActive = _tr.Active;
+        _tr.Refresh(LangState.Lang, TranslatableTexts());
+        if (_tr.Active || wasActive) StateHasChanged();
+    }
+
+    private IEnumerable<string?> TranslatableTexts()
+    {
+        foreach (var m in _memos)
+        {
+            yield return m.Title;
+            yield return m.LastCommentBody;
+        }
+        if (_memo is null) yield break;
+        yield return _memo.Description;
+        yield return _memo.AiSummary;
+        foreach (var c in _memo.Comments) yield return c.Body;
+        foreach (var e in _memo.Entries)
+        {
+            yield return e.Title;
+            yield return e.Body;
+            yield return e.AiSummary;
+            foreach (var c in e.Comments) yield return c.Body;
+        }
+    }
+
+    private void OnMemosChanged(string? memoId) => _ = InvokeAsync(() =>
+    {
+        LoadList();
+        if (_selectedId is { } id && (memoId is null || memoId == id)) _memo = Memos.GetMemo(id);
+        StateHasChanged();
+    });
+
+    private void LoadList()
+    {
+        _trDirty = true;
+        _folders = Memos.GetFolders();
+        _folderById = _folders.ToDictionary(f => f.Id, StringComparer.Ordinal);
+        // Meeting notes (WorkHub hidden folders) and Plan folders stay off the board.
+        var meetings = TeamMemoService.MeetingFolderIds(_folders);
+        meetings.UnionWith(TeamMemoService.PlanFolderIds(_folders));
+        _folders = _folders.Where(f => !meetings.Contains(f.Id)).ToList();
+        _memos = Memos.ListMemos();
+    }
+
+    private Task Reload()
+    {
+        LoadList();
+        if (_selectedId is { } id) _memo = Memos.GetMemo(id);
+        return Task.CompletedTask;
+    }
+
+    private string Display(string user) =>
+        string.IsNullOrWhiteSpace(user) ? "" : _displayNames.TryGetValue(user, out var d) ? d : user;
+
+    private string FolderPath(string? id) => id is not null && _folderById.TryGetValue(id, out var f) ? f.Path : "";
+
+    private static string Css(double v) => v.ToString("0.###", CultureInfo.InvariantCulture);
+
+    private List<TeamMemoSummary> VisibleMemos()
+    {
+        var all = _folderById.Values.ToList();
+        var meetingFolders = TeamMemoService.MeetingFolderIds(all);
+        meetingFolders.UnionWith(TeamMemoService.PlanFolderIds(all));
+        IEnumerable<TeamMemoSummary> q = _memos.Where(m => m.FolderId is null || !meetingFolders.Contains(m.FolderId));
+        if (_folderFilter is { Length: > 0 } folderId)
+        {
+            var inFolder = new HashSet<string>(StringComparer.Ordinal) { folderId };
+            bool grew = true;
+            while (grew)
+            {
+                grew = false;
+                foreach (var f in _folders)
+                    if (f.ParentId is { } p && inFolder.Contains(p) && inFolder.Add(f.Id)) grew = true;
+            }
+            q = q.Where(m => m.FolderId is { } fid && inFolder.Contains(fid));
+        }
+        q = _filter switch
+        {
+            "Mine"    => q.Where(m => string.Equals(m.Owner, _user, StringComparison.OrdinalIgnoreCase)
+                                   || m.Participants.Contains(_user, StringComparer.OrdinalIgnoreCase)),
+            "Overdue" => q.Where(m => m.IsOverdue(TeamMemoUi.Today)),
+            _         => q,
+        };
+        string s = _search.Trim();
+        if (s.Length > 0)
+            q = q.Where(m => m.Title.Contains(s, StringComparison.CurrentCultureIgnoreCase)
+                          || m.Tags.Contains(s, StringComparison.CurrentCultureIgnoreCase)
+                          || FolderPath(m.FolderId).Contains(s, StringComparison.CurrentCultureIgnoreCase)
+                          || Display(m.Owner).Contains(s, StringComparison.CurrentCultureIgnoreCase));
+        return q.ToList();
+    }
+
+    /// <summary>Start → Due, falling back to whichever exists; an open-ended running memo runs up to today.</summary>
+    private static (DateOnly Start, DateOnly End)? SpanOf(TeamMemoSummary m)
+    {
+        if (m.StartDate is null && m.DueDate is null) return null;
+        DateOnly start = m.StartDate ?? m.DueDate!.Value;
+        DateOnly end = m.DueDate ?? (TeamMemoStatus.IsClosed(m.Status) ? start : Max(start, TeamMemoUi.Today));
+        // An overdue memo keeps growing until it is closed, so the delay shows on the chart.
+        if (m.IsOverdue(TeamMemoUi.Today)) end = TeamMemoUi.Today;
+        return end < start ? (end, start) : (start, end);
+    }
+
+    private static DateOnly Max(DateOnly a, DateOnly b) => a > b ? a : b;
+
+    private void Select(string id)
+    {
+        _trDirty = true;
+        _selectedId = id;
+        _memo = Memos.GetMemo(id);
+        if (_memo is null) _selectedId = null;
+    }
+
+    private void Close()
+    {
+        _selectedId = null;
+        _memo = null;
+    }
+
+    private void ChangeStatus(ChangeEventArgs e)
+    {
+        if (_memo is null || e.Value?.ToString() is not { } s) return;
+        try { Memos.SetMemoStatus(_memo.Id, s, _user); } catch { }
+        Reload();
+    }
+
+    private void DropOn(string status)
+    {
+        _dragOver = null;
+        if (_dragId is not { } id) return;
+        _dragId = null;
+        var m = _memos.FirstOrDefault(x => x.Id == id);
+        if (m is null || m.Status == status) return;
+        try { Memos.SetMemoStatus(id, status, _user); } catch { }
+        Reload();
+    }
+}

@@ -1,0 +1,18 @@
+@page "/qr/gauss-data"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using JinoSupporter.Web.Services
+
+<PageTitle>QR GAUSS DATA</PageTitle>
+
+<QrTestDataBrowser TableKey="@QrTestTables.GaussKey"
+                   Kicker="GAUSS TEST RESULTS · DB RECORDS"
+                   Description="Select one or more dates to show the matching TCDB.dbo.GSTD rows together. The test time column is OTIME and TestResult is 1 (OK) / 0 (NG)."
+                   FocusDate="@DateQuery"
+                   FocusProductId="@QrQuery" />
+
+@code {
+    // Set when QR SUMMARY opens this page on one of its cells.
+    [SupplyParameterFromQuery(Name = "date")] public string? DateQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "qr")] public string? QrQuery { get; set; }
+}

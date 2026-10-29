@@ -1,2 +1,20 @@
 @page "/"
-<meta http-equiv="refresh" content="0;url=/bmes/daily-report" />
+@using JinoSupporter.Web.Services
+@inject MenuPermissionService Permissions
+
+@* Start page: Plan (team memo calendar) for anyone who may open Team Memo, otherwise DAILY REPORT. *@
+<meta http-equiv="refresh" content="0;url=@_target" />
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private string _target = "/bmes/daily-report";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState is null) return;
+        var user = (await AuthState).User;
+        if (user.Identity?.IsAuthenticated == true && Permissions.IsAllowed(user, AppMenus.TeamMemo))
+            _target = "/memo/plan";
+    }
+}

@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace JinoSupporter.Web.Services;
 
 /// <summary>Out-of-process driver for Excel conversion and optional folder picking.
-/// Conversion is always delegated to the Excel DRM Python CLI. The legacy
+/// DRM conversion is unavailable. The legacy
 /// <c>JinoSupporter.ExcelHelper</c> exe is kept only for server-side folder dialogs.</summary>
 public sealed class ExcelHelperRunner
 {
@@ -30,12 +30,9 @@ public sealed class ExcelHelperRunner
 
     public bool HelperExists => File.Exists(HelperExePath);
     public bool FolderPickerExists => HelperExists;
-    public bool ConverterExists => PythonCommandExists(PythonExePath) && File.Exists(PythonScriptPath);
+    public bool ConverterExists => false;
 
-    public string ConverterStatus =>
-        ConverterExists
-            ? $"{PythonExePath} -> {PythonScriptPath}"
-            : $"Python converter not found. python={PythonExePath}, script={PythonScriptPath}";
+    public string ConverterStatus => "Excel DRM conversion has been removed.";
 
     /// <summary>Open a folder dialog (server-side) and return the selected path.
     /// Returns null on cancel or when the helper is missing/non-zero.</summary>
@@ -65,259 +62,25 @@ public sealed class ExcelHelperRunner
     /// this wrapper having to model every payload variant.</summary>
     public sealed record HelperEvent(string Kind, JsonElement Raw);
 
-    /// <summary>Scan <paramref name="source"/> and convert each Excel file via
-    /// ExcelDuplicator's Python CLI. Outputs are written to
-    /// <c>{dest}/drm_clean/{name}_clean.xlsx</c>.</summary>
+    /// <summary>Retained for existing callers; DRM conversion is no longer available.</summary>
     public async IAsyncEnumerable<HelperEvent> CleanAsync(
         string source, string dest,
         bool verbose = false, bool keepFormats = false,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
-        if (!ConverterExists)
-        {
-            yield return NewEvent("fatal", new { message = ConverterStatus });
-            yield break;
-        }
-
-        List<string> files = [];
-        HelperEvent? setupFault = null;
-        try
-        {
-            files = ResolveExcelFiles(source);
-        }
-        catch (Exception ex)
-        {
-            setupFault = NewEvent("fatal", new { message = ex.Message });
-        }
-
-        if (setupFault is not null)
-        {
-            yield return setupFault;
-            yield break;
-        }
-
-        yield return NewEvent("scan", new
-        {
-            source,
-            count = files.Count,
-            converter = PythonScriptPath,
-        });
-
-        string cleanDir = "";
-        try
-        {
-            cleanDir = Path.Combine(dest, "drm_clean");
-            Directory.CreateDirectory(cleanDir);
-        }
-        catch (Exception ex)
-        {
-            setupFault = NewEvent("fatal", new { message = $"Output folder create failed: {ex.Message}" });
-        }
-
-        if (setupFault is not null)
-        {
-            yield return setupFault;
-            yield break;
-        }
-
-        var cleaner = new ExcelDrm.ExcelDrmCleaner(PythonExePath, PythonScriptPath)
-        {
-            DefaultMode = ExcelDrm.ConvertMode.Clipboard,
-        };
-
-        int ok = 0;
-        int fail = 0;
-
-        for (int i = 0; i < files.Count; i++)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            string input = files[i];
-            string output = BuildOutputPath(cleanDir, input);
-
-            yield return NewEvent("progress", new
-            {
-                current = i + 1,
-                total = files.Count,
-                file = Path.GetFileName(input),
-                source = input,
-                dest = output,
-            });
-
-            ExcelDrm.ConvertResult result;
-            try
-            {
-                // keepFormats is retained for callers, but conversion must use
-                // ExcelDuplicator's Python program. Clipboard is the Python CLI's
-                // default full-fidelity mode.
-                result = await cleaner.ConvertAsync(input, output, ExcelDrm.ConvertMode.Clipboard, ct);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                result = new ExcelDrm.ConvertResult
-                {
-                    Success = false,
-                    Input = input,
-                    Output = output,
-                    Error = ex.Message,
-                    ExitCode = -1,
-                };
-            }
-
-            foreach (string line in SplitLogLines(result.StdErr))
-            {
-                if (verbose || !result.Success)
-                    yield return NewEvent("log", new { message = line });
-            }
-
-            if (result.Success) ok++;
-            else fail++;
-
-            yield return NewEvent("result", new
-            {
-                success = result.Success,
-                source = result.Input,
-                dest = result.Output ?? output,
-                error = result.Error,
-                elapsed = result.ElapsedSeconds,
-                exitCode = result.ExitCode,
-                strategy = "python:excel_drm_cli.py:clipboard",
-            });
-        }
-
-        yield return NewEvent("done", new { ok, fail });
+        ct.ThrowIfCancellationRequested();
+        await Task.CompletedTask;
+        yield return NewEvent("fatal", new { message = ConverterStatus });
     }
 
-    /// <summary>Convert an explicit list of Excel files and write outputs
-    /// directly into <paramref name="dest"/> without creating a drm_clean child
-    /// folder. This is used by the web drag/drop converter page.</summary>
+    /// <summary>Retained for existing callers; DRM conversion is no longer available.</summary>
     public async IAsyncEnumerable<HelperEvent> CleanFilesToDestinationRootAsync(
-        IReadOnlyList<string> sourceFiles,
-        string dest,
-        bool verbose = false,
+        IReadOnlyList<string> sourceFiles, string dest, bool verbose = false,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
-        if (!ConverterExists)
-        {
-            yield return NewEvent("fatal", new { message = ConverterStatus });
-            yield break;
-        }
-
-        List<string> files = [];
-        HelperEvent? setupFault = null;
-        try
-        {
-            files = sourceFiles
-                .Where(path => !string.IsNullOrWhiteSpace(path))
-                .Select(Path.GetFullPath)
-                .Where(path => File.Exists(path) && IsExcelFile(path))
-                .ToList();
-        }
-        catch (Exception ex)
-        {
-            setupFault = NewEvent("fatal", new { message = ex.Message });
-        }
-
-        if (setupFault is not null)
-        {
-            yield return setupFault;
-            yield break;
-        }
-
-        yield return NewEvent("scan", new
-        {
-            source = "selected files",
-            count = files.Count,
-            converter = PythonScriptPath,
-        });
-
-        try
-        {
-            Directory.CreateDirectory(dest);
-        }
-        catch (Exception ex)
-        {
-            setupFault = NewEvent("fatal", new { message = $"Output folder create failed: {ex.Message}" });
-        }
-
-        if (setupFault is not null)
-        {
-            yield return setupFault;
-            yield break;
-        }
-
-        var cleaner = new ExcelDrm.ExcelDrmCleaner(PythonExePath, PythonScriptPath)
-        {
-            DefaultMode = ExcelDrm.ConvertMode.Clipboard,
-        };
-
-        int ok = 0;
-        int fail = 0;
-        var usedOutputs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        for (int i = 0; i < files.Count; i++)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            string input = files[i];
-            string output = BuildUniqueOutputPath(dest, input, usedOutputs);
-
-            yield return NewEvent("progress", new
-            {
-                current = i + 1,
-                total = files.Count,
-                file = Path.GetFileName(input),
-                source = input,
-                dest = output,
-            });
-
-            ExcelDrm.ConvertResult result;
-            try
-            {
-                result = await cleaner.ConvertAsync(input, output, ExcelDrm.ConvertMode.Clipboard, ct);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                result = new ExcelDrm.ConvertResult
-                {
-                    Success = false,
-                    Input = input,
-                    Output = output,
-                    Error = ex.Message,
-                    ExitCode = -1,
-                };
-            }
-
-            foreach (string line in SplitLogLines(result.StdErr))
-            {
-                if (verbose || !result.Success)
-                    yield return NewEvent("log", new { message = line });
-            }
-
-            if (result.Success) ok++;
-            else fail++;
-
-            yield return NewEvent("result", new
-            {
-                success = result.Success,
-                source = result.Input,
-                dest = result.Output ?? output,
-                error = result.Error,
-                elapsed = result.ElapsedSeconds,
-                exitCode = result.ExitCode,
-                strategy = "python:excel_drm_cli.py:clipboard",
-            });
-        }
-
-        yield return NewEvent("done", new { ok, fail });
+        ct.ThrowIfCancellationRequested();
+        await Task.CompletedTask;
+        yield return NewEvent("fatal", new { message = ConverterStatus });
     }
 
     /// <summary>Convenience: clean a single uploaded file. Writes to a temp

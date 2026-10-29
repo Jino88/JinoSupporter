@@ -17,7 +17,7 @@ public sealed partial class BmesFcostActualService(
     private const int MaxTimeoutSeconds = 600;
     private const int DefaultMaxRows = 5000;
     private const int HardMaxRows = 50000;
-    private const int RawBreakdownCacheSchemaVersion = 1;
+    private const int RawBreakdownCacheSchemaVersion = 2;
     private static readonly TimeSpan RawBreakdownRecentMutableWindow = TimeSpan.FromDays(7);
     private static readonly TimeSpan RawBreakdownRecentCacheTtl = TimeSpan.FromMinutes(15);
     private static readonly JsonSerializerOptions RawBreakdownCacheJsonOptions = new()
@@ -300,15 +300,66 @@ public sealed partial class BmesFcostActualService(
             };
         }
 
-        RawBreakdownCacheKey cacheKey = BuildRawBreakdownCacheKey(query, periods, lineShifts);
-        RawBreakdownCachePolicy cachePolicy = BuildRawBreakdownCachePolicy(periods);
-        BmesFcostRawBreakdownResult? cachedResult = await TryReadRawBreakdownCacheAsync(
-            cacheKey,
-            cachePolicy,
-            cancellationToken);
-        if (cachedResult is not null)
-            return cachedResult;
+        // The cache is keyed per period (plus the line-shift set) so periods that closed more
+        // than the mutable window ago are reused indefinitely and only the still-changing
+        // periods are read from the server. Period results are independent: the SQL groups by
+        // period and the unit-price lookups are keyed by the period's month.
+        var perPeriod = new Dictionary<string, BmesFcostRawBreakdownResult>(StringComparer.Ordinal);
+        var missing = new List<BmesFcostRawBreakdownPeriod>();
+        foreach (BmesFcostRawBreakdownPeriod period in periods)
+        {
+            (RawBreakdownCacheKey periodKey, RawBreakdownCachePolicy periodPolicy) =
+                BuildPeriodCacheEntry(query, period, lineShifts);
+            BmesFcostRawBreakdownResult? cached = await TryReadRawBreakdownCacheAsync(
+                periodKey,
+                periodPolicy,
+                cancellationToken);
+            if (cached is not null)
+                perPeriod[period.Key] = cached;
+            else
+                missing.Add(period);
+        }
 
+        if (missing.Count > 0)
+        {
+            Dictionary<string, BmesFcostRawBreakdownResult> fetched = await FetchRawBreakdownFromServerAsync(
+                query,
+                missing,
+                lineShifts,
+                lineSqlKeys,
+                cancellationToken);
+            foreach (BmesFcostRawBreakdownPeriod period in missing)
+            {
+                BmesFcostRawBreakdownResult periodResult = fetched.GetValueOrDefault(period.Key)
+                    ?? new BmesFcostRawBreakdownResult { Periods = [period], Rows = [] };
+                perPeriod[period.Key] = periodResult;
+                (RawBreakdownCacheKey periodKey, RawBreakdownCachePolicy periodPolicy) =
+                    BuildPeriodCacheEntry(query, period, lineShifts);
+                await StoreRawBreakdownCacheAsync(periodKey, periodPolicy, periodResult, cancellationToken);
+            }
+        }
+
+        return MergeRawBreakdownResults(periods, perPeriod);
+    }
+
+    private (RawBreakdownCacheKey Key, RawBreakdownCachePolicy Policy) BuildPeriodCacheEntry(
+        BmesFcostRawBreakdownQuery query,
+        BmesFcostRawBreakdownPeriod period,
+        IReadOnlyList<BmesFcostRawBreakdownLineShift> lineShifts)
+    {
+        // The ordinal only positions the period inside one request; the cached rows are keyed
+        // by period key, so the same week/month is shared across requests of any width.
+        var single = new List<BmesFcostRawBreakdownPeriod> { period with { Ordinal = 0 } };
+        return (BuildRawBreakdownCacheKey(query, single, lineShifts), BuildRawBreakdownCachePolicy(single));
+    }
+
+    private async Task<Dictionary<string, BmesFcostRawBreakdownResult>> FetchRawBreakdownFromServerAsync(
+        BmesFcostRawBreakdownQuery query,
+        List<BmesFcostRawBreakdownPeriod> periods,
+        List<BmesFcostRawBreakdownLineShift> lineShifts,
+        List<LineShiftSqlKey> lineSqlKeys,
+        CancellationToken cancellationToken)
+    {
         await using var conn = new SqlConnection(BuildConnectionString(query.Connection));
         await conn.OpenAsync(cancellationToken);
 
@@ -323,6 +374,12 @@ public sealed partial class BmesFcostActualService(
         cmd.CommandTimeout = NormalizeTimeoutSeconds(query.Connection.TimeoutSeconds);
         cmd.Parameters.Add(new SqlParameter("@Fact", SqlDbType.NVarChar, 20) { Value = NormalizeFilter(query.Fact) });
         cmd.Parameters.Add(new SqlParameter("@Plant", SqlDbType.NVarChar, 20) { Value = NormalizeFilter(query.Plant) });
+
+        // STBI (stock snapshot) price fallback is read once over the month range that covers
+        // every period start; the per-period month match happens in the SQL join.
+        (DateTime stbiFrom, DateTime stbiTo) = BuildStbiMonthRange(periods);
+        cmd.Parameters.Add(new SqlParameter("@StbiFrom", SqlDbType.Date) { Value = stbiFrom });
+        cmd.Parameters.Add(new SqlParameter("@StbiTo", SqlDbType.Date) { Value = stbiTo });
 
         for (int i = 0; i < periods.Count; i++)
         {
@@ -351,7 +408,7 @@ public sealed partial class BmesFcostActualService(
             l => l.LineShift.Trim(),
             l => l,
             StringComparer.OrdinalIgnoreCase);
-        var rows = new Dictionary<string, BmesFcostRawMaterialBreakdownRow>(StringComparer.OrdinalIgnoreCase);
+        var rowsByPeriod = new Dictionary<string, Dictionary<string, BmesFcostRawMaterialBreakdownRow>>(StringComparer.Ordinal);
 
         await using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess, cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -369,6 +426,12 @@ public sealed partial class BmesFcostActualService(
             string priceCurrency = ReadString(reader, "PriceCurrency");
             string priceUnit = ReadString(reader, "PriceUnit");
             decimal? unitPriceVnd = ReadDecimal(reader, "UnitPriceVnd");
+
+            if (!rowsByPeriod.TryGetValue(periodKey, out var rows))
+            {
+                rows = new Dictionary<string, BmesFcostRawMaterialBreakdownRow>(StringComparer.OrdinalIgnoreCase);
+                rowsByPeriod[periodKey] = rows;
+            }
 
             string rowKey = string.Join(
                 '\t',
@@ -401,27 +464,90 @@ public sealed partial class BmesFcostActualService(
         }
         await reader.DisposeAsync();
 
-        var resultRows = rows.Values
+        var results = new Dictionary<string, BmesFcostRawBreakdownResult>(StringComparer.Ordinal);
+        int totalRows = 0;
+        foreach (BmesFcostRawBreakdownPeriod period in periods)
+        {
+            List<BmesFcostRawMaterialBreakdownRow> periodRows = rowsByPeriod.TryGetValue(period.Key, out var rows)
+                ? SortRawBreakdownRows(rows.Values)
+                : [];
+            totalRows += periodRows.Count;
+            results[period.Key] = new BmesFcostRawBreakdownResult
+            {
+                Periods = [period],
+                ExchangeRates = exchangeRates
+                    .Where(rate => string.Equals(rate.PeriodKey, period.Key, StringComparison.Ordinal))
+                    .ToList(),
+                Rows = periodRows,
+            };
+        }
+
+        _activity.Log(
+            "BMES F-COST Raw",
+            $"Raw material breakdown periods={periods.Count:N0}, lineShifts={lineShifts.Count:N0}, rows={totalRows:N0}");
+        return results;
+    }
+
+    private static BmesFcostRawBreakdownResult MergeRawBreakdownResults(
+        List<BmesFcostRawBreakdownPeriod> periods,
+        IReadOnlyDictionary<string, BmesFcostRawBreakdownResult> perPeriod)
+    {
+        var rows = new Dictionary<string, BmesFcostRawMaterialBreakdownRow>(StringComparer.OrdinalIgnoreCase);
+        var exchangeRates = new List<BmesFcostExchangeRate>();
+        foreach (BmesFcostRawBreakdownPeriod period in periods)
+        {
+            if (!perPeriod.TryGetValue(period.Key, out BmesFcostRawBreakdownResult? part))
+                continue;
+
+            exchangeRates.AddRange(part.ExchangeRates);
+            foreach (BmesFcostRawMaterialBreakdownRow source in part.Rows)
+            {
+                string rowKey = string.Join(
+                    '\t',
+                    source.GroupName,
+                    source.ModelName,
+                    source.MaterialCode,
+                    source.MaterialName);
+                if (!rows.TryGetValue(rowKey, out var row))
+                {
+                    row = new BmesFcostRawMaterialBreakdownRow
+                    {
+                        GroupName = source.GroupName,
+                        ModelName = source.ModelName,
+                        MaterialCode = source.MaterialCode,
+                        MaterialName = source.MaterialName,
+                    };
+                    rows[rowKey] = row;
+                }
+
+                foreach (var item in source.FCostByPeriod)
+                    row.FCostByPeriod[item.Key] = row.FCostByPeriod.GetValueOrDefault(item.Key) + item.Value;
+                foreach (var item in source.EquivalentQtyByPeriod)
+                    row.EquivalentQtyByPeriod[item.Key] = row.EquivalentQtyByPeriod.GetValueOrDefault(item.Key) + item.Value;
+                foreach (var item in source.PriceByPeriod)
+                    row.PriceByPeriod[item.Key] = item.Value;
+                row.TotalFCostVnd += source.TotalFCostVnd;
+                row.SourceRows += source.SourceRows;
+            }
+        }
+
+        return new BmesFcostRawBreakdownResult
+        {
+            Periods = periods,
+            ExchangeRates = exchangeRates,
+            Rows = SortRawBreakdownRows(rows.Values),
+        };
+    }
+
+    private static List<BmesFcostRawMaterialBreakdownRow> SortRawBreakdownRows(
+        IEnumerable<BmesFcostRawMaterialBreakdownRow> rows)
+        => rows
             .Where(r => r.TotalFCostVnd > 0)
             .OrderBy(r => r.GroupName, StringComparer.Ordinal)
             .ThenBy(r => r.ModelName, StringComparer.Ordinal)
             .ThenByDescending(r => r.TotalFCostVnd)
             .ThenBy(r => r.MaterialName, StringComparer.Ordinal)
             .ToList();
-
-        _activity.Log(
-            "BMES F-COST Raw",
-            $"Raw material breakdown periods={periods.Count:N0}, lineShifts={lineShifts.Count:N0}, rows={resultRows.Count:N0}");
-
-        var result = new BmesFcostRawBreakdownResult
-        {
-            Periods = periods,
-            ExchangeRates = exchangeRates,
-            Rows = resultRows,
-        };
-        await StoreRawBreakdownCacheAsync(cacheKey, cachePolicy, result, cancellationToken);
-        return result;
-    }
 
     private async Task<BmesFcostRawBreakdownResult?> TryReadRawBreakdownCacheAsync(
         RawBreakdownCacheKey cacheKey,
@@ -1336,6 +1462,17 @@ public sealed partial class BmesFcostActualService(
 
     private sealed record LineShiftSqlKey(string LineShift, string VeridCandidate);
 
+    private static (DateTime From, DateTime ToExclusive) BuildStbiMonthRange(
+        IReadOnlyList<BmesFcostRawBreakdownPeriod> periods)
+    {
+        var months = periods
+            .Select(p => new DateTime(p.StartDate.Year, p.StartDate.Month, 1))
+            .ToList();
+        DateTime from = months.Min();
+        DateTime toExclusive = months.Max().AddMonths(1);
+        return (from, toExclusive);
+    }
+
     private static List<LineShiftSqlKey> BuildLineShiftSqlKeys(IEnumerable<BmesFcostRawBreakdownLineShift> lineShifts)
     {
         var result = new List<LineShiftSqlKey>();
@@ -1875,6 +2012,72 @@ public sealed partial class BmesFcostActualService(
                     SUM(CAST(ISNULL(e.FCAMT, 0) AS decimal(38, 6)) - CAST(ISNULL(e.INAMT, 0) AS decimal(38, 6))) * 100,
                     0
                 ) > 0
+            ),
+            -- Product name is resolved first so the LineShift match (product name + line) can
+            -- drop non-matching rows before any unit-price lookup runs.
+            Named AS (
+                SELECT
+                    ra.*,
+                    ISNULL(productName.ProductName, N'') AS ProductName
+                FROM RawAgg AS ra
+                OUTER APPLY (
+                    SELECT CAST(MIN(m.MAKTX) AS nvarchar(200)) AS ProductName
+                    FROM dbo.MATE AS m WITH (NOLOCK)
+                    WHERE m.MATNR = ra.ProductCode
+                ) AS productName
+                WHERE CONCAT(ISNULL(productName.ProductName, N''), N'_', ra.Line) = ra.LineShift
+            ),
+            -- Stock-based unit price fallback (dbo.STBI, daily stock snapshots, no MATNR-leading
+            -- index). Evaluated once per (material, month) over a single ZDATE range instead of a
+            -- per-row OUTER APPLY, which forced a full month scan for every output row.
+            -- The selection rule (fact match, GUBUN priority, latest ZDATE) is unchanged.
+            StbiNeed AS (
+                SELECT DISTINCT
+                    n.MaterialCode,
+                    DATEFROMPARTS(YEAR(n.PeriodStartDate), MONTH(n.PeriodStartDate), 1) AS MonthStart
+                FROM Named AS n
+            ),
+            StbiCand AS (
+                SELECT
+                    s.MATNR,
+                    DATEFROMPARTS(YEAR(s.ZDATE), MONTH(s.ZDATE), 1) AS MonthStart,
+                    s.ZDATE,
+                    s.ZBUKRS,
+                    s.GUBUN,
+                    s.DMBTR,
+                    s.MENGE,
+                    s.WAERS,
+                    s.MEINS
+                FROM dbo.STBI AS s WITH (NOLOCK)
+                WHERE s.ZDATE >= @StbiFrom
+                  AND s.ZDATE < @StbiTo
+                  AND s.MENGE > 0
+                  AND s.DMBTR > 0
+                  AND s.MATNR IN (SELECT sn.MaterialCode FROM StbiNeed AS sn)
+            ),
+            StbiPick AS (
+                SELECT
+                    c.MATNR,
+                    c.MonthStart,
+                    CAST(CAST(c.DMBTR AS decimal(38, 10)) / NULLIF(CAST(c.MENGE AS decimal(38, 10)), 0) AS decimal(38, 10)) AS UnitPrice,
+                    UPPER(RTRIM(CAST(c.WAERS AS nvarchar(20)))) AS PriceCurrency,
+                    RTRIM(CAST(c.MEINS AS nvarchar(40))) AS PriceUnit,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY c.MATNR, c.MonthStart
+                        ORDER BY
+                            CASE WHEN RTRIM(c.ZBUKRS) = @Fact THEN 0 ELSE 1 END,
+                            CASE
+                                WHEN RTRIM(c.GUBUN) = N'A' THEN 0
+                                WHEN RTRIM(c.GUBUN) = N'B' THEN 1
+                                WHEN RTRIM(c.GUBUN) = N'G' THEN 2
+                                ELSE 3
+                            END,
+                            c.ZDATE DESC
+                    ) AS rn
+                FROM StbiCand AS c
+                JOIN StbiNeed AS n
+                    ON n.MaterialCode = c.MATNR
+                   AND n.MonthStart = c.MonthStart
             )
             SELECT
                 ra.PeriodOrdinal AS PeriodOrdinal,
@@ -1884,7 +2087,7 @@ public sealed partial class BmesFcostActualService(
                 ra.LineShift AS LineShift,
                 ra.Line AS Line,
                 ra.ProductCode AS ProductCode,
-                ISNULL(productName.ProductName, N'') AS ProductName,
+                ra.ProductName AS ProductName,
                 ra.MaterialCode AS MaterialCode,
                 ISNULL(materialName.MaterialName, N'') AS MaterialName,
                 ra.FCostVnd AS FCostVnd,
@@ -1901,12 +2104,7 @@ public sealed partial class BmesFcostActualService(
                         THEN resolvedPrice.UnitPrice * priceRate.KrwPerCurrency / vndRate.KrwPerVnd
                     ELSE NULL
                 END AS decimal(38, 10)) AS UnitPriceVnd
-            FROM RawAgg AS ra
-            OUTER APPLY (
-                SELECT CAST(MIN(m.MAKTX) AS nvarchar(200)) AS ProductName
-                FROM dbo.MATE AS m WITH (NOLOCK)
-                WHERE m.MATNR = ra.ProductCode
-            ) AS productName
+            FROM Named AS ra
             OUTER APPLY (
                 SELECT CAST(MIN(m.MAKTX) AS nvarchar(200)) AS MaterialName
                 FROM dbo.MATE AS m WITH (NOLOCK)
@@ -1931,27 +2129,10 @@ public sealed partial class BmesFcostActualService(
                     i.EKORG,
                     i.LIFNR
             ) AS price
-            OUTER APPLY (
-                SELECT TOP (1)
-                    CAST(CAST(s.DMBTR AS decimal(38, 10)) / NULLIF(CAST(s.MENGE AS decimal(38, 10)), 0) AS decimal(38, 10)) AS UnitPrice,
-                    UPPER(RTRIM(CAST(s.WAERS AS nvarchar(20)))) AS PriceCurrency,
-                    RTRIM(CAST(s.MEINS AS nvarchar(40))) AS PriceUnit
-                FROM dbo.STBI AS s WITH (NOLOCK)
-                WHERE s.MATNR = ra.MaterialCode
-                  AND s.MENGE > 0
-                  AND s.DMBTR > 0
-                  AND s.ZDATE >= DATEFROMPARTS(YEAR(ra.PeriodStartDate), MONTH(ra.PeriodStartDate), 1)
-                  AND s.ZDATE < DATEADD(MONTH, 1, DATEFROMPARTS(YEAR(ra.PeriodStartDate), MONTH(ra.PeriodStartDate), 1))
-                ORDER BY
-                    CASE WHEN RTRIM(s.ZBUKRS) = @Fact THEN 0 ELSE 1 END,
-                    CASE
-                        WHEN RTRIM(s.GUBUN) = N'A' THEN 0
-                        WHEN RTRIM(s.GUBUN) = N'B' THEN 1
-                        WHEN RTRIM(s.GUBUN) = N'G' THEN 2
-                        ELSE 3
-                    END,
-                    s.ZDATE DESC
-            ) AS stockPrice
+            LEFT JOIN StbiPick AS stockPrice
+                ON stockPrice.MATNR = ra.MaterialCode
+               AND stockPrice.MonthStart = DATEFROMPARTS(YEAR(ra.PeriodStartDate), MONTH(ra.PeriodStartDate), 1)
+               AND stockPrice.rn = 1
             OUTER APPLY (
                 SELECT
                     CASE
@@ -1987,13 +2168,12 @@ public sealed partial class BmesFcostActualService(
                   AND CONVERT(date, t.GDATU) = DATEFROMPARTS(YEAR(ra.PeriodStartDate), MONTH(ra.PeriodStartDate), 1)
                 ORDER BY t.GDATU DESC
             ) AS vndRate
-            WHERE CONCAT(ISNULL(productName.ProductName, N''), N'_', ra.Line) = ra.LineShift
             ORDER BY
                 ra.PeriodOrdinal,
-                productName.ProductName,
+                ra.ProductName,
                 ra.Line,
                 ra.MaterialCode;
-            """;
+""";
     }
 
     private sealed record BmesFcostResolvedPeriod(

@@ -248,7 +248,7 @@ else if (!IsCliModel && !CodexApi.IsConfigured)
     private bool HasTranslateProvider => IsCliModel ? AiProviders.CodexCliEnabled : CodexApi.IsConfigured;
     private string TranslateButtonLabel => IsCliModel
         ? $"Translate ({CodexApi.Model} CLI)"
-        : $"Translate ({CodexApi.Model})";
+        : $"Translate ({CodexApi.Model} · {CodexApi.TranslateEffort})";
 
     protected override async Task OnInitializedAsync()
     {
@@ -333,7 +333,7 @@ else if (!IsCliModel && !CodexApi.IsConfigured)
             }
             else
             {
-                LogTranslate($"using Codex API model={CodexApi.Model}", actor);
+                LogTranslate($"using Codex API model={CodexApi.Model}, effort={CodexApi.TranslateEffort}", actor);
                 var images = _images.Select(img => (img.MediaType, img.Base64)).ToList();
                 CodexTranslationResult apiResult = await CodexApi.TranslateAsync(
                     _inputText,

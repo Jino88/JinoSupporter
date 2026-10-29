@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
@@ -54,7 +54,7 @@ builder.Services.AddHttpClient<ClaudeService>(client =>
 builder.Services.AddHttpClient<CodexApiService>(client =>
 {
     client.BaseAddress = new Uri("https://api.openai.com/v1/");
-    client.Timeout     = TimeSpan.FromSeconds(180);
+    client.Timeout     = TimeSpan.FromSeconds(420);
 });
 
 // Syncfusion
@@ -117,7 +117,24 @@ builder.Services.AddSingleton<BmesReportViewerBootstrap>();
 // BMES report → self-contained static HTML export (memory-friendly iframe rendering)
 builder.Services.AddScoped<BmesReportHtmlExportService>();
 builder.Services.AddScoped<BmesFcostActualService>();
-builder.Services.AddScoped<QrBakoDataService>();
+builder.Services.AddScoped<QrTestDataService>();
+builder.Services.AddScoped<QrSummaryService>();
+// The QR model table is one small file every QR page reads; singleton so the settings page
+// and the browsers see the same rows without each circuit re-reading it.
+builder.Services.AddSingleton<QrModelCodeService>();
+// Row caps the QR pages were last set to; singleton so a pick on one page holds on the others.
+builder.Services.AddSingleton<QrViewPreferenceService>();
+// Team memo: singleton so its Changed event reaches every connected circuit.
+builder.Services.AddSingleton<TeamMemoService>();
+// AI Summary of a team memo (Codex API, Luna / low effort).
+builder.Services.AddScoped<TeamMemoAiSummaryService>();
+// Review report writer (Codex API): notes + pictures -> report laid out for WorkHub normalization.
+builder.Services.AddScoped<ReviewReportService>();
+// Team memo display translation (EN/KO/VI via Codex Luna, cached in the memo DB).
+builder.Services.AddScoped<TeamMemoTranslationService>();
+builder.Services.AddScoped<TeamMemoLanguageState>();
+// Team memo lives in the WorkHub memo DB; this moves old web memos in once and notices WorkHub saves.
+builder.Services.AddHostedService<TeamMemoBackgroundService>();
 // DAILY REPORT dashboard: singleton so one cached snapshot + one background
 // refresh is shared by every connected user.
 builder.Services.AddSingleton<BmesDailyReportService>();
@@ -146,6 +163,19 @@ var app = builder.Build();
 
 // Seed default admin user if no users exist
 var repo = app.Services.GetRequiredService<WebRepository>();
+// Translation moved from the gemini CLI default to Codex Luna (low effort) over the API on
+// 2026-10-03. Rewrite the old default once; a model picked later in Setting is left alone.
+if (repo.GetSetting("Migrations:TranslateModelLuna") is null)
+{
+    string? translateModel = repo.GetSetting("OpenAI:TranslateModel");
+    if (string.IsNullOrWhiteSpace(translateModel) || translateModel.Contains("gemini", StringComparison.OrdinalIgnoreCase))
+    {
+        repo.SetSetting("OpenAI:TranslateModel", CodexApiService.LunaModel);
+        repo.SetSetting("OpenAI:TranslateEffort", CodexApiService.DefaultReasoningEffort);
+    }
+    repo.SetSetting("Migrations:TranslateModelLuna", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+}
+
 if (repo.GetAllUsers().Count == 0)
     repo.AddUser("admin", AuthService.HashPassword("admin123"), AppRoles.Admin);
 
@@ -379,6 +409,20 @@ app.MapPost("/api/bmes/daily-report/refresh", (
 
 // Serve the generated LPA result as a single self-contained static HTML file (list +
 // NG pivot + every row's checklist inside it), shown in an iframe on /bmes/lpa.
+// Team memo attachment (image thumbnails and downloads), same permission as the memo pages.
+app.MapGet("/team-memo/attachment/{id}", (string id, bool? download, TeamMemoService memos, MenuPermissionService perms, HttpContext ctx) =>
+{
+    if (ctx.User?.Identity?.IsAuthenticated != true) return Results.Unauthorized();
+    if (!perms.IsAllowed(ctx.User, AppMenus.TeamMemo)) return Results.Forbid();
+    var file = memos.GetAttachment(id);
+    if (file is null) return Results.NotFound();
+    ctx.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    bool inline = download != true && file.Value.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+    return inline
+        ? Results.File(file.Value.Data, file.Value.ContentType)
+        : Results.File(file.Value.Data, file.Value.ContentType, file.Value.FileName);
+});
+
 app.MapGet("/bmes/lpa/view/{token}", (string token, BmesLpaHtmlExportService svc, HttpContext ctx) =>
 {
     if (ctx.User?.Identity?.IsAuthenticated != true) return Results.Unauthorized();

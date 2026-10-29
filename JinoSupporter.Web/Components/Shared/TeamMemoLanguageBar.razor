@@ -1,0 +1,64 @@
+@using JinoSupporter.Web.Services
+@inject TeamMemoLanguageState LangState
+@inject TeamMemoTranslationService Translations
+@implements IDisposable
+
+@* Original / EN / KO / VI switch for the team memo pages, plus "translate every memo now".
+   Translation runs with Codex Luna (low); each call fills all three languages. *@
+<span class="tm-lang">
+    <span class="tm-seg">
+        @foreach (var (code, label) in TeamMemoLanguage.All)
+        {
+            <button class="@(LangState.Lang == code ? "on" : "")" title="@(code.Length == 0 ? "Show text as written" : $"Show in {TeamMemoLanguage.Name(code)} (Codex Luna)")"
+                    @onclick="() => LangState.Set(code)">@label</button>
+        }
+    </span>
+    <button class="tm-btn tm-btn-ghost tm-small" disabled="@(TeamMemoTranslationService.AllRunning || !Translations.IsConfigured)"
+            title="Translate every memo into English, Korean and Vietnamese now (only text not translated yet is sent)"
+            @onclick="TranslateAll">🌐 Translate all</button>
+    @if (TeamMemoTranslationService.AllRunning)
+    {
+        <span class="tm-muted tm-small"><span class="tm-spin dark"></span>
+            @(TeamMemoTranslationService.AllTotal > 0 ? $"All memos {TeamMemoTranslationService.AllDone}/{TeamMemoTranslationService.AllTotal}" : TeamMemoTranslationService.AllMessage)</span>
+    }
+    else if (Translator?.Busy == true)
+    {
+        <span class="tm-muted tm-small"><span class="tm-spin dark"></span> Translating @Translator.Pending…</span>
+    }
+    else if (_showAllMessage && !string.IsNullOrEmpty(TeamMemoTranslationService.AllMessage))
+    {
+        <span class="tm-muted tm-small">@TeamMemoTranslationService.AllMessage</span>
+    }
+    @if (!string.IsNullOrEmpty(Translator?.Error))
+    {
+        <span class="tm-small" style="color:#b91c1c;" title="@Translator.Error">⚠ translation failed</span>
+    }
+</span>
+
+@code {
+    [Parameter] public TeamMemoTranslator? Translator { get; set; }
+
+    private System.Threading.Timer? _ticker;
+    private bool _showAllMessage;
+
+    protected override void OnInitialized()
+    {
+        // Repaint progress while a translate-all pass runs (started here, by someone else or in the background).
+        _ticker = new System.Threading.Timer(_ =>
+        {
+            if (TeamMemoTranslationService.AllRunning) InvokeAsync(StateHasChanged);
+        }, null, 1000, 1000);
+    }
+
+    private void TranslateAll()
+    {
+        _showAllMessage = true;
+        _ = Task.Run(async () =>
+        {
+            await Translations.TranslateAllMemosAsync();
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    public void Dispose() => _ticker?.Dispose();
+}

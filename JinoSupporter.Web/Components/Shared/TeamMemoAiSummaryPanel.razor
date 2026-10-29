@@ -1,0 +1,104 @@
+@using JinoSupporter.Web.Services
+@inject TeamMemoAiSummaryService Summaries
+@implements IDisposable
+
+@* AI Summary of one team memo: the button that reads the memo's text, tables and images with
+   Codex Luna (low effort), and the saved summary shown to everyone. *@
+
+@{
+    string? runningBy = _busy ? null : TeamMemoAiSummaryService.RunningBy(Memo.Id);
+    bool stale = Memo.IsAiSummaryStale;
+}
+<div class="tm-ai">
+    <div class="tm-ai-hd">
+        <b>✨ AI Summary</b>
+        @if (Memo.AiSummaryAt is { } when)
+        {
+            <span class="tm-muted tm-small">@Display(Memo.AiSummaryBy) · @TeamMemoUi.Ago(when) · @Memo.AiSummaryModel</span>
+            @if (stale)
+            {
+                <span class="tm-pill tm-pill-late" title="The memo (in WorkHub or here) or its comments changed after this summary was made">Outdated</span>
+            }
+        }
+        <span style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+            @if (!string.IsNullOrWhiteSpace(Memo.AiSummary))
+            {
+                <button class="tm-btn tm-btn-ghost tm-small" @onclick="() => _open = !_open">@(_open ? "Hide" : "Show")</button>
+            }
+            <button class="tm-btn tm-btn-ai" disabled="@(_busy || runningBy is not null || !Summaries.IsConfigured)"
+                    title="@(Summaries.IsConfigured ? "Read the memo's text, tables and images and write a summary" : "Set the Codex API key in Setting first")"
+                    @onclick="RunAsync">
+                @if (_busy)
+                {
+                    <span class="tm-spin"></span><span>Summarizing… @_elapsed s</span>
+                }
+                else
+                {
+                    <span>@(string.IsNullOrWhiteSpace(Memo.AiSummary) ? "AI Summary" : "Regenerate")</span>
+                }
+            </button>
+        </span>
+    </div>
+    @if (runningBy is not null)
+    {
+        <div class="tm-muted tm-small" style="margin-top:6px;">@Display(runningBy) is generating a summary of this memo…</div>
+    }
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="tm-alert" style="margin:8px 0 0;">@_error</div>
+    }
+    @if (_open && !string.IsNullOrWhiteSpace(Memo.AiSummary))
+    {
+        <div class="tm-ai-body">@((MarkupString)TeamMemoUi.MarkdownToHtml(Translate?.Invoke(Memo.AiSummary) ?? Memo.AiSummary))</div>
+    }
+    else if (string.IsNullOrWhiteSpace(Memo.AiSummary) && !_busy)
+    {
+        <div class="tm-muted tm-small" style="margin-top:6px;">
+            No summary yet. AI Summary reads every history entry, comment, pasted image, spreadsheet and PDF of this memo and saves the result here for everyone.
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public TeamMemo Memo { get; set; } = default!;
+    [Parameter] public string CurrentUser { get; set; } = "";
+    [Parameter] public Func<string, string>? DisplayName { get; set; }
+    [Parameter] public Func<string?, string>? Translate { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private bool _busy;
+    private bool _open = true;
+    private int _elapsed;
+    private string? _error;
+    private System.Threading.Timer? _ticker;
+
+    private string Display(string user) => DisplayName?.Invoke(user) ?? user;
+
+    private async Task RunAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        _error = null;
+        _elapsed = 0;
+        _ticker = new System.Threading.Timer(_ => { _elapsed++; InvokeAsync(StateHasChanged); }, null, 1000, 1000);
+        try
+        {
+            // Not tied to the circuit: a summary that is already paid for is saved even if the page closes.
+            await Summaries.SummarizeAsync(Memo.Id, CurrentUser, CancellationToken.None);
+            _open = true;
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = "AI Summary failed: " + ex.Message;
+        }
+        finally
+        {
+            _ticker?.Dispose();
+            _ticker = null;
+            _busy = false;
+        }
+    }
+
+    public void Dispose() => _ticker?.Dispose();
+}

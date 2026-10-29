@@ -22,7 +22,10 @@ public static class AppMenus
     public const string BmesTest4          = "bmes-test4";
     public const string BmesTest5          = "bmes-test5";
     public const string BmesLpa            = "bmes-lpa";
+    public const string QrSummary          = "qr-summary";
     public const string QrBakoData         = "qr-bako-data";
+    public const string QrAirleakData      = "qr-airleak-data";
+    public const string QrGaussData        = "qr-gauss-data";
     public const string BmesDailyReport    = "bmes-daily-report";
     // Legacy keys retained only for existing DB permission rows.
     public const string BmesTest           = "bmes-test";
@@ -65,8 +68,11 @@ public static class AppMenus
         new(BmesTest4,          "Test 4",                   "BMES"),
         new(BmesTest5,          "BOM & Drawing",            "BMES"),
         new(BmesLpa,            "LPA",                      "BMES"),
-        new(QrBakoData,         "QR BAKO DATA",             "BMES"),
         new(BmesDailyReport,    "DAILY REPORT",             "BMES"),
+        new(QrSummary,          "SUMMARY",                  "QR"),
+        new(QrBakoData,         "QR BAKO DATA",             "QR"),
+        new(QrAirleakData,      "QR AIRLEAK DATA",          "QR"),
+        new(QrGaussData,        "QR GAUSS DATA",            "QR"),
         new(GraphMaker,         "Graph Maker",              "Tools"),
         new(DiInputBatch,       "INPUT DATA (BATCH)",       "Test Data Analysis"),
         new(DiDb,               "Result",                   "Test Data Analysis"),
@@ -92,26 +98,26 @@ public static class AppMenus
         [AppRoles.Manager] =
         [
             NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesSetting, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest3, BmesTest4, BmesTest5,
-            QrBakoData, BmesDailyReport, GraphMaker, DiInputBatch, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload
+            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, GraphMaker, DiInputBatch, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload
         ],
         [AppRoles.ManagerAi] =
         [
             NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesSetting, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest3, BmesTest4, BmesTest5,
-            QrBakoData, BmesDailyReport, GraphMaker, DiInputBatch, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload
+            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, GraphMaker, DiInputBatch, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload
         ],
         [AppRoles.Leader] =
         [
             NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest3, BmesTest4, BmesTest5,
-            QrBakoData, BmesDailyReport, GraphMaker, DiInputBatch, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload
+            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, GraphMaker, DiInputBatch, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload
         ],
         [AppRoles.Editor] =
         [
             NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest3, BmesTest4, BmesTest5,
-            QrBakoData, BmesDailyReport, GraphMaker, DiInputBatch, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload
+            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, GraphMaker, DiInputBatch, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload
         ],
         [AppRoles.Viewer] =
         [
-            NgRate, BmesWorkerStatus, BmesFCost, QrBakoData, BmesDailyReport, GraphMaker, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload
+            NgRate, BmesWorkerStatus, BmesFCost, QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, GraphMaker, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload
         ],
     };
 }

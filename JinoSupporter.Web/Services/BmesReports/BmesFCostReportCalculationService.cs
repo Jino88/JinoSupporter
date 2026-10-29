@@ -39,6 +39,8 @@ public sealed class BmesFCostReportCalculationService(
             start,
             end,
             force: false,
+            // The refresh window is at most three days, so no inter-request pacing is needed.
+            delayMs: 0,
             forceFromDate: forceFrom,
             forceRefreshTtl: TimeSpan.FromMinutes(15),
             progress: progress);

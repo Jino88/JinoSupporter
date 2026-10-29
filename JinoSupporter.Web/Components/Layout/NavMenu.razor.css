@@ -1,210 +1,293 @@
+/* ── Icon rail ─────────────────────────────────────────────────────────────
+   Square icon + short label per menu. Width is set by .sidebar in MainLayout
+   (64px). Tiles inside NavLink need ::deep because the <a> belongs to NavLink. */
+
 .navbar-toggler {
     appearance: none;
     cursor: pointer;
-    width: 3.5rem;
-    height: 2.5rem;
-    color: white;
+    width: 3rem;
+    height: 2.2rem;
     position: absolute;
-    top: 0.5rem;
+    top: 0.6rem;
     right: 1rem;
-    border: 1px solid rgba(255,255,255,.15);
+    border: 1px solid #cbd5e1;
     border-radius: 6px;
-    background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255,255,255,0.6%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") no-repeat center/1.5rem rgba(255,255,255,.05);
+    background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2871,85,105,0.8%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") no-repeat center/1.4rem #fff;
 }
 
-.navbar-toggler:checked { background-color: rgba(255,255,255,.15); }
+.navbar-toggler:checked { background-color: #e2e8f0; }
 
-/* ── Brand / top row ───────────────────────────────────────────────────── */
+/* ── Brand ─────────────────────────────────────────────────────────────── */
 .top-row {
     height: 56px;
-    background: transparent !important;
-    border-bottom: 1px solid rgba(255,255,255,.07) !important;
     display: flex;
     align-items: center;
-    padding: 0 16px !important;
-}
-
-.navbar-brand {
-    font-size: 15px !important;
-    font-weight: 700;
-    color: #ffffff !important;
-    letter-spacing: -0.3px;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.navbar-brand::before {
-    content: '';
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-    border-radius: 5px;
+    justify-content: center;
+    border-bottom: 1px solid #e2e8f0;
     flex-shrink: 0;
 }
 
-/* ── Nav items ─────────────────────────────────────────────────────────── */
+.rail-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    text-decoration: none;
+}
+
+.rail-brand-mark {
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+}
+
+.rail-brand-text {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: #334155;
+}
+
+/* ── List ──────────────────────────────────────────────────────────────── */
 .nav-scrollable {
     display: none;
-    padding: 10px 10px;
+    padding: 8px 0;
 }
 
 .navbar-toggler:checked ~ .nav-scrollable { display: block; }
 
-.nav-item {
-    font-size: 13px;
-    margin-bottom: 1px;
-}
-
-.nav-item ::deep .nav-link {
-    color: rgba(255,255,255,.55);
-    background: none;
-    border: none;
-    border-radius: 7px;
-    height: 38px;
+.rail-list {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 0 10px;
-    width: 100%;
-    font-size: 13px;
-    font-weight: 500;
-    text-decoration: none;
-    transition: background .12s, color .12s;
-    letter-spacing: -0.1px;
+    gap: 2px;
 }
 
-.nav-item ::deep .nav-link:hover {
-    background: rgba(255,255,255,.07);
-    color: rgba(255,255,255,.85);
+.rail-sep {
+    width: 30px;
+    height: 1px;
+    background: #e2e8f0;
+    margin: 4px 0;
 }
 
-.nav-item ::deep a.active {
-    background: rgba(59,130,246,.25) !important;
-    color: #93c5fd !important;
-    font-weight: 600;
-}
-
-.nav-icon {
-    font-size: 15px;
-    width: 20px;
-    text-align: center;
-    flex-shrink: 0;
-    display: inline-block;
-    opacity: .9;
-}
-
-/* ── Section divider ───────────────────────────────────────────────────── */
-.nav-section {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    color: rgba(255,255,255,.25);
-    padding: 12px 10px 4px;
-}
-
-/* ── Group toggle (parent menu button) ────────────────────────────────── */
-.nav-group-toggle {
-    width: 100%;
+/* Tile: shared by NavLink <a> and group <button>. */
+.rail-nav ::deep a.rail-tile, .rail-nav ::deep a.rail-tile:hover { text-decoration: none; }
+.rail-nav ::deep .rail-tile {
+    width: 58px;
+    padding: 4px 0 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
     background: none;
     border: none;
+    border-radius: 8px;
+    color: #64748b;
+    text-decoration: none;
     cursor: pointer;
+    font: inherit;
+}
+
+.rail-nav ::deep .rail-ico {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background: #f1f5f9;
+    position: relative;
+    transition: background .12s, color .12s;
+}
+
+.rail-nav ::deep .rail-ico svg {
+    width: 18px;
+    height: 18px;
+}
+
+.rail-nav ::deep .rail-lbl {
+    font-size: 9.5px;
+    font-weight: 500;
+    line-height: 1.1;
+    max-width: 58px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.1px;
+}
+
+.rail-nav ::deep .rail-tile:hover { color: #0f172a; }
+.rail-nav ::deep .rail-tile:hover .rail-ico { background: #e2e8f0; }
+
+.rail-nav ::deep .rail-tile:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: -2px;
+}
+
+.rail-nav ::deep .rail-tile.active { color: #1d4ed8; }
+.rail-nav ::deep .rail-tile.active .rail-ico {
+    background: #3b82f6;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(37,99,235,.28);
+}
+
+/* Group tile: small corner notch says "opens more". */
+.rail-nav ::deep .rail-group .rail-ico::after {
+    content: '';
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    border: 3px solid transparent;
+    border-right-color: currentColor;
+    border-bottom-color: currentColor;
+    opacity: .55;
+}
+
+.rail-nav ::deep .rail-group.open .rail-ico {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+/* ── Flyout ────────────────────────────────────────────────────────────── */
+.rail-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+    background: rgba(15,23,42,.12);
+}
+
+.rail-flyout {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 64px;
+    width: 228px;
+    z-index: 1050;
+    background: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    box-shadow: 12px 0 32px rgba(15,23,42,.12);
+    padding: 0 10px 16px;
+    overflow-y: auto;
+    animation: rail-flyout-in .14s ease-out;
+}
+
+@keyframes rail-flyout-in {
+    from { transform: translateX(-12px); opacity: 0; }
+    to   { transform: none; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rail-flyout { animation: none; }
+}
+
+.rail-flyout-head {
+    height: 56px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 0 10px;
-    height: 38px;
-    color: rgba(255,255,255,.55);
-    font-size: 13px;
-    font-weight: 500;
-    border-radius: 7px;
-    transition: background .12s, color .12s;
-    letter-spacing: -0.1px;
-    text-decoration: none;
+    justify-content: space-between;
+    padding: 0 6px;
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 700;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 10px;
 }
 
-.nav-group-toggle:hover {
-    background: rgba(255,255,255,.07);
-    color: rgba(255,255,255,.85);
-}
-
-.nav-group-toggle.active {
-    /* Open-state indicator — distinguishes parent group from child active by text only (no bg) */
-    color: rgba(255,255,255,.85) !important;
-    font-weight: 600;
-}
-
-.nav-caret {
-    margin-left: auto;
-    font-size: 16px;
-    color: rgba(255,255,255,.3);
-    transition: transform .18s ease;
-    display: inline-block;
+.rail-flyout-close {
+    border: 0;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 20px;
     line-height: 1;
+    padding: 2px 6px;
+    border-radius: 6px;
+    cursor: pointer;
 }
 
-.nav-caret.open {
-    transform: rotate(90deg);
+.rail-flyout-close:hover { background: #f1f5f9; color: #0f172a; }
+
+.rail-flyout-sub {
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    padding: 14px 6px 6px;
 }
 
-/* ── Submenu ───────────────────────────────────────────────────────────── */
-.nav-submenu {
-    padding-left: 12px;
-    border-left: 1px solid rgba(255,255,255,.08);
-    margin-left: 19px;
-    margin-bottom: 2px;
+.rail-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px 0;
+    justify-items: center;
 }
 
-.nav-sublink {
-    height: 33px !important;
-    font-size: 12px !important;
-    color: rgba(255,255,255,.45) !important;
-    padding: 0 8px !important;
+/* ── Signed-in user ────────────────────────────────────────────────────── */
+.rail-user {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 0 4px;
+    margin-top: auto;
+    border-top: 1px solid #e2e8f0;
 }
 
-.nav-sublink:hover {
-    background: rgba(255,255,255,.06) !important;
-    color: rgba(255,255,255,.75) !important;
+.rail-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 11px;
+    font-weight: 700;
 }
 
-.nav-item ::deep a.nav-sublink.active {
-    background: rgba(59,130,246,.2) !important;
-    color: #93c5fd !important;
-    font-weight: 600 !important;
+.rail-role {
+    font-size: 9.5px;
+    color: #64748b;
+    max-width: 58px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.nav-nested-toggle {
-    height: 33px !important;
-    padding: 0 8px !important;
-    font-size: 12px !important;
-    color: rgba(255,255,255,.45) !important;
+.rail-user form { margin: 0; }
+
+.rail-signout {
+    width: 30px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
 }
 
-.nav-nested-toggle:hover,
-.nav-nested-toggle.active {
-    color: rgba(255,255,255,.8) !important;
-}
-
-.nav-submenu-level2 {
-    margin-left: 17px;
-    padding-left: 9px;
-    border-left-color: rgba(255,255,255,.06);
-}
-
-.nav-sublink-level2 {
-    height: 31px !important;
-    font-size: 11.5px !important;
-}
+.rail-signout:hover { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
+.rail-signout ::deep svg, .rail-signout svg { width: 15px; height: 15px; }
 
 @media (min-width: 641px) {
     .navbar-toggler { display: none; }
 
     .nav-scrollable {
-        display: block;
-        height: calc(100vh - 56px);
+        display: flex;
+        flex-direction: column;
+        flex: 1;             /* fills .sidebar between brand and the connected panel */
+        min-height: 0;
         overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
     }
+}
+
+/* Phone: the rail becomes a wrapping grid under the top bar, flyout full width. */
+@media (max-width: 640.98px) {
+    .top-row { justify-content: flex-start; padding: 0 16px; }
+    .rail-list { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+    .rail-sep { display: none; }
+    .rail-flyout { left: 0; right: 0; width: auto; top: 56px; }
 }

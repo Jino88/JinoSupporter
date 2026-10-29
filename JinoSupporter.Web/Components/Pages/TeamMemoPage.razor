@@ -1,0 +1,1072 @@
+@page "/memo"
+@page "/memo/plan"
+@page "/memo/meetings"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using System.Security.Claims
+@using JinoSupporter.Web.Services
+@inject TeamMemoService Memos
+@inject WebRepository Repo
+@inject MenuPermissionService Permissions
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject TeamMemoTranslationService Translations
+@inject TeamMemoLanguageState LangState
+@implements IDisposable
+
+<PageTitle>@(_meetings ? "Plan" : "Work Memo")</PageTitle>
+<TeamMemoStyles />
+
+@if (!_authorized)
+{
+    <div class="tm-empty">@(_loaded ? "You do not have permission to open Work Memo." : "Loading…")</div>
+}
+else
+{
+<div class="tm-page">
+    <aside class="tm-tree">
+        <div class="tm-tree-hd">
+            <b>@(_meetings ? "Plan" : "Memos") <span class="tm-muted">@ScopedMemos.Count()</span></b>
+            @if (!_meetings)
+            {
+                <button class="tm-btn tm-btn-ghost" title="New folder" @onclick="StartNewFolder">📁＋</button>
+            }
+            <button class="tm-btn tm-btn-pri" title="@(_meetings ? "New plan" : "New memo in the selected folder")" @onclick="CreateMemo">@(_meetings ? "＋ Plan" : "＋ Memo")</button>
+        </div>
+        @if (_meetings && PlanRoots.Skip(1).Any())
+        {
+            var planMemos = _memos.Where(m => m.FolderId is not null && _planFolders.Contains(m.FolderId) && !_meetingFolders.Contains(m.FolderId)).ToList();
+            <div class="tm-cats">
+                <button class="tm-cat @(_planCat is null ? "on" : "")" @onclick="() => SelectCategory(null)">
+                    All <span>@planMemos.Count</span>
+                </button>
+                @foreach (var root in PlanRoots)
+                {
+                    int n = planMemos.Count(m => RootOf(m.FolderId!) == root.Id);
+                    <button class="tm-cat @(_planCat == root.Id ? "on" : "")" title="@root.Name" @onclick="() => SelectCategory(root.Id)">
+                        @CategoryLabel(root) <span>@n</span>
+                    </button>
+                }
+            </div>
+        }
+        <div class="tm-tree-tools">
+            <input class="tm-input" placeholder="Search title, tag, folder…" @bind="_search" @bind:event="oninput" />
+            <TeamMemoLanguageBar Translator="_tr" />
+            <div class="tm-chips">
+                @foreach (string f in Filters)
+                {
+                    <span class="tm-chip @(_filter == f ? "on" : "")" @onclick="() => _filter = f">@f</span>
+                }
+            </div>
+            @if (_folderForm is not null)
+            {
+                <div style="display:flex;flex-direction:column;gap:4px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px;">
+                    <span class="tm-small tm-muted">
+                        @if (_folderForm.MoveId is { } moveId) { <text>Move <b>@FolderPath(moveId)</b> into:</text> }
+                        else if (_folderForm.RenameId is not null) { <text>Rename folder</text> }
+                        else { <text>New folder in: <b>@(FolderPath(_folderForm.ParentId) is { Length: > 0 } p ? p : "(top level)")</b></text> }
+                    </span>
+                    @if (_folderForm.MoveId is { } movingId)
+                    {
+                        <select class="tm-input" value="@(_folderForm.ParentId ?? "")"
+                                @onchange="e => _folderForm.ParentId = e.Value?.ToString() is { Length: > 0 } v ? v : null">
+                            <option value="">(top level)</option>
+                            @foreach (var f in _folders.Where(f => CanDropFolder(movingId, f.Id)).OrderBy(f => f.Path, StringComparer.CurrentCultureIgnoreCase))
+                            {
+                                <option value="@f.Id">@f.Path</option>
+                            }
+                        </select>
+                    }
+                    else
+                    {
+                        <input class="tm-input" @bind="_folderForm.Name" @bind:event="oninput" @onkeydown="OnFolderKey" placeholder="Folder name" />
+                    }
+                    <div style="display:flex;gap:6px;">
+                        <button class="tm-btn tm-btn-pri" disabled="@(_folderForm.MoveId is null && string.IsNullOrWhiteSpace(_folderForm.Name))" @onclick="SaveFolder">@(_folderForm.MoveId is null ? "Save" : "Move")</button>
+                        @if (_folderForm.RenameId is null && _folderForm.MoveId is null && _folderForm.ParentId is not null)
+                        {
+                            <button class="tm-btn" @onclick="() => _folderForm.ParentId = null">Top level</button>
+                        }
+                        <button class="tm-btn" @onclick="() => _folderForm = null">Cancel</button>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="tm-tree-body">
+            @{
+                var visible = VisibleMemos();
+                var countByFolder = CountByFolder(visible);
+                bool filtering = _filter != "All" || !string.IsNullOrWhiteSpace(_search);
+            }
+            @FolderNodes(null, 0, visible, countByFolder, filtering)
+            @{
+                var unfiled = visible.Where(m => m.FolderId is null || !_folderById.ContainsKey(m.FolderId)).ToList();
+                if (_meetings) unfiled.Clear();
+            }
+            @if (unfiled.Count > 0)
+            {
+                <div class="tm-node folder" style="padding-left:10px;">
+                    <span class="tm-caret">▾</span><span class="tm-name tm-muted">Unfiled</span><span class="tm-cnt">@unfiled.Count</span>
+                </div>
+                @foreach (var m in unfiled) { @MemoNode(m, 1) }
+            }
+            @if (visible.Count == 0 && _folders.Count == 0)
+            {
+                <div class="tm-empty">No memos yet.<br />Create a folder, then a memo.</div>
+            }
+            @if (_drag is not null)
+            {
+                <div class="tm-dropzone @(_dropTarget == TopLevelTarget ? "over" : "")"
+                     ondragover="event.preventDefault();"
+                     @ondragenter="() => _dropTarget = TopLevelTarget"
+                     @ondrop="() => DropOn(null)">
+                    @(_drag.Value.Kind == 'f' ? "Drop here to move the folder to the top level" : "Drop here to make the memo Unfiled")
+                </div>
+            }
+            else if (_folders.Count > 0 && !_meetings)
+            {
+                <div class="tm-small tm-muted" style="padding:10px 16px;">Tip: drag a folder onto another folder to nest it; drag a memo onto a folder to move it.</div>
+            }
+        </div>
+    </aside>
+
+    <section class="tm-detail">
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="tm-alert">@_error <button class="tm-link" @onclick="() => _error = null">dismiss</button></div>
+        }
+        @if ((_memo is null || _edit is null) && _meetings)
+        {
+            <TeamMemoCalendarView Memos="ScopedMemos" IsPlan="InPlanScope" Translate="_tr.T" OnOpen="OpenFromCalendar" />
+        }
+        else if (_memo is null || _edit is null)
+        {
+            <div class="tm-empty" style="padding-top:120px;">
+                @(_meetings ? "Select a plan on the left, or create a new one." : "Select a memo on the left, or create a new one.")<br />
+                <span class="tm-small">Everyone signed in can see these memos, add history entries and reply under each entry.</span><br /><br />
+                @if (!_meetings) { <a class="tm-link" href="memo/board">Open the board &amp; schedule view →</a> }
+            </div>
+        }
+        else if (_meetings)
+        {
+            @* A plan is a schedule item, not a work memo: dates, repeat, who, notes and a discussion — no history. *@
+            <div class="tm-crumb">
+                <button class="tm-btn tm-btn-ghost tm-small" title="Back to the calendar" @onclick="CloseMemo">← Calendar</button>
+                <span>@(TrFolderPath(_memo.FolderId) is { Length: > 0 } pfp ? pfp : "Plan")</span>
+                <span>·</span>
+                <span>edited @TeamMemoUi.Ago(_memo.UpdatedAt) by <b>@Display(_memo.UpdatedBy)</b></span>
+                <span style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+                    @if (CanDeleteMemo)
+                    {
+                        <button class="tm-btn tm-btn-ghost tm-btn-danger" title="Delete plan" @onclick="DeleteMemo">🗑 Delete</button>
+                    }
+                </span>
+            </div>
+
+            <input class="tm-title" @bind="_edit.Title" @bind:event="oninput" placeholder="Plan title" />
+            @if (_tr.Active && _tr.T(_memo.Title) != _memo.Title)
+            {
+                <div class="tm-tr-line" title="Translated with Codex Luna — edit the original above">🌐 @_tr.T(_memo.Title)</div>
+            }
+
+            <div class="tm-meta">
+                <label>Type</label>
+                <select class="tm-input" value="@PlanTypeOf(_edit.FolderId)" @onchange="e => _edit.FolderId = e.Value?.ToString() is { Length: > 0 } v ? v : _edit.FolderId">
+                    @foreach (var t in PlanRoots) { <option value="@t.Id">@CategoryLabel(t)</option> }
+                </select>
+                <label>Owner</label>
+                <select class="tm-input" @bind="_edit.Owner">
+                    <option value="">(none)</option>
+                    @foreach (var u in OwnerChoices) { <option value="@u">@Display(u)</option> }
+                </select>
+
+                <label>Start</label>
+                <input class="tm-input" type="date" value="@TeamMemoUi.Ymd(_edit.StartDate)" @onchange="e => _edit.StartDate = ParseDate(e.Value)" />
+                <label>End</label>
+                <input class="tm-input" type="date" value="@TeamMemoUi.Ymd(_edit.DueDate)" @onchange="e => _edit.DueDate = ParseDate(e.Value)" />
+
+                <label>Repeat</label>
+                <div class="tm-span3" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                    @foreach (var (dow, name) in WeekdayChips)
+                    {
+                        bool on = TeamMemoCalendar.ParseWeekdays(_edit.RepeatWeekdays).Contains(dow);
+                        <span class="tm-chip @(on ? "on" : "")" title="Repeat every @dow" @onclick="() => ToggleWeekday(dow)">@name</span>
+                    }
+                    @if (_edit.RepeatWeekdays.Length > 0)
+                    {
+                        <span class="tm-muted tm-small" style="margin-left:6px;">until</span>
+                        <input class="tm-input" type="date" style="width:150px;" value="@TeamMemoUi.Ymd(_edit.RepeatUntil)" @onchange="e => _edit.RepeatUntil = ParseDate(e.Value)" />
+                    }
+                </div>
+
+                <label>Notes</label>
+                <textarea class="tm-input tm-span3" rows="4" @bind="_edit.Description" @bind:event="oninput" placeholder="Place, attendees, what to prepare…"></textarea>
+                @if (_tr.Active && !string.IsNullOrWhiteSpace(_memo.Description) && _tr.T(_memo.Description) != _memo.Description)
+                {
+                    <span></span>
+                    <div class="tm-span3 tm-tr-box">🌐 @_tr.T(_memo.Description)</div>
+                }
+            </div>
+            <div class="tm-savebar">
+                <button class="tm-btn tm-btn-pri" disabled="@(!IsDirty || _busy)" @onclick="SaveHeader">Save</button>
+                @if (IsDirty)
+                {
+                    <button class="tm-btn" @onclick="RevertHeader">Revert</button>
+                    <span class="tm-dirty">Unsaved changes</span>
+                }
+                @if (_staleNotice)
+                {
+                    <span class="tm-dirty">This plan was changed in WorkHub or by someone else — Revert to load that version.</span>
+                }
+                <span class="tm-muted tm-small" style="margin-left:auto;">Created by @Display(_memo.CreatedBy) · @_memo.CreatedAt.ToString("yyyy-MM-dd")</span>
+            </div>
+
+            <TeamMemoTimeline Memo="_memo" CurrentUser="@_user" IsAdmin="_isAdmin" DisplayName="Display" Translate="_tr.T" OnChanged="ReloadAfterWrite" ShowHistory="false" />
+        }
+        else
+        {
+            @* The memo's schedule stays pinned on top while scrolling through the history. *@
+            <div class="tm-sched-bar">
+                <b title="@_memo.Title">@_tr.T(_memo.Title)</b>
+                <span class="tm-pill tm-pill-kind">@TeamMemoStatus.Label(_memo.Status)</span>
+                <span>📅 @(_memo.StartDate is { } sd ? TeamMemoUi.Ymd(sd) : "—") → @(_memo.DueDate is { } dd ? TeamMemoUi.Ymd(dd) : "—")</span>
+                @if (!TeamMemoStatus.IsClosed(_memo.Status) && _memo.DueDate is { } od && od < TeamMemoUi.Today)
+                {
+                    <span class="tm-pill tm-pill-late">@(TeamMemoUi.Today.DayNumber - od.DayNumber)d over</span>
+                }
+                @if (TeamMemoCalendar.ParseWeekdays(_memo.RepeatWeekdays) is { Count: > 0 } rep)
+                {
+                    <span>🔁 @string.Join(" ", WeekdayChips.Where(c => rep.Contains(c.Dow)).Select(c => c.Name))@(_memo.RepeatUntil is { } ru ? $" until {TeamMemoUi.Ymd(ru)}" : "")</span>
+                }
+            </div>
+            <div class="tm-crumb">
+                @if (_meetings)
+                {
+                    <button class="tm-btn tm-btn-ghost tm-small" title="Back to the calendar" @onclick="CloseMemo">← Calendar</button>
+                }
+                <span title="@FolderPath(_memo.FolderId)">@(TrFolderPath(_memo.FolderId) is { Length: > 0 } fp ? fp : "Unfiled")</span>
+                <span>·</span>
+                <span>rev @_memo.Revision · edited @TeamMemoUi.Ago(_memo.UpdatedAt) by <b>@Display(_memo.UpdatedBy)</b></span>
+                <span class="tm-pill tm-pill-kind" title="Stored in the WorkHub memo DB — the same memo opens in WorkHub, and saves from either side show up in both.">🔗 WorkHub DB</span>
+                <span style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+                    @{ var participants = _memos.FirstOrDefault(m => m.Id == _memo.Id)?.Participants ?? new(); }
+                    <span class="tm-avs">
+                        @foreach (string p in participants.Take(6)) { <TeamMemoAvatar Name="@p" Size="24" /> }
+                    </span>
+                    <span class="tm-small">@participants.Count participant@(participants.Count == 1 ? "" : "s")</span>
+                    <button class="tm-btn tm-btn-ghost" title="@(_memo.IsPinned ? "Unpin" : "Pin to top")" @onclick="TogglePin">@(_memo.IsPinned ? "📌 Pinned" : "📌")</button>
+                    <a class="tm-btn tm-btn-ghost" href="memo/board?id=@_memo.Id" title="Show on board">▦ Board</a>
+                    @if (CanDeleteMemo)
+                    {
+                        <button class="tm-btn tm-btn-ghost tm-btn-danger" title="Delete memo" @onclick="DeleteMemo">🗑</button>
+                    }
+                </span>
+            </div>
+
+            <input class="tm-title" @bind="_edit.Title" @bind:event="oninput" placeholder="Title" />
+            @if (_tr.Active && _tr.T(_memo.Title) != _memo.Title)
+            {
+                <div class="tm-tr-line" title="Translated with Codex Luna — edit the original above">🌐 @_tr.T(_memo.Title)</div>
+            }
+
+            <div class="tm-meta">
+                <label>Type</label>
+                <select class="tm-input" @bind="_edit.Kind">
+                    @foreach (string k in TeamMemoKind.All) { <option value="@k">@k</option> }
+                </select>
+                <label>Status</label>
+                <select class="tm-input" value="@_memo.Status" @onchange="ChangeStatus">
+                    @foreach (string s in TeamMemoStatus.All) { <option value="@s">@TeamMemoStatus.Label(s)</option> }
+                </select>
+
+                <label>Folder</label>
+                <select class="tm-input" value="@(_edit.FolderId ?? "")" @onchange="e => _edit.FolderId = e.Value?.ToString() is { Length: > 0 } v ? v : null">
+                    <option value="">(Unfiled)</option>
+                    @foreach (var f in _folders.OrderBy(f => f.Path, StringComparer.CurrentCultureIgnoreCase)) { <option value="@f.Id">@TrFolderPath(f.Id)</option> }
+                </select>
+                <label>Owner</label>
+                <select class="tm-input" @bind="_edit.Owner">
+                    <option value="">(none)</option>
+                    @foreach (var u in OwnerChoices) { <option value="@u">@Display(u)</option> }
+                </select>
+
+                <label>Start</label>
+                <input class="tm-input" type="date" value="@TeamMemoUi.Ymd(_edit.StartDate)" @onchange="e => _edit.StartDate = ParseDate(e.Value)" />
+                <label>Due</label>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <input class="tm-input" type="date" value="@TeamMemoUi.Ymd(_edit.DueDate)" @onchange="e => _edit.DueDate = ParseDate(e.Value)" />
+                    @if (!TeamMemoStatus.IsClosed(_memo.Status) && _memo.DueDate is { } due && due < TeamMemoUi.Today)
+                    {
+                        <span class="tm-pill tm-pill-late">@(TeamMemoUi.Today.DayNumber - due.DayNumber)d over</span>
+                    }
+                </div>
+
+                <label>Repeat</label>
+                <div class="tm-span3" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                    @foreach (var (dow, name) in WeekdayChips)
+                    {
+                        bool on = TeamMemoCalendar.ParseWeekdays(_edit.RepeatWeekdays).Contains(dow);
+                        <span class="tm-chip @(on ? "on" : "")" title="Repeat every @dow" @onclick="() => ToggleWeekday(dow)">@name</span>
+                    }
+                    @if (_edit.RepeatWeekdays.Length > 0)
+                    {
+                        <span class="tm-muted tm-small" style="margin-left:6px;">until</span>
+                        <input class="tm-input" type="date" style="width:150px;" value="@TeamMemoUi.Ymd(_edit.RepeatUntil)" @onchange="e => _edit.RepeatUntil = ParseDate(e.Value)" />
+                        <span class="tm-muted tm-small">weekly from the Start date; shown on the Plan calendar and in WorkHub's schedule</span>
+                    }
+                </div>
+
+                <label>Tags</label>
+                <input class="tm-input tm-span3" @bind="_edit.Tags" @bind:event="oninput" placeholder="Comma separated, e.g. TIU-C11-20, AI" />
+                @if (_tr.Active && TrTags(_memo.Tags) is { } trTags && trTags != string.Join(", ", SplitTags(_memo.Tags)))
+                {
+                    <span></span>
+                    <div class="tm-span3 tm-tr-box">🌐 @trTags</div>
+                }
+
+                <label>Summary</label>
+                <textarea class="tm-input tm-span3" rows="2" @bind="_edit.Description" @bind:event="oninput" placeholder="Purpose, background, current conclusion…"></textarea>
+                @if (_tr.Active && !string.IsNullOrWhiteSpace(_memo.Description) && _tr.T(_memo.Description) != _memo.Description)
+                {
+                    <span></span>
+                    <div class="tm-span3 tm-tr-box">🌐 @_tr.T(_memo.Description)</div>
+                }
+            </div>
+            <div class="tm-savebar">
+                <button class="tm-btn tm-btn-pri" disabled="@(!IsDirty || _busy)" @onclick="SaveHeader">Save</button>
+                @if (IsDirty)
+                {
+                    <button class="tm-btn" @onclick="RevertHeader">Revert</button>
+                    <span class="tm-dirty">Unsaved changes</span>
+                }
+                @if (_staleNotice)
+                {
+                    <span class="tm-dirty">This memo was changed in WorkHub or by someone else — Revert to load that version.</span>
+                }
+                <span class="tm-muted tm-small" style="margin-left:auto;">Created by @Display(_memo.CreatedBy) · @_memo.CreatedAt.ToString("yyyy-MM-dd")</span>
+            </div>
+
+            <TeamMemoAiSummaryPanel Memo="_memo" CurrentUser="@_user" DisplayName="Display" Translate="_tr.T" OnChanged="ReloadAfterWrite" />
+            <TeamMemoTimeline Memo="_memo" CurrentUser="@_user" IsAdmin="_isAdmin" DisplayName="Display" Translate="_tr.T" OnChanged="ReloadAfterWrite" />
+        }
+    </section>
+</div>
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "id")] public string? QueryId { get; set; }
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
+
+    private static readonly string[] Filters = ["All", "Mine", "Active", "Overdue"];
+
+    private bool _loaded, _authorized, _isAdmin, _busy, _staleNotice;
+    private string _user = "";
+    private string? _error;
+    private string _search = "";
+    private string _filter = "All";
+
+    private List<TeamMemoFolder> _folders = new();
+    private Dictionary<string, TeamMemoFolder> _folderById = new(StringComparer.Ordinal);
+    private List<TeamMemoSummary> _memos = new();
+    private Dictionary<string, string> _displayNames = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _collapsedFolders = new(StringComparer.Ordinal);
+    private string? _selFolderId;
+
+    private TeamMemo? _memo;
+    private TeamMemo? _edit;
+    private TeamMemoTranslator _tr = default!;
+    private bool _trDirty = true;
+    private FolderForm? _folderForm;
+
+    private sealed class FolderForm
+    {
+        public string? ParentId { get; set; }
+        public string? RenameId { get; set; }
+        public string? MoveId { get; set; }
+        public string Name { get; set; } = "";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthenticationState auth = await AuthState;
+        _user = auth.User.Identity?.Name ?? "";
+        _isAdmin = string.Equals(auth.User.FindFirst(ClaimTypes.Role)?.Value, AppRoles.Admin, StringComparison.OrdinalIgnoreCase);
+        _authorized = Permissions.IsAllowed(auth.User, AppMenus.TeamMemo);
+        _loaded = true;
+        _tr = new TeamMemoTranslator(Translations, () => InvokeAsync(StateHasChanged));
+        if (!_authorized) return;
+
+        foreach (UserRecord u in Repo.GetAllUsers())
+            _displayNames[u.Username] = string.IsNullOrWhiteSpace(u.DisplayName) ? u.Username : u.DisplayName;
+
+        LoadList();
+        if (QueryId is { Length: > 0 } id) OpenMemo(id);
+        Memos.Changed += OnMemosChanged;
+        LangState.Changed += OnLangChanged;
+        TeamMemoTranslationService.Translated += OnLangChanged;
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    // /memo and /memo/plan are the same component: Blazor reuses it and skips OnParametersSet when no
+    // parameter changed, so the mode is also re-read on every navigation.
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) =>
+        _ = InvokeAsync(() => { if (SyncMode()) StateHasChanged(); });
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+        Memos.Changed -= OnMemosChanged;
+        LangState.Changed -= OnLangChanged;
+        TeamMemoTranslationService.Translated -= OnLangChanged;
+    }
+
+    private void OnLangChanged() => _ = InvokeAsync(() => { _trDirty = true; StateHasChanged(); });
+
+    // Translations follow whatever was rendered: any data change marks them dirty and the next render
+    // refreshes them once (cached ones at once, missing ones fetched in the background).
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!_trDirty || !_authorized || _tr is null) return;
+        _trDirty = false;
+        bool wasActive = _tr.Active;
+        _tr.Refresh(LangState.Lang, TranslatableTexts());
+        if (_tr.Active || wasActive) StateHasChanged();
+    }
+
+    private IEnumerable<string?> TranslatableTexts()
+    {
+        foreach (var f in _folders) yield return f.Name;
+        foreach (var m in _memos) yield return m.Title;
+        if (_memo is null) yield break;
+        yield return _memo.Title;
+        yield return _memo.Description;
+        yield return _memo.AiSummary;
+        foreach (string tag in SplitTags(_memo.Tags)) yield return tag;
+        foreach (var c in _memo.Comments) yield return c.Body;
+        foreach (var e in _memo.Entries)
+        {
+            yield return e.Title;
+            yield return e.Body;
+            yield return e.AiSummary;
+            foreach (var c in e.Comments) yield return c.Body;
+        }
+    }
+
+    private void OnMemosChanged(string? memoId)
+    {
+        _ = InvokeAsync(() =>
+        {
+            LoadList();
+            if (_memo is not null && (memoId is null || memoId == _memo.Id))
+            {
+                TeamMemo? fresh = Memos.GetMemo(_memo.Id);
+                if (fresh is null) { _memo = null; _edit = null; }
+                else if (IsDirty) { _staleNotice = fresh.Revision != _memo.Revision && HeaderDiffers(fresh, _memo); _memo = WithHeader(fresh, _memo); }
+                else { _memo = fresh; _edit = Clone(fresh); }
+            }
+            StateHasChanged();
+        });
+    }
+
+    private string Display(string user) =>
+        string.IsNullOrWhiteSpace(user) ? "" : _displayNames.TryGetValue(user, out var d) ? d : user;
+
+    private IEnumerable<string> OwnerChoices =>
+        _displayNames.Keys.Append(_edit?.Owner ?? "").Where(s => !string.IsNullOrWhiteSpace(s))
+            .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(s => Display(s), StringComparer.CurrentCultureIgnoreCase);
+
+    private bool CanDeleteMemo => _memo is not null &&
+        (_isAdmin || string.Equals(_memo.CreatedBy, _user, StringComparison.OrdinalIgnoreCase)
+                  || string.Equals(_memo.Owner, _user, StringComparison.OrdinalIgnoreCase));
+
+    private void LoadList()
+    {
+        _trDirty = true;
+        _folders = Memos.GetFolders();
+        _folderById = _folders.ToDictionary(f => f.Id, StringComparer.Ordinal);
+        _meetingFolders = TeamMemoService.MeetingFolderIds(_folders);
+        _planFolders = TeamMemoService.PlanFolderIds(_folders);
+        if (_planCat is not null && !_planFolders.Contains(_planCat)) _planCat = null;
+        try
+        {
+            _catLabels = Translations.Cached(_folders.Where(f => _planFolders.Contains(f.Id)).Select(f => f.Name).Distinct(),TeamMemoLanguage.English);
+        }
+        catch { _catLabels = new(StringComparer.Ordinal); }
+        _memos = Memos.ListMemos();
+    }
+
+    // ── Work Memo vs Plan ──────────────────────────────────────────────────
+    // /memo/plan (old link /memo/meetings) shows only Plan folders; /memo shows the rest.
+
+    private bool _meetings;
+    private HashSet<string> _meetingFolders = new(StringComparer.Ordinal);
+
+    private string BasePath => _meetings ? "memo/plan" : "memo";
+
+    // Plan owns the Plan folders (web-only flag, see TeamMemoService.SetFolderPlan) and shows nothing else;
+    // Work Memo shows everything except Plan and meeting folders. Meetings (WorkHub hidden) are in neither.
+    private HashSet<string> _planFolders = new(StringComparer.Ordinal);
+
+    private bool InScope(TeamMemoFolder f) =>
+        !_meetingFolders.Contains(f.Id) && (_meetings
+            ? _planFolders.Contains(f.Id) && (_planCat is null || RootOf(f.Id) == _planCat)
+            : !_planFolders.Contains(f.Id));
+
+    private bool InScope(TeamMemoSummary m) =>
+        m.FolderId is not null && _folderById.TryGetValue(m.FolderId, out var f) ? InScope(f) : !_meetings;
+
+    private string? _planCat;
+    private Dictionary<string, string> _catLabels = new(StringComparer.Ordinal);
+
+    /// <summary>Top Plan folder above <paramref name="folderId"/> — the 구분 tab it belongs to.</summary>
+    private string? RootOf(string folderId)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        string? cur = folderId;
+        while (cur is not null && _folderById.TryGetValue(cur, out var f) && seen.Add(cur))
+        {
+            if (f.ParentId is null || !_planFolders.Contains(f.ParentId)) return cur;
+            cur = f.ParentId;
+        }
+        return cur;
+    }
+
+    private IEnumerable<TeamMemoFolder> PlanRoots =>
+        _folders.Where(f => _planFolders.Contains(f.Id) && !_meetingFolders.Contains(f.Id) && RootOf(f.Id) == f.Id);
+
+    // A plan's Type is the top-level Plan group it sits in.
+    private static readonly string[] PlanTypes = ["Personal", "Work", "New Product", "Other"];
+    private const string PlanTypesSeededKey = "TeamMemo:PlanTypesSeeded";
+
+    /// <summary>
+    /// Once: makes the Plan types top-level Plan groups (the first "Plan" group becomes "Other").
+    /// Later the user may rename or delete them freely.
+    /// </summary>
+    private void EnsurePlanFolder()
+    {
+        if (!_meetings || _planFolderTried) return;
+        _planFolderTried = true;
+        if (Repo.GetSetting(PlanTypesSeededKey) == "1" && _planFolders.Count > 0) return;
+        try
+        {
+            TeamMemoFolder? TopLevel(string name) =>
+                _folders.FirstOrDefault(f => f.ParentId is null && string.Equals(f.Name, name, StringComparison.OrdinalIgnoreCase));
+
+            if (TopLevel("Plan") is { IsPlan: true } old && TopLevel("Other") is null)
+                Memos.RenameFolder(old.Id, "Other");
+            _folders = Memos.GetFolders();
+            foreach (string type in PlanTypes)
+                Memos.SetFolderPlan(TopLevel(type)?.Id ?? Memos.AddFolder(null, type, _user), true);
+            Repo.SetSetting(PlanTypesSeededKey, "1");
+            LoadList();
+        }
+        catch (Exception ex) { _error = ex.Message; }
+    }
+    private bool _planFolderTried;
+
+    /// <summary>Type (top-level Plan group) of the plan being edited.</summary>
+    private string PlanTypeOf(string? folderId) => folderId is not null ? RootOf(folderId) ?? "" : "";
+
+    /// <summary>English name of a 구분 (회의 → Meeting) from the translation cache, else the name itself.</summary>
+    private string CategoryLabel(TeamMemoFolder root) =>
+        _catLabels.TryGetValue(root.Name, out var en) && en.Length > 0 ? en : root.Name;
+
+    private void SelectCategory(string? cat)
+    {
+        if (_planCat == cat) return;
+        _planCat = cat;
+        _selFolderId = null;
+        if (_memo is not null && !IsDirty && !InScope(_memos.FirstOrDefault(x => x.Id == _memo.Id) ?? new TeamMemoSummary()))
+        {
+            _memo = null;
+            _edit = null;
+        }
+        _trDirty = true;
+    }
+
+    /// <summary>Plan opens on All.</summary>
+    private void DefaultCategory() => _planCat = null;
+
+    private IEnumerable<TeamMemoSummary> ScopedMemos => _memos.Where(InScope);
+
+    /// <summary>Parent in the shown tree; a folder whose parent is out of scope is shown at the top.</summary>
+    private string? EffectiveParent(TeamMemoFolder f) =>
+        f.ParentId is { } p && _folderById.TryGetValue(p, out var parent) && InScope(parent) ? p : null;
+
+    protected override void OnParametersSet() => SyncMode();
+
+    /// <summary>Work Memo vs Plan from the URL; true when the mode changed.</summary>
+    private bool SyncMode()
+    {
+        string path = Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0].TrimEnd('/');
+        if (!path.StartsWith("memo", StringComparison.OrdinalIgnoreCase) || path.StartsWith("memo/board", StringComparison.OrdinalIgnoreCase))
+            return false;   // leaving the page
+        bool meetings = path.Equals("memo/plan", StringComparison.OrdinalIgnoreCase)
+                        || path.Equals("memo/meetings", StringComparison.OrdinalIgnoreCase);
+        bool changed = meetings != _meetings;
+        if (changed)
+        {
+            _meetings = meetings;
+            if (_meetings) DefaultCategory();
+            _selFolderId = null;
+            _folderForm = null;
+            string? qid = System.Web.HttpUtility.ParseQueryString(new Uri(Nav.Uri).Query)["id"];
+            if (_memo is not null && !IsDirty && qid != _memo.Id) { _memo = null; _edit = null; }
+            _trDirty = true;
+        }
+        EnsurePlanFolder();
+        return changed;
+    }
+
+    // Calendar "Plan" colour = weekly repeating memos; everything else is a work schedule / due date.
+    private bool InPlanScope(TeamMemoSummary m) => !string.IsNullOrWhiteSpace(m.RepeatWeekdays);
+
+    private void OpenFromCalendar(string memoId)
+    {
+        var m = _memos.FirstOrDefault(x => x.Id == memoId);
+        if (m is not null && InScope(m)) OpenMemo(memoId);
+        else Nav.NavigateTo($"memo?id={memoId}");
+    }
+
+    private void CloseMemo()
+    {
+        if (IsDirty) { _error = "Save or revert the memo header first."; return; }
+        _memo = null;
+        _edit = null;
+        Nav.NavigateTo(BasePath, replace: true);
+    }
+
+    private static readonly (DayOfWeek Dow, string Name)[] WeekdayChips =
+    [
+        (DayOfWeek.Monday, "Mon"), (DayOfWeek.Tuesday, "Tue"), (DayOfWeek.Wednesday, "Wed"), (DayOfWeek.Thursday, "Thu"),
+        (DayOfWeek.Friday, "Fri"), (DayOfWeek.Saturday, "Sat"), (DayOfWeek.Sunday, "Sun"),
+    ];
+
+    private void ToggleWeekday(DayOfWeek dow)
+    {
+        if (_edit is null) return;
+        var days = TeamMemoCalendar.ParseWeekdays(_edit.RepeatWeekdays);
+        if (!days.Remove(dow)) days.Add(dow);
+        _edit.RepeatWeekdays = string.Join(",", days.OrderBy(d => (int)d).Select(d => ((int)d).ToString()));
+        if (days.Count == 0) _edit.RepeatUntil = null;
+    }
+
+    private void SetPlan(TeamMemoFolder f, bool plan)
+    {
+        try
+        {
+            Memos.SetFolderPlan(f.Id, plan);
+            if (_memo is not null && _planFolders.Contains(f.Id) != plan) { _memo = null; _edit = null; }
+            LoadList();
+        }
+        catch (Exception ex) { _error = ex.Message; }
+    }
+
+    private string FolderPath(string? id) => id is not null && _folderById.TryGetValue(id, out var f) ? f.Path : "";
+
+    // Folder path with each segment shown in the selected language (folder names are in TranslatableTexts).
+    private string TrFolderPath(string? id) =>
+        _tr.Active ? string.Join("/", FolderPath(id).Split('/').Select(seg => _tr.T(seg))) : FolderPath(id);
+
+    private static IEnumerable<string> SplitTags(string? tags) =>
+        (tags ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private string TrTags(string? tags) => string.Join(", ", SplitTags(tags).Select(t => _tr.T(t)));
+
+    // ── Tree ───────────────────────────────────────────────────────────────────
+
+    private List<TeamMemoSummary> VisibleMemos()
+    {
+        IEnumerable<TeamMemoSummary> q = ScopedMemos;
+        DateOnly today = TeamMemoUi.Today;
+        q = _filter switch
+        {
+            "Mine"    => q.Where(m => string.Equals(m.Owner, _user, StringComparison.OrdinalIgnoreCase)
+                                   || m.Participants.Contains(_user, StringComparer.OrdinalIgnoreCase)),
+            "Active"  => q.Where(m => !TeamMemoStatus.IsClosed(m.Status)),
+            "Overdue" => q.Where(m => m.IsOverdue(today)),
+            _         => q,
+        };
+        string s = _search.Trim();
+        if (s.Length > 0)
+            q = q.Where(m => m.Title.Contains(s, StringComparison.CurrentCultureIgnoreCase)
+                          || m.Tags.Contains(s, StringComparison.CurrentCultureIgnoreCase)
+                          || FolderPath(m.FolderId).Contains(s, StringComparison.CurrentCultureIgnoreCase)
+                          || Display(m.Owner).Contains(s, StringComparison.CurrentCultureIgnoreCase));
+        return q.ToList();
+    }
+
+    /// <summary>Visible memo count per folder, including every sub-folder.</summary>
+    private Dictionary<string, int> CountByFolder(List<TeamMemoSummary> visible)
+    {
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var m in visible)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            for (string? id = m.FolderId; id is not null && _folderById.TryGetValue(id, out var f) && seen.Add(id); id = f.ParentId)
+                counts[id] = counts.GetValueOrDefault(id) + 1;
+        }
+        return counts;
+    }
+
+    private RenderFragment FolderNodes(string? parentId, int depth, List<TeamMemoSummary> visible, Dictionary<string, int> counts, bool filtering) => __builder =>
+    {
+        foreach (TeamMemoFolder f in _folders.Where(f => InScope(f) && EffectiveParent(f) == parentId))
+        {
+            int count = counts.GetValueOrDefault(f.Id);
+            if (filtering && count == 0) continue;
+            bool open = filtering || !_collapsedFolders.Contains(f.Id);
+            bool dropOk = _dropTarget == f.Id && IsValidDrop(f.Id);
+            <div class="tm-node folder @(_selFolderId == f.Id && _memo is null ? "sel" : "") @(dropOk ? "drop" : "")"
+                 style="padding-left:@(10 + depth * 14)px;" @key="('f', f.Id)"
+                 draggable="true"
+                 @ondragstart="() => StartDrag('f', f.Id)" @ondragend="EndDrag"
+                 ondragover="event.preventDefault();"
+                 @ondragenter="() => _dropTarget = f.Id"
+                 @ondrop="() => DropOn(f.Id)" @ondrop:stopPropagation="true"
+                 @onclick="() => SelectFolder(f.Id)">
+                <span class="tm-caret" @onclick="() => ToggleFolder(f.Id)" @onclick:stopPropagation="true">@(open ? "▾" : "▸")</span>
+                <span class="tm-name" title="@f.Name">@_tr.T(f.Name)</span>
+                <span class="tm-folder-acts @(_selFolderId == f.Id ? "on" : "")">
+                    @if (_meetings)
+                    {
+                        @* Plan groups are plan types: ＋ adds a plan of this type; no sub-folders, moves or deletes here. *@
+                        <button class="tm-btn tm-btn-ghost tm-small" title="New plan in '@f.Name'" @onclick="() => CreatePlanIn(f.Id)" @onclick:stopPropagation="true">＋</button>
+                        <button class="tm-btn tm-btn-ghost tm-small" title="Rename" @onclick="() => StartRename(f)" @onclick:stopPropagation="true">✎</button>
+                    }
+                    else
+                    {
+                        <button class="tm-btn tm-btn-ghost tm-small" title="New sub-folder inside '@f.Name'" @onclick="() => StartNewFolder(f.Id)" @onclick:stopPropagation="true">＋</button>
+                        <button class="tm-btn tm-btn-ghost tm-small" title="Move into another folder" @onclick="() => StartMove(f)" @onclick:stopPropagation="true">⇄</button>
+                        <button class="tm-btn tm-btn-ghost tm-small" title="Rename" @onclick="() => StartRename(f)" @onclick:stopPropagation="true">✎</button>
+                    }
+                    @if (!_meetings)
+                    {
+                        <button class="tm-btn tm-btn-ghost tm-small" title="Move this folder to Plan" @onclick="() => SetPlan(f, true)" @onclick:stopPropagation="true">🗓</button>
+                        <button class="tm-btn tm-btn-ghost tm-small tm-btn-danger" title="Delete folder (its memos and sub-folders move up one level)" @onclick="() => DeleteFolder(f)" @onclick:stopPropagation="true">✕</button>
+                    }
+                </span>
+                <span class="tm-cnt">@count</span>
+            </div>
+            if (open)
+            {
+                @FolderNodes(f.Id, depth + 1, visible, counts, filtering)
+                foreach (var m in visible.Where(m => m.FolderId == f.Id))
+                {
+                    @MemoNode(m, depth + 1)
+                }
+            }
+        }
+    };
+
+    private RenderFragment MemoNode(TeamMemoSummary m, int depth) => __builder =>
+    {
+        DateOnly today = TeamMemoUi.Today;
+        string dot = m.Status switch
+        {
+            TeamMemoStatus.Done or TeamMemoStatus.Canceled => "done",
+            TeamMemoStatus.Hold => "hold",
+            _ when m.IsOverdue(today) => "late",
+            TeamMemoStatus.InProgress => "prog",
+            _ => "",
+        };
+        <div class="tm-node @(_memo?.Id == m.Id ? "sel" : "")" style="padding-left:@(14 + depth * 14)px;" @key="('m', m.Id)"
+             draggable="true" @ondragstart="() => StartDrag('m', m.Id)" @ondragend="EndDrag"
+             title="@m.Title" @onclick="() => OpenMemo(m.Id)">
+            <span class="tm-dot @dot"></span>
+            <span class="tm-name">@_tr.T(m.Title)</span>
+            @if (m.IsPinned) { <span class="tm-pin">📌</span> }
+            <span class="tm-cnt">@(m.CommentCount > 0 ? $"💬{m.CommentCount} · " : "")@TeamMemoUi.Md(m.DueDate ?? DateOnly.FromDateTime(m.UpdatedAt))</span>
+        </div>
+    };
+
+    private void ToggleFolder(string id)
+    {
+        if (!_collapsedFolders.Remove(id)) _collapsedFolders.Add(id);
+    }
+
+    private void SelectFolder(string id)
+    {
+        _selFolderId = id;
+        if (_memo is not null && !IsDirty) { _memo = null; _edit = null; }
+    }
+
+    // ── Folders ────────────────────────────────────────────────────────────────
+
+    private void StartNewFolder() => StartNewFolder(_selFolderId);
+
+    private void StartNewFolder(string? parentId) => _folderForm = new FolderForm { ParentId = parentId };
+
+    private void StartRename(TeamMemoFolder f) => _folderForm = new FolderForm { RenameId = f.Id, Name = f.Name };
+
+    private void StartMove(TeamMemoFolder f) => _folderForm = new FolderForm { MoveId = f.Id, ParentId = f.ParentId };
+
+    // ── Drag & drop in the tree ────────────────────────────────────────────────
+
+    private const string TopLevelTarget = "\u0001top";
+    private (char Kind, string Id)? _drag;
+    private string? _dropTarget;
+
+    private void StartDrag(char kind, string id)
+    {
+        _drag = (kind, id);
+        _dropTarget = null;
+    }
+
+    private void EndDrag()
+    {
+        _drag = null;
+        _dropTarget = null;
+    }
+
+    /// <summary>True when <paramref name="target"/> is neither the folder itself nor one of its sub-folders.</summary>
+    private bool CanDropFolder(string folderId, string target)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        for (string? cur = target; cur is not null && seen.Add(cur); cur = _folderById.TryGetValue(cur, out var f) ? f.ParentId : null)
+            if (cur == folderId) return false;
+        return true;
+    }
+
+    private bool IsValidDrop(string target) => _drag switch
+    {
+        ('f', string id) => CanDropFolder(id, target),
+        ('m', _) => true,
+        _ => false,
+    };
+
+    private void DropOn(string? folderId)
+    {
+        var drag = _drag;
+        EndDrag();
+        if (drag is not { } d) return;
+        try
+        {
+            if (d.Kind == 'f')
+            {
+                if (folderId is not null && !CanDropFolder(d.Id, folderId)) return;
+                Memos.MoveFolder(d.Id, folderId);
+                _selFolderId = d.Id;
+            }
+            else
+            {
+                Memos.MoveMemo(d.Id, folderId, _user);
+                if (_memo?.Id == d.Id)
+                {
+                    // Keep any unsaved header edits; only the folder changed underneath them.
+                    _memo.FolderId = folderId;
+                    if (_edit is not null) _edit.FolderId = folderId;
+                }
+            }
+            if (folderId is not null) _collapsedFolders.Remove(folderId);
+            LoadList();
+        }
+        catch (Exception ex) { _error = ex.Message; }
+    }
+
+    private void OnFolderKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") SaveFolder();
+        else if (e.Key == "Escape") _folderForm = null;
+    }
+
+    private void SaveFolder()
+    {
+        if (_folderForm is null || (_folderForm.MoveId is null && string.IsNullOrWhiteSpace(_folderForm.Name))) return;
+        try
+        {
+            if (_folderForm.MoveId is { } mid)
+            {
+                Memos.MoveFolder(mid, _folderForm.ParentId);
+                if (_folderForm.ParentId is not null) _collapsedFolders.Remove(_folderForm.ParentId);
+            }
+            else if (_folderForm.RenameId is { } rid) Memos.RenameFolder(rid, _folderForm.Name);
+            else
+            {
+                _selFolderId = Memos.AddFolder(_folderForm.ParentId, _folderForm.Name, _user);
+                // A top-level folder made under Plan is a Plan folder (sub-folders inherit it).
+                if (_meetings && _folderForm.ParentId is null) Memos.SetFolderPlan(_selFolderId, true);
+                if (_folderForm.ParentId is not null) _collapsedFolders.Remove(_folderForm.ParentId);
+            }
+            _folderForm = null;
+            LoadList();
+        }
+        catch (Exception ex) { _error = ex.Message; }
+    }
+
+    private async Task DeleteFolder(TeamMemoFolder f)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", $"Delete folder '{f.Name}'? Its memos and sub-folders move up one level (same as WorkHub).")) return;
+        try
+        {
+            Memos.DeleteFolder(f.Id);
+            _selFolderId = f.ParentId;
+            LoadList();
+        }
+        catch (Exception ex) { _error = ex.Message; }
+    }
+
+    // ── Memo ───────────────────────────────────────────────────────────────────
+
+    private void OpenMemo(string id)
+    {
+        _trDirty = true;
+        TeamMemo? memo = Memos.GetMemo(id);
+        if (memo is null) { _error = "That memo no longer exists."; return; }
+        _memo = memo;
+        _edit = Clone(memo);
+        _selFolderId = memo.FolderId;
+        _staleNotice = false;
+        // Keep the URL shareable; skipped on the first load, where it already matches (and
+        // prerendering cannot navigate).
+        if (QueryId != id) Nav.NavigateTo($"{BasePath}?id={id}", replace: true);
+    }
+
+    private void CreatePlanIn(string folderId)
+    {
+        _selFolderId = folderId;
+        if (_memo is not null && !IsDirty) { _memo = null; _edit = null; }
+        CreateMemo();
+    }
+
+    private void CreateMemo()
+    {
+        string? folder = _selFolderId ?? _memo?.FolderId;
+        if (_meetings && (folder is null || !_planFolders.Contains(folder)))
+            folder = _planCat ?? PlanRoots.FirstOrDefault()?.Id;   // a plan always lives in a Plan folder
+        if (_meetings && folder is null) { _error = "Create a Plan folder first."; return; }
+        string id;
+        try { id = Memos.CreateMemo(folder, _meetings ? "New plan" : "New memo", TeamMemoKind.Task, _user); }
+        catch (Exception ex) { _error = ex.Message; return; }
+        if (folder is not null) _collapsedFolders.Remove(folder);
+        LoadList();
+        OpenMemo(id);
+    }
+
+    private async Task ReloadAfterWrite()
+    {
+        _trDirty = true;
+        LoadList();
+        if (_memo is null) return;
+        TeamMemo? fresh = Memos.GetMemo(_memo.Id);
+        if (fresh is null) { _memo = null; _edit = null; return; }
+        _memo = IsDirty ? WithHeader(fresh, _memo) : fresh;
+        if (!IsDirty) _edit = Clone(fresh);
+        await Task.CompletedTask;
+    }
+
+    private bool IsDirty => _memo is not null && _edit is not null && HeaderDiffers(_memo, _edit);
+
+    private static bool HeaderDiffers(TeamMemo a, TeamMemo b) =>
+        a.Title != b.Title || a.Kind != b.Kind || a.FolderId != b.FolderId || a.Owner != b.Owner || a.Tags != b.Tags
+        || a.StartDate != b.StartDate || a.DueDate != b.DueDate || a.Description != b.Description
+        || a.RepeatWeekdays != b.RepeatWeekdays || a.RepeatUntil != b.RepeatUntil;
+
+    /// <summary>Fresh entries/comments with the header still as last loaded, so a pending edit stays comparable.</summary>
+    private static TeamMemo WithHeader(TeamMemo fresh, TeamMemo header)
+    {
+        TeamMemo m = Clone(header);
+        m.Status = fresh.Status;
+        m.IsPinned = fresh.IsPinned;
+        m.Revision = fresh.Revision;
+        m.UpdatedAt = fresh.UpdatedAt;
+        m.UpdatedBy = fresh.UpdatedBy;
+        m.Entries = fresh.Entries;
+        m.Comments = fresh.Comments;
+        m.Attachments = fresh.Attachments;
+        m.AiSummary = fresh.AiSummary;
+        m.AiSummaryAt = fresh.AiSummaryAt;
+        m.AiSummaryBy = fresh.AiSummaryBy;
+        m.AiSummaryModel = fresh.AiSummaryModel;
+        m.AiSummaryRevision = fresh.AiSummaryRevision;
+        return m;
+    }
+
+    private static TeamMemo Clone(TeamMemo m) => new()
+    {
+        Id = m.Id, FolderId = m.FolderId, Title = m.Title, Kind = m.Kind, Status = m.Status, Owner = m.Owner, Tags = m.Tags,
+        StartDate = m.StartDate, DueDate = m.DueDate, Description = m.Description, IsPinned = m.IsPinned,
+        RepeatWeekdays = m.RepeatWeekdays, RepeatUntil = m.RepeatUntil,
+        CreatedBy = m.CreatedBy, CreatedAt = m.CreatedAt, UpdatedBy = m.UpdatedBy, UpdatedAt = m.UpdatedAt, Revision = m.Revision,
+        AiSummary = m.AiSummary, AiSummaryAt = m.AiSummaryAt, AiSummaryBy = m.AiSummaryBy, AiSummaryModel = m.AiSummaryModel,
+        AiSummaryRevision = m.AiSummaryRevision,
+        Entries = m.Entries, Comments = m.Comments, Attachments = m.Attachments,
+    };
+
+    private static DateOnly? ParseDate(object? v) => DateOnly.TryParse(v?.ToString(), out var d) ? d : null;
+
+    private void SaveHeader()
+    {
+        if (_memo is null || _edit is null) return;
+        _busy = true;
+        try
+        {
+            // Status, pin, entries and comments bump the revision too; only a change to the header fields
+            // themselves (in WorkHub or by someone else) since this edit began counts as a conflict.
+            TeamMemo? fresh = Memos.GetMemo(_memo.Id);
+            if (fresh is null) { _error = "That memo no longer exists."; return; }
+            if (HeaderDiffers(fresh, _memo))
+            {
+                _staleNotice = true;
+                _error = "The memo header was changed in WorkHub or by someone else while you were editing. Revert to load it, then re-apply your change.";
+                return;
+            }
+            _edit.Status = fresh.Status;
+            _edit.IsPinned = fresh.IsPinned;
+            _edit.Revision = fresh.Revision;
+            Memos.UpdateMemo(_edit, _user);
+            _staleNotice = false;
+            LoadList();
+            _memo = Memos.GetMemo(_memo.Id);
+            _edit = _memo is null ? null : Clone(_memo);
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
+    }
+
+    private void RevertHeader()
+    {
+        if (_memo is null) return;
+        _memo = Memos.GetMemo(_memo.Id);
+        _edit = _memo is null ? null : Clone(_memo);
+        _staleNotice = false;
+    }
+
+    private void ChangeStatus(ChangeEventArgs e)
+    {
+        if (_memo is null || e.Value?.ToString() is not { } s) return;
+        try
+        {
+            Memos.SetMemoStatus(_memo.Id, s, _user);
+            _memo.Status = s;
+            if (_edit is not null) _edit.Status = s;
+            LoadList();
+        }
+        catch (Exception ex) { _error = ex.Message; }
+    }
+
+    private void TogglePin()
+    {
+        if (_memo is null || _edit is null) return;
+        // Pin is saved on its own so it never drags unsaved header edits along with it.
+        try
+        {
+            Memos.SetPinned(_memo.Id, !_memo.IsPinned, _user);
+            _memo.IsPinned = !_memo.IsPinned;
+            _edit.IsPinned = _memo.IsPinned;
+            LoadList();
+        }
+        catch (Exception ex) { _error = ex.Message; }
+    }
+
+    private async Task DeleteMemo()
+    {
+        if (_memo is null) return;
+        if (!await JS.InvokeAsync<bool>("confirm", $"Delete memo '{_memo.Title}' with its history and comments? It is deleted from WorkHub too.")) return;
+        Memos.DeleteMemo(_memo.Id, _user);
+        _memo = null;
+        _edit = null;
+        LoadList();
+        Nav.NavigateTo(BasePath, replace: true);
+    }
+}

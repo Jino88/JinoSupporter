@@ -1,0 +1,1469 @@
+@page "/qr/gauss-scatter"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@layout EmptyLayout
+@using System.Globalization
+@using JinoSupporter.Web.Components.Layout
+@using JinoSupporter.Web.Services
+@inject QrSummaryService QrSummary
+@inject QrModelCodeService QrModelCodes
+@inject QrViewPreferenceService QrViewPrefs
+@inject NavigationManager Nav
+@implements IDisposable
+
+<PageTitle>GAUSS SCATTER</PageTitle>
+
+<AuthorizeView>
+    <NotAuthorized>
+        @{ RedirectToLogin(); }
+    </NotAuthorized>
+    <Authorized>
+        <div class="gsc-page">
+            <header class="gsc-titlebar">
+                <div>
+                    <div class="gsc-kicker">GAUSS · dbo.GSTD · DISPERSION</div>
+                    <h1>GAUSS SCATTER</h1>
+                    <p>One column per test date. Value and Value 2 are drawn together in their own colours, each with its own normal curve and box.</p>
+                </div>
+                <div class="gsc-actions">
+                    <div class="gsc-quick">
+                        <button class="gsc-chip gsc-swatch-chip @(_showValue ? "gsc-on" : "")"
+                                type="button" @onclick="() => ToggleSeries(0)">
+                            <i class="gsc-dot" style="background:@ValueColor"></i>Value
+                        </button>
+                        <button class="gsc-chip gsc-swatch-chip @(_showValue2 ? "gsc-on" : "")"
+                                type="button" @onclick="() => ToggleSeries(1)">
+                            <i class="gsc-dot" style="background:@Value2Color"></i>Value 2
+                        </button>
+                    </div>
+                    <div class="gsc-quick">
+                        <button class="gsc-chip @(_ngOnly ? "" : "gsc-on")"
+                                type="button" @onclick="() => SetNgOnly(false)">All</button>
+                        <button class="gsc-chip @(_ngOnly ? "gsc-on" : "")"
+                                type="button" @onclick="() => SetNgOnly(true)">NG only</button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="gsc-toolbar">
+                @* Same reason as QR SUMMARY: a native date input fires "change" for every complete
+                   date typed through on the way to the intended one, so the reload is debounced and
+                   the inputs are never disabled mid-entry. *@
+                <label class="gsc-field">
+                    <span>From</span>
+                    <input type="date"
+                           value="@_from.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+                           @onchange="OnFromChanged" />
+                </label>
+                <label class="gsc-field">
+                    <span>To</span>
+                    <input type="date"
+                           value="@_to.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+                           @onchange="OnToChanged" />
+                </label>
+                <div class="gsc-quick">
+                    <button class="gsc-chip" type="button" disabled="@_busy" @onclick="() => ApplyQuickRangeAsync(0)">Latest day</button>
+                    <button class="gsc-chip" type="button" disabled="@_busy" @onclick="() => ApplyQuickRangeAsync(1)">2 days</button>
+                    <button class="gsc-chip" type="button" disabled="@_busy" @onclick="() => ApplyQuickRangeAsync(6)">7 days</button>
+                    <button class="gsc-chip" type="button" disabled="@_busy" @onclick="() => ApplyQuickRangeAsync(29)">30 days</button>
+                </div>
+                <label class="gsc-field">
+                    <span>Max QR</span>
+                    <select disabled="@_busy" @onchange="OnMaxRowsChanged">
+                        @foreach (int option in MaxRowOptions)
+                        {
+                            <option value="@option" selected="@(option == _maxRows)">@option.ToString("N0")</option>
+                        }
+                    </select>
+                </label>
+                @* Model comes from characters 11-12 of the QR; names from Setting → QR Model Codes.
+                   Re-filters the points already fetched, so picking one costs no query. *@
+                <label class="gsc-field">
+                    <span>Model</span>
+                    <select disabled="@_busy" @onchange="OnModelChanged">
+                        <option value="" selected="@(_modelCode.Length == 0)">All models</option>
+                        @foreach (ModelOption option in _modelOptions)
+                        {
+                            <option value="@option.Code" selected="@(option.Code == _modelCode)">@option.Label</option>
+                        }
+                    </select>
+                </label>
+                <button class="gsc-btn gsc-primary" type="button" @onclick="ReloadAsync" disabled="@_busy">
+                    @if (_busy)
+                    {
+                        <span class="gsc-spinner" aria-hidden="true"></span>
+                        <span>Loading</span>
+                    }
+                    else
+                    {
+                        <span>Refresh</span>
+                    }
+                </button>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_error))
+            {
+                <div class="gsc-alert gsc-danger">@_error</div>
+            }
+
+            @if (!QrSummary.IsConfigured)
+            {
+                <div class="gsc-alert gsc-warning">QR DB password is not configured on the server.</div>
+            }
+            else if (_busy && _value.Count == 0 && _value2.Count == 0)
+            {
+                <div class="gsc-state">
+                    <span class="gsc-spinner" aria-hidden="true"></span>
+                    <span>Reading GSTD from TCDB.</span>
+                </div>
+            }
+            else if (TotalPoints == 0)
+            {
+                <div class="gsc-state">No numeric gauss reading in @_from.ToString("yyyy-MM-dd") ~ @_to.ToString("yyyy-MM-dd").</div>
+            }
+            else
+            {
+                <div class="gsc-stats">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Series</th><th>Points</th><th>Mean</th><th>σ</th><th>Median</th>
+                                <th>Q1</th><th>Q3</th><th>Min</th><th>Max</th><th>Range</th><th>IQR</th><th>NG</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (SeriesView view in _views)
+                            {
+                                <tr>
+                                    <th scope="row"><i class="gsc-dot" style="background:@view.Color"></i>@view.Label</th>
+                                    <td>@view.Stats.N.ToString("N0")</td>
+                                    <td>@Num(view.Stats.Mean)</td>
+                                    <td>@Num(view.Stats.StdDev)</td>
+                                    <td>@Num(view.Stats.Median)</td>
+                                    <td>@Num(view.Stats.Q1)</td>
+                                    <td>@Num(view.Stats.Q3)</td>
+                                    <td>@Num(view.Stats.Min)</td>
+                                    <td>@Num(view.Stats.Max)</td>
+                                    <td>@Num(view.Stats.Max - view.Stats.Min)</td>
+                                    <td>@Num(view.Stats.Q3 - view.Stats.Q1)</td>
+                                    <td>@view.NgCount.ToString("N0") · @FormatPpm(view.NgRatePpm)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <span class="gsc-stats-note">@_dates.Count.ToString("N0") test date(s) · @_from.ToString("yyyy-MM-dd") ~ @_to.ToString("yyyy-MM-dd")</span>
+                </div>
+
+                <div class="gsc-plot">
+                    <svg viewBox="0 0 1320 566" preserveAspectRatio="xMidYMid meet" role="img"
+                         aria-label="GAUSS Value and Value 2 by test date, each with its fitted normal curve and a box labelled with max, Q3, Q2, mean, Q1, min and IQR">
+
+                        @* ---- Y grid, shared by both panels ----
+                           The <g> is not decoration: Razor reads a bare <text> right after a C#
+                           statement as its own @@<text> escape tag, so a loop body that draws text
+                           has to open with some other element. *@
+                        @foreach (double tick in _scale.Ticks)
+                        {
+                            <g>
+                                <line x1="74" y1="@F(_scale.Map(tick))" x2="890" y2="@F(_scale.Map(tick))" stroke="#e4e8ee" stroke-width="1" />
+                                <line x1="930" y1="@F(_scale.Map(tick))" x2="1300" y2="@F(_scale.Map(tick))" stroke="#e4e8ee" stroke-width="1" />
+                                <text x="68" y="@F(_scale.Map(tick) + 3.4)" text-anchor="end" class="gsc-axis">@AxisNum(tick)</text>
+                            </g>
+                        }
+
+                        <rect x="74" y="34" width="816" height="466" fill="none" stroke="#c6ccd5" stroke-width="1" />
+                        <rect x="930" y="34" width="370" height="466" fill="none" stroke="#c6ccd5" stroke-width="1" />
+                        <text x="482" y="548" text-anchor="middle" class="gsc-axis-title">Test date</text>
+                        <text x="1115" y="548" text-anchor="middle" class="gsc-axis-title">Normal fit · distribution</text>
+                        <text x="18" y="267" text-anchor="middle" class="gsc-axis-title" transform="rotate(-90 18 267)">GAUSS reading</text>
+
+                        @* ---- One column per date ---- *@
+                        @foreach (DateColumn column in _columns)
+                        {
+                            <g>
+                                @if (column.Index > 0)
+                                {
+                                    <line x1="@F(column.Left)" y1="34" x2="@F(column.Left)" y2="500" stroke="#eef1f5" stroke-width="1" />
+                                }
+                                <line x1="@F(column.Center)" y1="500" x2="@F(column.Center)" y2="505" stroke="#c6ccd5" stroke-width="1" />
+                                @if (column.ShowLabel)
+                                {
+                                    <g>
+                                        <text x="@F(column.Center)" y="518" text-anchor="middle" class="gsc-axis">@column.Label</text>
+                                        <text x="@F(column.Center)" y="530" text-anchor="middle" class="gsc-axis gsc-faint">@column.Count.ToString("N0")</text>
+                                    </g>
+                                }
+                            </g>
+                        }
+
+                        @* ---- Each series: its mean / median guides, then its own strip per date ---- *@
+                        @foreach (SeriesView view in _views)
+                        {
+                            <g>
+                                <line x1="74" y1="@F(_scale.Map(view.Stats.Median))" x2="890" y2="@F(_scale.Map(view.Stats.Median))"
+                                      stroke="@view.Color" stroke-width="1.3" stroke-opacity="0.85" />
+                                <line x1="74" y1="@F(_scale.Map(view.Stats.Mean))" x2="890" y2="@F(_scale.Map(view.Stats.Mean))"
+                                      stroke="@view.Color" stroke-width="1.3" stroke-opacity="0.85" stroke-dasharray="6 4" />
+
+                                @foreach (GaussPoint p in view.Plotted)
+                                {
+                                    <circle cx="@F(XMap(p, view))" cy="@F(_scale.Map(p.Value))" r="2.3"
+                                            fill="@view.Color" fill-opacity="0.5">
+                                        @if (view.ShowTitles)
+                                        {
+                                            <title>@p.ProductId · @view.Label @Num(p.Value) · @p.Time.ToString("MM-dd HH:mm:ss", CultureInfo.InvariantCulture)</title>
+                                        }
+                                    </circle>
+                                }
+                            </g>
+                        }
+
+                        @* ---- Vertical normal curve per series: value on the shared Y axis, density
+                               growing to the right. With a single series the readings' own histogram
+                               sits behind it, so the departure from the fitted bell is visible rather
+                               than assumed; with both series the bars would only muddy each other. ---- *@
+                        <line x1="946" y1="34" x2="946" y2="500" stroke="#c6ccd5" stroke-width="1" />
+                        @foreach (SeriesView view in _views)
+                        {
+                            <g>
+                                @foreach (HistogramBar bar in view.Histogram)
+                                {
+                                    <rect x="946" y="@F(bar.Top)" width="@F(bar.Width)" height="@F(bar.Height)"
+                                          fill="@view.Color" fill-opacity="0.13" />
+                                }
+
+                                @if (view.Curve.Length > 0)
+                                {
+                                    <polyline points="@view.Curve" fill="none" stroke="@view.Color" stroke-width="1.8" />
+                                }
+
+                                @foreach (SigmaMark mark in view.SigmaMarks)
+                                {
+                                    <g>
+                                        <line x1="946" y1="@F(mark.Y)" x2="1096" y2="@F(mark.Y)"
+                                              stroke="#9aa6b4" stroke-width="1" stroke-dasharray="3 3" />
+                                        <text x="1100" y="@F(mark.Y + 3.4)" class="gsc-axis">@mark.Label</text>
+                                    </g>
+                                }
+                            </g>
+                        }
+
+                        @* ---- One box per series: whiskers to min/max, box over Q1..Q3,
+                               median solid, mean dashed with a diamond ---- *@
+                        @foreach (SeriesView view in _views)
+                        {
+                            <g>
+                                @{
+                                    double top = _scale.Map(view.Stats.Max);
+                                    double bottom = _scale.Map(view.Stats.Min);
+                                    double q3 = _scale.Map(view.Stats.Q3);
+                                    double q1 = _scale.Map(view.Stats.Q1);
+                                    double med = _scale.Map(view.Stats.Median);
+                                    double mean = _scale.Map(view.Stats.Mean);
+                                    double boxTop = Math.Min(q1, q3);
+                                    double boxHeight = Math.Max(Math.Abs(q1 - q3), 1);
+                                }
+
+                                <line x1="@F(view.BoxCenter)" y1="@F(top)" x2="@F(view.BoxCenter)" y2="@F(bottom)"
+                                      stroke="@view.Color" stroke-width="1.2" />
+                                <line x1="@F(view.BoxCenter - view.CapHalf)" y1="@F(top)" x2="@F(view.BoxCenter + view.CapHalf)" y2="@F(top)"
+                                      stroke="@view.Color" stroke-width="1.6" />
+                                <line x1="@F(view.BoxCenter - view.CapHalf)" y1="@F(bottom)" x2="@F(view.BoxCenter + view.CapHalf)" y2="@F(bottom)"
+                                      stroke="@view.Color" stroke-width="1.6" />
+
+                                <rect x="@F(view.BoxCenter - view.BoxHalf)" y="@F(boxTop)"
+                                      width="@F(view.BoxHalf * 2)" height="@F(boxHeight)"
+                                      fill="@view.Color" fill-opacity="0.08" stroke="@view.Color" stroke-width="1.3" />
+
+                                <line x1="@F(view.BoxCenter - view.BoxHalf)" y1="@F(med)" x2="@F(view.BoxCenter + view.BoxHalf)" y2="@F(med)"
+                                      stroke="@view.Color" stroke-width="2.4" />
+                                <line x1="@F(view.BoxCenter - view.BoxHalf)" y1="@F(mean)" x2="@F(view.BoxCenter + view.BoxHalf)" y2="@F(mean)"
+                                      stroke="@view.Color" stroke-width="2" stroke-dasharray="6 4" />
+                                <polygon points="@Diamond(view.BoxCenter, mean)" fill="@view.Color" />
+
+                                <text x="@F(view.BoxCenter)" y="524" text-anchor="middle" class="gsc-mark" fill="@view.Color">@view.Label</text>
+                                <text x="@F(view.BoxCenter)" y="536" text-anchor="middle" class="gsc-axis">IQR @MarkNum(view.Stats.Q3 - view.Stats.Q1)</text>
+
+                                @* ---- The numbers the box is made of, in a column beside it. They are
+                                       already spread far enough apart to stay readable, so a label that
+                                       had to leave its own line gets a leader back to it. ---- *@
+                                @foreach (BoxLabel label in view.BoxLabels)
+                                {
+                                    <g>
+                                        @if (label.Nudged)
+                                        {
+                                            <line x1="@F(view.BoxCenter + view.BoxHalf + 1)" y1="@F(label.LineY)"
+                                                  x2="@F(view.LabelX - 3)" y2="@F(label.TextY - 3.4)"
+                                                  stroke="@view.Color" stroke-width="0.8" stroke-opacity="0.45" />
+                                        }
+                                        <text x="@F(view.LabelX)" y="@F(label.TextY)" class="gsc-mark" fill="@label.Fill">@label.Text</text>
+                                    </g>
+                                }
+                            </g>
+                        }
+                    </svg>
+                </div>
+
+                <footer class="gsc-foot">
+                    @foreach (SeriesView view in _views)
+                    {
+                        <span class="gsc-key"><i class="gsc-dot" style="background:@view.Color"></i>@view.Label</span>
+                    }
+                    <span class="gsc-key"><i class="gsc-line"></i>Median</span>
+                    <span class="gsc-key"><i class="gsc-line gsc-dashed"></i>Mean</span>
+                    <span class="gsc-key"><i class="gsc-box"></i>Q1 – Q3, whiskers to min / max</span>
+                    <span class="gsc-key"><i class="gsc-curve"></i>Normal fit@(_views.Count == 1 ? " over the reading histogram" : "")</span>
+                    @if (PlottedPoints < TotalPoints)
+                    {
+                        <span>Drawing @PlottedPoints.ToString("N0") of @TotalPoints.ToString("N0") points — statistics use all of them</span>
+                    }
+                    @if (_fetchedAt != default)
+                    {
+                        <span>as of @_fetchedAt.ToString("yyyy-MM-dd HH:mm:ss")</span>
+                    }
+                </footer>
+            }
+        </div>
+    </Authorized>
+</AuthorizeView>
+
+<style>
+    .gsc-page {
+        display: flex;
+        min-height: 100vh;
+        padding: 0.8rem 1rem 1rem;
+        flex-direction: column;
+        background: var(--plane, #e8eaee);
+        color: var(--ink, #0f1319);
+        font-family: var(--sans, "Segoe UI", "Malgun Gothic", sans-serif);
+    }
+
+    .gsc-titlebar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.6rem;
+        flex: 0 0 auto;
+    }
+
+    .gsc-kicker {
+        margin-bottom: 0.2rem;
+        color: var(--crit, #c8342a);
+        font-family: var(--mono, Bahnschrift, Consolas, monospace);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+    }
+
+    .gsc-titlebar h1 { margin: 0; font-size: 1.12rem; line-height: 1.25; }
+
+    .gsc-titlebar p {
+        margin: 0.16rem 0 0;
+        color: var(--ink-2, #4a5461);
+        font-size: 0.76rem;
+    }
+
+    .gsc-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .gsc-toolbar {
+        display: flex;
+        margin-bottom: 0.6rem;
+        padding: 0.5rem 0.6rem;
+        align-items: flex-end;
+        gap: 0.6rem;
+        flex: 0 0 auto;
+        flex-wrap: wrap;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel, #fff);
+    }
+
+    .gsc-field {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        gap: 0.18rem;
+    }
+
+    .gsc-field > span {
+        color: var(--ink-3, #7f8a98);
+        font-size: 0.64rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+
+    .gsc-field input,
+    .gsc-field select {
+        min-height: 1.9rem;
+        padding: 0.24rem 0.4rem;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel, #fff);
+        color: var(--ink, #0f1319);
+        font: 400 0.72rem var(--mono, Bahnschrift, Consolas, monospace);
+    }
+
+    .gsc-quick { display: flex; gap: 0.25rem; }
+
+    .gsc-btn {
+        display: inline-flex;
+        min-height: 1.9rem;
+        padding: 0.32rem 0.72rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel, #fff);
+        color: var(--ink, #0f1319);
+        font: 700 0.7rem var(--sans, "Segoe UI", sans-serif);
+        cursor: pointer;
+    }
+
+    .gsc-btn.gsc-primary {
+        border-color: var(--signal, #16202b);
+        background: var(--signal, #16202b);
+        color: var(--panel, #fff);
+    }
+
+    .gsc-btn:disabled,
+    .gsc-chip:disabled { cursor: default; opacity: 0.55; }
+
+    .gsc-chip {
+        min-height: 1.9rem;
+        padding: 0.28rem 0.6rem;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel, #fff);
+        color: var(--ink-2, #4a5461);
+        font: 700 0.68rem var(--sans, "Segoe UI", sans-serif);
+        cursor: pointer;
+    }
+
+    .gsc-chip:hover:not(:disabled) { border-color: var(--ink, #0f1319); }
+
+    .gsc-chip.gsc-on {
+        border-color: var(--signal, #16202b);
+        background: var(--signal, #16202b);
+        color: var(--panel, #fff);
+    }
+
+    /* The swatch keeps its series colour whether or not the chip is switched on. */
+    .gsc-swatch-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .gsc-swatch-chip:not(.gsc-on) { opacity: 0.62; }
+
+    .gsc-alert,
+    .gsc-state {
+        margin-bottom: 0.65rem;
+        padding: 0.58rem 0.72rem;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel, #fff);
+        color: var(--ink-2, #4a5461);
+        font-size: 0.76rem;
+    }
+
+    .gsc-state {
+        display: flex;
+        min-height: 8rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+    }
+
+    .gsc-alert.gsc-danger {
+        border-color: var(--crit, #c8342a);
+        background: var(--crit-wash, #fbedec);
+        color: var(--crit, #c8342a);
+    }
+
+    .gsc-alert.gsc-warning {
+        border-color: var(--line-2, #c6ccd5);
+        background: var(--panel-2, #f5f6f9);
+    }
+
+    .gsc-spinner {
+        display: inline-block;
+        width: 0.78rem;
+        height: 0.78rem;
+        border: 2px solid var(--line-2, #c6ccd5);
+        border-top-color: currentColor;
+        border-radius: 50%;
+        animation: gsc-spin 0.75s linear infinite;
+    }
+
+    .gsc-stats {
+        margin-bottom: 0.6rem;
+        padding: 0.45rem 0.6rem;
+        flex: 0 0 auto;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel, #fff);
+        overflow-x: auto;
+    }
+
+    .gsc-stats table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.7rem;
+    }
+
+    .gsc-stats th,
+    .gsc-stats td {
+        padding: 0.24rem 0.5rem;
+        border-bottom: 1px solid var(--line, #dde1e7);
+        text-align: right;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .gsc-stats thead th {
+        border-bottom-color: var(--line-2, #c6ccd5);
+        color: var(--ink-3, #7f8a98);
+        font-size: 0.63rem;
+        font-weight: 700;
+    }
+
+    .gsc-stats tbody tr:last-child th,
+    .gsc-stats tbody tr:last-child td { border-bottom: 0; }
+
+    .gsc-stats tbody th {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        text-align: left;
+        font-weight: 800;
+    }
+
+    .gsc-stats td {
+        font-family: var(--mono, Bahnschrift, Consolas, monospace);
+    }
+
+    .gsc-stats thead th:first-child { text-align: left; }
+
+    .gsc-stats-note {
+        display: block;
+        padding-top: 0.3rem;
+        color: var(--ink-3, #7f8a98);
+        font-size: 0.63rem;
+    }
+
+    .gsc-plot {
+        min-height: 0;
+        padding: 0.4rem;
+        flex: 1 1 auto;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel, #fff);
+    }
+
+    .gsc-plot svg { display: block; width: 100%; height: 100%; }
+
+    .gsc-axis {
+        fill: #7f8a98;
+        font-family: var(--mono, Bahnschrift, Consolas, monospace);
+        font-size: 10px;
+    }
+
+    .gsc-axis.gsc-faint { fill: #b3bcc7; font-size: 9px; }
+
+    .gsc-axis-title {
+        fill: #4a5461;
+        font-family: var(--sans, "Segoe UI", sans-serif);
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .gsc-mark {
+        fill: #16202b;
+        font-family: var(--mono, Bahnschrift, Consolas, monospace);
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .gsc-foot {
+        display: flex;
+        padding-top: 0.45rem;
+        gap: 0.9rem;
+        flex: 0 0 auto;
+        flex-wrap: wrap;
+        align-items: center;
+        color: var(--ink-3, #7f8a98);
+        font-size: 0.66rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .gsc-key { display: inline-flex; align-items: center; gap: 0.3rem; }
+
+    .gsc-dot {
+        display: inline-block;
+        width: 0.5rem;
+        height: 0.5rem;
+        flex: 0 0 auto;
+        border-radius: 50%;
+    }
+
+    .gsc-line { width: 1rem; height: 0; border-top: 2px solid #16202b; }
+    .gsc-line.gsc-dashed { border-top-style: dashed; }
+
+    .gsc-box {
+        width: 0.85rem;
+        height: 0.55rem;
+        border: 1px solid #16202b;
+    }
+
+    .gsc-curve { width: 1rem; height: 0; border-top: 2px solid #16202b; }
+
+    @@keyframes gsc-spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+
+@code {
+    private static readonly int[] MaxRowChoices = [500, 2000, 5000, 10000, 20000];
+
+    /// <summary>The offered caps with whatever is in force folded in — the window can be opened
+    /// with ?max= from QR SUMMARY, which is not necessarily one of the presets.</summary>
+    private IEnumerable<int> MaxRowOptions =>
+        MaxRowChoices.Append(_maxRows).Where(value => value > 0).Distinct().OrderBy(value => value);
+
+    /// <summary>
+    /// Markers the SVG will draw, shared out between the visible series. Beyond this the strips
+    /// are solid anyway, so the points are sampled evenly — the statistics still run over every
+    /// reading, never the sample.
+    /// </summary>
+    private const int MaxPlottedPoints = 8000;
+
+    /// <summary>A hover title per circle is one extra DOM node each; only worth it on a small cloud.</summary>
+    private const int MaxTitledPoints = 1500;
+
+    /// <summary>Matches QR SUMMARY: how long typing has to settle before a date edit reloads.</summary>
+    private const int DateSettleMs = 900;
+
+    private const double PlotLeft = 74;
+    private const double PlotRight = 890;
+    private const double PlotTop = 34;
+    private const double PlotBottom = 500;
+
+    /// <summary>Fraction of a series' slot inside a date column that the jittered strip may fill.</summary>
+    private const double JitterFill = 0.36;
+
+    /// <summary>Left edge of the normal-curve panel and how far full density reaches to the right.</summary>
+    private const double CurveBase = 946;
+    private const double CurveWidth = 150;
+
+    private const int HistogramBins = 34;
+
+    /// <summary>Vertical pitch of the value column beside a box — 10px type needs this much room.</summary>
+    private const double BoxLabelPitch = 12;
+
+    private const string MarkColor = "#16202b";
+
+    private const string ValueColor = "#1f5fa8";
+    private const string Value2Color = "#8a4fb8";
+
+    [SupplyParameterFromQuery(Name = "from")] public string? FromQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "to")] public string? ToQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "max")] public string? MaxQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "series")] public string? SeriesQuery { get; set; }
+
+    // Both readings of every round are kept, so toggling a series costs no query.
+    private List<GaussPoint> _value = [];
+    private List<GaussPoint> _value2 = [];
+
+    // Derived once per data or filter change. The render loops read these thousands of times,
+    // so recomputing them per access would re-sort the whole series on every marker.
+    private List<SeriesView> _views = [];
+    private List<DateOnly> _dates = [];
+    private Dictionary<DateOnly, int> _dateIndex = [];
+    private List<DateColumn> _columns = [];
+    private Scale _scale = Scale.Unit;
+    private double _band = PlotRight - PlotLeft;
+
+    /// <summary>The last fetch, kept so the model dropdown can re-derive the points without a query.</summary>
+    private QrSummaryResult? _result;
+
+    /// <summary>Model code currently plotted; empty means every model.</summary>
+    private string _modelCode = string.Empty;
+    private IReadOnlyList<ModelOption> _modelOptions = [];
+    private readonly HashSet<string> _knownCodes = new(StringComparer.OrdinalIgnoreCase);
+
+    private sealed record ModelOption(string Code, string Label);
+
+    private QrSummaryBounds _bounds = new(null, null, null);
+    private CancellationTokenSource? _dateSettle;
+    private DateOnly _from;
+    private DateOnly _to;
+    private int _maxRows = 2000;
+    private bool _showValue = true;
+    private bool _showValue2 = true;
+    private bool _ngOnly;
+    private DateTime _fetchedAt;
+    private string _error = string.Empty;
+    private bool _busy;
+
+    /// <param name="Jitter">Stable −1..1 offset inside the slot, so a redraw never reshuffles the strip.</param>
+    private sealed record GaussPoint(string ProductId, DateTimeOffset Time, DateOnly Date, double Value, bool IsNg, double Jitter);
+
+    private sealed record DateColumn(int Index, DateOnly Date, string Label, int Count, double Left, double Center, bool ShowLabel);
+
+    private sealed record HistogramBar(double Top, double Height, double Width);
+
+    private sealed record SigmaMark(double Y, string Label);
+
+    /// <param name="LineY">Where the value actually sits on the axis.</param>
+    /// <param name="TextY">Where the label ended up after the column was spread out.</param>
+    private sealed record BoxLabel(string Text, double LineY, double TextY, string Fill)
+    {
+        public bool Nudged => Math.Abs(TextY - 3.4 - LineY) > 1.5;
+    }
+
+    private sealed record Stats(int N, double Mean, double Median, double Min, double Max, double Q1, double Q3, double StdDev)
+    {
+        public static readonly Stats Empty = new(0, 0, 0, 0, 0, 0, 0, 0);
+    }
+
+    /// <summary>Everything one visible series contributes to the chart, resolved once per rebuild.</summary>
+    /// <param name="Slot">0 for Value, 1 for Value 2 — also the series' lane inside a date column.</param>
+    private sealed record SeriesView(
+        int Slot,
+        int Lane,
+        int LaneCount,
+        string Label,
+        string Color,
+        List<GaussPoint> Points,
+        List<GaussPoint> Plotted,
+        Stats Stats,
+        int NgCount,
+        double? NgRatePpm,
+        List<HistogramBar> Histogram,
+        List<SigmaMark> SigmaMarks,
+        List<BoxLabel> BoxLabels,
+        string Curve,
+        double BoxCenter,
+        double BoxHalf,
+        double CapHalf,
+        double LabelX)
+    {
+        public bool ShowTitles => Points.Count <= MaxTitledPoints;
+    }
+
+    /// <summary>Linear value-to-pixel mapping plus the ticks that were chosen for it.</summary>
+    private sealed record Scale(double Lo, double Hi, IReadOnlyList<double> Ticks)
+    {
+        public static readonly Scale Unit = new(0, 1, []);
+
+        public double Map(double value)
+        {
+            double span = Hi - Lo;
+            double t = span <= 0 ? 0.5 : (value - Lo) / span;
+            return PlotBottom - t * (PlotBottom - PlotTop);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _from = ParseDate(FromQuery);
+        _to = ParseDate(ToQuery);
+        // The window is opened from QR SUMMARY with ?max=, which wins; a direct visit falls back
+        // to the cap last picked on either page.
+        _maxRows = int.TryParse(MaxQuery, NumberStyles.Integer, CultureInfo.InvariantCulture, out int max) && max > 0
+            ? max
+            : QrViewPreferenceService.Resolve(QrViewPrefs.MaxQr, _maxRows);
+
+        // series=1 / series=2 open the window on one reading; anything else shows both.
+        if (string.Equals(SeriesQuery, "1", StringComparison.Ordinal))
+            _showValue2 = false;
+        else if (string.Equals(SeriesQuery, "2", StringComparison.Ordinal))
+            _showValue = false;
+
+        if (QrSummary.IsConfigured)
+            await LoadAsync();
+    }
+
+    private void RedirectToLogin() =>
+        Nav.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(Nav.Uri)}", forceLoad: true);
+
+    /// <summary>Toggles one reading on or off; the last visible one stays on so the chart is never empty.</summary>
+    private void ToggleSeries(int slot)
+    {
+        if (slot == 0)
+        {
+            if (_showValue && !_showValue2)
+                return;
+            _showValue = !_showValue;
+        }
+        else
+        {
+            if (_showValue2 && !_showValue)
+                return;
+            _showValue2 = !_showValue2;
+        }
+        Rebuild();
+    }
+
+    private void SetNgOnly(bool ngOnly)
+    {
+        _ngOnly = ngOnly;
+        Rebuild();
+    }
+
+    private async Task ReloadAsync()
+    {
+        CancelDateSettle();
+        await LoadAsync();
+    }
+
+    private void OnFromChanged(ChangeEventArgs args)
+    {
+        if (TryParseDate(args.Value, out DateOnly value))
+        {
+            _from = value;
+            QueueDateReload();
+        }
+    }
+
+    private void OnToChanged(ChangeEventArgs args)
+    {
+        if (TryParseDate(args.Value, out DateOnly value))
+        {
+            _to = value;
+            QueueDateReload();
+        }
+    }
+
+    /// <summary>
+    /// Reloads once the user stops editing the date. Nothing is re-rendered while the timer
+    /// runs, so the input being typed into is never touched — see <see cref="DateSettleMs"/>.
+    /// </summary>
+    private void QueueDateReload()
+    {
+        CancelDateSettle();
+        var settle = new CancellationTokenSource();
+        _dateSettle = settle;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(DateSettleMs, settle.Token);
+                await InvokeAsync(LoadAsync);
+            }
+            catch (OperationCanceledException)
+            {
+                // Superseded by a newer keystroke, or the window went away.
+            }
+        });
+    }
+
+    private void CancelDateSettle()
+    {
+        CancellationTokenSource? settle = _dateSettle;
+        _dateSettle = null;
+        if (settle is null)
+            return;
+
+        settle.Cancel();
+        settle.Dispose();
+    }
+
+    public void Dispose() => CancelDateSettle();
+
+    private async Task OnMaxRowsChanged(ChangeEventArgs args)
+    {
+        if (int.TryParse(Convert.ToString(args.Value, CultureInfo.InvariantCulture), out int value) && value > 0)
+        {
+            _maxRows = value;
+            QrViewPrefs.SetMaxQr(value);
+            await LoadAsync();
+        }
+    }
+
+    /// <summary>Sets the window to the newest day with data, going back <paramref name="daysBack"/> days.</summary>
+    private async Task ApplyQuickRangeAsync(int daysBack)
+    {
+        CancelDateSettle();
+        DateOnly anchor = _bounds.MaxDate ?? DateOnly.FromDateTime(DateTime.Today);
+        _to = anchor;
+        _from = anchor.AddDays(-daysBack);
+        await LoadAsync();
+    }
+
+    private int TotalPoints => _views.Sum(v => v.Points.Count);
+
+    private int PlottedPoints => _views.Sum(v => v.Plotted.Count);
+
+    private async Task LoadAsync()
+    {
+        if (_busy)
+            return;
+
+        _busy = true;
+        _error = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            QrSummaryResult result = await QrSummary.FetchAsync(new QrSummaryQuery
+            {
+                From = _from,
+                To = _to,
+                MaxRows = _maxRows,
+            });
+
+            _result = result;
+            _from = result.From;
+            _to = result.To;
+            _maxRows = result.MaxRows;
+            _bounds = result.Bounds;
+            _fetchedAt = result.FetchedAt;
+
+            BuildModelOptions();
+            BuildPoints();
+            Rebuild();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>Re-derives the visible series, the shared axis, the date columns and both panels.</summary>
+    private void Rebuild()
+    {
+        var lanes = new List<(int Slot, string Label, string Color, List<GaussPoint> Points)>(2);
+        if (_showValue)
+            lanes.Add((0, "Value", ValueColor, Filter(_value)));
+        if (_showValue2)
+            lanes.Add((1, "Value 2", Value2Color, Filter(_value2)));
+
+        int laneCount = Math.Max(lanes.Count, 1);
+        int total = lanes.Sum(l => l.Points.Count);
+
+        // The two readings share one axis on purpose: side-by-side boxes only compare if the
+        // scale under them is the same one.
+        double lo = double.MaxValue;
+        double hi = double.MinValue;
+        foreach ((_, _, _, List<GaussPoint> points) in lanes)
+        {
+            foreach (GaussPoint p in points)
+            {
+                if (p.Value < lo) lo = p.Value;
+                if (p.Value > hi) hi = p.Value;
+            }
+        }
+
+        _scale = total == 0 ? Scale.Unit : BuildScale(lo, hi);
+
+        BuildDateColumns(lanes.SelectMany(l => l.Points));
+
+        int budget = Math.Max(MaxPlottedPoints / laneCount, 1);
+        var views = new List<SeriesView>(lanes.Count);
+        for (int i = 0; i < lanes.Count; i++)
+        {
+            (int slot, string label, string color, List<GaussPoint> points) = lanes[i];
+            Stats stats = Describe(points);
+            List<GaussPoint> raw = slot == 0 ? _value : _value2;
+            int ng = raw.Count(p => p.IsNg);
+
+            // With one series its histogram sits behind the curve; with two the bars would
+            // only muddy each other, so the curves carry the comparison alone.
+            bool single = lanes.Count == 1;
+
+            // Every box carries its own value column, so two of them have to share the 200px right
+            // of the curve (946..1096 stays the curve's): narrower boxes, 100px apart, label column
+            // 8px off each box. The single box keeps its old width and reads on the same footing.
+            double boxCenter = single ? 1180 : 1116 + i * 100;
+            double boxHalf = single ? 38 : 16;
+
+            views.Add(new SeriesView(
+                slot,
+                i,
+                laneCount,
+                label,
+                color,
+                points,
+                Sample(points, budget),
+                stats,
+                ng,
+                raw.Count == 0 ? null : ng / (double)raw.Count * 1_000_000d,
+                single ? BuildHistogram(points) : [],
+                single ? BuildSigmaMarks(stats) : [],
+                BuildBoxLabels(stats, color),
+                BuildNormalCurve(stats),
+                boxCenter,
+                boxHalf,
+                single ? 28 : 12,
+                boxCenter + boxHalf + 12));
+        }
+        _views = views;
+    }
+
+    private List<GaussPoint> Filter(List<GaussPoint> points) =>
+        _ngOnly ? points.Where(p => p.IsNg).ToList() : points;
+
+    /// <summary>
+    /// One column per test date, evenly spaced. The axis is categorical on purpose: a two-day
+    /// window gets exactly two columns, whatever hours the tests actually ran at.
+    /// </summary>
+    private void BuildDateColumns(IEnumerable<GaussPoint> points)
+    {
+        var counts = new Dictionary<DateOnly, int>();
+        foreach (GaussPoint p in points)
+            counts[p.Date] = counts.GetValueOrDefault(p.Date) + 1;
+
+        _dates = counts.Keys.OrderBy(static d => d).ToList();
+        _dateIndex = _dates.Select(static (date, i) => (date, i)).ToDictionary(t => t.date, t => t.i);
+        if (_dates.Count == 0)
+        {
+            _columns = [];
+            _band = PlotRight - PlotLeft;
+            return;
+        }
+
+        _band = (PlotRight - PlotLeft) / _dates.Count;
+
+        // Past roughly 16 columns the MM-dd labels start colliding, so only every nth is drawn.
+        int labelStride = (int)Math.Ceiling(_dates.Count / 16d);
+
+        var columns = new List<DateColumn>(_dates.Count);
+        for (int i = 0; i < _dates.Count; i++)
+        {
+            DateOnly date = _dates[i];
+            columns.Add(new DateColumn(
+                i,
+                date,
+                date.ToString("MM-dd", CultureInfo.InvariantCulture),
+                counts[date],
+                PlotLeft + i * _band,
+                PlotLeft + (i + 0.5) * _band,
+                i % labelStride == 0));
+        }
+        _columns = columns;
+    }
+
+    /// <summary>The readings' own distribution, as bars growing right from the curve baseline.</summary>
+    private List<HistogramBar> BuildHistogram(List<GaussPoint> points)
+    {
+        double span = _scale.Hi - _scale.Lo;
+        if (points.Count == 0 || span <= 0)
+            return [];
+
+        double binSpan = span / HistogramBins;
+        var bins = new int[HistogramBins];
+        foreach (GaussPoint p in points)
+        {
+            int index = (int)((p.Value - _scale.Lo) / binSpan);
+            bins[Math.Clamp(index, 0, HistogramBins - 1)]++;
+        }
+
+        int tallest = bins.Max();
+        if (tallest == 0)
+            return [];
+
+        var bars = new List<HistogramBar>(HistogramBins);
+        for (int i = 0; i < HistogramBins; i++)
+        {
+            if (bins[i] == 0)
+                continue;
+
+            double binLo = _scale.Lo + i * binSpan;
+            double top = _scale.Map(binLo + binSpan);
+            double bottom = _scale.Map(binLo);
+            bars.Add(new HistogramBar(top, Math.Max(bottom - top, 0.6), bins[i] / (double)tallest * CurveWidth));
+        }
+        return bars;
+    }
+
+    /// <summary>
+    /// The normal curve fitted from the mean and standard deviation, drawn vertically: value on
+    /// the shared Y axis, density to the right. The peak is normalised to the full panel width so
+    /// it sits on the same footing as the tallest histogram bar.
+    /// </summary>
+    private string BuildNormalCurve(Stats stats)
+    {
+        double span = _scale.Hi - _scale.Lo;
+        if (stats.N == 0 || stats.StdDev <= 0 || span <= 0)
+            return string.Empty;
+
+        var curve = new System.Text.StringBuilder(2048);
+        const int Steps = 160;
+        for (int i = 0; i <= Steps; i++)
+        {
+            double v = _scale.Lo + span * i / Steps;
+            double z = (v - stats.Mean) / stats.StdDev;
+            double density = Math.Exp(-0.5 * z * z);
+            if (curve.Length > 0)
+                curve.Append(' ');
+            curve.Append(F(CurveBase + density * CurveWidth)).Append(',').Append(F(_scale.Map(v)));
+        }
+        return curve.ToString();
+    }
+
+    /// <summary>
+    /// The six numbers that go beside a box. A tight IQR puts Q1, Q2, Q3 and the mean within a few
+    /// pixels of each other — Value 2's IQR of 3 lands them inside 7px — so the column is spread to
+    /// a readable pitch and each label that had to move keeps a leader back to its own line.
+    /// </summary>
+    private List<BoxLabel> BuildBoxLabels(Stats stats, string accent)
+    {
+        if (stats.N == 0)
+            return [];
+
+        (string Text, double Value, string Fill)[] source =
+        [
+            ($"MAX {MarkNum(stats.Max)}", stats.Max, MarkColor),
+            ($"Q3 {MarkNum(stats.Q3)}", stats.Q3, MarkColor),
+            ($"Q2 {MarkNum(stats.Median)}", stats.Median, MarkColor),
+            ($"MEAN {MarkNum(stats.Mean)}", stats.Mean, accent),
+            ($"Q1 {MarkNum(stats.Q1)}", stats.Q1, MarkColor),
+            ($"MIN {MarkNum(stats.Min)}", stats.Min, MarkColor),
+        ];
+
+        List<BoxLabel> labels = source
+            .Select(s => new BoxLabel(s.Text, _scale.Map(s.Value), _scale.Map(s.Value) + 3.4, s.Fill))
+            .OrderBy(static l => l.LineY)
+            .ToList();
+
+        for (int i = 1; i < labels.Count; i++)
+        {
+            double floor = labels[i - 1].TextY + BoxLabelPitch;
+            if (labels[i].TextY < floor)
+                labels[i] = labels[i] with { TextY = floor };
+        }
+
+        // Spreading downwards can push the last label under the panel; when it does, hang the
+        // column off the bottom instead and let it grow upwards.
+        double limit = PlotBottom + 13;
+        if (labels[^1].TextY > limit)
+        {
+            labels[^1] = labels[^1] with { TextY = limit };
+            for (int i = labels.Count - 2; i >= 0; i--)
+            {
+                double ceiling = labels[i + 1].TextY - BoxLabelPitch;
+                if (labels[i].TextY > ceiling)
+                    labels[i] = labels[i] with { TextY = ceiling };
+            }
+        }
+
+        return labels;
+    }
+
+    private List<SigmaMark> BuildSigmaMarks(Stats stats)
+    {
+        if (stats.N == 0 || stats.StdDev <= 0)
+            return [];
+
+        var marks = new List<SigmaMark>(4);
+        foreach (int k in new[] { -2, -1, 1, 2 })
+        {
+            double v = stats.Mean + k * stats.StdDev;
+            if (v < _scale.Lo || v > _scale.Hi)
+                continue;
+
+            marks.Add(new SigmaMark(_scale.Map(v), $"{(k > 0 ? "+" : "−")}{Math.Abs(k)}σ"));
+        }
+        return marks;
+    }
+
+    /// <summary>
+    /// Each date column is split into one lane per visible reading, so Value and Value 2 stand
+    /// beside each other on the same date instead of overprinting.
+    /// </summary>
+    private double XMap(GaussPoint point, SeriesView view)
+    {
+        int index = _dateIndex.GetValueOrDefault(point.Date);
+        double lane = _band / view.LaneCount;
+        double center = PlotLeft + index * _band + (view.Lane + 0.5) * lane;
+        return center + point.Jitter * lane * JitterFill;
+    }
+
+    /// <summary>The markers actually drawn: every point, or an even sample once the strips are solid.</summary>
+    private static List<GaussPoint> Sample(List<GaussPoint> points, int budget)
+    {
+        if (points.Count <= budget)
+            return points;
+
+        int stride = (int)Math.Ceiling(points.Count / (double)budget);
+        var sampled = new List<GaussPoint>(budget + 1);
+        for (int i = 0; i < points.Count; i += stride)
+            sampled.Add(points[i]);
+        return sampled;
+    }
+
+    private void OnModelChanged(ChangeEventArgs args)
+    {
+        _modelCode = (Convert.ToString(args.Value, CultureInfo.InvariantCulture) ?? string.Empty).Trim();
+        BuildPoints();
+        Rebuild();
+    }
+
+    /// <summary>Re-derives both series from the last fetch, keeping only the selected model.</summary>
+    private void BuildPoints()
+    {
+        var value = new List<GaussPoint>();
+        var value2 = new List<GaussPoint>();
+
+        // Every round counts, not just the newest: dispersion is exactly what the retests show.
+        foreach (QrSummaryRow product in _result?.Rows ?? [])
+        {
+            if (!MatchesModel(product.ProductId))
+                continue;
+
+            Collect(product.ProductId, product, value, value2);
+            foreach (QrSummaryRow older in product.Older)
+                Collect(product.ProductId, older, value, value2);
+        }
+
+        value.Sort(static (a, b) => a.Time.CompareTo(b.Time));
+        value2.Sort(static (a, b) => a.Time.CompareTo(b.Time));
+        _value = value;
+        _value2 = value2;
+    }
+
+    private bool MatchesModel(string productId)
+    {
+        if (_modelCode.Length == 0)
+            return true;
+
+        string code = QrModelCodeService.ExtractCode(productId);
+        return string.Equals(_modelCode, QrModelCodeService.UnmappedCode, StringComparison.Ordinal)
+            ? !_knownCodes.Contains(code)
+            : string.Equals(code, _modelCode, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Offers only the models the fetched QR actually contain, each with its QR count.</summary>
+    private void BuildModelOptions()
+    {
+        _knownCodes.Clear();
+        _modelOptions = [];
+        if (_result is null)
+            return;
+
+        var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (QrModelCode entry in QrModelCodes.Codes)
+        {
+            _knownCodes.Add(entry.Code);
+            names[entry.Code] = string.IsNullOrWhiteSpace(entry.Name) ? entry.Code : entry.Name;
+        }
+
+        var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        int unmapped = 0;
+        foreach (QrSummaryRow row in _result.Rows)
+        {
+            string code = QrModelCodeService.ExtractCode(row.ProductId);
+            if (_knownCodes.Contains(code))
+                counts[code] = counts.TryGetValue(code, out int seen) ? seen + 1 : 1;
+            else
+                unmapped++;
+        }
+
+        var options = new List<ModelOption>();
+        foreach ((string code, string name) in names.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+        {
+            if (counts.TryGetValue(code, out int count))
+                options.Add(new ModelOption(code, $"{name} ({code}) · {count:N0} QR"));
+        }
+
+        if (unmapped > 0)
+            options.Add(new ModelOption(QrModelCodeService.UnmappedCode, $"Other · {unmapped:N0} QR"));
+
+        _modelOptions = options;
+
+        if (_modelCode.Length > 0 && !options.Any(option => string.Equals(option.Code, _modelCode, StringComparison.OrdinalIgnoreCase)))
+            _modelCode = string.Empty;
+    }
+
+    private static void Collect(string productId, QrSummaryRow row, List<GaussPoint> value, List<GaussPoint> value2)
+    {
+        if (row.Gauss is not QrSummaryCell cell || cell.TestTime is not DateTimeOffset time)
+            return;
+
+        bool ng = cell.Verdict == QrVerdict.Fail;
+        DateOnly date = DateOnly.FromDateTime(time.LocalDateTime);
+        Add(value, cell.ItemAt(0), 0);
+        Add(value2, cell.ItemAt(1), 1);
+
+        void Add(List<GaussPoint> target, QrSummaryItem? item, int slot)
+        {
+            if (item is not null && TryParseNumber(item.Value, out double parsed))
+                target.Add(new GaussPoint(productId, time, date, parsed, ng, Jitter(productId, time, slot)));
+        }
+    }
+
+    /// <summary>
+    /// A repeatable −1..1 spread for one reading. Hashing the QR and its timestamp rather than
+    /// drawing at random keeps a point in the same place across re-renders, so toggling a series
+    /// does not reshuffle the strip under the user.
+    /// </summary>
+    private static double Jitter(string productId, DateTimeOffset time, int slot)
+    {
+        // FNV-1a over the identity of the reading; string.GetHashCode is per-process randomised.
+        unchecked
+        {
+            uint hash = 2166136261;
+            foreach (char c in productId)
+                hash = (hash ^ c) * 16777619;
+
+            hash = (hash ^ (uint)time.Ticks) * 16777619;
+            hash = (hash ^ (uint)(time.Ticks >> 32)) * 16777619;
+            hash = (hash ^ (uint)slot) * 16777619;
+            return hash / (double)uint.MaxValue * 2 - 1;
+        }
+    }
+
+    /// <summary>
+    /// GSTD readings arrive as text (the summary query casts every column to nvarchar), and a
+    /// tester occasionally appends a unit. Take the leading numeric token and ignore the rest.
+    /// </summary>
+    private static bool TryParseNumber(string? text, out double value)
+    {
+        value = 0;
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+
+        ReadOnlySpan<char> span = text.AsSpan().Trim();
+        int end = 0;
+        while (end < span.Length &&
+               (char.IsAsciiDigit(span[end]) || span[end] is '+' or '-' or '.' or 'e' or 'E'))
+        {
+            end++;
+        }
+
+        return double.TryParse(
+            span[..end],
+            NumberStyles.Float,
+            CultureInfo.InvariantCulture,
+            out value)
+            && !double.IsNaN(value)
+            && !double.IsInfinity(value);
+    }
+
+    private static Stats Describe(List<GaussPoint> points)
+    {
+        double[] sorted = points.Select(p => p.Value).OrderBy(static v => v).ToArray();
+        if (sorted.Length == 0)
+            return Stats.Empty;
+
+        double mean = sorted.Average();
+        double variance = sorted.Length < 2
+            ? 0
+            : sorted.Sum(v => (v - mean) * (v - mean)) / (sorted.Length - 1);
+
+        return new Stats(
+            sorted.Length,
+            mean,
+            Quantile(sorted, 0.5),
+            sorted[0],
+            sorted[^1],
+            Quantile(sorted, 0.25),
+            Quantile(sorted, 0.75),
+            Math.Sqrt(variance));
+    }
+
+    /// <summary>Linear interpolation between order statistics (the R type 7 / Excel PERCENTILE rule).</summary>
+    private static double Quantile(double[] sorted, double q)
+    {
+        if (sorted.Length == 1)
+            return sorted[0];
+
+        double pos = (sorted.Length - 1) * q;
+        int lo = (int)Math.Floor(pos);
+        int hi = (int)Math.Ceiling(pos);
+        return lo == hi ? sorted[lo] : sorted[lo] + (pos - lo) * (sorted[hi] - sorted[lo]);
+    }
+
+    private static Scale BuildScale(double min, double max)
+    {
+        double lo = min;
+        double hi = max;
+
+        // A run that never moved would otherwise collapse the axis onto a single pixel.
+        if (hi - lo <= 0)
+        {
+            double flat = Math.Abs(hi) > 0 ? Math.Abs(hi) * 0.05 : 1;
+            lo -= flat;
+            hi += flat;
+        }
+        else
+        {
+            double pad = (hi - lo) * 0.08;
+            lo -= pad;
+            hi += pad;
+        }
+
+        double step = NiceStep((hi - lo) / 6);
+        double first = Math.Ceiling(lo / step) * step;
+        var ticks = new List<double>(10);
+        for (double t = first; t <= hi + step * 1e-6 && ticks.Count < 14; t += step)
+            ticks.Add(t);
+
+        return new Scale(lo, hi, ticks);
+    }
+
+    private static double NiceStep(double raw)
+    {
+        if (raw <= 0 || double.IsNaN(raw) || double.IsInfinity(raw))
+            return 1;
+
+        double power = Math.Pow(10, Math.Floor(Math.Log10(raw)));
+        double fraction = raw / power;
+        double nice = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 2.5 ? 2.5 : fraction <= 5 ? 5 : 10;
+        return nice * power;
+    }
+
+    private static string Diamond(double cx, double cy) =>
+        string.Create(
+            CultureInfo.InvariantCulture,
+            $"{cx:0.##},{cy - 5:0.##} {cx + 5:0.##},{cy:0.##} {cx:0.##},{cy + 5:0.##} {cx - 5:0.##},{cy:0.##}");
+
+    private static DateOnly ParseDate(string? text) =>
+        DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly parsed)
+            ? parsed
+            : default;
+
+    private static bool TryParseDate(object? value, out DateOnly parsed) =>
+        DateOnly.TryParse(
+            Convert.ToString(value, CultureInfo.InvariantCulture),
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out parsed);
+
+    /// <summary>SVG coordinates must be invariant — a Korean locale would emit "12,3" and break the path.</summary>
+    private static string F(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private static string Num(double value)
+    {
+        double magnitude = Math.Abs(value);
+        string format = magnitude >= 1000 ? "N1" : magnitude >= 10 ? "N2" : "N3";
+        return value.ToString(format, CultureInfo.CurrentCulture);
+    }
+
+    /// <summary>Y axis ticks read as whole gauss values — the decimals only add noise on the axis.</summary>
+    private static string AxisNum(double value) =>
+        Math.Round(value, MidpointRounding.AwayFromZero).ToString("N0", CultureInfo.CurrentCulture);
+
+    /// <summary>Box labels share a narrow column, so they carry at most one decimal.</summary>
+    private static string MarkNum(double value) =>
+        value.ToString(Math.Abs(value) >= 100 ? "N0" : "0.#", CultureInfo.CurrentCulture);
+
+    private static string FormatPpm(double? value) =>
+        value is double ppm ? $"{ppm.ToString("N0", CultureInfo.CurrentCulture)} ppm" : "-";
+}
