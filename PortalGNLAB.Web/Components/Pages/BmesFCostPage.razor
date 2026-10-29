@@ -26,8 +26,8 @@
 
 @if (ShowPageHeader)
 {
-    <div class="d-flex align-items-center gap-2 mb-3">
-        <span class="fw-semibold" style="font-size:20px;">$</span>
+    <div class="fcost-page-header d-flex align-items-center gap-2 mb-3">
+        <span class="fcost-page-icon">$</span>
         <h5 class="mb-0 fw-semibold">@(IsTrendReportRoute ? "Report - Major Model Defect Rate Trend" : "F-Cost")</h5>
     </div>
 }
@@ -149,7 +149,7 @@
     double weeklyBasisTotalRate = ComputeWeeklyBasisTotalRate();
     int weeklySummaryRowSpan = weeklyModelRows.Count + 1;
 
-    <div class="d-flex justify-content-end mt-3">
+    <div class="fcost-page-actions d-flex justify-content-end mt-3">
         <button class="btn btn-outline-success btn-sm"
                 @onclick="ExportCsvAsync"
                 disabled="@_isExportingCsv">
@@ -169,13 +169,13 @@
     {
 <div class="card fcost-card mt-3 fcost-trend-card">
             <div class="card-body p-0">
-                <div class="fcost-trend-title"><span></span> @(ShowAllPeriodColumns ? "FCOST Trend (전체)" : "FCOST Trend")</div>
+                <div class="fcost-trend-title"><span></span> @(ShowAllPeriodColumns ? "FCOST Trend (All periods)" : "FCOST Trend")</div>
                 <div style="overflow-x:auto;">
                     <table class="fcost-trend-table">
                         <thead>
                             <tr>
-                                <th class="trend-model-th">모델</th>
-                                <th class="trend-metric-th">지표</th>
+                                <th class="trend-model-th">Model</th>
+                                <th class="trend-metric-th">Metric</th>
                                 @foreach (int ci in weeklyColumnIndexes)
                                 {
                                     <th class="@(ci == trendFirstColumnIndex ? "trend-period-start" : ColBoundaryClass(ci))">@WeeklySummaryColumnHeader(ci)</th>
@@ -208,7 +208,7 @@
                                         }
                                         <strong>@TrendModelDisplayName(row.ModelName)</strong>
                                     </td>
-                                     <td class="trend-metric-td">불량률</td>
+                                     <td class="trend-metric-td">Defect Rate</td>
                                     @foreach (int ci in weeklyColumnIndexes)
                                     {
                                         double v = row.NgPpmByColumn.TryGetValue(ci, out double ppm) ? ppm : 0;
@@ -230,7 +230,7 @@
                                     <td class="@($"trend-model-td trend-model-muted {(row.Depth > 0 ? "trend-child-model" : "")}")">
                                         <span class="trend-expand-spacer"></span>@TrendModelDisplayName(row.ModelName)
                                     </td>
-                                     <td class="trend-metric-td">비중</td>
+                                     <td class="trend-metric-td">Share</td>
                                     @foreach (int ci in weeklyColumnIndexes)
                                     {
                                         double modelCost = ValueAt(row.CostByCol, ci);
@@ -435,18 +435,18 @@
     {
 <div class="card fcost-card mt-3 fcost-weekly-card">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
-            <span>@(ShowAllPeriodColumns ? "Weekly Report (전체)" : "Weekly Report")</span>
-                <span class="text-muted" style="font-size:11px;">@(ShowAllPeriodColumns ? "목표 불량률 (Period 선택 전체 기간)" : "목표 불량률 (WEEK: 4주 내림차순, MONTH: 3달 내림차순)")</span>
+            <span>@(ShowAllPeriodColumns ? "Weekly Report (All periods)" : "Weekly Report")</span>
+                <span class="text-muted" style="font-size:11px;">@(ShowAllPeriodColumns ? "Target defect rate (all selected periods)" : "Target defect rate (WEEK: last 4 weeks, MONTH: last 3 months, newest first)")</span>
         </div>
         <div class="card-body p-0">
             <div style="overflow-x:auto;">
                 <table class="fcost-weekly-table">
                     <thead>
                         <tr>
-                            <th class="weekly-site-th">구분</th>
-                            <th class="weekly-model-th">모델</th>
-                            <th class="weekly-target-th">목표 불량률</th>
-                            <th class="weekly-target-th">달성률</th>
+                            <th class="weekly-site-th">Site</th>
+                            <th class="weekly-model-th">Model</th>
+                            <th class="weekly-target-th">Target Rate</th>
+                            <th class="weekly-target-th">Achievement</th>
                             @foreach (int ci in weeklyColumnIndexes)
                             {
                                 <th class="@ColBoundaryClass(ci)">@WeeklySummaryColumnHeader(ci)</th>
@@ -520,7 +520,7 @@
                             </tr>
                         }
                         <tr class="weekly-total-row">
-                            <td class="weekly-total-label" colspan="3"><strong>TOTAL 불량률</strong></td>
+                            <td class="weekly-total-label" colspan="3"><strong>TOTAL Defect Rate</strong></td>
                             @for (int i = 0; i < weeklyColumnIndexes.Count; i++)
                             {
                                 double v = weeklyTotalRates[i];
@@ -534,12 +534,12 @@
             {
                 <div class="fcost-weekly-config">
                     <label class="fcost-weekly-list-editor">
-                        <span>주간 항목</span>
+                        <span>Weekly items</span>
                         <textarea class="form-control form-control-sm" rows="2" @bind="_weeklyActionItemsText"></textarea>
                     </label>
                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <button class="btn btn-primary btn-sm" @onclick="SaveWeeklyReportSettings">저장</button>
-                        <button class="btn btn-outline-secondary btn-sm" @onclick="ResetWeeklyReportSettings">초기화</button>
+                        <button class="btn btn-primary btn-sm" @onclick="SaveWeeklyReportSettings">Save</button>
+                        <button class="btn btn-outline-secondary btn-sm" @onclick="ResetWeeklyReportSettings">Reset</button>
                         @if (!string.IsNullOrWhiteSpace(_weeklySettingsStatus))
                         {
                             <span class="small text-muted">@_weeklySettingsStatus</span>
@@ -595,10 +595,10 @@
     var subColumnIndexes = VisibleFCostColumnIndexes();
 <div class="card fcost-card mt-3">
         <div class="card-header small fw-semibold d-flex align-items-center gap-2">
-            <span>Model / Sub Group Summary - Input / F-Cost / 불량률%</span>
+            <span>Model / Sub Group Summary - Input / F-Cost / Defect Rate %</span>
             <span class="text-muted" style="font-size:11px;">
                 @_report.SubGroups.Count sub group bucket(s), @_report.UnmappedMaterials.Count unmapped
-                sorted by previous-week 불량률
+                sorted by previous-week defect rate
             </span>
         </div>
         <div class="card-body p-0">
@@ -639,7 +639,7 @@
                                     {
                                         <td class="label-td" rowspan="@sgRows"><strong>@totalLbl</strong></td>
                                     }
-                                    <td class="label-td"><span class="ztype-badge">INPUT</span></td>
+                                    <td class="label-td"><span class="ztype-badge zt-input">INPUT</span></td>
                                     @for (int i = 0; i < N; i++)
                                     {
                                         double v = totalInput[i];
@@ -654,7 +654,7 @@
                                     {
                                         <td class="label-td" rowspan="@sgRows"><strong>@totalLbl</strong></td>
                                     }
-                                    <td class="label-td"><span class="ztype-badge">F-COST</span></td>
+                                    <td class="label-td"><span class="ztype-badge zt-cost">F-COST</span></td>
                                     @for (int i = 0; i < N; i++)
                                     {
                                         double v = totalCost[i];
@@ -669,7 +669,7 @@
                                     {
                                         <td class="label-td" rowspan="@sgRows"><strong>@totalLbl</strong></td>
                                     }
-                                    <td class="label-td"><span class="ztype-badge">RATE %</span></td>
+                                    <td class="label-td"><span class="ztype-badge zt-rate">RATE %</span></td>
                                     @for (int i = 0; i < N; i++)
                                     {
                                         // Weighted rate: 誇cost / 誇input * 100. 0 if input=0.
@@ -721,7 +721,7 @@
                                             <strong class="ms-1">@row.Display</strong>
                                         </td>
                                     }
-                                    <td class="label-td"><span class="ztype-badge">INPUT</span></td>
+                                    <td class="label-td"><span class="ztype-badge zt-input">INPUT</span></td>
                                     @foreach (int ci in subColumnIndexes)
                                     {
                                         double v = ValueAt(row.InputByCol, ci);
@@ -745,7 +745,7 @@
                                             <strong class="ms-1">@row.Display</strong>
                                         </td>
                                     }
-                                    <td class="label-td"><span class="ztype-badge">F-COST</span></td>
+                                    <td class="label-td"><span class="ztype-badge zt-cost">F-COST</span></td>
                                     @foreach (int ci in subColumnIndexes)
                                     {
                                         double v = ValueAt(row.CostByCol, ci);
@@ -769,7 +769,7 @@
                                             <strong class="ms-1">@row.Display</strong>
                                         </td>
                                     }
-                                    <td class="label-td"><span class="ztype-badge">RATE %</span></td>
+                                    <td class="label-td"><span class="ztype-badge zt-rate">RATE %</span></td>
                                     @{ var rate = row.RateByCol; }
                                     @foreach (int ci in subColumnIndexes)
                                     {
@@ -787,8 +787,9 @@
                 <div class="alert alert-warning small m-3 mb-0">
                     <strong>Unmapped (@_report.UnmappedMaterials.Count):</strong>
                     Materials whose <code>MatnrTx_ModNoTx</code> (or fallback <code>MatnrTx_VeridTx</code>)
-                    didn't match any LineShift in the saved ModelGroups ??                    @string.Join(", ", _report.UnmappedMaterials.Take(10).Select(m => m.DisplayName))
-                    @(_report.UnmappedMaterials.Count > 10 ? $" ??(+{_report.UnmappedMaterials.Count - 10})" : "")
+                    didn't match any LineShift in the saved ModelGroups:
+                    @string.Join(", ", _report.UnmappedMaterials.Take(10).Select(m => m.DisplayName))
+                    @(_report.UnmappedMaterials.Count > 10 ? $" (+{_report.UnmappedMaterials.Count - 10} more)" : "")
                     <a class="btn btn-sm btn-outline-dark ms-2 py-0"
                        href="@BuildUnmappedModelGroupUrl(_report.UnmappedMaterials)"
                        target="_blank"
@@ -818,7 +819,7 @@
                 <table class="fcost-table">
                     <thead>
                         <tr>
-                            <th class="label-th" style="width:280px;">모델</th>
+                            <th class="label-th" style="width:280px;">Model</th>
                             <th class="label-th" style="width:100px;">Type</th>
                             @foreach (int ci in materialColumnIndexes)
                             {
@@ -849,7 +850,7 @@
                                     {
                                         <td class="label-td" rowspan="@matRows"><strong>@botLbl</strong></td>
                                     }
-                                    <td class="label-td"><span class="ztype-badge">INPUT</span></td>
+                                    <td class="label-td"><span class="ztype-badge zt-input">INPUT</span></td>
                                     @for (int i = 0; i < Nb; i++)
                                     {
                                         double v = botInput[i];
@@ -864,7 +865,7 @@
                                     {
                                         <td class="label-td" rowspan="@matRows"><strong>@botLbl</strong></td>
                                     }
-                                    <td class="label-td"><span class="ztype-badge">F-COST</span></td>
+                                    <td class="label-td"><span class="ztype-badge zt-cost">F-COST</span></td>
                                     @for (int i = 0; i < Nb; i++)
                                     {
                                         double v = botCost[i];
@@ -879,7 +880,7 @@
                                     {
                                         <td class="label-td" rowspan="@matRows"><strong>@botLbl</strong></td>
                                     }
-                                    <td class="label-td"><span class="ztype-badge">RATE %</span></td>
+                                    <td class="label-td"><span class="ztype-badge zt-rate">RATE %</span></td>
                                     @for (int i = 0; i < Nb; i++)
                                     {
                                         double v = botInput[i] > 0 ? botCost[i] / botInput[i] * 100.0 : 0;
@@ -904,7 +905,7 @@
                                             }
                                         </td>
                                     }
-                                    <td class="label-td"><span class="ztype-badge">INPUT</span></td>
+                                    <td class="label-td"><span class="ztype-badge zt-input">INPUT</span></td>
                                     @foreach (int ci in materialColumnIndexes)
                                     {
                                         double v = block.Input?.GetCol(ci + 1) ?? 0;
@@ -925,7 +926,7 @@
                                             }
                                         </td>
                                     }
-                                    <td class="label-td"><span class="ztype-badge">F-COST</span></td>
+                                    <td class="label-td"><span class="ztype-badge zt-cost">F-COST</span></td>
                                     @foreach (int ci in materialColumnIndexes)
                                     {
                                         double v = block.Cost?.GetCol(ci + 1) ?? 0;
@@ -946,7 +947,7 @@
                                             }
                                         </td>
                                     }
-                                    <td class="label-td"><span class="ztype-badge">RATE %</span></td>
+                                    <td class="label-td"><span class="ztype-badge zt-rate">RATE %</span></td>
                                     @foreach (int ci in materialColumnIndexes)
                                     {
                                         double input = block.Input?.GetCol(ci + 1) ?? 0;
@@ -1279,6 +1280,247 @@
     }
     .breakdown-expand-spacer {
         display: inline-block; flex: 0 0 auto; width: 18px; height: 18px;
+    }
+
+    /* ── 2026-10-29 redesign (same look as NG Rate, docs/ui-mockups): same tables, new look ── */
+    .fcost-page-header h5 { color: #0f172a; font-size: 18px; letter-spacing: -.01em; }
+    .fcost-page-icon {
+        display: inline-grid; place-items: center; width: 30px; height: 30px;
+        border-radius: 8px; background: #eef2ff; color: #4338ca; font-size: 15px; font-weight: 800;
+    }
+
+    .fcost-card,
+    .ins .fcost-card {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 12px !important;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 4px 16px rgba(15, 23, 42, .05) !important;
+        overflow: hidden;
+    }
+    .fcost-card > .card-header,
+    .ins .fcost-card > .card-header {
+        min-height: 44px !important;
+        padding: .7rem 1rem !important;
+        background: #fff !important;
+        color: #0f172a !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        border-radius: 0 !important;
+        font-size: 13.5px !important;
+        font-weight: 700 !important;
+    }
+    .fcost-card > .card-header::before,
+    .ins .fcost-card > .card-header::before { content: none !important; }
+    .fcost-card > .card-header .text-muted { color: #64748b !important; font-weight: 500; }
+    .fcost-card > .card-body.p-0,
+    .ins .fcost-card > .card-body.p-0 { padding: 0 !important; }
+    .fcost-card > .card-body:not(.p-0),
+    .ins .fcost-card > .card-body:not(.p-0) { padding: .85rem 1rem !important; }
+    .fcost-card .form-control,
+    .fcost-card .form-select,
+    .ins .fcost-card .form-control,
+    .ins .fcost-card .form-select { border-color: #e2e8f0 !important; border-radius: 8px !important; }
+    .fcost-card .btn,
+    .fcost-page-actions .btn,
+    .ins .fcost-card .btn,
+    .ins .fcost-page-actions .btn { border-radius: 8px !important; font-weight: 600 !important; }
+    .fcost-card .btn-success,
+    .fcost-card .btn-primary,
+    .ins .fcost-card .btn-success,
+    .ins .fcost-card .btn-primary {
+        background: #4f46e5 !important; border-color: #4f46e5 !important; color: #fff !important;
+        box-shadow: 0 1px 2px rgba(79, 70, 229, .3);
+    }
+    .fcost-card .btn-success:hover,
+    .fcost-card .btn-primary:hover,
+    .ins .fcost-card .btn-success:hover,
+    .ins .fcost-card .btn-primary:hover { background: #4338ca !important; border-color: #4338ca !important; }
+    .fcost-card .btn-outline-secondary,
+    .ins .fcost-card .btn-outline-secondary { border-color: #e2e8f0 !important; color: #334155 !important; background: #fff !important; }
+    .fcost-card .btn-outline-secondary:hover,
+    .ins .fcost-card .btn-outline-secondary:hover { background: #f8fafc !important; color: #0f172a !important; }
+    .fcost-card .btn-outline-success,
+    .fcost-page-actions .btn-outline-success,
+    .ins .fcost-card .btn-outline-success,
+    .ins .fcost-page-actions .btn-outline-success { border-color: #c7d2fe !important; color: #4338ca !important; background: #fff !important; }
+    .fcost-card .btn-outline-success:hover,
+    .fcost-page-actions .btn-outline-success:hover,
+    .ins .fcost-card .btn-outline-success:hover,
+    .ins .fcost-page-actions .btn-outline-success:hover { background: #eef2ff !important; color: #3730a3 !important; }
+
+    .fcost-table td,
+    .fcost-trend-table td,
+    .fcost-weekly-table td,
+    .fcost-breakdown-table td {
+        font-family: inherit; font-variant-numeric: tabular-nums;
+    }
+
+    /* Regular F-Cost tables (Model / Sub Group summary, per-material) */
+    .fcost-table { font-size: 12px; border-collapse: separate; border-spacing: 0; color: #0f172a; }
+    .fcost-table th {
+        background: #f8fafc; color: #64748b; font-weight: 600; font-size: 11px;
+        text-transform: none; letter-spacing: 0;
+        padding: 7px 10px; border: 0; border-bottom: 1px solid #e2e8f0;
+    }
+    .fcost-table td { padding: 5px 10px; border: 0; border-bottom: 1px solid #eef2f7; font-size: 11.5px; }
+    .fcost-table td.label-td { font-size: 12px; }
+    .fcost-table th:first-child,
+    .fcost-table td:first-child { padding-left: 14px; }
+    .fcost-table td.label-td[rowspan] { border-right: 1px solid #eef2f7; vertical-align: top; }
+    .fcost-row-total td {
+        background: #f8fafc; color: #0f172a; font-weight: 700;
+        border: 0; border-bottom: 1px solid #e2e8f0;
+    }
+    .fcost-row-input td,
+    .fcost-row-cost  td,
+    .fcost-row-rate  td { background: #fff; color: #0f172a; font-weight: 500; }
+    .fcost-row-input td { border-top: 0; }
+    .fcost-row-rate  td { font-weight: 600; }
+    .fcost-row-mid  td { background: #fff; color: #0f172a; font-weight: 700; }
+    .fcost-row-mid.fcost-row-input td { border-top: 1px solid #e2e8f0; }
+    .fcost-row-sub1 td { background: #fff; color: #334155; font-weight: 600; }
+    .fcost-row-sub2 td { background: #fff; color: #334155; font-weight: 500; font-size: 11.5px; }
+    .fcost-table tbody tr:hover td { background: #f8faff; }
+    .fcost-table .zero,
+    .fcost-table td.zero { color: #cbd5e1; }
+    .fcost-tog { color: #94a3b8; font-size: 9px; }
+    .fcost-table .hier-level-badge,
+    .ins .fcost-table .hier-level-badge {
+        display: inline-block; width: auto; min-width: 0; padding: 1px 5px;
+        border: 0 !important; border-radius: 4px !important;
+        background: #e0e7ff !important; color: #3730a3 !important; font-family: inherit !important;
+        font-size: 9px; font-weight: 800; letter-spacing: .06em;
+    }
+    .fcost-table .fcost-row-mid .hier-level-badge,
+    .ins .fcost-table .fcost-row-mid .hier-level-badge { background: #0f172a !important; color: #fff !important; }
+    .fcost-card > .card-body > .btn { align-self: flex-start; min-width: 160px; }
+    .ztype-badge {
+        min-width: 58px; text-align: center;
+        border: 0; border-radius: 5px; padding: 1px 7px;
+        font-size: 10.5px; font-weight: 700;
+        background: #f1f5f9; color: #475569;
+    }
+    .ztype-badge.zt-input { background: #f1f5f9; color: #475569; }
+    .ztype-badge.zt-cost { background: #eef2ff; color: #4338ca; }
+    .ztype-badge.zt-rate { background: #fef3c7; color: #92400e; }
+    .zero { color: #cbd5e1; }
+
+    /* Day / Week / Month blocks: the first column of each block gets the block colour */
+    .fcost-table th.col-day-start,
+    .fcost-table td.col-day-start,
+    .fcost-weekly-table th.col-day-start,
+    .fcost-weekly-table td.col-day-start { border-left: 2px solid #c7d2fe; }
+    .fcost-table th.col-week-start,
+    .fcost-table td.col-week-start,
+    .fcost-weekly-table th.col-week-start,
+    .fcost-weekly-table td.col-week-start { border-left: 2px solid #bae6fd; }
+    .fcost-table th.col-month-start,
+    .fcost-table td.col-month-start,
+    .fcost-weekly-table th.col-month-start,
+    .fcost-weekly-table td.col-month-start { border-left: 2px solid #a7f3d0; }
+    .fcost-table th.col-day-start { box-shadow: inset 0 2px 0 #c7d2fe; color: #4338ca; }
+    .fcost-table th.col-week-start { box-shadow: inset 0 2px 0 #bae6fd; color: #0369a1; }
+    .fcost-table th.col-month-start { box-shadow: inset 0 2px 0 #a7f3d0; color: #047857; }
+
+    /* FCOST Trend */
+    .fcost-trend-card { border-color: #e2e8f0 !important; }
+    .fcost-trend-title {
+        padding: .7rem 1rem; color: #0f172a; font-size: 13.5px; font-weight: 700;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .fcost-trend-title span { margin-right: 0; }
+    .fcost-trend-table { border-collapse: separate; border-spacing: 0; color: #0f172a; }
+    .fcost-trend-table th {
+        background: #f8fafc; color: #64748b; font-weight: 600; font-size: 11px;
+        padding: 7px 10px; border: 0; border-bottom: 1px solid #e2e8f0;
+    }
+    .fcost-trend-table td {
+        padding: 5px 10px; border: 0; border-bottom: 1px solid #eef2f7;
+        background: #fff; font-size: 11.5px;
+    }
+    .fcost-trend-table .trend-model-td,
+    .fcost-trend-table .trend-metric-td { text-align: left; font-size: 12px; }
+    .fcost-trend-table .trend-model-th,
+    .fcost-trend-table .trend-metric-th { text-align: left; }
+    .fcost-trend-table .trend-model-th,
+    .fcost-trend-table .trend-model-td { padding-left: 14px; }
+    .fcost-trend-table .trend-metric-td { color: #64748b; font-weight: 600; }
+    .fcost-trend-table .trend-model-muted { color: #94a3b8; }
+    .fcost-trend-table .trend-defect-row td { border-top: 1px solid #e2e8f0; }
+    .fcost-trend-table .trend-child-row td { background: #fbfcfe; }
+    .fcost-trend-table tbody tr:hover td { background: #f8faff; }
+    .trend-expand-btn,
+    .breakdown-expand-btn {
+        border: 1px solid #c7d2fe; border-radius: 5px; background: #eef2ff; color: #4338ca;
+    }
+    .trend-expand-btn:hover,
+    .breakdown-expand-btn:hover { background: #e0e7ff; }
+    .trend-bgroup-badge {
+        border: 0; border-radius: 4px; background: #e0e7ff; color: #3730a3;
+        font-size: 9px; font-weight: 800; letter-spacing: .06em; padding: 1px 5px;
+    }
+    .fcost-trend-table .trend-period-start,
+    .fcost-trend-table .col-week-start { border-left: 2px solid #bae6fd; }
+    .fcost-trend-table .col-month-start { border-left: 2px solid #a7f3d0; }
+    .fcost-trend-table .trend-total-row td {
+        background: #f8fafc; color: #0f172a; font-weight: 700;
+    }
+    .fcost-trend-table .trend-total-first-row td { border-top: 1px solid #cbd5e1; }
+
+    /* FCOST Raw Material Breakdown */
+    .fcost-breakdown-table { border-collapse: separate; border-spacing: 0; color: #0f172a; }
+    .fcost-breakdown-table th,
+    .fcost-breakdown-table td { border: 0; border-bottom: 1px solid #eef2f7; padding: 5px 10px; }
+    .fcost-breakdown-table th {
+        background: #f8fafc; color: #64748b; font-weight: 600; font-size: 11px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .fcost-breakdown-table th:first-child,
+    .fcost-breakdown-table td:first-child { padding-left: 14px; }
+    .fcost-breakdown-table .breakdown-rate-hint { color: #94a3b8; }
+    .fcost-breakdown-table .breakdown-qty { color: #64748b; }
+    .fcost-breakdown-table td.zero .breakdown-amount { color: #cbd5e1; font-weight: 500; }
+    .fcost-breakdown-table .breakdown-group-start td { border-top: 1px solid #cbd5e1; }
+    .fcost-breakdown-table .breakdown-grand-total-row td {
+        background: #eef2ff; color: #3730a3; font-weight: 800;
+        border: 0; border-bottom: 1px solid #c7d2fe;
+    }
+    .fcost-breakdown-table .breakdown-total-row td { background: #f8fafc; color: #0f172a; font-weight: 700; }
+    .fcost-breakdown-table .breakdown-subtotal-row td { background: #fbfcfe; color: #0f172a; font-weight: 600; }
+    .fcost-breakdown-table .breakdown-material-row td { background: #fff; }
+    .fcost-breakdown-table tbody tr:hover td { background: #f8faff; }
+    .fcost-currency-tools { color: #64748b; font-weight: 600; }
+    .fcost-rate-source { color: #64748b; }
+    .fcost-currency-warning { color: #b45309; }
+
+    /* Target defect rate (Weekly Report) */
+    .fcost-weekly-card { border-color: #e2e8f0 !important; }
+    .fcost-weekly-table { border-collapse: separate; border-spacing: 0; color: #0f172a; }
+    .fcost-weekly-table th {
+        background: #f8fafc; color: #64748b; font-weight: 600; font-size: 11px;
+        padding: 8px 12px; border: 0; border-bottom: 1px solid #e2e8f0;
+    }
+    .fcost-weekly-table td { border: 0; border-bottom: 1px solid #eef2f7; }
+    .fcost-weekly-table td.weekly-site-td {
+        border-right: 1px solid #eef2f7; color: #3730a3; font-weight: 800; background: #fff;
+    }
+    .fcost-weekly-table td.weekly-model-target-td { background: #fffbeb; }
+    .fcost-weekly-table .weekly-model-target-input { color: #92400e; font-weight: 700; }
+    .fcost-weekly-table .weekly-model-target-input:focus { outline: 2px solid #c7d2fe; border-radius: 4px; }
+    .fcost-weekly-table .weekly-model-achievement { color: #4338ca; }
+    .fcost-weekly-table .weekly-model-row:hover td { background: #f8faff; }
+    .weekly-total-row td,
+    .fcost-weekly-table td.weekly-total-label {
+        background: #f8fafc; color: #0f172a; font-weight: 700;
+        border-top: 1px solid #cbd5e1;
+    }
+    .fcost-weekly-config { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: .85rem 1rem; }
+    .fcost-weekly-config label span { color: #64748b; font-weight: 600; }
+    .fcost-weekly-saved-list {
+        border: 1px solid #e2e8f0; border-radius: 8px; color: #0f172a; font-size: 13px;
+    }
+    .weekly-list-bullet {
+        display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+        background: #4f46e5; vertical-align: middle; margin-right: 8px;
     }
 </style>
 
