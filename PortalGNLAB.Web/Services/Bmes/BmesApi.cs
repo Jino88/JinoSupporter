@@ -48,8 +48,10 @@ public static class BmesApi
     public static readonly TimeSpan CallSpacing = TimeSpan.FromSeconds(1);
     public static readonly TimeSpan CallTimeout = TimeSpan.FromSeconds(60);
 
-    /// <summary>Longest period one call may cover (Tool rule: 31 days or less).</summary>
-    public const int MaxPeriodDays = 31;
+    /// <summary>Longest period one call may cover: 3 calendar months. Measured 2026-10-29: AI_TOOL_00055 view R
+    /// takes 2026-07-28..2026-10-27 and answers E MSG0001207 from 2026-07-27; views S and AI_TOOL_00027 view C took
+    /// 185 days in one call with the same totals as split calls. The general guide's "31 days" is wrong.</summary>
+    public const int MaxPeriodMonths = 3;
 
     private sealed class Tokens(string access, string refresh)
     {

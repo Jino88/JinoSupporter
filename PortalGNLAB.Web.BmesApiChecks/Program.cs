@@ -97,9 +97,15 @@ BmesApiResult Load(string name) => BmesToolRows.ParseExecuteResponse(Fixture(nam
 
 // -- shared helpers -----------------------------------------------------------
 {
-    var windows = BmesToolRows.SplitPeriod(new DateTime(2026, 8, 1), new DateTime(2026, 10, 27));
-    Check(windows.Count == 3 && windows[0].End == new DateTime(2026, 8, 31) && windows[2].End == new DateTime(2026, 10, 27)
-          && windows.All(w => (w.End - w.Start).TotalDays + 1 <= 31), "periods: 88 days -> 3 windows of at most 31 days");
+    // Boundary measured on the API: 2026-07-28..2026-10-27 passes, from 2026-07-27 it is MSG0001207.
+    Check(BmesToolRows.SplitPeriod(new DateTime(2026, 7, 28), new DateTime(2026, 10, 27)).Count == 1, "periods: exactly 3 months -> 1 window");
+    var windows = BmesToolRows.SplitPeriod(new DateTime(2026, 4, 27), new DateTime(2026, 10, 27));
+    Check(windows.Count == 3 && windows[0] == (new DateTime(2026, 4, 27), new DateTime(2026, 7, 26))
+          && windows[1] == (new DateTime(2026, 7, 27), new DateTime(2026, 10, 26)) && windows[2] == (new DateTime(2026, 10, 27), new DateTime(2026, 10, 27)),
+        "periods: 6 months + 1 day -> 3 back-to-back windows of at most 3 months");
+    var monthEnd = BmesToolRows.SplitPeriod(new DateTime(2026, 11, 30), new DateTime(2027, 6, 30));
+    Check(monthEnd.Zip(monthEnd.Skip(1)).All(p => p.Second.Start == p.First.End.AddDays(1)) && monthEnd[^1].End == new DateTime(2027, 6, 30),
+        "periods: month-end start -> no gap or overlap");
     Check(BmesToolRows.SplitPeriod(new DateTime(2026, 10, 27), new DateTime(2026, 10, 27)).Count == 1, "periods: single day -> 1 window");
     Check(BmesToolRows.ToIsoDate("20261001") == "2026-10-01" && BmesToolRows.ToIsoDate("2026-10-01") == "2026-10-01" && BmesToolRows.ToIsoDate("") == "",
         "dates: yyyyMMdd -> yyyy-MM-dd");

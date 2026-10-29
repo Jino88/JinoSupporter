@@ -6,7 +6,7 @@ public static partial class BmesGateway
 
     /// <summary>
     /// MES073260/SearchList — LPA audit list, from PLATFORM_API (AI_TOOL_00027, view C: one row per audit with
-    /// OK / NG / N/A counts). Ranges longer than 31 days are fetched in 31-day windows, one call each.
+    /// OK / NG / N/A counts). Ranges longer than 3 months are fetched in 3-month windows, one call each.
     /// Output: generic rows (every column of the Tool answer, in order) or a failed result carrying the error text.
     /// </summary>
     public static async Task<BmesLpaScrapeService.LpaResult> FetchLpaListAsync(
