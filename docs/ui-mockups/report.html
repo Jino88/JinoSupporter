@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>BMES Report — redesign mockup</title>
+<link rel="stylesheet" href="mockup.css" />
+<style>
+  .meta { display: flex; gap: 18px; font-size: 11.5px; color: var(--muted); }
+  .meta b { color: var(--ink-2); font-weight: 600; }
+  .viewbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 10px 16px; margin-bottom: 14px; }
+  .viewbar .sep { width: 1px; height: 22px; background: var(--line); }
+  .viewbar label { font-size: 11.5px; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .viewbar .inp { height: 30px; width: 80px; }
+  .viewbar .grow { flex: 1; }
+  .tabs.big button { padding: 11px 16px; font-size: 13px; }
+  .tgt { padding: 16px 18px; display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; }
+  .tgt h3 { margin: 0; font-size: 13.5px; }
+  .tgt .sub { font-size: 11.5px; color: var(--muted); grid-column: 1; }
+  .ring { grid-row: 1 / span 3; grid-column: 2; }
+  .tgt .nums { grid-column: 1; display: flex; gap: 14px; margin-top: 6px; font-size: 12px; color: var(--muted); }
+  .tgt .nums b { display: block; font-size: 16px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .status-ok { color: var(--good); } .status-warn { color: var(--warn); } .status-bad { color: var(--bad); }
+  .rank-b { width: 22px; height: 22px; border-radius: 6px; background: #f1f5f9; display: inline-grid; place-items: center; font-weight: 700; font-size: 11px; color: var(--muted); }
+  .rank-b.r1 { background: #0f172a; color: #fff; }
+  td .spk { display: inline-block; vertical-align: middle; }
+  .t .type-row td { background: #f8fafc; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="rail" id="rail"></aside>
+  <main class="main"><div class="page">
+
+    <header class="ph">
+      <div>
+        <div class="ph-crumb">BMES <span class="faint">›</span> <b>Report</b></div>
+        <h1>BMES Integrated Report</h1>
+        <div class="ph-sub">
+          <span>2026-08-01 – 2026-10-28</span><span class="dot-sep">·</span>
+          <span class="chips"><span class="chip on">MSM-X316</span><span class="chip on">MSM-X318</span><span class="chip on">J69 Speaker</span></span>
+        </div>
+      </div>
+      <div class="ph-actions" style="flex-direction:column;align-items:flex-end;gap:10px">
+        <div style="display:flex;gap:8px">
+          <button class="btn"><i data-icon="download"></i> Excel</button>
+          <button class="btn"><i data-icon="download"></i> HTML</button>
+          <button class="btn primary"><i data-icon="refresh"></i> Rebuild report</button>
+        </div>
+        <div class="meta"><span>Generated <b>10-29 08:14</b></span><span>Calc <b>v7</b></span><span>Schema <b>2</b></span></div>
+      </div>
+    </header>
+
+    <div class="tabs big" id="tabs"></div>
+
+    <section class="card viewbar">
+      <label>Hide rows below <input class="inp" value="100" /> ppm</label>
+      <span class="sep"></span>
+      <label>Columns <span class="seg"><button>Date</button><button class="on">Week</button><button>Month</button></span></label>
+      <span class="sep"></span>
+      <label>Show <select class="inp" style="width:auto"><option>Last 8 weeks</option><option>Last 12 weeks</option><option>All</option></select></label>
+      <span class="grow"></span>
+      <span class="muted" style="font-size:11.5px">Sorted by W43 · worst first</span>
+    </section>
+
+    <section class="grid g-4" id="targets"></section>
+    <div style="height:14px"></div>
+
+    <section class="grid g-3-1">
+      <div class="card">
+        <div class="card-h"><h2>Weekly PPM by group <span class="hint">dashed = target</span></h2><div class="legend" id="lg"></div></div>
+        <div class="card-b" id="trend"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h2>F-Cost · W43</h2><span class="muted">USD</span></div>
+        <div class="card-b">
+          <div class="kpi-value" style="font-size:28px">$18,420</div>
+          <div class="kpi-foot" style="margin-bottom:14px"><span class="delta down">▼ −$2,130</span><span>vs W42 · 0.41% of input</span></div>
+          <div class="bars" id="fcost"></div>
+        </div>
+      </div>
+    </section>
+
+    <div style="height:14px"></div>
+
+    <section class="card">
+      <div class="card-h"><h2>Weekly summary <span class="hint">Group → Model → Process type · PPM</span></h2></div>
+      <div class="card-b flush"><div class="tbl-wrap"><table class="t" id="summary"></table></div></div>
+    </section>
+
+    <div style="height:14px"></div>
+
+    <section class="card">
+      <div class="card-h"><h2>Top defects <span class="hint">line-shift × process × NG name</span></h2></div>
+      <div class="card-b flush"><div class="tbl-wrap"><table class="t" id="defects"></table></div></div>
+    </section>
+
+  </div></main>
+</div>
+<div class="sample-note">Mockup · sample data</div>
+
+<script src="mockup.js"></script>
+<script>
+  renderRail("report");
+  document.getElementById("tabs").innerHTML = ["Daily", "Weekly", "KPI", "Cause share", "F-Cost", "F-Cost (all)", "Target defect rate", "Target (all)"]
+    .map((t) => `<button class="${t === "Weekly" ? "on" : ""}">${t}</button>`).join("");
+
+  const ring = (p, color) => {
+    const r = 24, c = 2 * Math.PI * r, len = Math.min(p, 100) / 100 * c;
+    return `<svg class="ring" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="${r}" fill="none" stroke="#eef2f7" stroke-width="7"/>
+      <circle cx="32" cy="32" r="${r}" fill="none" stroke="${color}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${len} ${c}" transform="rotate(-90 32 32)"/>
+      <text x="32" y="36" text-anchor="middle" font-size="12.5" font-weight="700" fill="#0f172a">${p}%</text></svg>`;
+  };
+  const targets = [
+    { n: "All selected", base: 2200, tgt: 1500, now: 1725, p: 68, c: "#4f46e5", s: "status-warn", st: "On track" },
+    { n: "MSM-X316", base: 2600, tgt: 1800, now: 2498, p: 13, c: "#dc2626", s: "status-bad", st: "Behind" },
+    { n: "MSM-X318", base: 1700, tgt: 1200, now: 1403, p: 59, c: "#d97706", s: "status-warn", st: "On track" },
+    { n: "J69 Speaker", base: 1500, tgt: 1000, now: 924, p: 100, c: "#059669", s: "status-ok", st: "Achieved" },
+  ];
+  document.getElementById("targets").innerHTML = targets.map((t) => `
+    <div class="card tgt">
+      <h3>${t.n}</h3>${ring(t.p, t.c)}
+      <span class="sub">Target achievement · <b class="${t.s}">${t.st}</b></span>
+      <div class="nums"><span>Baseline<b>${fmt(t.base)}</b></span><span>Target<b>${fmt(t.tgt)}</b></span><span>W43<b>${fmt(t.now)}</b></span></div>
+    </div>`).join("");
+
+  const weeks = ["W36", "W37", "W38", "W39", "W40", "W41", "W42", "W43"];
+  const groups = [
+    { name: "MSM-X316", color: "#dc2626", values: [2620, 2580, 2610, 2550, 2470, 2440, 2380, 2498] },
+    { name: "MSM-X318", color: "#d97706", values: [1690, 1650, 1600, 1560, 1520, 1480, 1450, 1403] },
+    { name: "J69 Speaker", color: "#059669", values: [1480, 1400, 1300, 1210, 1100, 1020, 980, 924] },
+  ];
+  document.getElementById("lg").innerHTML = groups.map((g) => `<span><i style="background:${g.color}"></i>${g.name}</span>`).join("");
+  document.getElementById("trend").innerHTML = lineChart(weeks, [...groups,
+    { name: "t1", color: "#dc2626", values: weeks.map(() => 1800), dashed: true },
+    { name: "t2", color: "#d97706", values: weeks.map(() => 1200), dashed: true },
+    { name: "t3", color: "#059669", values: weeks.map(() => 1000), dashed: true }], { w: 860, h: 250 });
+
+  document.getElementById("fcost").innerHTML = [
+    { n: "MSM-X316", v: 9800, c: "#dc2626" }, { n: "MSM-X318", v: 5120, c: "#d97706" }, { n: "J69 Speaker", v: 3500, c: "#059669" },
+  ].map((r) => `<div class="bar-row" style="grid-template-columns:minmax(0,1fr) 80px"><div class="bar-name"><b>${r.n}</b><div class="bar-track"><div class="bar-fill" style="width:${r.v / 98}%;background:${r.c}"></div></div></div><span class="bar-val">$${fmt(r.v)}</span></div>`).join("");
+
+  const rows = [
+    { lvl: 0, n: "MSM-X316", v: [2550, 2470, 2440, 2380, 2498] },
+    { lvl: 1, n: "Main Assy", t: "Main Assy", v: [980, 950, 940, 900, 1060] },
+    { lvl: 1, n: "Function", t: "Function", v: [610, 590, 600, 580, 640] },
+    { lvl: 1, n: "Final Visual", t: "Final Visual", v: [560, 540, 520, 510, 450] },
+    { lvl: 1, n: "Sub Assy", t: "Sub Assy", v: [330, 320, 310, 330, 300] },
+    { lvl: 0, n: "MSM-X318", v: [1560, 1520, 1480, 1450, 1403] },
+    { lvl: 0, n: "J69 Speaker", v: [1210, 1100, 1020, 980, 924] },
+  ];
+  const wk5 = weeks.slice(-5);
+  document.getElementById("summary").innerHTML = `
+    <thead><tr><th class="l" style="min-width:220px">Group / Process type</th>${wk5.map((w) => `<th>${w}</th>`).join("")}<th>Change</th><th class="l">Trend</th></tr></thead>
+    <tbody>${rows.map((r) => {
+      const d = r.v.at(-1) - r.v.at(-2);
+      return `<tr class="lvl-${r.lvl}"><td>${r.lvl === 0 ? `<span class="tree-caret">▾</span>${r.n}` : `<span class="pt"><i style="background:${typeColor(r.t)}"></i>${r.n}</span>`}</td>
+        ${r.v.map((v) => `<td class="n"><span class="heat" style="${heat(v, r.lvl ? 1100 : 2600)}">${fmt(v)}</span></td>`).join("")}
+        <td><span class="delta ${deltaClass(d)}">${signed(d)}</span></td><td class="l"><span class="spk">${sparkline(r.v, { w: 90, h: 24, color: d > 0 ? "#dc2626" : "#059669", fill: false })}</span></td></tr>`;
+    }).join("")}</tbody>`;
+
+  const defects = [
+    { ls: "X316B · L1 Day", t: "Main Assy", p: "Voice coil bonding", ng: "Glue overflow", v: [420, 450, 440, 450, 860] },
+    { ls: "X318 · L2 Night", t: "Final Visual", p: "Final appearance", ng: "Scratch", v: [480, 470, 450, 440, 620] },
+    { ls: "X316B · L1 Day", t: "Function", p: "R&B test", ng: "Rub & Buzz", v: [380, 400, 390, 380, 540] },
+    { ls: "J69 · L1 Day", t: "Sub Assy", p: "Frame welding", ng: "Welding offset", v: [190, 200, 180, 190, 330] },
+    { ls: "X318 · L2 Night", t: "Function", p: "SPL measure", ng: "SPL low", v: [200, 190, 170, 180, 300] },
+    { ls: "X316B · L2 Day", t: "Main Assy", p: "Magnet attach", ng: "Coil short", v: [260, 240, 250, 230, 210] },
+  ];
+  document.getElementById("defects").innerHTML = `
+    <thead><tr><th class="l">#</th><th class="l">Line-shift</th><th class="l">Type</th><th class="l">Process</th><th class="l">NG name</th>${wk5.map((w) => `<th>${w}</th>`).join("")}<th>Change</th></tr></thead>
+    <tbody>${defects.map((r, i) => {
+      const d = r.v.at(-1) - r.v.at(-2);
+      return `<tr><td><span class="rank-b ${i === 0 ? "r1" : ""}">${i + 1}</span></td><td class="l"><b>${r.ls}</b></td><td class="l"><span class="pt"><i style="background:${typeColor(r.t)}"></i>${r.t}</span></td>
+        <td class="l">${r.p}</td><td class="l">${r.ng}</td>${r.v.map((v) => `<td class="n"><span class="heat" style="${heat(v, 900)}">${fmt(v)}</span></td>`).join("")}
+        <td><span class="delta ${deltaClass(d)}">${signed(d)}</span></td></tr>`;
+    }).join("")}</tbody>`;
+</script>
+</body>
+</html>
