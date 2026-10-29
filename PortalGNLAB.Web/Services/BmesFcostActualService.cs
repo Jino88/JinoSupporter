@@ -784,7 +784,7 @@ public sealed partial class BmesFcostActualService(
     }
 
     private string GetRawBreakdownCacheDbPath()
-        => Path.Combine(_settings.FCostDbSaveDirectory, "fcost_raw.db");
+        => PortalDb.FilePath;
 
     private static string BuildSqliteConnectionString(string dbPath)
     {

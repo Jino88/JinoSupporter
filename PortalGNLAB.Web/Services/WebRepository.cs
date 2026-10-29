@@ -22,14 +22,11 @@ public sealed class WebRepository
 
     public WebRepository(IConfiguration config)
     {
-        // Priority 1: appsettings.json ??Database:Path (explicit override)
-        // Priority 2: WPF app settings file (DataInference.DatabasePath)
-        // Priority 3: default path under AppStoragePaths.RootDirectory.
+        // The one unified DB (PortalGNLAB.db); Database:Path only overrides it for tests.
         string? configured = config["Database:Path"];
         _dbPath = !string.IsNullOrWhiteSpace(configured)
             ? configured
-            : WpfSettingsReader.TryGetDatabasePath()
-              ?? AppStoragePaths.Combine("process-review.db");
+            : PortalDb.FilePath;
 
         EnsureDatabase();
     }

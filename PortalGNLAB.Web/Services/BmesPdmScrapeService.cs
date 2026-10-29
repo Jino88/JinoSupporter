@@ -4,7 +4,7 @@ namespace PortalGNLAB.Web.Services;
 
 /// <summary>
 /// Fetches the drawing/spec master from BMES MES073300/SearchList and dumps every row
-/// verbatim to a standalone SQLite DB (bmes_pdm_raw.db) next to ngrate_settings.db.
+/// verbatim to a standalone SQLite DB (BmesPdm table in PortalGNLAB.db).
 /// All values are stored as TEXT. Full refresh — the table is dropped and recreated on
 /// every call.
 /// </summary>
@@ -12,8 +12,7 @@ public sealed class BmesPdmScrapeService(NgRateSettingsService settings)
 {
     private static string[] Columns => BmesGateway.PdmColumns;
 
-    public string RawDbPath =>
-        Path.Combine(settings.SettingsDbDirectory, "bmes_pdm_raw.db");
+    public string RawDbPath => PortalDb.FilePath;
 
     /// <summary>
     /// Returns number of rows saved, or -1 on failure.
@@ -50,7 +49,7 @@ public sealed class BmesPdmScrapeService(NgRateSettingsService settings)
 
         progress?.Report($"Parsed {rows.Count:N0} rows. Saving to {Path.GetFileName(RawDbPath)}…");
         int saved = await Task.Run(() => SaveToSqlite(rows));
-        progress?.Report($"✓ Saved {saved:N0} row(s) to bmes_pdm_raw.db");
+        progress?.Report($"✓ Saved {saved:N0} row(s) to PortalGNLAB.db (BmesPdm)");
         return saved;
     }
 

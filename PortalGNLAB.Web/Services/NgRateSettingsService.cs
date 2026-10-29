@@ -4,9 +4,9 @@ using System.Text.RegularExpressions;
 namespace PortalGNLAB.Web.Services;
 
 /// <summary>
-/// NG Rate settings DB service.
-/// Settings file location is now configurable via <see cref="AppPathsService"/>
-/// (see Admin Paths). Defaults under <see cref="AppStoragePaths.RootDirectory"/>.
+/// NG Rate settings service (BMES web / API logins, routing and reason tables).
+/// Everything lives in the unified <see cref="PortalDb"/> file; the old ngrate_settings.db
+/// is only read by <see cref="PortalDbMigrator"/>.
 /// </summary>
 public sealed class NgRateSettingsService
 {
@@ -32,7 +32,7 @@ public sealed class NgRateSettingsService
         string.IsNullOrWhiteSpace(_appPaths.Current.NgRateSettingsDbDirectory)
             ? BootstrapSettingsDbDirectory
             : _appPaths.Current.NgRateSettingsDbDirectory;
-    public string SettingsDbPath      => Path.Combine(SettingsDbDirectory, "ngrate_settings.db");
+    public string SettingsDbPath      => PortalDb.FilePath;
     public bool IsNgRateStorageConfigured => _appPaths.IsNgRateStorageConfigured;
     private bool HasUnifiedDbDirectory =>
         !string.IsNullOrWhiteSpace(_appPaths.Current.DbRootDirectory);
@@ -175,9 +175,7 @@ public sealed class NgRateSettingsService
     private SqliteConnection Open()
     {
         EnsureDatabase();
-        var conn = new SqliteConnection($"Data Source={SettingsDbPath}");
-        conn.Open();
-        return conn;
+        return PortalDb.Open();
     }
 
     // ── Routing Table ─────────────────────────────────────────────────────────────
@@ -473,60 +471,17 @@ public sealed class NgRateSettingsService
     };
 
     /// <summary>
-    /// Scans all *.db files in DbSaveDirectory (top-level + "daily" subfolder),
-    /// unions DISTINCT (PROCESSNAME, NGNAME) pairs from each OrginalTable,
+    /// Scans the NG Rate cache table (NgRateCache in PortalGNLAB.db),
+    /// unions DISTINCT (PROCESSNAME, NGNAME) pairs,
     /// applies NormalizeText to both columns, then inserts any pair not already
     /// present in ReasonTable (comparison is normalized on both sides).
     /// Returns the number of newly inserted rows.
     /// </summary>
     public int RefreshReasonFromDailyDbs(IProgress<string>? progress = null)
     {
-        var dailyPairs = new HashSet<(string Pn, string Ng)>();
-        var files      = EnumerateDbFilesForScan();
-
-        progress?.Report($"Scanning {files.Count} DB file(s)…");
-        int scanned = 0;
-        foreach (var file in files)
-        {
-            scanned++;
-            try
-            {
-                var cs = new SqliteConnectionStringBuilder
-                {
-                    DataSource = file,
-                    Mode       = SqliteOpenMode.ReadOnly,
-                }.ToString();
-
-                using var conn = new SqliteConnection(cs);
-                conn.Open();
-
-                using (var check = conn.CreateCommand())
-                {
-                    check.CommandText =
-                        "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='OrginalTable';";
-                    if (Convert.ToInt64(check.ExecuteScalar() ?? 0L) == 0) continue;
-                }
-
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText =
-                    "SELECT DISTINCT [PROCESSNAME], [NGNAME] FROM [OrginalTable] " +
-                    "WHERE [PROCESSNAME] IS NOT NULL AND [NGNAME] IS NOT NULL;";
-                using var rdr = cmd.ExecuteReader();
-                while (rdr.Read())
-                {
-                    string pn = NormalizeText(rdr.IsDBNull(0) ? string.Empty : rdr.GetString(0));
-                    string ng = NormalizeText(rdr.IsDBNull(1) ? string.Empty : rdr.GetString(1));
-                    if (pn.Length == 0 && ng.Length == 0) continue;
-                    dailyPairs.Add((pn, ng));
-                }
-            }
-            catch (Exception ex)
-            {
-                progress?.Report($"[WARN] {Path.GetFileName(file)}: {ex.Message}");
-            }
-        }
-
-        progress?.Report($"Collected {dailyPairs.Count} distinct pair(s) from {scanned} DB file(s).");
+        progress?.Report("Scanning NG Rate cache…");
+        var dailyPairs = ReadCachedProcessNgPairs(null);
+        progress?.Report($"Collected {dailyPairs.Count} distinct pair(s) from the NG Rate cache.");
 
         var existing = GetReasonRows()
             .Select(r => (Pn: NormalizeText(r.ProcessName), Ng: NormalizeText(r.NgName)))
@@ -556,7 +511,7 @@ public sealed class NgRateSettingsService
     }
 
     /// <summary>
-    /// Scans all daily *.db files for DISTINCT (PROCESSNAME, NGNAME) pairs whose
+    /// Scans the NG Rate cache for DISTINCT (PROCESSNAME, NGNAME) pairs whose
     /// [MATERIALNAME] contains <paramref name="materialNamePattern"/> (case-insensitive,
     /// SQLite LIKE). Used by the Reason Table page to discover which reasons are still
     /// missing for a given model.
@@ -564,91 +519,57 @@ public sealed class NgRateSettingsService
     public List<(string ProcessName, string NgName)> GetProcessNgPairsByMaterial(
         string materialNamePattern, IProgress<string>? progress = null)
     {
-        var pairs = new HashSet<(string Pn, string Ng)>();
-        if (string.IsNullOrWhiteSpace(materialNamePattern)) return pairs.ToList();
+        if (string.IsNullOrWhiteSpace(materialNamePattern)) return [];
 
-        var files = EnumerateDbFilesForScan();
-        progress?.Report($"Scanning {files.Count} DB file(s) for material LIKE '{materialNamePattern}'…");
-
-        string pattern = "%" + materialNamePattern.Trim() + "%";
-        int scanned = 0;
-        foreach (var file in files)
-        {
-            scanned++;
-            try
-            {
-                var cs = new SqliteConnectionStringBuilder
-                {
-                    DataSource = file,
-                    Mode       = SqliteOpenMode.ReadOnly,
-                }.ToString();
-
-                using var conn = new SqliteConnection(cs);
-                conn.Open();
-
-                using (var check = conn.CreateCommand())
-                {
-                    check.CommandText =
-                        "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='OrginalTable';";
-                    if (Convert.ToInt64(check.ExecuteScalar() ?? 0L) == 0) continue;
-                }
-
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText =
-                    "SELECT DISTINCT [PROCESSNAME], [NGNAME] FROM [OrginalTable] " +
-                    "WHERE [PROCESSNAME] IS NOT NULL AND [NGNAME] IS NOT NULL " +
-                    "AND [MATERIALNAME] IS NOT NULL " +
-                    "AND [MATERIALNAME] LIKE @mn COLLATE NOCASE;";
-                cmd.Parameters.AddWithValue("@mn", pattern);
-                using var rdr = cmd.ExecuteReader();
-                while (rdr.Read())
-                {
-                    string pn = NormalizeText(rdr.IsDBNull(0) ? string.Empty : rdr.GetString(0));
-                    string ng = NormalizeText(rdr.IsDBNull(1) ? string.Empty : rdr.GetString(1));
-                    if (pn.Length == 0 && ng.Length == 0) continue;
-                    pairs.Add((pn, ng));
-                }
-            }
-            catch (Exception ex)
-            {
-                progress?.Report($"[WARN] {Path.GetFileName(file)}: {ex.Message}");
-            }
-        }
-
-        progress?.Report($"Found {pairs.Count} distinct pair(s) across {scanned} DB file(s).");
+        progress?.Report($"Scanning NG Rate cache for material LIKE '{materialNamePattern}'…");
+        var pairs = ReadCachedProcessNgPairs("%" + materialNamePattern.Trim() + "%");
+        progress?.Report($"Found {pairs.Count} distinct pair(s).");
         return pairs
             .OrderBy(p => p.Pn, StringComparer.Ordinal)
             .ThenBy(p => p.Ng, StringComparer.Ordinal)
+            .Select(p => (p.Pn, p.Ng))
             .ToList();
     }
 
-    /// <summary>
-    /// Collect *.db files from DbSaveDirectory top-level + "daily" subfolder,
-    /// excluding ngrate_settings.db.
-    /// </summary>
-    private List<string> EnumerateDbFilesForScan()
+    private HashSet<(string Pn, string Ng)> ReadCachedProcessNgPairs(string? materialLikePattern)
     {
-        var dbDir = DbSaveDirectory;
-        var files = new List<string>();
+        var pairs = new HashSet<(string Pn, string Ng)>();
+        try
+        {
+            using var conn = Open();
+            if (!CacheTableExists(conn)) return pairs;
 
-        if (Directory.Exists(dbDir))
-        {
-            files.AddRange(
-                Directory.EnumerateFiles(dbDir, "*.db", SearchOption.TopDirectoryOnly)
-                         .Where(f => !string.Equals(
-                             Path.GetFileName(f), "ngrate_settings.db",
-                             StringComparison.OrdinalIgnoreCase)));
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText =
+                "SELECT DISTINCT [PROCESSNAME], [NGNAME] FROM [NgRateCache] " +
+                "WHERE [PROCESSNAME] IS NOT NULL AND [NGNAME] IS NOT NULL" +
+                (materialLikePattern is null
+                    ? ";"
+                    : " AND [MATERIALNAME] IS NOT NULL AND [MATERIALNAME] LIKE @mn COLLATE NOCASE;");
+            if (materialLikePattern is not null)
+                cmd.Parameters.AddWithValue("@mn", materialLikePattern);
+            using var rdr = cmd.ExecuteReader();
+            while (rdr.Read())
+            {
+                string pn = NormalizeText(rdr.IsDBNull(0) ? string.Empty : rdr.GetString(0));
+                string ng = NormalizeText(rdr.IsDBNull(1) ? string.Empty : rdr.GetString(1));
+                if (pn.Length == 0 && ng.Length == 0) continue;
+                pairs.Add((pn, ng));
+            }
         }
-        var dailyDir = Path.Combine(dbDir, "daily");
-        if (Directory.Exists(dailyDir))
+        catch
         {
-            files.AddRange(
-                Directory.EnumerateFiles(dailyDir, "*.db", SearchOption.TopDirectoryOnly)
-                         .Where(f => !string.Equals(
-                             Path.GetFileName(f), "ngrate_settings.db",
-                             StringComparison.OrdinalIgnoreCase)));
+            // An unreadable cache just yields no pairs.
         }
-        return files;
+        return pairs;
+    }
+
+    private static bool CacheTableExists(SqliteConnection conn)
+    {
+        using var check = conn.CreateCommand();
+        check.CommandText =
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='NgRateCache';";
+        return Convert.ToInt64(check.ExecuteScalar() ?? 0L) > 0;
     }
 
     /// <summary>
@@ -694,199 +615,45 @@ public sealed class NgRateSettingsService
 
     // ── LineShift Scan ────────────────────────────────────────────────────────────
 
-    public List<string> GetAllLineShifts()
-    {
-        var dbDir  = DbSaveDirectory;
-        var result = new HashSet<string>(StringComparer.Ordinal);
-
-        // Collect candidate DB files: top-level + optional "daily" subdirectory
-        var files = new List<string>();
-
-        if (Directory.Exists(dbDir))
-        {
-            files.AddRange(
-                Directory.EnumerateFiles(dbDir, "*.db", SearchOption.TopDirectoryOnly)
-                         .Where(f => !string.Equals(
-                             Path.GetFileName(f), "ngrate_settings.db",
-                             StringComparison.OrdinalIgnoreCase)));
-        }
-
-        var dailyDir = Path.Combine(dbDir, "daily");
-        if (Directory.Exists(dailyDir))
-        {
-            files.AddRange(
-                Directory.EnumerateFiles(dailyDir, "*.db", SearchOption.TopDirectoryOnly)
-                         .Where(f => !string.Equals(
-                             Path.GetFileName(f), "ngrate_settings.db",
-                             StringComparison.OrdinalIgnoreCase)));
-        }
-
-        foreach (var file in files)
-        {
-            try
-            {
-                var cs = new SqliteConnectionStringBuilder
-                {
-                    DataSource = file,
-                    Mode       = SqliteOpenMode.ReadOnly,
-                }.ToString();
-
-                using var conn = new SqliteConnection(cs);
-                conn.Open();
-
-                // Check OrginalTable exists
-                using var checkCmd = conn.CreateCommand();
-                checkCmd.CommandText =
-                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='OrginalTable';";
-                var tableCount = Convert.ToInt64(checkCmd.ExecuteScalar() ?? 0L);
-                if (tableCount == 0) continue;
-
-                // Check LineShift column exists
-                bool hasLineShift = false;
-                using (var pragmaCmd = conn.CreateCommand())
-                {
-                    pragmaCmd.CommandText = "PRAGMA table_info([OrginalTable]);";
-                    using var rdr = pragmaCmd.ExecuteReader();
-                    while (rdr.Read())
-                    {
-                        if (string.Equals(rdr.GetString(1), "LineShift", StringComparison.Ordinal))
-                        {
-                            hasLineShift = true;
-                            break;
-                        }
-                    }
-                }
-
-                using var selCmd = conn.CreateCommand();
-                if (hasLineShift)
-                {
-                    selCmd.CommandText =
-                        "SELECT DISTINCT [LineShift] FROM [OrginalTable] " +
-                        "WHERE [LineShift] IS NOT NULL AND [LineShift] != '';";
-                }
-                else
-                {
-                    selCmd.CommandText =
-                        "SELECT DISTINCT ([MATERIALNAME] || '_' || [PRODUCTION_LINE]) FROM [OrginalTable] " +
-                        "WHERE [MATERIALNAME] IS NOT NULL AND [MATERIALNAME] != '';";
-                }
-
-                using var selRdr = selCmd.ExecuteReader();
-                while (selRdr.Read())
-                {
-                    if (!selRdr.IsDBNull(0))
-                    {
-                        var val = selRdr.GetString(0);
-                        if (!string.IsNullOrEmpty(val))
-                            result.Add(val);
-                    }
-                }
-            }
-            catch
-            {
-                // swallow per-file exceptions
-            }
-        }
-
-        return result.OrderBy(x => x).ToList();
-    }
+    public List<string> GetAllLineShifts() => ReadCachedLineShifts(null);
 
     /// <summary>
-    /// Returns distinct LineShift values from OrginalTable rows whose MATERIALNAME
-    /// matches the given value. Scans the top-level, "daily" and "monthly" *.db
-    /// files, so a model that only ran in an earlier period still offers its
-    /// shift groups to the Model Group editor.
+    /// Returns distinct LineShift values (MATERIALNAME_PRODUCTION_LINE) from the NG Rate cache
+    /// rows whose MATERIALNAME matches the given value, so a model that only ran in an earlier
+    /// period still offers its shift groups to the Model Group editor.
     /// </summary>
     public List<string> GetLineShiftsByMaterialName(string materialName)
+        => string.IsNullOrWhiteSpace(materialName) ? [] : ReadCachedLineShifts(materialName);
+
+    private List<string> ReadCachedLineShifts(string? materialName)
     {
         var result = new HashSet<string>(StringComparer.Ordinal);
-        if (string.IsNullOrWhiteSpace(materialName)) return new List<string>();
+        try
+        {
+            using var conn = Open();
+            if (!CacheTableExists(conn)) return [];
 
-        var dbDir = DbSaveDirectory;
-        var files = new List<string>();
-        if (Directory.Exists(dbDir))
-        {
-            files.AddRange(
-                Directory.EnumerateFiles(dbDir, "*.db", SearchOption.TopDirectoryOnly)
-                         .Where(f => !string.Equals(
-                             Path.GetFileName(f), "ngrate_settings.db",
-                             StringComparison.OrdinalIgnoreCase)));
-        }
-        foreach (var sub in new[] { "daily", "monthly" })
-        {
-            var subDir = Path.Combine(dbDir, sub);
-            if (!Directory.Exists(subDir)) continue;
-            files.AddRange(
-                Directory.EnumerateFiles(subDir, "*.db", SearchOption.TopDirectoryOnly)
-                         .Where(f => !string.Equals(
-                             Path.GetFileName(f), "ngrate_settings.db",
-                             StringComparison.OrdinalIgnoreCase)));
-        }
-
-        foreach (var file in files)
-        {
-            try
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText =
+                "SELECT DISTINCT ([MATERIALNAME] || '_' || [PRODUCTION_LINE]) FROM [NgRateCache] " +
+                "WHERE [MATERIALNAME] IS NOT NULL AND [MATERIALNAME] != ''" +
+                (materialName is null ? ";" : " AND [MATERIALNAME] = @mn;");
+            if (materialName is not null)
+                cmd.Parameters.AddWithValue("@mn", materialName);
+            using var rdr = cmd.ExecuteReader();
+            while (rdr.Read())
             {
-                var cs = new SqliteConnectionStringBuilder
+                if (!rdr.IsDBNull(0))
                 {
-                    DataSource = file,
-                    Mode       = SqliteOpenMode.ReadOnly,
-                }.ToString();
-
-                using var conn = new SqliteConnection(cs);
-                conn.Open();
-
-                using var checkCmd = conn.CreateCommand();
-                checkCmd.CommandText =
-                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='OrginalTable';";
-                var tableCount = Convert.ToInt64(checkCmd.ExecuteScalar() ?? 0L);
-                if (tableCount == 0) continue;
-
-                bool hasLineShift = false;
-                using (var pragmaCmd = conn.CreateCommand())
-                {
-                    pragmaCmd.CommandText = "PRAGMA table_info([OrginalTable]);";
-                    using var rdr = pragmaCmd.ExecuteReader();
-                    while (rdr.Read())
-                    {
-                        if (string.Equals(rdr.GetString(1), "LineShift", StringComparison.Ordinal))
-                        {
-                            hasLineShift = true;
-                            break;
-                        }
-                    }
-                }
-
-                using var selCmd = conn.CreateCommand();
-                if (hasLineShift)
-                {
-                    selCmd.CommandText =
-                        "SELECT DISTINCT [LineShift] FROM [OrginalTable] " +
-                        "WHERE [MATERIALNAME] = @mn " +
-                        "AND [LineShift] IS NOT NULL AND [LineShift] != '';";
-                }
-                else
-                {
-                    selCmd.CommandText =
-                        "SELECT DISTINCT ([MATERIALNAME] || '_' || [PRODUCTION_LINE]) FROM [OrginalTable] " +
-                        "WHERE [MATERIALNAME] = @mn " +
-                        "AND [MATERIALNAME] IS NOT NULL AND [MATERIALNAME] != '';";
-                }
-                selCmd.Parameters.AddWithValue("@mn", materialName);
-
-                using var selRdr = selCmd.ExecuteReader();
-                while (selRdr.Read())
-                {
-                    if (!selRdr.IsDBNull(0))
-                    {
-                        var val = selRdr.GetString(0);
-                        if (!string.IsNullOrEmpty(val)) result.Add(val);
-                    }
+                    string val = rdr.GetString(0);
+                    if (!string.IsNullOrEmpty(val)) result.Add(val);
                 }
             }
-            catch { }
         }
-
+        catch
+        {
+            // swallow: an unreadable cache simply offers no shifts
+        }
         return result.OrderBy(x => x).ToList();
     }
 
@@ -894,9 +661,7 @@ public sealed class NgRateSettingsService
 
     public void EnsureDatabase()
     {
-        Directory.CreateDirectory(SettingsDbDirectory);
-        using var conn = new SqliteConnection($"Data Source={SettingsDbPath}");
-        conn.Open();
+        using var conn = PortalDb.Open();
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
             CREATE TABLE IF NOT EXISTS NgRateSettings (

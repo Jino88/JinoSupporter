@@ -19,7 +19,19 @@ var builder = WebApplication.CreateBuilder(args);
 // AppPathsConfig become the authoritative defaults for everything below.
 var appPathsService = new AppPathsService();
 var appPaths = appPathsService.Current;
-builder.Configuration["Database:Path"] = appPaths.MainDbPath;
+
+// ── Unified DB ────────────────────────────────────────────────────────────────
+// Every store (process-review.db, ngrate_settings.db, fcost_raw.db, bmes_*.db, review-report.db,
+// NG Rate monthly/daily caches) lives in PortalGNLAB.db. The first start moves the old files in
+// and leaves them in place as backups; later starts only check the completion marker.
+PortalDbMigrationResult dbMigration = PortalDbMigrator.EnsureMigrated(
+    PortalDb.FilePath,
+    PortalDbMigrationSources.FromAppPaths(appPaths),
+    message => Console.WriteLine($"[PortalDb] {message}"));
+if (dbMigration.AlreadyMigrated)
+    Console.WriteLine($"[PortalDb] Using {PortalDb.FilePath}");
+appPaths.MainDbPath = PortalDb.FilePath;
+builder.Configuration["Database:Path"] = PortalDb.FilePath;
 builder.Services.AddSingleton(appPathsService);
 
 // ── Services ──────────────────────────────────────────────────────────────────
@@ -174,6 +186,7 @@ if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
 // ── Pipeline ──────────────────────────────────────────────────────────────────
 
 var app = builder.Build();
+BmesApiCredentialProvider.Configure(app.Services.GetRequiredService<NgRateSettingsService>());  // PLATFORM_API login for BmesGateway
 
 // Seed default admin user if no users exist
 var repo = app.Services.GetRequiredService<WebRepository>();

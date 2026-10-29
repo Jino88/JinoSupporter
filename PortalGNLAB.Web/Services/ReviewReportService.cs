@@ -114,7 +114,7 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
 
     public bool IsConfigured => codex.IsConfigured;
 
-    public static string DbPath => AppStoragePaths.Combine("review-report.db");
+    public static string DbPath => PortalDb.FilePath;
 
     // ── AI ──────────────────────────────────────────────────────────────────
 
@@ -320,25 +320,10 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
 
     // ── Storage ─────────────────────────────────────────────────────────────
 
-    private static SqliteConnection Open()
-    {
-        string path = DbPath;
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        var conn = new SqliteConnection(new SqliteConnectionStringBuilder
-        {
-            DataSource = path,
-            Mode = SqliteOpenMode.ReadWriteCreate,
-            DefaultTimeout = 30,
-        }.ToString());
-        conn.Open();
-        lock (SchemaGate)
-        {
-            if (!_schemaReady)
-            {
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = """
-                    PRAGMA journal_mode = WAL;
-                    CREATE TABLE IF NOT EXISTS reports (
+    /// <summary>Tables live in PortalGNLAB.db (the old review-report.db's reports / report_images / report_values,
+    /// renamed because <c>reports</c> would collide with the main DB's <c>Reports</c>).</summary>
+    public const string SchemaSql = """
+                                        CREATE TABLE IF NOT EXISTS ReviewReports (
                         id TEXT PRIMARY KEY,
                         title TEXT NOT NULL DEFAULT '',
                         created_by TEXT NOT NULL DEFAULT '',
@@ -348,10 +333,11 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
                         input_text TEXT NOT NULL DEFAULT '',
                         extra_instruction TEXT NOT NULL DEFAULT '',
                         report_json TEXT,
-                        model TEXT NOT NULL DEFAULT ''
+                        model TEXT NOT NULL DEFAULT '',
+                        revisions_json TEXT NOT NULL DEFAULT '[]'
                     );
-                    CREATE TABLE IF NOT EXISTS report_images (
-                        report_id TEXT NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+                    CREATE TABLE IF NOT EXISTS ReviewReportImages (
+                        report_id TEXT NOT NULL REFERENCES ReviewReports(id) ON DELETE CASCADE,
                         no INTEGER NOT NULL,
                         file_name TEXT NOT NULL DEFAULT '',
                         media_type TEXT NOT NULL DEFAULT 'image/png',
@@ -359,8 +345,8 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
                         PRIMARY KEY (report_id, no)
                     );
                     -- Result values, one row per (metric, condition), rewritten on every save.
-                    CREATE TABLE IF NOT EXISTS report_values (
-                        report_id TEXT NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+                    CREATE TABLE IF NOT EXISTS ReviewReportValues (
+                        report_id TEXT NOT NULL REFERENCES ReviewReports(id) ON DELETE CASCADE,
                         metric_id TEXT NOT NULL,
                         arm_id TEXT NOT NULL,
                         metric_name TEXT NOT NULL DEFAULT '',
@@ -374,13 +360,23 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
                         PRIMARY KEY (report_id, metric_id, arm_id)
                     );
                     """;
+
+    private static SqliteConnection Open()
+    {
+        var conn = PortalDb.Open();
+        lock (SchemaGate)
+        {
+            if (!_schemaReady)
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = SchemaSql;
                 cmd.ExecuteNonQuery();
                 using (var col = conn.CreateCommand())
                 {
-                    col.CommandText = "SELECT COUNT(*) FROM pragma_table_info('reports') WHERE name = 'revisions_json'";
+                    col.CommandText = "SELECT COUNT(*) FROM pragma_table_info('ReviewReports') WHERE name = 'revisions_json'";
                     if (Convert.ToInt64(col.ExecuteScalar()) == 0)
                     {
-                        col.CommandText = "ALTER TABLE reports ADD COLUMN revisions_json TEXT NOT NULL DEFAULT '[]'";
+                        col.CommandText = "ALTER TABLE ReviewReports ADD COLUMN revisions_json TEXT NOT NULL DEFAULT '[]'";
                         col.ExecuteNonQuery();
                     }
                 }
@@ -399,7 +395,7 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
     {
         using var conn = Open();
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT id, title, created_by, updated_at FROM reports ORDER BY updated_at DESC";
+        cmd.CommandText = "SELECT id, title, created_by, updated_at FROM ReviewReports ORDER BY updated_at DESC";
         var list = new List<ReviewReportSummary>();
         using var r = cmd.ExecuteReader();
         while (r.Read())
@@ -415,7 +411,7 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
         {
             cmd.CommandText = """
                 SELECT id, title, created_by, created_at, updated_at, language, input_text, extra_instruction, report_json, model, revisions_json
-                FROM reports WHERE id = @id
+                FROM ReviewReports WHERE id = @id
                 """;
             cmd.Parameters.AddWithValue("@id", id);
             using var r = cmd.ExecuteReader();
@@ -437,7 +433,7 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
         }
         using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = "SELECT no, file_name, media_type, data FROM report_images WHERE report_id = @id ORDER BY no";
+            cmd.CommandText = "SELECT no, file_name, media_type, data FROM ReviewReportImages WHERE report_id = @id ORDER BY no";
             cmd.Parameters.AddWithValue("@id", id);
             using var r = cmd.ExecuteReader();
             while (r.Read())
@@ -459,7 +455,7 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
         {
             cmd.Transaction = tx;
             cmd.CommandText = """
-                INSERT INTO reports (id, title, created_by, created_at, updated_at, language, input_text, extra_instruction, report_json, model, revisions_json)
+                INSERT INTO ReviewReports (id, title, created_by, created_at, updated_at, language, input_text, extra_instruction, report_json, model, revisions_json)
                 VALUES (@id, @title, @by, @created, @updated, @lang, @input, @extra, @json, @model, @revisions)
                 ON CONFLICT(id) DO UPDATE SET
                     title = excluded.title, updated_at = excluded.updated_at, language = excluded.language,
@@ -482,7 +478,7 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
         using (var del = conn.CreateCommand())
         {
             del.Transaction = tx;
-            del.CommandText = "DELETE FROM report_images WHERE report_id = @id";
+            del.CommandText = "DELETE FROM ReviewReportImages WHERE report_id = @id";
             del.Parameters.AddWithValue("@id", report.Id);
             del.ExecuteNonQuery();
         }
@@ -490,7 +486,7 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
         {
             using var ins = conn.CreateCommand();
             ins.Transaction = tx;
-            ins.CommandText = "INSERT INTO report_images (report_id, no, file_name, media_type, data) VALUES (@id, @no, @name, @mt, @data)";
+            ins.CommandText = "INSERT INTO ReviewReportImages (report_id, no, file_name, media_type, data) VALUES (@id, @no, @name, @mt, @data)";
             ins.Parameters.AddWithValue("@id", report.Id);
             ins.Parameters.AddWithValue("@no", img.No);
             ins.Parameters.AddWithValue("@name", img.FileName);
@@ -501,7 +497,7 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
         using (var delValues = conn.CreateCommand())
         {
             delValues.Transaction = tx;
-            delValues.CommandText = "DELETE FROM report_values WHERE report_id = @id";
+            delValues.CommandText = "DELETE FROM ReviewReportValues WHERE report_id = @id";
             delValues.Parameters.AddWithValue("@id", report.Id);
             delValues.ExecuteNonQuery();
         }
@@ -519,7 +515,7 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
                     using var ins = conn.CreateCommand();
                     ins.Transaction = tx;
                     ins.CommandText = """
-                        INSERT INTO report_values (report_id, metric_id, arm_id, metric_name, unit, kind, rate_of, arm_label, arm_role, source_display, number)
+                        INSERT INTO ReviewReportValues (report_id, metric_id, arm_id, metric_name, unit, kind, rate_of, arm_label, arm_role, source_display, number)
                         VALUES (@id, @m, @a, @name, @unit, @kind, @of, @label, @role, @shown, @num)
                         """;
                     ins.Parameters.AddWithValue("@id", report.Id);
@@ -565,7 +561,7 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
     {
         using var conn = Open();
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = "DELETE FROM report_values WHERE report_id = @id; DELETE FROM report_images WHERE report_id = @id; DELETE FROM reports WHERE id = @id;";
+        cmd.CommandText = "DELETE FROM ReviewReportValues WHERE report_id = @id; DELETE FROM ReviewReportImages WHERE report_id = @id; DELETE FROM ReviewReports WHERE id = @id;";
         cmd.Parameters.AddWithValue("@id", id);
         cmd.ExecuteNonQuery();
     }

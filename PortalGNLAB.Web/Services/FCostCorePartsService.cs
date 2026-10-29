@@ -18,7 +18,7 @@ public sealed class FCostCorePartsService(
     private readonly AppActivityLogger _activity = activity;
 
     public string GetRawDbPath()
-        => Path.Combine(_settings.FCostDbSaveDirectory, "fcost_raw.db");
+        => PortalDb.FilePath;
 
     public FCostCorePartsStatus GetStatus()
         => ReadStatus(GetRawDbPath());

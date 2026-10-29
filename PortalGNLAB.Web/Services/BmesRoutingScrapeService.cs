@@ -5,7 +5,7 @@ namespace PortalGNLAB.Web.Services;
 /// <summary>
 /// Fetches routing master records from BMES MES020240/SearchList for each WERKS
 /// (3200, 3210, 3220) and dumps all rows verbatim to a standalone SQLite DB
-/// (bmes_routing_raw.db) next to ngrate_settings.db. Column set mirrors the API
+/// (BmesRouting table in PortalGNLAB.db). Column set mirrors the API
 /// response; all values are stored as TEXT. Full refresh — table is dropped and
 /// recreated on every call.
 /// </summary>
@@ -13,8 +13,7 @@ public sealed class BmesRoutingScrapeService(NgRateSettingsService settings)
 {
     private static string[] Columns => BmesGateway.RoutingColumns;
 
-    public string RawDbPath =>
-        Path.Combine(settings.SettingsDbDirectory, "bmes_routing_raw.db");
+    public string RawDbPath => PortalDb.FilePath;
 
     /// <summary>
     /// Returns number of rows saved across all WERKS requests, or -1 on failure.
@@ -50,7 +49,7 @@ public sealed class BmesRoutingScrapeService(NgRateSettingsService settings)
 
         progress?.Report($"Parsed {allRows.Count:N0} total rows. Saving to {Path.GetFileName(RawDbPath)}…");
         int saved = await Task.Run(() => SaveToSqlite(allRows));
-        progress?.Report($"✓ Saved {saved:N0} row(s) to bmes_routing_raw.db");
+        progress?.Report($"✓ Saved {saved:N0} row(s) to PortalGNLAB.db (BmesRouting)");
 
         progress?.Report("Merging into RoutingTable…");
         int added = await Task.Run(() => settings.MergeRoutingFromRawDb(RawDbPath, progress));

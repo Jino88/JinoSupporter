@@ -398,6 +398,32 @@
         </div>
     </div>
 
+    <!-- ══ BMES API Credentials ═══════════════════════════════════════════════ -->
+    <div class="col-md-6">
+<div class="card setting-card h-100">
+    <div class="card-header fw-semibold small">🔑 BMES API Login <span class="text-muted fw-normal">(PLATFORM_API)</span></div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold mb-1">Facility</label>
+                    <select class="form-select form-select-sm" @bind="_snap.ApiFacility">
+                        <option value="">Select facility…</option>
+                        <option value="BN">BN</option>
+                        <option value="GN">GN</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold mb-1">Login ID</label>
+                    <input class="form-control form-control-sm" @bind="_snap.ApiLoginId" placeholder="BMES API ID" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold mb-1">Password</label>
+                    <input class="form-control form-control-sm" type="password" @bind="_snap.ApiPassword" placeholder="BMES API Password" />
+                </div>
+                <button class="btn btn-primary btn-sm" @onclick="SaveApiCredentials">Save</button>
+            </div>
+        </div>
+    </div>
+
     <div class="col-md-6">
 <div class="card setting-card h-100">
     <div class="card-header fw-semibold small">Server Tables</div>
@@ -524,7 +550,7 @@
                     }
                     <button class="btn btn-outline-primary btn-sm" @onclick="RefreshRoutingFromBmes"
                             disabled="@_routingScrapeBusy"
-                            title="Scrape MES020240/SearchList for WERKS 3200/3210/3220 → bmes_routing_raw.db">
+                            title="Scrape MES020240/SearchList for WERKS 3200/3210/3220 → PortalGNLAB.db (BmesRouting)">
                         Refresh from BMES
                     </button>
                     <button class="btn btn-outline-secondary btn-sm" @onclick="ImportRoutingFromFile"
@@ -1384,6 +1410,12 @@
     {
         NgRateSettings.ApplySnapshot(_snap);
         SetStatus("Credentials saved.", false);
+    }
+
+    private void SaveApiCredentials()
+    {
+        NgRateSettings.ApplySnapshot(_snap);
+        SetStatus("BMES API login saved.", false);
     }
 
     private async Task PullRoutingFromServerAsync() =>

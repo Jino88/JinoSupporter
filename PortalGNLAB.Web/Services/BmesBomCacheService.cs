@@ -13,8 +13,7 @@ public sealed class BmesBomCacheService(NgRateSettingsService settings)
 {
     private readonly object _writeGate = new();
 
-    public string CacheDbPath =>
-        Path.Combine(settings.SettingsDbDirectory, "bmes_bom_cache.db");
+    public string CacheDbPath => PortalDb.FilePath;
 
     public BmesBomCacheEntry? TryLoad(BmesBomCacheQuery query)
     {

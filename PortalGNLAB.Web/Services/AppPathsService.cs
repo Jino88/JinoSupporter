@@ -121,7 +121,7 @@ public sealed class AppPathsService
     /// developer-machine directories.</summary>
     public static AppPathsConfig Defaults()
     {
-        string mainDb = WpfSettingsReader.TryGetDatabasePath() ?? string.Empty;
+        string mainDb = PortalDb.FilePath;
 
         return new AppPathsConfig
         {
@@ -332,7 +332,7 @@ public sealed class AppPathsService
 
         string? mainDir = Path.GetDirectoryName(cfg.MainDbPath);
         if (DirectoryPathConflictsWithFile(mainDir))
-            cfg.MainDbPath = Path.Combine(DefaultDbRootDirectory, "process-review.db");
+            cfg.MainDbPath = PortalDb.FilePath;
 
         return cfg;
     }
@@ -609,7 +609,7 @@ internal static class AppPathsConfigExtensions
         string ngRateDir = AppPathsService.GetNgRateDirectory(root);
 
         cfg.DbRootDirectory           = root;
-        cfg.MainDbPath                = Path.Combine(root, "process-review.db");
+        cfg.MainDbPath                = PortalDb.FilePath;
         cfg.NgRateDbSaveDirectory     = ngRateDir;
         cfg.NgRateRoutingFilePath     = Path.Combine(ngRateDir, "Routing.txt");
         cfg.NgRateReasonFilePath      = Path.Combine(ngRateDir, "reason.txt");

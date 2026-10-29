@@ -231,9 +231,7 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
     {
         string dir = _settings.DbSaveDirectory;
         if (!Directory.Exists(dir)) return null;
-        return Directory.GetFiles(dir, "*.db")
-            .Where(f => !Path.GetFileName(f).Equals("ngrate_settings.db",
-                            StringComparison.OrdinalIgnoreCase))
+        return Directory.GetFiles(dir, "temp_*.db")
             .OrderByDescending(File.GetLastWriteTime)
             .FirstOrDefault();
     }

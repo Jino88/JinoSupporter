@@ -109,7 +109,7 @@ public sealed class FCostService(NgRateSettingsService settings, AppActivityLogg
     // ── HTTP ─────────────────────────────────────────────────────────────────────
 
     public string GetRawDbPath()
-        => Path.Combine(_settings.FCostDbSaveDirectory, "fcost_raw.db");
+        => PortalDb.FilePath;
 
     public FCostRawStatus GetRawStatus()
     {

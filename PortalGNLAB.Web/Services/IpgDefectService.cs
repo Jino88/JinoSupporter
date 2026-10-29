@@ -296,7 +296,7 @@ public sealed class IpgDefectService(
     }
 
     private string GetRawDbPath()
-        => Path.Combine(_settings.FCostDbSaveDirectory, "fcost_raw.db");
+        => PortalDb.FilePath;
 
     private IpgDefectParseResult? TryReadSearchListCache(
         DateTime queryDate,
@@ -372,7 +372,7 @@ public sealed class IpgDefectService(
         {
             string saveDir = _settings.FCostDbSaveDirectory;
             Directory.CreateDirectory(saveDir);
-            string dbPath = Path.Combine(saveDir, "fcost_raw.db");
+            string dbPath = GetRawDbPath();
             EnsureCacheDatabase(dbPath);
 
             using SqliteConnection connection = OpenCacheConnection(dbPath, readOnly: false);
