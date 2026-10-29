@@ -51,7 +51,7 @@ public static partial class BmesGateway
     /// <summary>
     /// MES020210 — NG records (input and NG quantity per work order, process and NG code)
     /// for one plant over a date range, from PLATFORM_API (AI_TOOL_00055, view S).
-    /// Ranges longer than 31 days are fetched in 31-day windows, one call each.
+    /// Ranges longer than 3 months are fetched in 3-month windows, one call each.
     /// </summary>
     /// <param name="werks">Plant code, e.g. 3200 or 3220.</param>
     /// <param name="start">First production date, yyyy-MM-dd.</param>

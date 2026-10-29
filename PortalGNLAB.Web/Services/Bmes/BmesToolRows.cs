@@ -134,14 +134,17 @@ public static class BmesToolRows
         return (set.Columns.ToList(), rows);
     }
 
-    /// <summary>Consecutive windows of at most <paramref name="maxDays"/> days covering [start, end].</summary>
-    public static List<(DateTime Start, DateTime End)> SplitPeriod(DateTime start, DateTime end, int maxDays = BmesApi.MaxPeriodDays)
+    /// <summary>Consecutive windows of at most <paramref name="maxMonths"/> calendar months covering [start, end]
+    /// (2026-07-28 → 2026-10-27 is one 3-month window).</summary>
+    public static List<(DateTime Start, DateTime End)> SplitPeriod(DateTime start, DateTime end, int maxMonths = BmesApi.MaxPeriodMonths)
     {
         var windows = new List<(DateTime, DateTime)>();
-        for (DateTime s = start.Date; s <= end.Date; s = s.AddDays(maxDays))
+        for (DateTime s = start.Date; s <= end.Date; )
         {
-            DateTime e = s.AddDays(maxDays - 1);
-            windows.Add((s, e > end.Date ? end.Date : e));
+            DateTime e = s.AddMonths(maxMonths).AddDays(-1);
+            if (e > end.Date) e = end.Date;
+            windows.Add((s, e));
+            s = e.AddDays(1);
         }
         return windows;
     }
