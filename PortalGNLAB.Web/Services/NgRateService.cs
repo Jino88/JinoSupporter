@@ -44,6 +44,9 @@ public sealed class NgRateService(
         progress?.Report(msg);
     }
 
+    private static string Rows(List<Dictionary<string, string>>? rows) =>
+        rows is null ? "failed" : $"{rows.Count:N0} rows";
+
     // OrginalTable column order (per DataMaker CONSTANT.ListSTRManager); also the NgRateCache layout
     private static readonly string[] OrgTableColumns = NgRateCacheSchema.Columns;
 
@@ -136,31 +139,15 @@ public sealed class NgRateService(
         {
             progress?.Report($"─── Server fetch  {toFetch.Min():MM/dd} – {toFetch.Max():MM/dd} ({toFetch.Count} day(s))");
 
-            string loginId  = _settings.LoginId;
-            string password = _settings.Password;
-            if (string.IsNullOrWhiteSpace(loginId) || string.IsNullOrWhiteSpace(password))
-            {
-                progress?.Report("[ERROR] BMES credentials not configured. Ask admin to set them in NG Rate Settings.");
-                return null;
-            }
-
-            BmesLoginOutcome login = await BmesWebSession.OpenAsync(
-                loginId, password,
-                new BmesWebSessionOptions
-                {
-                    TokenMessage = "Fetching verification token…",
-                    LoginMessage = "Logging in to BMES…",
-                },
-                progress);
+            // NG records come only from PLATFORM_API; the BMES web login is just the fallback API login.
+            BmesLoginOutcome login = await BmesWebSession.OpenAsync(_settings.LoginId, _settings.Password, progress: progress);
             if (!login.Succeeded)
             {
-                progress?.Report(login.Failure == BmesLoginFailure.Token
-                    ? "[ERROR] Failed to obtain token."
-                    : $"[ERROR] Login failed — {login.Diagnostic}");
+                progress?.Report("[ERROR] BMES API login not configured. Ask admin to set it in Setting.");
                 return null;
             }
             using BmesWebSession session = login.Session!;
-            progress?.Report("Login successful.");
+            Log(progress, "Source: PLATFORM_API AI_TOOL_00055 view S (MES020210), plants 3200 / 3220.");
 
             // Merge consecutive dates into ranges; split the request when the sequence breaks
             var serverRows = new List<Dictionary<string, string>>();
@@ -193,6 +180,7 @@ public sealed class NgRateService(
                 var rows3220 = await fetch3220;
                 if (rows3200 != null) serverRows.AddRange(rows3200);
                 if (rows3220 != null) serverRows.AddRange(rows3220);
+                Log(progress, $"  API {s} ~ {e}: 3200 {Rows(rows3200)}, 3220 {Rows(rows3220)}");
 
                 progress.ReportSteps(++fetched, ranges.Count, "Server fetch");
             }
