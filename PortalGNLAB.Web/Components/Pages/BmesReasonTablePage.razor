@@ -4,6 +4,7 @@
 @using Microsoft.AspNetCore.Components.Web
 @inject NgRateSettingsService NgRateSettings
 @inject BmesSettingsSyncService BmesSettingsSync
+@inject BmesRoutingScrapeService BmesRoutingScrape
 
 <PageTitle>BMES Reason Table</PageTitle>
 
@@ -57,6 +58,11 @@
                     <span class="spinner-border spinner-border-sm me-1" role="status" style="width:10px; height:10px;"></span>
                 }
                 Update To Server
+            </button>
+            <button class="btn btn-outline-primary btn-sm" @onclick="RefreshReasonFromBmesApi"
+                    disabled="@_reasonRefreshBusy"
+                    title="Add missing (ProcessName, NgName) pairs from BMES API (AI_TOOL_00055 view R + AI_TOOL_00056, GN, last 3 months)">
+                Refresh from BMES
             </button>
             <button class="btn btn-outline-primary btn-sm" @onclick="RefreshReasonFromDailyDbs"
                     disabled="@_reasonRefreshBusy"
@@ -581,6 +587,47 @@
             _reasonRefreshMsg = added > 0
                 ? $"Added {added} new pair(s)."
                 : "No new pairs. ReasonTable already covers all DB values.";
+            SetStatus($"{_reasonRefreshMsg} Saved locally. Click Update To Server to sync.", false);
+        }
+        catch (Exception ex)
+        {
+            _reasonRefreshError = true;
+            _reasonRefreshMsg = ex.Message;
+        }
+        finally
+        {
+            _reasonRefreshBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RefreshReasonFromBmesApi()
+    {
+        if (_reasonRefreshBusy) return;
+        _reasonRefreshBusy = true;
+        _reasonRefreshMsg = string.Empty;
+        _reasonRefreshError = false;
+        StateHasChanged();
+
+        try
+        {
+            var progress = new Progress<string>(msg =>
+            {
+                _reasonRefreshMsg = msg;
+                InvokeAsync(StateHasChanged);
+            });
+
+            int added = await BmesRoutingScrape.FetchReasonPairsAsync(progress);
+            if (added < 0)
+            {
+                _reasonRefreshError = true;
+                return;
+            }
+            _reasonRows = NgRateSettings.GetReasonRows();
+            _editReasonId = -1;
+            _reasonRefreshMsg = added > 0
+                ? $"Added {added} new pair(s) from BMES API."
+                : "No new pairs. ReasonTable already covers all BMES API values.";
             SetStatus($"{_reasonRefreshMsg} Saved locally. Click Update To Server to sync.", false);
         }
         catch (Exception ex)

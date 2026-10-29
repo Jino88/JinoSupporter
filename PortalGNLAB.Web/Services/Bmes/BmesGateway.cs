@@ -20,8 +20,9 @@ namespace PortalGNLAB.Web.Services;
 ///   MES072900   Worker attendance             web  (AI_TOOL_00005 is "HR Personnel Report", not
 ///                                                  authorised for this login)   WorkerStatusService
 ///   MES020010   Material master               web  (no Tool)              BmesMaterialService
-///   MES020240   Routing master                web  (AI_TOOL_00028 is MES020030/033: per version,
-///                                                  not the same rows)     BmesRoutingScrapeService
+///   MES073010   Routing + occurred NG codes   api  AI_TOOL_00055 view R   BmesRoutingScrapeService
+///               (replaces MES020240 routing        + AI_TOOL_00056 names  (Routing / Reason Table)
+///                master; KTSCH = VLSCH, ZLRTP = LGUBN)
 ///   MES073300   Drawing / spec (PDM)          web  (no Tool)              BmesPdmScrapeService
 ///   MES073260   LPA audit list                api  AI_TOOL_00027 view C   BmesLpaScrapeService
 ///   MES073261   LPA checklist                 api  AI_TOOL_00027 view D   BmesLpaScrapeService
