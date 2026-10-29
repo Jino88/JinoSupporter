@@ -63,6 +63,42 @@ BmesApiResult Load(string name) => BmesToolRows.ParseExecuteResponse(Fixture(nam
         "F-Cost: request parameters (view P, daily, GN)");
 }
 
+// -- MES050027 F-Cost source rows (AI_TOOL_00001 view V) -> raw material breakdown
+{
+    var rows = BmesGateway.FcostRawRowsFromResult(Load("fcost_raw_view_v.json"));
+    Check(rows.Count == 12, "F-Cost raw: 12 fixture rows -> 12 source rows");
+    var first = rows[0];
+    Check(first.Facility == "GN" && first.Plant == "3200" && first.Line == "B25A" && first.ProductCode == "P-S-061819800"
+          && first.MaterialCode == "C-S-000001400" && first.PeriodKey == "2026-43", "F-Cost raw: codes and period key (ZPVTT)");
+    Check(first.StandardVnd == 20365430m && first.ActualVnd == 22489544m, "F-Cost raw: INAMT / FCAMT read as VND numbers");
+    Check(first.ProductName == "BRS-181389S08ZZ" && first.MaterialName == "VP ASSY(181389)", "F-Cost raw: names joined from result 1 by code");
+    var p = BmesGateway.FcostRawParameters(new DateTime(2026, 10, 28), "W", "GN");
+    Check((string)p["ZTYPE"] == "V" && (string)p["SDATE"] == "2026-10-28" && (string)p["ZGUBN"] == "W" && (string)p["FACCO"] == "GN",
+        "F-Cost raw: request parameters (view V, weekly, GN)");
+
+    var w43 = new BmesFcostRawBreakdownPeriod(0, "2026-43", "26-W43", "Week", new DateTime(2026, 10, 19), new DateTime(2026, 10, 26));
+    var w44 = new BmesFcostRawBreakdownPeriod(1, "2026-44", "26-W44", "Week", new DateTime(2026, 10, 26), new DateTime(2026, 11, 2));
+    BmesFcostRawBreakdownLineShift[] lineShifts =
+    [
+        new("SPK", "181389", "BRS-181389S08ZZ_B25A"),
+        new("SPK", "X526", "MSM-X526B-BOTTOM_C27A"),
+    ];
+    var byPeriod = BmesFcostActualService.BuildRawBreakdownRows(rows, [w43, w44], lineShifts, "GN", "3200");
+    var r43 = byPeriod.GetValueOrDefault("2026-43") ?? [];
+    Check(r43.Count == 5 && r43.All(r => r.GroupName == "SPK" && r.ModelName == "181389"),
+        "F-Cost raw: W43 -> 5 material rows of line shift 'product name_line' (zero-net X526 row left out)");
+    Check(r43[0].MaterialCode == "R-S-001136802" && r43[0].FCostByPeriod["2026-43"] == 6064711m && r43[0].MaterialName == "FP 18.5-13.5-17.3-12.3-1.7T",
+        "F-Cost raw: F-Cost = actual - standard, biggest first, material name kept");
+    Check(r43.Sum(r => r.TotalFCostVnd) == 2124114m + 611413m + 6064711m + 1023135m + 1092407m, "F-Cost raw: W43 total");
+    Check(!byPeriod.ContainsKey("2026-44"), "F-Cost raw: actual below standard gives no row (W44)");
+    Check(BmesFcostActualService.BuildRawBreakdownRows(rows, [w43], lineShifts, "GN", "3210").Count == 0, "F-Cost raw: other plant left out");
+    Check(BmesFcostActualService.BuildRawBreakdownRows(rows, [w43], [lineShifts[1]], "GN", "3200").Count == 0, "F-Cost raw: unregistered line shift left out");
+    Check(BmesFcostActualService.BuildRawBreakdownRows(rows, [w44], lineShifts, "GN", "3200").Count == 0, "F-Cost raw: periods not asked for left out");
+    Check(BmesFcostActualService.RawWindowStart("W", new DateTime(2026, 10, 28)) == new DateTime(2026, 9, 14)
+          && BmesFcostActualService.RawWindowStart("M", new DateTime(2026, 10, 28)) == new DateTime(2026, 4, 1),
+        "F-Cost raw: one call covers 7 ISO weeks (W38..W44) or 7 months (04..10), as the Tool answered");
+}
+
 // -- MES072410 Core-parts F-Cost (AI_TOOL_00001 view G) -----------------------
 {
     var parsed = BmesGateway.CorePartsFromResult(Load("coreparts_view_g.json"));

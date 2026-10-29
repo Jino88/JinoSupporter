@@ -16,9 +16,12 @@ namespace PortalGNLAB.Web.Services;
 ///   MES020210   NG records (input / NG qty)   api  AI_TOOL_00055 view S   NgRateService
 ///   MES072400   F-Cost by model / material    api  AI_TOOL_00001 view P   FCostService
 ///   MES072410   Core-parts F-Cost             api  AI_TOOL_00001 view G   FCostCorePartsService
+///   MES050027   F-Cost source rows            api  AI_TOOL_00001 view V   BmesFcostActualService
+///               (product × material × period)                        (raw material breakdown)
 ///   MES050032   IPG defects (week / month)    web  (no Tool)              IpgDefectService
-///   MES072900   Worker attendance             web  (AI_TOOL_00005 is "HR Personnel Report", not
-///                                                  authorised for this login)   WorkerStatusService
+///   MES072900   Worker attendance             web  (AI_TOOL_00002 Fingerprint has the     WorkerStatusService
+///                                                  same IN / OUT rows but answers MSG0000155 —
+///                                                  no HR facility permission, 2026-10-29)
 ///   MES020010   Material master               web  (no Tool)              BmesMaterialService
 ///   MES073010   Routing + occurred NG codes   api  AI_TOOL_00055 view R   BmesRoutingScrapeService
 ///               (replaces MES020240 routing        + AI_TOOL_00056 names  (Routing / Reason Table)
@@ -28,8 +31,8 @@ namespace PortalGNLAB.Web.Services;
 ///   MES073261   LPA checklist                 api  AI_TOOL_00027 view D   BmesLpaScrapeService
 ///   MES073261   LPA photos (GetImage)         web  (anonymous download)   BmesLpaImageService
 ///
-/// Not here yet: the read-only SQL queries against the BMES database (MATE, MAST/BOMC,
-/// INFR, STBI, TCURR, E008) in <see cref="BmesFcostActualService"/>.
+/// Not here yet: the read-only SQL queries against the BMES database in <see cref="BmesFcostActualService"/>
+/// (BOM MAST/BOMC, MATE, unit prices INFR / STBI, exchange rates TCURR) — no API Tool offers them.
 /// </summary>
 public static partial class BmesGateway
 {
