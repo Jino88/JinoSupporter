@@ -41,7 +41,7 @@ export function loginUrl(returnTo: string): string {
   return "/login?returnUrl=" + encodeURIComponent(returnTo);
 }
 
-async function getJson<T>(path: string): Promise<T> {
+export async function getJson<T>(path: string): Promise<T> {
   const response = await fetch(path, { credentials: "same-origin", headers: { Accept: "application/json" } });
   if (response.status === 401) {
     window.location.assign(loginUrl(window.location.pathname + window.location.search));
@@ -53,7 +53,7 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 /** POST / PUT / DELETE with a JSON body. The server answers {error} with 400 for rejected input. */
-async function send(method: "POST" | "PUT" | "DELETE", path: string, body?: unknown): Promise<void> {
+export async function send(method: "POST" | "PUT" | "DELETE", path: string, body?: unknown): Promise<void> {
   const response = await fetch(path, {
     method,
     credentials: "same-origin",
