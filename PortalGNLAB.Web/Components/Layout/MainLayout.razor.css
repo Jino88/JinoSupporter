@@ -1,0 +1,197 @@
+.page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+    background: #f1f5f9;
+}
+
+.content { padding-top: 0; }
+
+.sidebar {
+    background: #f8fafc;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (min-width: 641px) {
+    .page {
+        flex-direction: row;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    main {
+        overflow-y: auto;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 64px;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        z-index: 1030;      /* the menu flyout lives in here and must cover the page's sticky tab strip */
+        overflow-y: auto;
+        flex-shrink: 0;
+    }
+}
+
+/* ── Browser-style tab strip ───────────────────────────────────────────── */
+.app-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    gap: 2px;
+    padding: 6px 10px 0;
+    background: #e2e8f0;
+    border-bottom: 1px solid #cbd5e1;
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+.app-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 220px;
+    padding: 6px 8px 6px 12px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-bottom: 0;
+    border-radius: 8px 8px 0 0;
+    font-size: 12.5px;
+    color: #475569;
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.app-tab:hover { background: #f8fafc; color: #0f172a; }
+
+.app-tab.active {
+    background: #fff;
+    color: #0f172a;
+    font-weight: 600;
+    box-shadow: inset 0 -2px 0 #3b82f6;
+}
+
+.app-tab-title { overflow: hidden; text-overflow: ellipsis; }
+
+.app-tab-close {
+    border: 0;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 15px;
+    line-height: 1;
+    padding: 0 3px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.app-tab-close:hover { background: #e2e8f0; color: #ef4444; }
+.app-tab.active .app-tab-close:hover { background: #f1f5f9; }
+
+/* ── Connected users panel ─────────────────────────────────────────────── */
+.connected-panel {
+    margin-top: auto;
+    padding: 8px 4px 12px;
+    cursor: default;
+    border-top: 1px solid #e2e8f0;
+}
+
+.connected-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-size: 9.5px;
+    white-space: nowrap;
+    color: #475569;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 0 2px rgba(74,222,128,.3);
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.user-row {
+    display: none;            /* rail is too narrow; names are in the panel tooltip */
+    font-size: 11.5px;
+    color: #475569;
+    padding: 2px 0;
+}
+
+.name-row {
+    display: flex;
+    gap: 5px;
+    margin-top: 8px;
+}
+
+.name-input {
+    flex: 1;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 5px;
+    border: 1px solid rgba(255,255,255,.15);
+    background: rgba(255,255,255,.07);
+    color: rgba(255,255,255,.9);
+    outline: none;
+    min-width: 0;
+    transition: border-color .15s;
+}
+
+.name-input::placeholder { color: rgba(255,255,255,.3); }
+.name-input:focus { border-color: rgba(147,197,253,.5); }
+
+.name-btn {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    border: 1px solid rgba(255,255,255,.15);
+    background: rgba(255,255,255,.1);
+    color: rgba(255,255,255,.85);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s;
+}
+
+.name-btn:hover { background: rgba(255,255,255,.2); }
+
+/* ── Blazor error UI ───────────────────────────────────────────────────── */
+#blazor-error-ui {
+    background: #1e293b;
+    color: #f8fafc;
+    bottom: 0;
+    left: 0;
+    padding: 10px 20px;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+    font-size: 13px;
+    display: none;
+    box-shadow: 0 -2px 8px rgba(0,0,0,.2);
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 16px;
+    top: 10px;
+    color: rgba(255,255,255,.6);
+}

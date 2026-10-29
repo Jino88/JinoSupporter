@@ -1,0 +1,1809 @@
+﻿@page "/bmes/setting"
+@page "/setting"
+@rendermode InteractiveServer
+@using PortalGNLAB.Web.Services
+@using Microsoft.AspNetCore.Components.Web
+@inject AppPathsService         AppPaths
+@inject NgRateSettingsService    NgRateSettings
+@inject BmesMaterialService      BmesMaterials
+@inject BmesRoutingScrapeService BmesRoutingScrape
+@inject BmesSettingsSyncService  BmesSettingsSync
+@inject WebRepository            Repo
+@inject AiProviderSettingsService AiProviders
+@inject QrTestDataService        QrBakoData
+@inject QrModelCodeService       QrModelCodes
+@inject TeamMemoService          TeamMemos
+
+<PageTitle>Setting</PageTitle>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <span style="font-size:20px;">⚙️</span>
+    <h5 class="mb-0 fw-semibold">Setting</h5>
+</div>
+
+@if (!string.IsNullOrEmpty(_statusMsg))
+{
+    <div class="alert @(_statusError ? "alert-danger" : "alert-success") py-2 small mb-3 d-flex align-items-center">
+        <span class="flex-fill">@_statusMsg</span>
+        <button class="btn-close btn-sm" @onclick="() => _statusMsg = string.Empty"></button>
+    </div>
+}
+
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <div class="row g-3 mb-3">
+            <div class="col-lg-4">
+<div class="card setting-card h-100">
+    <div class="card-header fw-semibold small">Claude API</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold mb-1">API Key</label>
+                            <div class="input-group input-group-sm">
+                                <input type="@(_showKey ? "text" : "password")"
+                                       class="form-control form-control-sm font-monospace"
+                                       placeholder="sk-ant-api03-..."
+                                       @bind="_apiKey" />
+                                <button class="btn btn-outline-secondary btn-sm" type="button"
+                                        @onclick="() => _showKey = !_showKey">
+                                    @(_showKey ? "Hide" : "Show")
+                                </button>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" @onclick="SaveClaudeAsync" disabled="@_claudeSaving">
+                            @(_claudeSaving ? "Saving..." : "Save")
+                        </button>
+                        @if (_claudeSaved) { <span class="ms-2 text-success fw-semibold small">Saved.</span> }
+                        @if (!string.IsNullOrEmpty(_claudeError)) { <div class="small text-danger mt-2">@_claudeError</div> }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+<div class="card setting-card h-100">
+    <div class="card-header fw-semibold small">Codex API (OpenAI)</div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold mb-1">API Key</label>
+                            <div class="input-group input-group-sm">
+                                <input type="@(_showCodexKey ? "text" : "password")"
+                                       class="form-control form-control-sm font-monospace"
+                                       placeholder="sk-..."
+                                       @bind="_codexApiKey" />
+                                <button class="btn btn-outline-secondary btn-sm" type="button"
+                                        @onclick="() => _showCodexKey = !_showCodexKey">
+                                    @(_showCodexKey ? "Hide" : "Show")
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold mb-1">Translate Model</label>
+                            <input class="form-control form-control-sm font-monospace"
+                                   placeholder="@CodexApiService.DefaultTranslateModel"
+                                   @bind="_codexTranslateModel" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold mb-1">Translate Reasoning Effort</label>
+                            <select class="form-select form-select-sm" @bind="_codexTranslateEffort">
+                                @foreach (string effort in CodexApiService.ReasoningEfforts)
+                                {
+                                    <option value="@effort">@effort</option>
+                                }
+                            </select>
+                            <div class="form-text small">Codex Luna (@CodexApiService.LunaModel) at low is the default. Team Memo AI Summary always uses Luna / low.</div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" @onclick="SaveCodexAsync" disabled="@_codexSaving">
+                            @(_codexSaving ? "Saving..." : "Save")
+                        </button>
+                        @if (_codexSaved) { <span class="ms-2 text-success fw-semibold small">Saved.</span> }
+                        @if (!string.IsNullOrEmpty(_codexError)) { <div class="small text-danger mt-2">@_codexError</div> }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+<div class="card setting-card h-100">
+    <div class="card-header fw-semibold small">AI Provider Switches</div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="aiClaudeApi"
+                                   @bind="_aiProviders.ClaudeApiEnabled" />
+                            <label class="form-check-label small" for="aiClaudeApi">Claude API</label>
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="aiClaudeCli"
+                                   @bind="_aiProviders.ClaudeCliEnabled" />
+                            <label class="form-check-label small" for="aiClaudeCli">Claude CLI</label>
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="aiCodexCli"
+                                   @bind="_aiProviders.CodexCliEnabled" />
+                            <label class="form-check-label small" for="aiCodexCli">Codex CLI</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="aiCodexApi"
+                                   @bind="_aiProviders.CodexApiEnabled" />
+                            <label class="form-check-label small" for="aiCodexApi">Codex API</label>
+                        </div>
+                        <button class="btn btn-primary btn-sm" @onclick="SaveAiProvidersAsync" disabled="@_aiProviderSaving">
+                            @(_aiProviderSaving ? "Saving..." : "Save")
+                        </button>
+                        @if (_aiProviderSaved) { <span class="ms-2 text-success fw-semibold small">Saved.</span> }
+                        @if (!string.IsNullOrEmpty(_aiProviderError)) { <div class="small text-danger mt-2">@_aiProviderError</div> }
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+<div class="card setting-card">
+    <div class="card-header fw-semibold small">Team Memo DB <span class="text-muted fw-normal">· Work Memo reads and writes the WorkHub memo DB directly — the web and WorkHub share one database</span></div>
+                    <div class="card-body">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-lg-5 col-md-12">
+                                <label class="form-label small fw-semibold mb-1">Memo DB (WorkHub jinomemo.db)</label>
+                                <input class="form-control form-control-sm font-monospace" placeholder="@TeamMemoService.DefaultDbPath" @bind="_tmDbPath" />
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <label class="form-label small fw-semibold mb-1">Attachments folder <span class="text-muted fw-normal">(blank = DB folder\\attachments, same as WorkHub)</span></label>
+                                <input class="form-control form-control-sm font-monospace" @bind="_tmAttachDir" />
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <label class="form-label small fw-semibold mb-1">Author shown for WorkHub edits</label>
+                                <select class="form-select form-select-sm" @bind="_tmWorkHubAuthor">
+                                    <option value="WorkHub">WorkHub</option>
+                                    @foreach (var u in Repo.GetAllUsers())
+                                    {
+                                        <option value="@u.Username">@(string.IsNullOrWhiteSpace(u.DisplayName) ? u.Username : $"{u.DisplayName} ({u.Username})")</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mt-3 flex-wrap">
+                            <div class="form-check form-switch me-2 mb-0">
+                                <input class="form-check-input" type="checkbox" id="tmAutoTr" @bind="_tmAutoTranslate" />
+                                <label class="form-check-label small" for="tmAutoTr" title="After any change, translate new memo text into English, Korean and Vietnamese in the background (Codex Luna, low). Already translated text is never sent again.">Auto-translate memos (EN/KO/VI)</label>
+                            </div>
+                            <button class="btn btn-primary btn-sm" @onclick="SaveTeamMemoStore">Save</button>
+                            <button class="btn btn-outline-primary btn-sm" @onclick="CheckTeamMemoStore">Test connection</button>
+                            @if (!string.IsNullOrEmpty(_tmStatus)) { <span class="small @(_tmOk ? "text-success" : "text-danger")">@_tmStatus</span> }
+                            <span class="small text-muted">Old web memos: @(Repo.GetSetting("TeamMemo:MigratedToMemoDb") ?? "not moved yet (runs once at start)")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+<div class="card setting-card">
+    <div class="card-header fw-semibold small">QR BAKO DATA DB</div>
+                    <div class="card-body">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-lg-3 col-md-6">
+                                <label class="form-label small fw-semibold mb-1">Server</label>
+                                <input class="form-control form-control-sm" @bind="_pathsForm.QrBakoDataServer" />
+                            </div>
+                            <div class="col-lg-1 col-md-3">
+                                <label class="form-label small fw-semibold mb-1">Port</label>
+                                <input class="form-control form-control-sm" type="number" min="1" max="65535" @bind="_pathsForm.QrBakoDataPort" />
+                            </div>
+                            <div class="col-lg-2 col-md-4">
+                                <label class="form-label small fw-semibold mb-1">Database</label>
+                                <input class="form-control form-control-sm" @bind="_pathsForm.QrBakoDataDatabase" />
+                            </div>
+                            <div class="col-lg-2 col-md-4">
+                                <label class="form-label small fw-semibold mb-1">User ID</label>
+                                <input class="form-control form-control-sm" @bind="_pathsForm.QrBakoDataUserId" autocomplete="off" />
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <label class="form-label small fw-semibold mb-1">Password</label>
+                                <div class="input-group input-group-sm">
+                                    <input class="form-control form-control-sm"
+                                           type="@(_showQrBakoPassword ? "text" : "password")"
+                                           @bind="_pathsForm.QrBakoDataPassword"
+                                           autocomplete="off" />
+                                    <button class="btn btn-outline-secondary btn-sm"
+                                            type="button"
+                                            @onclick="() => _showQrBakoPassword = !_showQrBakoPassword">
+                                        @(_showQrBakoPassword ? "Hide" : "Show")
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-lg-1 col-md-3">
+                                <label class="form-label small fw-semibold mb-1">Rows</label>
+                                <input class="form-control form-control-sm" type="number" min="1" max="20000" @bind="_pathsForm.QrBakoDataDefaultMaxRows" />
+                            </div>
+                            <div class="col-lg-2 col-md-3">
+                                <label class="form-label small fw-semibold mb-1">Timeout</label>
+                                <input class="form-control form-control-sm" type="number" min="1" max="300" @bind="_pathsForm.QrBakoDataTimeoutSeconds" />
+                            </div>
+                            <div class="col-lg-4 col-md-6 d-flex align-items-end gap-3">
+                                <div class="form-check mb-1">
+                                    <input class="form-check-input" id="qrBakoEncrypt" type="checkbox" @bind="_pathsForm.QrBakoDataEncrypt" />
+                                    <label class="form-check-label small" for="qrBakoEncrypt">Encrypt</label>
+                                </div>
+                                <div class="form-check mb-1">
+                                    <input class="form-check-input" id="qrBakoTrust" type="checkbox" @bind="_pathsForm.QrBakoDataTrustServerCertificate" />
+                                    <label class="form-check-label small" for="qrBakoTrust">Trust server certificate</label>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-12 d-flex align-items-end gap-2">
+                                <button class="btn btn-primary btn-sm" @onclick="SaveQrBakoDbAsync" disabled="@_qrBakoSaving">
+                                    @if (_qrBakoSaving)
+                                    { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                    Save
+                                </button>
+                                <button class="btn btn-outline-primary btn-sm" @onclick="TestQrBakoDbAsync" disabled="@(_qrBakoSaving || _qrBakoTesting)">
+                                    @if (_qrBakoTesting)
+                                    { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                    Test Connection
+                                </button>
+                                @if (!string.IsNullOrWhiteSpace(_qrBakoMsg))
+                                {
+                                    <span class="small fw-semibold @(_qrBakoError ? "text-danger" : "text-success")">@_qrBakoMsg</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+                <div class="card setting-card">
+                    <div class="card-header fw-semibold small">
+                        QR Model Codes
+                        <span class="text-muted fw-normal">
+                            · characters 11-12 of the QR name the model — J69NAG1GD0<b>37</b>00009 is code 37
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted mb-2">
+                            The QR pages filter by this table. It is the only model marker the three stations agree on:
+                            BKTD writes <code>3200.MSM-X316.L1.M1.V01.260922</code> in <code>Model</code> while ALTD and
+                            GSTD write <code>3200.MSM-X316B.L1.M1.JIG1</code> in <code>ST_Information</code>.
+                        </p>
+                        <table class="table table-sm align-middle mb-2" style="max-width:34rem;">
+                            <thead>
+                                <tr>
+                                    <th style="width:7rem;" class="small">Code</th>
+                                    <th class="small">Model name</th>
+                                    <th style="width:5rem;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (_qrModelCodes.Count == 0)
+                                {
+                                    <tr>
+                                        <td colspan="3" class="small text-muted">
+                                            No model is defined; the QR pages will only offer "All models".
+                                        </td>
+                                    </tr>
+                                }
+                                @for (int i = 0; i < _qrModelCodes.Count; i++)
+                                {
+                                    int index = i;
+                                    <tr>
+                                        <td>
+                                            <input class="form-control form-control-sm font-monospace"
+                                                   maxlength="2"
+                                                   placeholder="37"
+                                                   @bind="_qrModelCodes[index].Code" />
+                                        </td>
+                                        <td>
+                                            <input class="form-control form-control-sm"
+                                                   placeholder="MSM-X316B"
+                                                   @bind="_qrModelCodes[index].Name" />
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-outline-danger btn-sm"
+                                                    type="button"
+                                                    @onclick="() => _qrModelCodes.RemoveAt(index)">Remove</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-outline-secondary btn-sm"
+                                    type="button"
+                                    @onclick="() => _qrModelCodes.Add(new QrModelCode())">Add model</button>
+                            <button class="btn btn-primary btn-sm" @onclick="SaveQrModelCodes" disabled="@_qrModelSaving">
+                                @if (_qrModelSaving)
+                                { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                Save
+                            </button>
+                            @if (!string.IsNullOrWhiteSpace(_qrModelMsg))
+                            {
+                                <span class="small fw-semibold @(_qrModelError ? "text-danger" : "text-success")">@_qrModelMsg</span>
+                            }
+                            <span class="small text-muted ms-auto">@QrModelCodes.SettingsPath</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Authorized>
+</AuthorizeView>
+
+@{
+    var rFiltered  = GetFilteredRouting();
+    var rsFiltered = GetFilteredReason();
+}
+
+<div class="row g-3 mb-3">
+    <div class="col-12">
+<div class="card setting-card">
+    <div class="card-header fw-semibold small">App Path</div>
+            <div class="card-body">
+                <label class="form-label small fw-semibold mb-1">
+                    Working Folder
+                    <span class="badge bg-warning text-dark ms-1">restart</span>
+                </label>
+                <div class="input-group input-group-sm">
+                    <input class="form-control form-control-sm font-monospace"
+                           @bind="_pathsForm.DbRootDirectory"
+                           placeholder="@AppPathsService.DefaultDbRootDirectory" />
+                    <button class="btn btn-outline-secondary btn-sm"
+                            type="button"
+                            @onclick="UseDefaultAppPath">
+                        Default
+                    </button>
+                    <button class="btn btn-primary btn-sm"
+                            type="button"
+                            @onclick="SaveAppPathAsync"
+                            disabled="@_pathSaving">
+                        @if (_pathSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        Save
+                    </button>
+                </div>
+                <div class="small text-muted mt-2">
+                    NG RATE: <code>@NgRateWorkDirectory</code><br />
+                    FCOST: <code>@FCostWorkDirectory</code><br />
+                    WK STATUS: <code>@WorkerStatusWorkDirectory</code>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_pathStatus))
+                {
+                    <div class="small mt-2 @(_pathStatusError ? "text-danger" : "text-success") fw-semibold">
+                        @_pathStatus
+                    </div>
+                }
+                @if (_pathSavedRequiresRestart)
+                {
+                    <div class="small text-warning fw-semibold mt-2">
+                        Restart the app for main DB path changes to fully take effect.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ BMES Credentials ═══════════════════════════════════════════════════ -->
+    <div class="col-md-6">
+<div class="card setting-card h-100">
+    <div class="card-header fw-semibold small">🔑 BMES Credentials <span class="text-muted fw-normal">(NG Rate / Worker Status)</span></div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold mb-1">Login ID</label>
+                    <input class="form-control form-control-sm" @bind="_snap.LoginId" placeholder="BMES ID" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold mb-1">Password</label>
+                    <input class="form-control form-control-sm" type="password" @bind="_snap.Password" placeholder="BMES Password" />
+                </div>
+                <button class="btn btn-primary btn-sm" @onclick="SaveCredentials">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ BMES API Credentials ═══════════════════════════════════════════════ -->
+    <div class="col-md-6">
+<div class="card setting-card h-100">
+    <div class="card-header fw-semibold small">🔑 BMES API Login <span class="text-muted fw-normal">(PLATFORM_API)</span></div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold mb-1">Facility</label>
+                    <select class="form-select form-select-sm" @bind="_snap.ApiFacility">
+                        <option value="">Select facility…</option>
+                        <option value="BN">BN</option>
+                        <option value="GN">GN</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold mb-1">Login ID</label>
+                    <input class="form-control form-control-sm" @bind="_snap.ApiLoginId" placeholder="BMES API ID" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold mb-1">Password</label>
+                    <input class="form-control form-control-sm" type="password" @bind="_snap.ApiPassword" placeholder="BMES API Password" />
+                </div>
+                <button class="btn btn-primary btn-sm" @onclick="SaveApiCredentials">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+<div class="card setting-card h-100">
+    <div class="card-header fw-semibold small">Server Tables</div>
+            <div class="card-body">
+                <div class="small text-muted mb-2">
+                    Save target: <code>@ServerTableTargetPreview</code>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <button class="btn btn-outline-primary btn-sm"
+                            @onclick="PullRoutingFromServerAsync"
+                            disabled="@(_serverTableBusy || _pathSaving)">
+                        @if (_serverTableBusy && _serverTableAction == "routing")
+                        { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        Load Routing
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm"
+                            @onclick="PullReasonFromServerAsync"
+                            disabled="@(_serverTableBusy || _pathSaving)">
+                        @if (_serverTableBusy && _serverTableAction == "reason")
+                        { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        Load Reason
+                    </button>
+                    <button class="btn btn-primary btn-sm"
+                            @onclick="PullRoutingReasonFromServerAsync"
+                            disabled="@(_serverTableBusy || _pathSaving)">
+                        @if (_serverTableBusy && _serverTableAction == "all")
+                        { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        Load Both
+                    </button>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_serverTableMsg))
+                {
+                    <div class="small mt-2 @(_serverTableError ? "text-danger" : "text-success") fw-semibold">
+                        @_serverTableMsg
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ BMES Material Fetch (test) ═════════════════════════════════════════ -->
+    <div class="col-12">
+<div class="card setting-card">
+    <div class="card-header d-flex align-items-center gap-2">
+                <span class="fw-semibold small">🧪 BMES Material Fetch (MES020010)</span>
+                <span class="badge bg-secondary" style="font-size:10px;">DB rows: @_materialCount</span>
+                <div class="ms-auto">
+                    <button class="btn btn-primary btn-sm"
+                            @onclick="FetchAllMaterialsAsync"
+                            disabled="@_fetchBusy">
+                        @if (_fetchBusy)
+                        { <span class="spinner-border spinner-border-sm me-1"></span><text>Fetching…</text> }
+                        else { <text>▶ Fetch all materials</text> }
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(_fetchLog))
+                {
+                    <pre class="small mb-2 setting-fetch-log">@_fetchLog</pre>
+                }
+                @if (_latest is not null)
+                {
+                    <div class="small">
+                        <div><strong>MATNR:</strong> @_latest.Matnr</div>
+                        <div><strong>MAKTX:</strong> @_latest.Maktx</div>
+                        <div><strong>MTYPE/BTYPE:</strong> @_latest.Mtype / @_latest.Btype</div>
+                        <div><strong>ModNameB:</strong> @_latest.ModNameB</div>
+                        <div><strong>LotQt / Bunch:</strong> @_latest.LotQt / @_latest.Bunch</div>
+                        <div><strong>ERNAM / ERDAT:</strong> @_latest.Ernam / @_latest.Erdat</div>
+                        <div class="text-muted mt-1">FetchedAt: @_latest.FetchedAt</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted small">No material saved yet.</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-6">
+<a class="card setting-card text-decoration-none h-100" href="/bmes/routing-table">
+            <div class="card-body">
+                <div class="fw-semibold small text-dark">Routing Table</div>
+                <div class="text-muted small mt-1">Moved to its own BMES menu.</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6">
+<a class="card setting-card text-decoration-none h-100" href="/bmes/reason-table">
+            <div class="card-body">
+                <div class="fw-semibold small text-dark">Reason Table</div>
+                <div class="text-muted small mt-1">Moved to its own BMES menu. Model search is in the first column.</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 d-none">
+
+    <!-- ══ Routing Table ═══════════════════════════════════════════════════════ -->
+    <div class="col-12">
+<div class="card setting-card">
+    <div class="card-header d-flex align-items-center gap-2">
+                <span class="fw-semibold small">Routing Table</span>
+                <span class="badge bg-secondary ms-1" style="font-size:10px;">@_routingRows.Count rows</span>
+                @if (_anyRoutingSearch)
+                {
+                    <span class="text-muted ms-1" style="font-size:10px;">— @rFiltered.Count shown</span>
+                }
+                <div class="ms-auto d-flex gap-2 align-items-center">
+                    @if (_routingScrapeBusy)
+                    {
+                        <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                    }
+                    @if (!string.IsNullOrEmpty(_routingScrapeMsg))
+                    {
+                        <span class="small @(_routingScrapeError ? "text-danger" : "text-success") fw-semibold">
+                            @_routingScrapeMsg
+                        </span>
+                    }
+                    <button class="btn btn-outline-primary btn-sm" @onclick="RefreshRoutingFromBmes"
+                            disabled="@_routingScrapeBusy"
+                            title="Scrape MES020240/SearchList for WERKS 3200/3210/3220 → PortalGNLAB.db (BmesRouting)">
+                        Refresh from BMES
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="ImportRoutingFromFile"
+                            disabled="@_routingScrapeBusy"
+                            title="Import from Routing.txt">
+                        Import from file
+                    </button>
+                </div>
+            </div>
+            <div style="overflow-x:auto; max-height:460px; overflow-y:auto;">
+                <table class="bmes-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:160px;">Model Name</th>
+                            <th style="min-width:130px;">ProcessCode</th>
+                            <th style="min-width:200px;">ProcessName</th>
+                            <th style="min-width:110px;">ProcessType</th>
+                            <th style="width:60px;"></th>
+                        </tr>
+                        <tr class="bmes-search-row">
+                            <td><input class="bmes-search-input" placeholder="Search…"
+                                       @bind="_rqModelName"   @bind:event="oninput" @bind:after="OnRoutingSearchChanged" /></td>
+                            <td><input class="bmes-search-input" placeholder="Search…"
+                                       @bind="_rqProcessCode" @bind:event="oninput" @bind:after="OnRoutingSearchChanged" /></td>
+                            <td><input class="bmes-search-input" placeholder="Search…"
+                                       @bind="_rqProcessName" @bind:event="oninput" @bind:after="OnRoutingSearchChanged" /></td>
+                            <td><input class="bmes-search-input" placeholder="Search…"
+                                       @bind="_rqProcessType" @bind:event="oninput" @bind:after="OnRoutingSearchChanged" /></td>
+                            <td></td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!_anyRoutingSearch)
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4 small">
+                                    Type in a search field above to find rows.
+                                </td>
+                            </tr>
+                        }
+                        else if (rFiltered.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="5" class="py-3 px-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="text-muted small">No matching rows.</span>
+                                        <button class="btn btn-primary btn-sm" @onclick="AddRoutingFromSearch">
+                                            + Add Row with these values
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var r in rFiltered)
+                            {
+                                @if (_editRoutingId == r.Id)
+                                {
+                                    <tr class="bmes-edit-row">
+                                        <td><input class="bmes-input" @bind="_editRouting.ModelName"   /></td>
+                                        <td><input class="bmes-input" @bind="_editRouting.ProcessCode" /></td>
+                                        <td><input class="bmes-input" @bind="_editRouting.ProcessName" /></td>
+                                        <td><input class="bmes-input" @bind="_editRouting.ProcessType" /></td>
+                                        <td class="bmes-actions">
+                                            <button class="btn btn-success btn-sm py-0 px-2"   @onclick="SaveRoutingEdit">✓</button>
+                                            <button class="btn btn-secondary btn-sm py-0 px-2" @onclick="CancelRoutingEdit">✕</button>
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    <tr class="bmes-row" @ondblclick="() => StartRoutingEdit(r)">
+                                        <td>@r.ModelName</td>
+                                        <td>@r.ProcessCode</td>
+                                        <td>@r.ProcessName</td>
+                                        <td>@r.ProcessType</td>
+                                        <td class="bmes-actions">
+                                            <button class="btn btn-outline-primary btn-sm py-0 px-1" @onclick="() => StartRoutingEdit(r)"    title="Edit">✎</button>
+                                            <button class="btn btn-outline-danger  btn-sm py-0 px-1" @onclick="() => DeleteRoutingRow(r.Id)" title="Delete">✕</button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Reason Table ════════════════════════════════════════════════════════ -->
+    <div class="col-12">
+<div class="card setting-card">
+    <div class="card-header d-flex align-items-center gap-2">
+                <span class="fw-semibold small">Reason Table</span>
+                <span class="badge bg-secondary ms-1" style="font-size:10px;">@_reasonRows.Count rows</span>
+                @if (_modelScanActive)
+                {
+                    <span class="text-muted ms-1" style="font-size:10px;">— @_modelPairs.Count distinct pair(s) for "@_rsqModel"</span>
+                }
+                else if (_anyReasonSearch)
+                {
+                    <span class="text-muted ms-1" style="font-size:10px;">— @rsFiltered.Count shown</span>
+                }
+
+                <div class="d-flex align-items-center gap-1 ms-3">
+                    <input class="form-control form-control-sm"
+                           style="max-width:240px; font-size:11px;"
+                           placeholder="Model (Material) — Enter to scan"
+                           @bind="_rsqModel"
+                           @bind:event="oninput"
+                           @onkeydown="OnModelSearchKeyDown" />
+                    <button class="btn btn-outline-primary btn-sm py-0 px-2"
+                            style="font-size:11px;"
+                            disabled="@(_modelScanBusy || string.IsNullOrWhiteSpace(_rsqModel))"
+                            @onclick="RunModelScan"
+                            title="Scan daily DBs for distinct (ProcessName, NgName) pairs whose MATERIALNAME contains this model.">
+                        @if (_modelScanBusy)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" style="width:10px; height:10px;"></span>
+                        }
+                        Scan
+                    </button>
+                    @if (_modelScanActive)
+                    {
+                        <button class="btn btn-link btn-sm py-0 px-1 text-secondary"
+                                style="font-size:11px;"
+                                @onclick="ClearModelScan"
+                                title="Clear model scan and return to Reason Table search">✕</button>
+                    }
+                </div>
+
+                <div class="ms-auto d-flex gap-2 align-items-center">
+                    @if (_reasonRefreshBusy)
+                    {
+                        <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                    }
+                    @if (!string.IsNullOrEmpty(_reasonRefreshMsg))
+                    {
+                        <span class="small @(_reasonRefreshError ? "text-danger" : "text-success") fw-semibold">
+                            @_reasonRefreshMsg
+                        </span>
+                    }
+                    <button class="btn btn-outline-primary btn-sm" @onclick="RefreshReasonFromDailyDbs"
+                            disabled="@_reasonRefreshBusy"
+                            title="Scan all Daily DBs and add missing (ProcessName, NgName) pairs">
+                        Refresh from Daily DBs
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="ImportReasonFromFile"
+                            disabled="@_reasonRefreshBusy"
+                            title="Import from reason.txt">
+                        Import from file
+                    </button>
+                </div>
+            </div>
+            <div style="overflow-x:auto; max-height:460px; overflow-y:auto;">
+                <table class="bmes-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:200px;">ProcessName</th>
+                            <th style="min-width:200px;">NgName</th>
+                            <th style="min-width:200px;">Reason</th>
+                            <th style="width:60px;"></th>
+                        </tr>
+                        <tr class="bmes-search-row">
+                            <td><input class="bmes-search-input" placeholder="Search…"
+                                       @bind="_rsqProcessName" @bind:event="oninput" @bind:after="OnReasonSearchChanged" /></td>
+                            <td><input class="bmes-search-input" placeholder="Search…"
+                                       @bind="_rsqNgName"      @bind:event="oninput" @bind:after="OnReasonSearchChanged" /></td>
+                            <td><input class="bmes-search-input" placeholder="Search…"
+                                       @bind="_rsqReason"      @bind:event="oninput" @bind:after="OnReasonSearchChanged" /></td>
+                            <td></td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (_modelScanActive)
+                        {
+                            @if (_modelPairs.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4 small">
+                                        @(_modelScanBusy
+                                            ? "Scanning…"
+                                            : "No (PROCESSNAME, NGNAME) pair found in daily DBs for this model.")
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var p in ModelPairsFiltered())
+                                {
+                                    var existing = FindReasonRow(p.ProcessName, p.NgName);
+                                    bool missing = existing is null;
+                                    bool editing = existing is not null && _editReasonId == existing.Id;
+
+                                    @if (editing)
+                                    {
+                                        <tr class="bmes-edit-row">
+                                            <td><input class="bmes-input" @bind="_editReason.ProcessName" /></td>
+                                            <td><input class="bmes-input" @bind="_editReason.NgName"      /></td>
+                                            <td><input class="bmes-input" @bind="_editReason.Reason"      /></td>
+                                            <td class="bmes-actions">
+                                                <button class="btn btn-success btn-sm py-0 px-2"   @onclick="SaveReasonEdit">✓</button>
+                                                <button class="btn btn-secondary btn-sm py-0 px-2" @onclick="CancelReasonEdit">✕</button>
+                                            </td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        var pn = p.ProcessName; var ng = p.NgName;
+                                        <tr class="bmes-row @(missing ? "bmes-row-missing" : "")">
+                                            <td>@pn</td>
+                                            <td>@ng</td>
+                                            <td>
+                                                @if (missing)
+                                                {
+                                                    <span class="text-danger small fst-italic">(not in Reason Table)</span>
+                                                }
+                                                else
+                                                {
+                                                    @existing!.Reason
+                                                }
+                                            </td>
+                                            <td class="bmes-actions">
+                                                @if (missing)
+                                                {
+                                                    <button class="btn btn-outline-primary btn-sm py-0 px-1"
+                                                            @onclick="() => AddReasonFromPair(pn, ng)"
+                                                            title="Add to Reason Table">+</button>
+                                                }
+                                                else
+                                                {
+                                                    <button class="btn btn-outline-primary btn-sm py-0 px-1"
+                                                            @onclick="() => StartReasonEdit(existing)"   title="Edit">✎</button>
+                                                    <button class="btn btn-outline-danger  btn-sm py-0 px-1"
+                                                            @onclick="() => DeleteReasonRow(existing.Id)" title="Delete">✕</button>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                        }
+                        else if (!_anyReasonSearch)
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4 small">
+                                    Type in a search field above to find rows.
+                                </td>
+                            </tr>
+                        }
+                        else if (rsFiltered.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="4" class="py-3 px-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="text-muted small">No matching rows.</span>
+                                        <button class="btn btn-primary btn-sm" @onclick="AddReasonFromSearch">
+                                            + Add Row with these values
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var r in rsFiltered)
+                            {
+                                @if (_editReasonId == r.Id)
+                                {
+                                    <tr class="bmes-edit-row">
+                                        <td><input class="bmes-input" @bind="_editReason.ProcessName" /></td>
+                                        <td><input class="bmes-input" @bind="_editReason.NgName"      /></td>
+                                        <td><input class="bmes-input" @bind="_editReason.Reason"      /></td>
+                                        <td class="bmes-actions">
+                                            <button class="btn btn-success btn-sm py-0 px-2"   @onclick="SaveReasonEdit">✓</button>
+                                            <button class="btn btn-secondary btn-sm py-0 px-2" @onclick="CancelReasonEdit">✕</button>
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    <tr class="bmes-row" @ondblclick="() => StartReasonEdit(r)">
+                                        <td>@r.ProcessName</td>
+                                        <td>@r.NgName</td>
+                                        <td>@r.Reason</td>
+                                        <td class="bmes-actions">
+                                            <button class="btn btn-outline-primary btn-sm py-0 px-1" @onclick="() => StartReasonEdit(r)"    title="Edit">✎</button>
+                                            <button class="btn btn-outline-danger  btn-sm py-0 px-1" @onclick="() => DeleteReasonRow(r.Id)" title="Delete">✕</button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    .ins .setting-card,
+    .ins .setting-card .card-header { border-radius: 2px !important; }
+    .setting-fetch-log {
+        background: var(--panel-2, #f5f6f9);
+        border: 1px solid var(--line, #dde1e7);
+        border-radius: 2px;
+        padding: 8px;
+        max-height: 160px;
+        overflow: auto;
+    }
+
+    .bmes-table {
+        width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap;
+    }
+    .bmes-table thead th {
+        background: var(--panel-2, #f5f6f9); font-weight: 700; font-size: 10px; color: var(--ink-2, #4a5461);
+        text-transform: uppercase; letter-spacing: .4px;
+        padding: 6px 10px; border: 1px solid var(--line, #dde1e7);
+        position: sticky; top: 0; z-index: 2;
+    }
+    .bmes-search-row {
+        position: sticky; top: 29px; z-index: 1; background: var(--panel, #fff);
+    }
+    .bmes-search-row td {
+        padding: 4px 6px; border: 1px solid var(--line, #dde1e7);
+        background: var(--panel, #fff);
+    }
+    .bmes-search-input {
+        width: 100%; font-size: 11px; padding: 3px 6px;
+        border: 1px solid var(--line, var(--line, #dde1e7)); border-radius: 2px;
+        background: var(--panel-2, #f5f6f9); outline: none;
+        color: var(--ink-2, #4a5461);
+    }
+    .bmes-search-input:focus {
+        border-color: var(--signal, #16202b); background: var(--panel, #fff);
+    }
+    .bmes-table td {
+        padding: 4px 10px; border: 1px solid var(--line, #dde1e7); vertical-align: middle;
+    }
+    .bmes-row:hover td { background: var(--panel-2, #f5f6f9); }
+    .bmes-row-missing td { background: var(--crit-wash, #fbedec); }
+    .bmes-row-missing:hover td { background: var(--crit-wash, #fbedec); }
+    .bmes-edit-row td { background: var(--signal-wash, #edf0f4); }
+    .bmes-actions { text-align: center; white-space: nowrap; }
+    .bmes-input {
+        width: 100%; font-size: 12px; padding: 2px 6px;
+        border: 1px solid var(--signal, #16202b); border-radius: 2px;
+        background: var(--panel, #fff); outline: none;
+    }
+    .bmes-input:focus { border-color: var(--signal, #16202b);}
+</style>
+
+@code {
+    private string _apiKey      = string.Empty;
+    private bool   _showKey;
+    private bool   _claudeSaving;
+    private bool   _claudeSaved;
+    private string _claudeError = string.Empty;
+
+    private string _codexApiKey         = string.Empty;
+    private string _codexTranslateModel = CodexApiService.DefaultTranslateModel;
+    private string _codexTranslateEffort = CodexApiService.DefaultReasoningEffort;
+    private bool   _showCodexKey;
+    private bool   _codexSaving;
+    private bool   _codexSaved;
+    private string _codexError = string.Empty;
+
+    private AiProviderSettingsSnapshot _aiProviders = new();
+    private bool   _aiProviderSaving;
+    private bool   _aiProviderSaved;
+    private string _aiProviderError = string.Empty;
+
+    private NgRateSettingsSnapshot _snap = new();
+    private AppPathsConfig _pathsForm = new();
+    private bool   _showQrBakoPassword;
+    private bool   _qrBakoSaving;
+    private bool   _qrBakoTesting;
+    private string _qrBakoMsg = string.Empty;
+    private bool   _qrBakoError;
+
+    /// <summary>Editable copy of the QR model table; only Save writes it back.</summary>
+    private List<QrModelCode> _qrModelCodes = [];
+    private bool   _qrModelSaving;
+    private string _qrModelMsg = string.Empty;
+    private bool   _qrModelError;
+
+    private List<RoutingRow> _routingRows = [];
+    private List<ReasonRow>  _reasonRows  = [];
+
+    private long        _editRoutingId = -1;
+    private RoutingRow  _editRouting   = new();
+    private long        _editReasonId  = -1;
+    private ReasonRow   _editReason    = new();
+
+    private string _statusMsg   = string.Empty;
+    private bool   _statusError;
+    private bool   _serverTableBusy;
+    private string _serverTableAction = string.Empty;
+    private string _serverTableMsg    = string.Empty;
+    private bool   _serverTableError;
+    private bool   _pathSaving;
+    private bool   _pathSavedRequiresRestart;
+    private string _pathStatus = string.Empty;
+    private bool   _pathStatusError;
+    private string _origDbRoot = string.Empty;
+    private string _origMainDb = string.Empty;
+    private string _origSettingsDbDir = string.Empty;
+    private string EffectiveWorkDirectory =>
+        string.IsNullOrWhiteSpace(_pathsForm.DbRootDirectory)
+            ? AppPathsService.DefaultDbRootDirectory
+            : _pathsForm.DbRootDirectory.Trim();
+    private string NgRateWorkDirectory =>
+        AppPathsService.GetNgRateDirectory(EffectiveWorkDirectory);
+    private string FCostWorkDirectory =>
+        AppPathsService.GetFCostDirectory(EffectiveWorkDirectory);
+    private string WorkerStatusWorkDirectory =>
+        AppPathsService.GetWorkerStatusDirectory(EffectiveWorkDirectory);
+    private string ServerTableTargetPreview =>
+        Path.Combine(NgRateWorkDirectory, "ngrate_settings.db");
+
+    // ── Routing search ────────────────────────────────────────────────────────
+    private string _rqModelName   = string.Empty;
+    private string _rqProcessCode = string.Empty;
+    private string _rqProcessName = string.Empty;
+    private string _rqProcessType = string.Empty;
+    private bool   _anyRoutingSearch;
+
+    // ── Reason search ─────────────────────────────────────────────────────────
+    private string _rsqProcessName = string.Empty;
+    private string _rsqNgName      = string.Empty;
+    private string _rsqReason      = string.Empty;
+    private bool   _anyReasonSearch;
+
+    // ── Reason: scan distinct (PN, NG) by Material model name ─────────────────
+    private string _rsqModel       = string.Empty;
+    private bool   _modelScanBusy;
+    private bool   _modelScanActive;
+    private List<(string ProcessName, string NgName)> _modelPairs = new();
+
+    // ── BMES material fetch state ────────────────────────────────────────────
+    private bool           _fetchBusy;
+    private string         _fetchLog       = string.Empty;
+    private BmesMaterial?  _latest;
+    private int            _materialCount;
+
+    // Team memo DB (shared with WorkHub)
+    private string  _tmDbPath = "";
+    private string  _tmAttachDir = "";
+    private string  _tmWorkHubAuthor = "WorkHub";
+    private bool    _tmAutoTranslate = true;
+    private string? _tmStatus;
+    private bool    _tmOk;
+
+    private void LoadTeamMemoStore()
+    {
+        _tmDbPath = TeamMemos.DbPath;
+        _tmAttachDir = Repo.GetSetting("TeamMemo:MemoAttachmentsDir") ?? "";
+        _tmWorkHubAuthor = TeamMemos.WorkHubAuthor;
+        _tmAutoTranslate = Repo.GetSetting(TeamMemoBackgroundService.AutoTranslateKey) != "0";
+    }
+
+    private void SaveTeamMemoStore()
+    {
+        TeamMemos.SaveStoreSettings(
+            string.IsNullOrWhiteSpace(_tmDbPath) ? TeamMemoService.DefaultDbPath : _tmDbPath, _tmAttachDir, _tmWorkHubAuthor);
+        Repo.SetSetting(TeamMemoBackgroundService.AutoTranslateKey, _tmAutoTranslate ? "1" : "0");
+        CheckTeamMemoStore();
+    }
+
+    private void CheckTeamMemoStore()
+    {
+        try
+        {
+            int memos = TeamMemos.ListMemos().Count;
+            int folders = TeamMemos.GetFolders().Count;
+            _tmStatus = $"Connected — {memos} memos, {folders} folders. Attachments: {TeamMemos.AttachmentsRoot}";
+            _tmOk = true;
+        }
+        catch (Exception ex)
+        {
+            _tmStatus = ex.Message;
+            _tmOk = false;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        CopyAppPathFromCurrent();
+        LoadTeamMemoStore();
+        _apiKey = Repo.GetSetting("Claude:ApiKey") ?? string.Empty;
+        _codexApiKey = Repo.GetSetting("OpenAI:ApiKey")
+            ?? Repo.GetSetting("Codex:ApiKey")
+            ?? string.Empty;
+        _codexTranslateModel = Repo.GetSetting("OpenAI:TranslateModel")
+            ?? Repo.GetSetting("Codex:TranslateModel")
+            ?? CodexApiService.DefaultTranslateModel;
+        _codexTranslateEffort = Repo.GetSetting("OpenAI:TranslateEffort") is { Length: > 0 } savedEffort
+            ? savedEffort
+            : CodexApiService.DefaultReasoningEffort;
+        _aiProviders = AiProviders.GetSnapshot();
+        _qrModelCodes = QrModelCodes.Codes.ToList();
+        _snap        = NgRateSettings.GetSnapshot();
+        _routingRows = NgRateSettings.GetRoutingRows();
+        _reasonRows  = NgRateSettings.GetReasonRows();
+
+        _latest         = Repo.GetLatestBmesMaterial();
+        _materialCount  = Repo.GetBmesMaterialCount();
+    }
+
+    private async Task SaveClaudeAsync()
+    {
+        _claudeSaving = true;
+        _claudeSaved  = false;
+        _claudeError  = string.Empty;
+        try
+        {
+            Repo.SetSetting("Claude:ApiKey", _apiKey.Trim());
+            _claudeSaved = true;
+        }
+        catch (Exception ex)
+        {
+            _claudeError = ex.Message;
+        }
+        finally
+        {
+            _claudeSaving = false;
+        }
+        await Task.CompletedTask;
+    }
+
+    private async Task SaveCodexAsync()
+    {
+        _codexSaving = true;
+        _codexSaved  = false;
+        _codexError  = string.Empty;
+        try
+        {
+            string model = string.IsNullOrWhiteSpace(_codexTranslateModel)
+                ? CodexApiService.DefaultTranslateModel
+                : _codexTranslateModel.Trim();
+            Repo.SetSetting("OpenAI:ApiKey", _codexApiKey.Trim());
+            Repo.SetSetting("OpenAI:TranslateModel", model);
+            Repo.SetSetting("OpenAI:TranslateEffort", _codexTranslateEffort);
+            if (!string.IsNullOrWhiteSpace(_codexApiKey))
+            {
+                _aiProviders.CodexApiEnabled = true;
+                AiProviders.Save(_aiProviders);
+            }
+            _codexTranslateModel = model;
+            _codexSaved = true;
+        }
+        catch (Exception ex)
+        {
+            _codexError = ex.Message;
+        }
+        finally
+        {
+            _codexSaving = false;
+        }
+        await Task.CompletedTask;
+    }
+
+    private async Task SaveAiProvidersAsync()
+    {
+        _aiProviderSaving = true;
+        _aiProviderSaved  = false;
+        _aiProviderError  = string.Empty;
+        try
+        {
+            AiProviders.Save(_aiProviders);
+            _aiProviderSaved = true;
+        }
+        catch (Exception ex)
+        {
+            _aiProviderError = ex.Message;
+        }
+        finally
+        {
+            _aiProviderSaving = false;
+        }
+        await Task.CompletedTask;
+    }
+
+    private void CopyAppPathFromCurrent()
+    {
+        var c = AppPaths.Current;
+        _pathsForm = new AppPathsConfig
+        {
+            DbRootDirectory = c.DbRootDirectory,
+            MainDbPath = c.MainDbPath,
+            NgRateDbSaveDirectory = c.NgRateDbSaveDirectory,
+            NgRateRoutingFilePath = c.NgRateRoutingFilePath,
+            NgRateReasonFilePath = c.NgRateReasonFilePath,
+            NgRateSettingsDbDirectory = c.NgRateSettingsDbDirectory,
+            ModelBmesJsonFolder = c.ModelBmesJsonFolder,
+            TestExcelConverterSourceDir = c.TestExcelConverterSourceDir,
+            TestExcelConverterDestDir = c.TestExcelConverterDestDir,
+            AdminDbQueryServer = c.AdminDbQueryServer,
+            AdminDbQueryPort = c.AdminDbQueryPort,
+            AdminDbQueryDatabase = c.AdminDbQueryDatabase,
+            AdminDbQueryUserId = c.AdminDbQueryUserId,
+            AdminDbQueryPassword = c.AdminDbQueryPassword,
+            AdminDbQueryTimeoutSeconds = c.AdminDbQueryTimeoutSeconds,
+            AdminDbQueryEncrypt = c.AdminDbQueryEncrypt,
+            AdminDbQueryTrustServerCertificate = c.AdminDbQueryTrustServerCertificate,
+            QrBakoDataServer = c.QrBakoDataServer,
+            QrBakoDataPort = c.QrBakoDataPort,
+            QrBakoDataDatabase = c.QrBakoDataDatabase,
+            QrBakoDataUserId = c.QrBakoDataUserId,
+            QrBakoDataPassword = c.QrBakoDataPassword,
+            QrBakoDataTimeoutSeconds = c.QrBakoDataTimeoutSeconds,
+            QrBakoDataDefaultMaxRows = c.QrBakoDataDefaultMaxRows,
+            QrBakoDataEncrypt = c.QrBakoDataEncrypt,
+            QrBakoDataTrustServerCertificate = c.QrBakoDataTrustServerCertificate,
+        };
+        _origDbRoot = c.DbRootDirectory;
+        _origMainDb = c.MainDbPath;
+        _origSettingsDbDir = c.NgRateSettingsDbDirectory;
+    }
+
+    private void UseDefaultAppPath()
+    {
+        _pathsForm.DbRootDirectory = AppPathsService.DefaultDbRootDirectory;
+        ApplyUnifiedAppPathToForm();
+        _pathStatus = "Default working folder applied. Click Save to keep it.";
+        _pathStatusError = false;
+    }
+
+    private async Task SaveAppPathAsync() =>
+        await SaveAppPathCoreAsync(showSavedMessage: true);
+
+    private async Task<bool> SaveAppPathCoreAsync(bool showSavedMessage)
+    {
+        if (_pathSaving) return false;
+        _pathSaving = true;
+        _pathStatus = string.Empty;
+        _pathStatusError = false;
+        StateHasChanged();
+
+        try
+        {
+            string requestedRoot = string.IsNullOrWhiteSpace(_pathsForm.DbRootDirectory)
+                ? AppPathsService.DefaultDbRootDirectory
+                : _pathsForm.DbRootDirectory.Trim();
+            if (AppPathsService.DirectoryPathConflictsWithFile(requestedRoot))
+            {
+                _pathStatusError = true;
+                _pathStatus = $"Working Folder points to an existing file, not a folder: {requestedRoot}";
+                return false;
+            }
+
+            ApplyUnifiedAppPathToForm();
+            await Task.Run(() => AppPaths.Save(_pathsForm));
+            NgRateSettings.EnsureDatabase();
+            _pathSavedRequiresRestart =
+                !PathEquals(_pathsForm.DbRootDirectory, _origDbRoot) ||
+                !PathEquals(_pathsForm.MainDbPath, _origMainDb) ||
+                !PathEquals(_pathsForm.NgRateSettingsDbDirectory, _origSettingsDbDir);
+            CopyAppPathFromCurrent();
+            _snap = NgRateSettings.GetSnapshot();
+            _routingRows = NgRateSettings.GetRoutingRows();
+            _reasonRows = NgRateSettings.GetReasonRows();
+            if (showSavedMessage)
+                _pathStatus = $"Saved. Server table DB: {NgRateSettings.SettingsDbPath}";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _pathStatusError = true;
+            _pathStatus = ex.Message;
+            return false;
+        }
+        finally
+        {
+            _pathSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyUnifiedAppPathToForm()
+    {
+        if (string.IsNullOrWhiteSpace(_pathsForm.DbRootDirectory))
+            _pathsForm.DbRootDirectory = AppPathsService.DefaultDbRootDirectory;
+        _pathsForm = AppPathsService.ApplyUnifiedDbDirectory(_pathsForm);
+    }
+
+    /// <summary>
+    /// Writes the QR model table. Blank codes and duplicates are dropped by the service, so the
+    /// saved list is read back afterwards rather than kept as typed — otherwise the page would
+    /// keep showing a row the QR pages are not using.
+    /// </summary>
+    private void SaveQrModelCodes()
+    {
+        if (_qrModelSaving) return;
+        _qrModelSaving = true;
+        _qrModelMsg = string.Empty;
+        _qrModelError = false;
+
+        try
+        {
+            QrModelCodes.Save(_qrModelCodes);
+            _qrModelCodes = QrModelCodes.Codes.ToList();
+            _qrModelMsg = $"{_qrModelCodes.Count:N0} model(s) saved.";
+        }
+        catch (Exception ex)
+        {
+            _qrModelError = true;
+            _qrModelMsg = ex.Message;
+        }
+        finally
+        {
+            _qrModelSaving = false;
+        }
+    }
+
+    private async Task SaveQrBakoDbAsync() =>
+        await SaveQrBakoDbCoreAsync(showSavedMessage: true);
+
+    private async Task<bool> SaveQrBakoDbCoreAsync(bool showSavedMessage)
+    {
+        if (_qrBakoSaving) return false;
+        _qrBakoSaving = true;
+        _qrBakoMsg = string.Empty;
+        _qrBakoError = false;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Run(() => AppPaths.Save(BuildQrBakoSaveConfig()));
+            CopyAppPathFromCurrent();
+            if (showSavedMessage)
+                _qrBakoMsg = "QR BAKO DB connection saved.";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _qrBakoError = true;
+            _qrBakoMsg = ex.Message;
+            return false;
+        }
+        finally
+        {
+            _qrBakoSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task TestQrBakoDbAsync()
+    {
+        if (_qrBakoTesting) return;
+        _qrBakoTesting = true;
+        _qrBakoMsg = string.Empty;
+        _qrBakoError = false;
+        StateHasChanged();
+
+        try
+        {
+            if (!await SaveQrBakoDbCoreAsync(showSavedMessage: false))
+                return;
+
+            // One connection serves all three QR tables, so probe each of them —
+            // otherwise a permission gap on ALTD/GSTD only shows up on the pages.
+            foreach (QrTestTableDef table in QrTestTables.All)
+                await QrBakoData.TestConnectionAsync(table);
+            _qrBakoMsg = "Connected to TCDB (dbo.BKTD, dbo.ALTD, dbo.GSTD).";
+        }
+        catch (Exception ex)
+        {
+            _qrBakoError = true;
+            _qrBakoMsg = ex.Message;
+        }
+        finally
+        {
+            _qrBakoTesting = false;
+            StateHasChanged();
+        }
+    }
+
+    private AppPathsConfig BuildQrBakoSaveConfig()
+    {
+        var c = AppPaths.Current;
+        return new AppPathsConfig
+        {
+            DbRootDirectory = c.DbRootDirectory,
+            MainDbPath = c.MainDbPath,
+            NgRateDbSaveDirectory = c.NgRateDbSaveDirectory,
+            NgRateRoutingFilePath = c.NgRateRoutingFilePath,
+            NgRateReasonFilePath = c.NgRateReasonFilePath,
+            NgRateSettingsDbDirectory = c.NgRateSettingsDbDirectory,
+            ModelBmesJsonFolder = c.ModelBmesJsonFolder,
+            TestExcelConverterSourceDir = c.TestExcelConverterSourceDir,
+            TestExcelConverterDestDir = c.TestExcelConverterDestDir,
+            AdminDbQueryServer = c.AdminDbQueryServer,
+            AdminDbQueryPort = c.AdminDbQueryPort,
+            AdminDbQueryDatabase = c.AdminDbQueryDatabase,
+            AdminDbQueryUserId = c.AdminDbQueryUserId,
+            AdminDbQueryPassword = c.AdminDbQueryPassword,
+            AdminDbQueryTimeoutSeconds = c.AdminDbQueryTimeoutSeconds,
+            AdminDbQueryEncrypt = c.AdminDbQueryEncrypt,
+            AdminDbQueryTrustServerCertificate = c.AdminDbQueryTrustServerCertificate,
+            QrBakoDataServer = _pathsForm.QrBakoDataServer.Trim(),
+            QrBakoDataPort = Math.Clamp(_pathsForm.QrBakoDataPort, 1, 65535),
+            QrBakoDataDatabase = _pathsForm.QrBakoDataDatabase.Trim(),
+            QrBakoDataUserId = _pathsForm.QrBakoDataUserId.Trim(),
+            QrBakoDataPassword = _pathsForm.QrBakoDataPassword,
+            QrBakoDataTimeoutSeconds = Math.Clamp(_pathsForm.QrBakoDataTimeoutSeconds, 1, 300),
+            QrBakoDataDefaultMaxRows = Math.Clamp(_pathsForm.QrBakoDataDefaultMaxRows, 1, 20000),
+            QrBakoDataEncrypt = _pathsForm.QrBakoDataEncrypt,
+            QrBakoDataTrustServerCertificate = _pathsForm.QrBakoDataTrustServerCertificate,
+        };
+    }
+
+    private async Task FetchAllMaterialsAsync()
+    {
+        if (_fetchBusy) return;
+        _fetchBusy = true;
+        _fetchLog  = string.Empty;
+        StateHasChanged();
+
+        var progress = new Progress<string>(msg =>
+        {
+            _fetchLog += (_fetchLog.Length > 0 ? "\n" : "") + msg;
+            InvokeAsync(StateHasChanged);
+        });
+
+        try
+        {
+            int saved = await BmesMaterials.FetchAllAsync(progress);
+            if (saved > 0)
+            {
+                _latest        = Repo.GetLatestBmesMaterial();
+                _materialCount = Repo.GetBmesMaterialCount();
+                SetStatus($"Saved {saved} material(s). Total in DB: {_materialCount}", false);
+            }
+            else
+            {
+                SetStatus("Fetch failed — see log below.", true);
+            }
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Unexpected error: {ex.Message}", true);
+            _fetchLog += "\n" + ex;
+        }
+        finally
+        {
+            _fetchBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private void SaveCredentials()
+    {
+        NgRateSettings.ApplySnapshot(_snap);
+        SetStatus("Credentials saved.", false);
+    }
+
+    private void SaveApiCredentials()
+    {
+        NgRateSettings.ApplySnapshot(_snap);
+        SetStatus("BMES API login saved.", false);
+    }
+
+    private async Task PullRoutingFromServerAsync() =>
+        await PullServerTableAsync(
+            "routing",
+            BmesSettingsSync.PullRoutingRowsFromServerAsync,
+            () => _routingRows = NgRateSettings.GetRoutingRows());
+
+    private async Task PullReasonFromServerAsync() =>
+        await PullServerTableAsync(
+            "reason",
+            BmesSettingsSync.PullReasonRowsFromServerAsync,
+            () => _reasonRows = NgRateSettings.GetReasonRows());
+
+    private async Task PullRoutingReasonFromServerAsync() =>
+        await PullServerTableAsync(
+            "all",
+            BmesSettingsSync.PullAllRowsFromServerAsync,
+            () =>
+            {
+                _routingRows = NgRateSettings.GetRoutingRows();
+                _reasonRows = NgRateSettings.GetReasonRows();
+            });
+
+    private async Task PullServerTableAsync(
+        string action,
+        Func<Task<BmesSettingsSyncResult>> pull,
+        Action refreshLocalRows)
+    {
+        if (_serverTableBusy) return;
+        _serverTableBusy = true;
+        _serverTableAction = action;
+        _serverTableMsg = string.Empty;
+        _serverTableError = false;
+        StateHasChanged();
+
+        try
+        {
+            if (!await SaveAppPathCoreAsync(showSavedMessage: false))
+            {
+                _serverTableError = true;
+                _serverTableMsg = "Working folder save failed.";
+                SetStatus(_serverTableMsg, true);
+                return;
+            }
+            var result = await pull();
+            if (result.Succeeded)
+            {
+                refreshLocalRows();
+                _serverTableMsg = $"{result.Message} {result.Rows:N0} row(s) saved.";
+                SetStatus(_serverTableMsg, false);
+            }
+            else
+            {
+                _serverTableError = true;
+                _serverTableMsg = result.Message;
+                SetStatus($"Server table load failed: {result.Message}", true);
+            }
+        }
+        catch (Exception ex)
+        {
+            _serverTableError = true;
+            _serverTableMsg = ex.Message;
+            SetStatus($"Server table load failed: {ex.Message}", true);
+        }
+        finally
+        {
+            _serverTableBusy = false;
+            _serverTableAction = string.Empty;
+            StateHasChanged();
+        }
+    }
+
+    // ── Filter helpers ────────────────────────────────────────────────────────
+
+    private List<RoutingRow> GetFilteredRouting()
+    {
+        if (!_anyRoutingSearch) return [];
+        return _routingRows.Where(r =>
+            (string.IsNullOrEmpty(_rqModelName)   || r.ModelName.Contains(_rqModelName,     StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(_rqProcessCode) || r.ProcessCode.Contains(_rqProcessCode, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(_rqProcessName) || r.ProcessName.Contains(_rqProcessName, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(_rqProcessType) || r.ProcessType.Contains(_rqProcessType, StringComparison.OrdinalIgnoreCase))
+        ).ToList();
+    }
+
+    private List<ReasonRow> GetFilteredReason()
+    {
+        if (!_anyReasonSearch) return [];
+        return _reasonRows.Where(r =>
+            (string.IsNullOrEmpty(_rsqProcessName) || r.ProcessName.Contains(_rsqProcessName, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(_rsqNgName)      || r.NgName.Contains(_rsqNgName,           StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(_rsqReason)      || r.Reason.Contains(_rsqReason,           StringComparison.OrdinalIgnoreCase))
+        ).ToList();
+    }
+
+    private Task OnRoutingSearchChanged()
+    {
+        _anyRoutingSearch = !string.IsNullOrEmpty(_rqModelName)   ||
+                            !string.IsNullOrEmpty(_rqProcessCode) ||
+                            !string.IsNullOrEmpty(_rqProcessName) ||
+                            !string.IsNullOrEmpty(_rqProcessType);
+        return Task.CompletedTask;
+    }
+
+    private Task OnReasonSearchChanged()
+    {
+        _anyReasonSearch = !string.IsNullOrEmpty(_rsqProcessName) ||
+                           !string.IsNullOrEmpty(_rsqNgName)      ||
+                           !string.IsNullOrEmpty(_rsqReason);
+        return Task.CompletedTask;
+    }
+
+    // ── Routing ───────────────────────────────────────────────────────────────
+
+    private void AddRoutingFromSearch()
+    {
+        var newRow = new RoutingRow
+        {
+            ModelName   = _rqModelName.Trim(),
+            ProcessCode = _rqProcessCode.Trim(),
+            ProcessName = _rqProcessName.Trim(),
+            ProcessType = _rqProcessType.Trim(),
+        };
+        var newId = NgRateSettings.AddRoutingRow(newRow);
+        _routingRows = NgRateSettings.GetRoutingRows();
+        // Clear search so the new row is visible
+        _rqModelName = _rqProcessCode = _rqProcessName = _rqProcessType = string.Empty;
+        _anyRoutingSearch = false;
+        // Open in edit mode
+        _editRoutingId = newId;
+        _editRouting   = new RoutingRow
+        {
+            Id = newId, ModelName = newRow.ModelName, ProcessCode = newRow.ProcessCode,
+            ProcessName = newRow.ProcessName, ProcessType = newRow.ProcessType,
+        };
+    }
+
+    private void StartRoutingEdit(RoutingRow r)
+    {
+        _editRoutingId = r.Id;
+        _editRouting   = new RoutingRow
+        {
+            Id = r.Id, ModelName = r.ModelName, ProcessCode = r.ProcessCode,
+            ProcessName = r.ProcessName, ProcessType = r.ProcessType,
+        };
+    }
+
+    private void SaveRoutingEdit()
+    {
+        NgRateSettings.UpdateRoutingRow(_editRouting);
+        _routingRows   = NgRateSettings.GetRoutingRows();
+        _editRoutingId = -1;
+        SetStatus("Routing row saved.", false);
+    }
+
+    private void CancelRoutingEdit() => _editRoutingId = -1;
+
+    private void DeleteRoutingRow(long id)
+    {
+        NgRateSettings.DeleteRoutingRow(id);
+        _routingRows = NgRateSettings.GetRoutingRows();
+        if (_editRoutingId == id) _editRoutingId = -1;
+        SetStatus("Routing row deleted.", false);
+    }
+
+    private void ImportRoutingFromFile()
+    {
+        int count = NgRateSettings.ImportRoutingFromFile(NgRateSettings.RoutingFilePath);
+        _routingRows = NgRateSettings.GetRoutingRows();
+        _editRoutingId = -1;
+        SetStatus(count > 0 ? $"Imported {count} routing rows from file." : "File not found or empty.", count == 0);
+    }
+
+    // ── Refresh Routing raw dump from BMES ────────────────────────────────────
+    private bool   _routingScrapeBusy;
+    private string _routingScrapeMsg   = string.Empty;
+    private bool   _routingScrapeError;
+
+    private async Task RefreshRoutingFromBmes()
+    {
+        if (_routingScrapeBusy) return;
+        _routingScrapeBusy  = true;
+        _routingScrapeMsg   = string.Empty;
+        _routingScrapeError = false;
+        StateHasChanged();
+
+        try
+        {
+            var progress = new Progress<string>(msg =>
+            {
+                _routingScrapeMsg = msg;
+                InvokeAsync(StateHasChanged);
+            });
+
+            int saved = await BmesRoutingScrape.FetchAllAsync(progress);
+            if (saved < 0)
+            {
+                _routingScrapeError = true;
+            }
+            else
+            {
+                _routingRows  = NgRateSettings.GetRoutingRows();
+                _editRoutingId = -1;
+            }
+        }
+        catch (Exception ex)
+        {
+            _routingScrapeError = true;
+            _routingScrapeMsg   = $"✗ {ex.Message}";
+        }
+        finally
+        {
+            _routingScrapeBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    // ── Reason ────────────────────────────────────────────────────────────────
+
+    private void AddReasonFromSearch()
+    {
+        var newRow = new ReasonRow
+        {
+            ProcessName = _rsqProcessName.Trim(),
+            NgName      = _rsqNgName.Trim(),
+            Reason      = _rsqReason.Trim(),
+        };
+        var newId = NgRateSettings.AddReasonRow(newRow);
+        _reasonRows = NgRateSettings.GetReasonRows();
+        // Clear search so the new row is visible
+        _rsqProcessName = _rsqNgName = _rsqReason = string.Empty;
+        _anyReasonSearch = false;
+        // Open in edit mode
+        _editReasonId = newId;
+        _editReason   = new ReasonRow
+        {
+            Id = newId, ProcessName = newRow.ProcessName, NgName = newRow.NgName, Reason = newRow.Reason,
+        };
+    }
+
+    private void StartReasonEdit(ReasonRow r)
+    {
+        _editReasonId = r.Id;
+        _editReason   = new ReasonRow
+        {
+            Id = r.Id, ProcessName = r.ProcessName, NgName = r.NgName, Reason = r.Reason,
+        };
+    }
+
+    private void SaveReasonEdit()
+    {
+        NgRateSettings.UpdateReasonRow(_editReason);
+        _reasonRows   = NgRateSettings.GetReasonRows();
+        _editReasonId = -1;
+        SetStatus("Reason row saved.", false);
+    }
+
+    private void CancelReasonEdit() => _editReasonId = -1;
+
+    private void DeleteReasonRow(long id)
+    {
+        NgRateSettings.DeleteReasonRow(id);
+        _reasonRows = NgRateSettings.GetReasonRows();
+        if (_editReasonId == id) _editReasonId = -1;
+        SetStatus("Reason row deleted.", false);
+    }
+
+    // ── Reason: model (Material) scan ────────────────────────────────────────
+
+    private async Task OnModelSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await RunModelScan();
+    }
+
+    private async Task RunModelScan()
+    {
+        if (_modelScanBusy) return;
+        if (string.IsNullOrWhiteSpace(_rsqModel)) { ClearModelScan(); return; }
+
+        _modelScanBusy   = true;
+        _modelScanActive = true;
+        _modelPairs      = new();
+        StateHasChanged();
+
+        try
+        {
+            string pattern = _rsqModel;
+            var pairs = await Task.Run(() => NgRateSettings.GetProcessNgPairsByMaterial(pattern));
+            _modelPairs = pairs;
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Model scan failed: {ex.Message}", true);
+        }
+        finally
+        {
+            _modelScanBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ClearModelScan()
+    {
+        _modelScanActive = false;
+        _modelPairs.Clear();
+    }
+
+    /// <summary>Returns scanned pairs further filtered by the in-table PN/NG search inputs
+    /// (the Reason input has no effect here — Reason is derived from ReasonTable lookup).</summary>
+    private IEnumerable<(string ProcessName, string NgName)> ModelPairsFiltered()
+    {
+        IEnumerable<(string ProcessName, string NgName)> q = _modelPairs;
+        if (!string.IsNullOrEmpty(_rsqProcessName))
+            q = q.Where(p => p.ProcessName.Contains(_rsqProcessName, StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrEmpty(_rsqNgName))
+            q = q.Where(p => p.NgName.Contains(_rsqNgName, StringComparison.OrdinalIgnoreCase));
+        return q;
+    }
+
+    private ReasonRow? FindReasonRow(string pn, string ng)
+        => _reasonRows.FirstOrDefault(r =>
+               string.Equals(r.ProcessName, pn, StringComparison.Ordinal)
+            && string.Equals(r.NgName,      ng, StringComparison.Ordinal));
+
+    private void AddReasonFromPair(string pn, string ng)
+    {
+        var newRow = new ReasonRow { ProcessName = pn, NgName = ng, Reason = string.Empty };
+        var newId  = NgRateSettings.AddReasonRow(newRow);
+        _reasonRows = NgRateSettings.GetReasonRows();
+        _editReasonId = newId;
+        _editReason   = new ReasonRow { Id = newId, ProcessName = pn, NgName = ng, Reason = string.Empty };
+    }
+
+    private void ImportReasonFromFile()
+    {
+        int count = NgRateSettings.ImportReasonFromFile(NgRateSettings.ReasonFilePath);
+        _reasonRows = NgRateSettings.GetReasonRows();
+        _editReasonId = -1;
+        SetStatus(count > 0 ? $"Imported {count} reason rows from file." : "File not found or empty.", count == 0);
+    }
+
+    // ── Refresh Reason from Daily DBs ─────────────────────────────────────────
+    private bool   _reasonRefreshBusy;
+    private string _reasonRefreshMsg   = string.Empty;
+    private bool   _reasonRefreshError;
+
+    private async Task RefreshReasonFromDailyDbs()
+    {
+        if (_reasonRefreshBusy) return;
+        _reasonRefreshBusy  = true;
+        _reasonRefreshMsg   = string.Empty;
+        _reasonRefreshError = false;
+        StateHasChanged();
+
+        try
+        {
+            var progress = new Progress<string>(msg =>
+            {
+                _reasonRefreshMsg = msg;
+                InvokeAsync(StateHasChanged);
+            });
+
+            int added = await Task.Run(() => NgRateSettings.RefreshReasonFromDailyDbs(progress));
+            _reasonRows    = NgRateSettings.GetReasonRows();
+            _editReasonId  = -1;
+            _reasonRefreshMsg = added > 0
+                ? $"✓ Added {added} new pair(s)."
+                : "✓ No new pairs — ReasonTable already covers all DB values.";
+        }
+        catch (Exception ex)
+        {
+            _reasonRefreshError = true;
+            _reasonRefreshMsg   = $"✗ {ex.Message}";
+        }
+        finally
+        {
+            _reasonRefreshBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private void SetStatus(string msg, bool isError)
+    {
+        _statusMsg   = msg;
+        _statusError = isError;
+    }
+
+    private static bool PathEquals(string a, string b) =>
+        string.Equals((a ?? string.Empty).Trim(), (b ?? string.Empty).Trim(), StringComparison.OrdinalIgnoreCase);
+}

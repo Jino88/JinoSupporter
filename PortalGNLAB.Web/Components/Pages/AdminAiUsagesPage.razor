@@ -1,0 +1,862 @@
+@page "/admin/ai-usages"
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+@using PortalGNLAB.Web.Services
+@inject WebRepository      Repo
+@inject ClaudeUsageScraper Scraper
+@inject CodexUsageScraper  CodexScraper
+
+<PageTitle>AI Usages</PageTitle>
+
+<AuthorizeView Roles="Admin">
+    <NotAuthorized>
+        <div class="alert alert-danger">Access denied.</div>
+    </NotAuthorized>
+    <Authorized>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h5 class="fw-bold mb-0">AI Usages</h5>
+</div>
+
+<div class="card aiu-card aiu-session-card mb-4">
+    <div class="card-header d-flex align-items-center">
+        <span class="fw-semibold">Browser Sessions</span>
+        <span class="ms-auto d-flex gap-2">
+            @if (Scraper.SessionProfileExists)
+            {
+                <span class="badge aiu-badge aiu-badge-ok">Claude saved</span>
+            }
+            else
+            {
+                <span class="badge aiu-badge aiu-badge-muted">Claude none</span>
+            }
+            @if (CodexScraper.SessionProfileExists)
+            {
+                <span class="badge aiu-badge aiu-badge-ok">Codex saved</span>
+            }
+            else
+            {
+                <span class="badge aiu-badge aiu-badge-muted">Codex none</span>
+            }
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
+            <span class="small fw-semibold text-muted me-1">Claude</span>
+            <button class="btn btn-primary btn-sm" @onclick="LoginAsync"
+                    disabled="@(_loginBusy || _scrapeBusy)">
+                @if (_loginBusy) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                Login
+            </button>
+            <button class="btn btn-primary btn-sm" @onclick="RefreshAsync"
+                    disabled="@(_loginBusy || _scrapeBusy || !Scraper.SessionProfileExists)">
+                @if (_scrapeBusy) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                Refresh
+            </button>
+            <button class="btn btn-outline-danger btn-sm" @onclick="DeleteSession"
+                    disabled="@(_loginBusy || _scrapeBusy || !Scraper.SessionProfileExists)"
+                    title="Delete session profile">
+                Delete
+            </button>
+        </div>
+
+        @if (!string.IsNullOrEmpty(_sessionStatus))
+        {
+            <div class="mt-2 small aiu-status @(_sessionError ? "aiu-status-crit" : "aiu-status-ok")">@_sessionStatus</div>
+        }
+
+        <div class="d-flex gap-2 flex-wrap align-items-center mt-3 mb-2">
+            <span class="small fw-semibold text-muted me-1">Codex/OpenAI</span>
+            <button class="btn btn-primary btn-sm" @onclick="LoginCodexAsync"
+                    disabled="@(_codexLoginBusy || _codexScrapeBusy)">
+                @if (_codexLoginBusy) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                Login
+            </button>
+            <button class="btn btn-primary btn-sm" @onclick="RefreshCodexAsync"
+                    disabled="@(_codexLoginBusy || _codexScrapeBusy || !CodexScraper.SessionProfileExists)">
+                @if (_codexScrapeBusy) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                Refresh
+            </button>
+            <button class="btn btn-outline-danger btn-sm" @onclick="DeleteCodexSession"
+                    disabled="@(_codexLoginBusy || _codexScrapeBusy || !CodexScraper.SessionProfileExists)"
+                    title="Delete Codex/OpenAI session profile">
+                Delete
+            </button>
+        </div>
+
+        @if (!string.IsNullOrEmpty(_codexSessionStatus))
+        {
+            <div class="mt-2 small aiu-status @(_codexSessionError ? "aiu-status-crit" : "aiu-status-ok")">@_codexSessionStatus</div>
+        }
+
+        <div class="form-text mt-2">
+            Login once on first use. Claude opens platform.claude.com and claude.ai. Codex/OpenAI opens chatgpt.com and platform.openai.com.
+            Sign in on both tabs, then close the window. Refresh reuses the saved browser profile.
+        </div>
+        <div class="form-text aiu-warning">
+            Refresh runs hidden first. If a provider redirects to its login page, use that provider's Login button once.
+        </div>
+        <div class="form-text">
+            Claude profile: <code class="small">@Scraper.ProfileDirectory</code>
+        </div>
+        <div class="form-text">
+            Codex/OpenAI profile: <code class="small">@CodexScraper.ProfileDirectory</code>
+        </div>
+        @if (Scraper.SessionProfileExists)
+        {
+            <div class="form-text aiu-status-ok">
+                Claude session is saved. Click Refresh when you want to update.
+            </div>
+        }
+        @if (CodexScraper.SessionProfileExists)
+        {
+            <div class="form-text aiu-status-ok">
+                Codex/OpenAI session is saved. Click Refresh when you want to update.
+            </div>
+        }
+    </div>
+</div>
+
+@if (_imported)
+{
+    <div class="alert alert-info d-flex align-items-center" role="alert">
+        <div>
+            <strong>Auto-fetched Claude values have been saved.</strong>
+            You can still edit values manually and click Save.
+        </div>
+    </div>
+}
+
+<div class="ai-usage-grid mb-4">
+    <div class="card aiu-card h-100">
+        <div class="card-header d-flex align-items-center">
+            <span class="fw-semibold">Codex Plan</span>
+            <a href="https://chatgpt.com/" target="_blank"
+               class="ms-auto small text-decoration-none">chatgpt.com</a>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label small text-muted mb-1">Plan usage</label>
+                <input type="text" class="form-control form-control-sm aiu-mono text-end"
+                       placeholder="e.g. 42%"
+                       @bind="_codexPlanUsage" />
+                @if (TryParsePct(_codexPlanUsage) is double cpu)
+                {
+                    <div class="progress mt-2" style="height:8px;">
+                        <div class="progress-bar aiu-progress-main" style="width:@(cpu.ToString("0.#"))%"></div>
+                    </div>
+                }
+            </div>
+            <div class="mb-3">
+                <label class="form-label small text-muted mb-1">Weekly / monthly limit</label>
+                <input type="text" class="form-control form-control-sm aiu-mono text-end"
+                       placeholder="e.g. 18%"
+                       @bind="_codexPlanLimitUsage" />
+                @if (TryParsePct(_codexPlanLimitUsage) is double cpl)
+                {
+                    <div class="progress mt-2" style="height:6px;">
+                        <div class="progress-bar aiu-progress-ok" style="width:@(cpl.ToString("0.#"))%"></div>
+                    </div>
+                }
+            </div>
+            <div class="mb-3">
+                <label class="form-label small text-muted mb-1">Reset / note</label>
+                <input type="text" class="form-control form-control-sm"
+                       placeholder="e.g. resets Friday"
+                       @bind="_codexPlanNote" />
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-primary btn-sm" @onclick="SaveCodexPlanAsync" disabled="@_codexPlanSaving">
+                    @(_codexPlanSaving ? "Saving..." : "Save")
+                </button>
+                @if (_codexPlanSaved) { <span class="aiu-status-ok fw-semibold small">Saved.</span> }
+                @if (!string.IsNullOrEmpty(_codexPlanError)) { <span class="aiu-status-crit small">@_codexPlanError</span> }
+            </div>
+            <div class="small text-muted mt-2">
+                Last updated: <span class="aiu-mono">@FormatTs(_codexPlanUpdatedAt)</span>
+            </div>
+            @if (!string.IsNullOrEmpty(_codexPlanScrapeError))
+            {
+                <div class="alert alert-warning mt-2 mb-0 small">@_codexPlanScrapeError</div>
+            }
+            @if (!string.IsNullOrEmpty(_codexPlanSnippet))
+            {
+                <details class="mt-2 small">
+                    <summary class="text-muted" style="cursor:pointer;">Raw page snippet (debug)</summary>
+                    <pre class="small mt-2 aiu-snippet">@_codexPlanSnippet</pre>
+                </details>
+            }
+        </div>
+    </div>
+
+    <div class="card aiu-card h-100">
+        <div class="card-header d-flex align-items-center">
+            <span class="fw-semibold">Claude Plan</span>
+            <a href="https://claude.ai/settings/usage" target="_blank"
+               class="ms-auto small text-decoration-none">claude.ai/settings/usage</a>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label small text-muted mb-1">Current session usage</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text small">Current session</span>
+                    <input type="text" class="form-control form-control-sm aiu-mono text-end"
+                           placeholder="e.g. 42%"
+                           @bind="_sessionUsage" />
+                </div>
+                @if (TryParsePct(_sessionUsage) is double su)
+                {
+                    <div class="progress mt-2" style="height:8px;">
+                        <div class="progress-bar aiu-progress-main" style="width:@(su.ToString("0.#"))%"></div>
+                    </div>
+                }
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label small text-muted mb-1">Weekly limit usage</label>
+                <div class="input-group input-group-sm mb-1">
+                    <span class="input-group-text small" style="width:120px;">All models</span>
+                    <input type="text" class="form-control form-control-sm aiu-mono text-end"
+                           placeholder="e.g. 41%" @bind="_weeklyAllModels" />
+                </div>
+                @if (TryParsePct(_weeklyAllModels) is double wa)
+                {
+                    <div class="progress mb-2" style="height:6px;">
+                        <div class="progress-bar aiu-progress-ok" style="width:@(wa.ToString("0.#"))%"></div>
+                    </div>
+                }
+
+                <div class="input-group input-group-sm mb-1">
+                    <span class="input-group-text small" style="width:120px;">Sonnet only</span>
+                    <input type="text" class="form-control form-control-sm aiu-mono text-end"
+                           placeholder="e.g. 27%" @bind="_weeklySonnet" />
+                </div>
+                @if (TryParsePct(_weeklySonnet) is double ws)
+                {
+                    <div class="progress mb-2" style="height:6px;">
+                        <div class="progress-bar aiu-progress-neutral" style="width:@(ws.ToString("0.#"))%"></div>
+                    </div>
+                }
+
+                <div class="input-group input-group-sm mb-1">
+                    <span class="input-group-text small" style="width:120px;">Claude Design</span>
+                    <input type="text" class="form-control form-control-sm aiu-mono text-end"
+                           placeholder="e.g. 0%" @bind="_weeklyClaudeDesign" />
+                </div>
+                @if (TryParsePct(_weeklyClaudeDesign) is double wd)
+                {
+                    <div class="progress mb-2" style="height:6px;">
+                        <div class="progress-bar aiu-progress-neutral" style="width:@(wd.ToString("0.#"))%"></div>
+                    </div>
+                }
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label small text-muted mb-1">Extra usage / balance (USD)</label>
+                <div class="row g-2">
+                    <div class="col-sm-5">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text small">Extra usage</span>
+                            <span class="input-group-text">$</span>
+                           <input type="text" class="form-control form-control-sm aiu-mono text-end"
+                                   placeholder="0.00"
+                                   @bind="_extraUsage" />
+                        </div>
+                    </div>
+                    <div class="col-sm-2 text-center align-self-center text-muted">/</div>
+                    <div class="col-sm-5">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text small">Balance</span>
+                            <span class="input-group-text">$</span>
+                           <input type="text" class="form-control form-control-sm aiu-mono text-end"
+                                   placeholder="0.00"
+                                   @bind="_extraBalance" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 align-items-end mt-2">
+                <div class="col-sm-6">
+                    <button class="btn btn-primary btn-sm" @onclick="SavePlanAsync" disabled="@_planSaving">
+                        @(_planSaving ? "Saving..." : "Save")
+                    </button>
+                    @if (_planSaved) { <span class="ms-2 aiu-status-ok fw-semibold small">Saved.</span> }
+                    @if (!string.IsNullOrEmpty(_planError)) { <span class="ms-2 aiu-status-crit small">@_planError</span> }
+                </div>
+                <div class="col-sm-6 text-sm-end">
+                    <div class="small text-muted">Last updated</div>
+                    <div class="aiu-mono small">@FormatTs(_planUpdatedAt)</div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_usageScrapeError))
+            {
+                <div class="alert alert-warning mt-2 mb-0 small">@_usageScrapeError</div>
+            }
+            @if (!string.IsNullOrEmpty(_usageSnippet))
+            {
+                <details class="mt-2 small">
+                    <summary class="text-muted" style="cursor:pointer;">Raw page snippet (debug)</summary>
+                    <pre class="small mt-2 aiu-snippet">@_usageSnippet</pre>
+                </details>
+            }
+            <div class="form-text mt-2">
+                Debug dump folder: <code class="small">@Scraper.DebugDirectory</code>
+            </div>
+        </div>
+    </div>
+
+    <div class="card aiu-card h-100">
+        <div class="card-header d-flex align-items-center">
+            <span class="fw-semibold">Codex API</span>
+            <span class="badge aiu-badge aiu-badge-muted ms-auto">Translate tokens</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Input tokens</label>
+                    <input type="text" class="form-control form-control-sm aiu-mono text-end"
+                           @bind="_codexApiInputTokens" />
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Output tokens</label>
+                           <input type="text" class="form-control form-control-sm aiu-mono text-end"
+                           @bind="_codexApiOutputTokens" />
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Total tokens</label>
+                           <input type="text" class="form-control form-control-sm aiu-mono text-end"
+                           @bind="_codexApiTotalTokens" />
+                </div>
+            </div>
+            <div class="mt-3">
+                <label class="form-label small text-muted mb-1">Last request</label>
+                <div class="aiu-mono small">@FormatTs(_codexApiLastRequestAt)</div>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-3">
+                <button class="btn btn-primary btn-sm" @onclick="SaveCodexApiAsync" disabled="@_codexApiSaving">
+                    @(_codexApiSaving ? "Saving..." : "Save")
+                </button>
+                @if (_codexApiSaved) { <span class="aiu-status-ok fw-semibold small">Saved.</span> }
+                @if (!string.IsNullOrEmpty(_codexApiError)) { <span class="aiu-status-crit small">@_codexApiError</span> }
+            </div>
+            <div class="form-text mt-2">
+                Codex API token totals are updated by Translate and by OpenAI usage refresh when available.
+            </div>
+            @if (!string.IsNullOrEmpty(_codexApiScrapeError))
+            {
+                <div class="alert alert-warning mt-2 mb-0 small">@_codexApiScrapeError</div>
+            }
+            @if (!string.IsNullOrEmpty(_codexApiSnippet))
+            {
+                <details class="mt-2 small">
+                    <summary class="text-muted" style="cursor:pointer;">Raw page snippet (debug)</summary>
+                    <pre class="small mt-2 aiu-snippet">@_codexApiSnippet</pre>
+                </details>
+            }
+        </div>
+    </div>
+
+    <div class="card aiu-card h-100">
+        <div class="card-header d-flex align-items-center">
+            <span class="fw-semibold">Claude API</span>
+            <a href="https://platform.claude.com/settings/billing" target="_blank"
+               class="ms-auto small text-decoration-none">platform.claude.com/settings/billing</a>
+        </div>
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-sm-6">
+                    <label class="form-label small text-muted mb-1">API credit balance (USD)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                               <input type="text" class="form-control aiu-mono text-end"
+                               placeholder="0.00"
+                               @bind="_apiCreditBalance" />
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="small text-muted">Last updated</div>
+                    <div class="aiu-mono small">@FormatTs(_apiUpdatedAt)</div>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <button class="btn btn-primary btn-sm" @onclick="SaveApiAsync" disabled="@_apiSaving">
+                    @(_apiSaving ? "Saving..." : "Save")
+                </button>
+                @if (_apiSaved) { <span class="ms-2 aiu-status-ok fw-semibold small">Saved.</span> }
+                @if (!string.IsNullOrEmpty(_apiError)) { <span class="ms-2 aiu-status-crit small">@_apiError</span> }
+            </div>
+
+            @if (!string.IsNullOrEmpty(_billingScrapeError))
+            {
+                <div class="alert alert-warning mt-2 mb-0 small">@_billingScrapeError</div>
+            }
+            @if (!string.IsNullOrEmpty(_billingSnippet))
+            {
+                <details class="mt-2 small">
+                    <summary class="text-muted" style="cursor:pointer;">Raw page snippet (debug)</summary>
+                    <pre class="small mt-2 aiu-snippet">@_billingSnippet</pre>
+                </details>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .aiu-card {
+        background: var(--panel, #fff);
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+    }
+    .aiu-session-card { max-width: 920px; }
+    .aiu-card > .card-header {
+        background: var(--panel-2, #f5f6f9);
+        border-bottom: 1px solid var(--line-2, #c6ccd5);
+    }
+    .aiu-mono { font-family: var(--mono, Bahnschrift, monospace); }
+    .aiu-badge { border-radius: 2px; font-weight: 600; }
+    .aiu-badge-ok,
+    .aiu-status-ok { color: var(--ok, #1f5fa8) !important; }
+    .aiu-badge-ok { background: var(--ok-wash, #eaf1f9); }
+    .aiu-badge-muted { background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461); }
+    .aiu-status-crit { color: var(--crit, #c8342a) !important; }
+    .aiu-warning { color: var(--warn-ink, #92610a); }
+    .aiu-progress-main { background: var(--signal, #16202b); }
+    .aiu-progress-ok { background: var(--ok, #1f5fa8); }
+    .aiu-progress-neutral { background: var(--line-2, #c6ccd5); }
+    .aiu-snippet {
+        max-height: 220px;
+        overflow: auto;
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
+        padding: 8px;
+        border: 1px solid var(--line, #dde1e7);
+        font-size: 11px;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .ai-usage-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-areas:
+            "codex-plan claude-plan"
+            "codex-api claude-api";
+        gap: 16px;
+        align-items: stretch;
+    }
+    .ai-usage-grid > .card:nth-child(1) { grid-area: codex-plan; }
+    .ai-usage-grid > .card:nth-child(2) { grid-area: claude-plan; }
+    .ai-usage-grid > .card:nth-child(3) { grid-area: codex-api; }
+    .ai-usage-grid > .card:nth-child(4) { grid-area: claude-api; }
+    @@media (max-width: 639.98px) {
+        .ai-usage-grid {
+            grid-template-columns: 1fr;
+            grid-template-areas:
+                "codex-plan"
+                "codex-api"
+                "claude-plan"
+                "claude-api";
+        }
+    }
+</style>
+
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    private string  _apiCreditBalance = string.Empty;
+    private string? _apiUpdatedAt;
+    private bool    _apiSaving;
+    private bool    _apiSaved;
+    private string  _apiError = string.Empty;
+
+    private string  _sessionUsage       = string.Empty;
+    private string  _weeklyAllModels    = string.Empty;
+    private string  _weeklySonnet       = string.Empty;
+    private string  _weeklyClaudeDesign = string.Empty;
+    private string  _extraUsage         = string.Empty;
+    private string  _extraBalance       = string.Empty;
+    private string? _planUpdatedAt;
+    private bool    _planSaving;
+    private bool    _planSaved;
+    private string  _planError          = string.Empty;
+
+    private string  _codexPlanUsage      = string.Empty;
+    private string  _codexPlanLimitUsage = string.Empty;
+    private string  _codexPlanNote       = string.Empty;
+    private string? _codexPlanUpdatedAt;
+    private bool    _codexPlanSaving;
+    private bool    _codexPlanSaved;
+    private string  _codexPlanError      = string.Empty;
+
+    private string  _codexApiInputTokens  = string.Empty;
+    private string  _codexApiOutputTokens = string.Empty;
+    private string  _codexApiTotalTokens  = string.Empty;
+    private string? _codexApiLastRequestAt;
+    private bool    _codexApiSaving;
+    private bool    _codexApiSaved;
+    private string  _codexApiError        = string.Empty;
+    private string  _codexPlanScrapeError = string.Empty;
+    private string  _codexApiScrapeError  = string.Empty;
+    private string  _codexPlanSnippet     = string.Empty;
+    private string  _codexApiSnippet      = string.Empty;
+
+    private bool   _loginBusy;
+    private bool   _scrapeBusy;
+    private string _sessionStatus      = string.Empty;
+    private bool   _sessionError;
+    private bool   _imported;
+    private string _billingScrapeError = string.Empty;
+    private string _usageScrapeError   = string.Empty;
+    private string _billingSnippet     = string.Empty;
+    private string _usageSnippet       = string.Empty;
+
+    private bool _codexLoginBusy;
+    private bool _codexScrapeBusy;
+    private string _codexSessionStatus = string.Empty;
+    private bool _codexSessionError;
+
+    protected override void OnInitialized()
+    {
+        _apiCreditBalance = Repo.GetSetting("AiUsages:ApiCreditBalance") ?? string.Empty;
+        _apiUpdatedAt     = Repo.GetSetting("AiUsages:ApiUpdatedAt");
+
+        _sessionUsage       = Repo.GetSetting("AiUsages:SessionUsage")       ?? string.Empty;
+        _weeklyAllModels    = Repo.GetSetting("AiUsages:WeeklyAllModels")    ?? string.Empty;
+        _weeklySonnet       = Repo.GetSetting("AiUsages:WeeklySonnet")       ?? string.Empty;
+        _weeklyClaudeDesign = Repo.GetSetting("AiUsages:WeeklyClaudeDesign") ?? string.Empty;
+        _extraUsage         = Repo.GetSetting("AiUsages:ExtraUsage")         ?? string.Empty;
+        _extraBalance       = Repo.GetSetting("AiUsages:ExtraBalance")       ?? string.Empty;
+        _planUpdatedAt      = Repo.GetSetting("AiUsages:PlanUpdatedAt");
+
+        _codexPlanUsage      = Repo.GetSetting("AiUsages:CodexPlanUsage")      ?? string.Empty;
+        _codexPlanLimitUsage = Repo.GetSetting("AiUsages:CodexPlanLimitUsage") ?? string.Empty;
+        _codexPlanNote       = Repo.GetSetting("AiUsages:CodexPlanNote")       ?? string.Empty;
+        _codexPlanUpdatedAt  = Repo.GetSetting("AiUsages:CodexPlanUpdatedAt");
+
+        _codexApiInputTokens   = CleanTokenSetting(Repo.GetSetting("AiUsages:CodexApiInputTokens"));
+        _codexApiOutputTokens  = CleanTokenSetting(Repo.GetSetting("AiUsages:CodexApiOutputTokens"));
+        _codexApiTotalTokens   = CleanTokenSetting(Repo.GetSetting("AiUsages:CodexApiTotalTokens"));
+        _codexApiLastRequestAt = Repo.GetSetting("AiUsages:CodexApiLastRequestAt");
+    }
+
+    private async Task LoginAsync()
+    {
+        _loginBusy = true;
+        _sessionError = false;
+        _sessionStatus = "Opening browser. Sign in on both tabs, then close it.";
+        StateHasChanged();
+        try
+        {
+            await Scraper.OpenLoginBrowserAsync();
+            _sessionStatus = "Session saved. Fetching once without opening another browser window.";
+            await RefreshCoreAsync(autoTriggered: true);
+        }
+        catch (Exception ex)
+        {
+            _sessionError = true;
+            _sessionStatus = $"Login failed: {ex.Message}";
+        }
+        finally { _loginBusy = false; }
+    }
+
+    private Task RefreshAsync() => RefreshCoreAsync(autoTriggered: false);
+
+    private async Task RefreshCoreAsync(bool autoTriggered)
+    {
+        if (_scrapeBusy || !Scraper.SessionProfileExists) return;
+
+        _scrapeBusy = true;
+        _sessionError = false;
+        _sessionStatus = autoTriggered ? "Auto-fetching Claude usage..." : "Fetching Claude usage...";
+        _billingScrapeError = _usageScrapeError = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var result = await Scraper.ScrapeAsync();
+            if (!autoTriggered && NeedsVisibleLogin(result.BillingError, result.UsageError))
+            {
+                _sessionStatus = "Hidden refresh needs login or security check. Opening Claude browser...";
+                StateHasChanged();
+                await Scraper.OpenLoginBrowserAsync();
+                result = await Scraper.ScrapeAsync();
+            }
+
+            if (!string.IsNullOrEmpty(result.ApiCreditBalance))   _apiCreditBalance = result.ApiCreditBalance;
+            if (!string.IsNullOrEmpty(result.SessionUsage))       _sessionUsage = result.SessionUsage;
+            if (!string.IsNullOrEmpty(result.WeeklyAllModels))    _weeklyAllModels = result.WeeklyAllModels;
+            if (!string.IsNullOrEmpty(result.WeeklySonnet))       _weeklySonnet = result.WeeklySonnet;
+            if (!string.IsNullOrEmpty(result.WeeklyClaudeDesign)) _weeklyClaudeDesign = result.WeeklyClaudeDesign;
+            if (!string.IsNullOrEmpty(result.ExtraUsage))         _extraUsage = result.ExtraUsage;
+            if (!string.IsNullOrEmpty(result.ExtraBalance))       _extraBalance = result.ExtraBalance;
+
+            _billingScrapeError = result.BillingError ?? string.Empty;
+            _usageScrapeError   = result.UsageError   ?? string.Empty;
+            _billingSnippet     = result.BillingRawSnippet;
+            _usageSnippet       = result.UsageRawSnippet;
+
+            SaveFetchedClaudeValues();
+            _imported = true;
+            _sessionStatus = result.BillingError is null && result.UsageError is null
+                ? "Claude auto-fetch complete and saved."
+                : "Some Claude pages could not be fetched. Saved available values.";
+            _sessionError = result.BillingError is not null || result.UsageError is not null;
+            if (NeedsVisibleLogin(result.BillingError, result.UsageError))
+            {
+                _sessionStatus = autoTriggered
+                    ? "Claude hidden refresh needs login or security check. Click Claude Login once."
+                    : "Claude refresh still needs login or security check. Click Claude Login once.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _sessionError = true;
+            _sessionStatus = $"Refresh failed: {ex.Message}";
+        }
+        finally
+        {
+            _scrapeBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoginCodexAsync()
+    {
+        _codexLoginBusy = true;
+        _codexSessionError = false;
+        _codexSessionStatus = "Opening browser. Sign in to ChatGPT and OpenAI Platform, then close it.";
+        StateHasChanged();
+        try
+        {
+            await CodexScraper.OpenLoginBrowserAsync();
+            _codexSessionStatus = "Codex/OpenAI session saved. Fetching once without opening another browser window.";
+            await RefreshCodexCoreAsync(autoTriggered: true);
+        }
+        catch (Exception ex)
+        {
+            _codexSessionError = true;
+            _codexSessionStatus = $"Codex/OpenAI login failed: {ex.Message}";
+        }
+        finally { _codexLoginBusy = false; }
+    }
+
+    private Task RefreshCodexAsync() => RefreshCodexCoreAsync(autoTriggered: false);
+
+    private async Task RefreshCodexCoreAsync(bool autoTriggered)
+    {
+        if (_codexScrapeBusy || !CodexScraper.SessionProfileExists) return;
+
+        _codexScrapeBusy = true;
+        _codexSessionError = false;
+        _codexSessionStatus = autoTriggered ? "Auto-fetching Codex/OpenAI usage..." : "Fetching Codex/OpenAI usage...";
+        _codexPlanScrapeError = _codexApiScrapeError = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var result = await CodexScraper.ScrapeAsync();
+            if (!autoTriggered && NeedsVisibleLogin(result.PlanError, result.ApiError))
+            {
+                _codexSessionStatus = "Hidden refresh needs login or security check. Opening Codex/OpenAI browser...";
+                StateHasChanged();
+                await CodexScraper.OpenLoginBrowserAsync();
+                result = await CodexScraper.ScrapeAsync();
+            }
+
+            if (!string.IsNullOrEmpty(result.PlanUsage))      _codexPlanUsage = result.PlanUsage;
+            if (!string.IsNullOrEmpty(result.PlanLimitUsage)) _codexPlanLimitUsage = result.PlanLimitUsage;
+            if (!string.IsNullOrEmpty(result.PlanNote))       _codexPlanNote = result.PlanNote;
+            if (IsPlainTokenCount(result.ApiInputTokens))      _codexApiInputTokens = result.ApiInputTokens;
+            if (IsPlainTokenCount(result.ApiOutputTokens))     _codexApiOutputTokens = result.ApiOutputTokens;
+            if (IsPlainTokenCount(result.ApiTotalTokens))      _codexApiTotalTokens = result.ApiTotalTokens;
+
+            _codexPlanScrapeError = result.PlanError ?? string.Empty;
+            _codexApiScrapeError  = result.ApiError  ?? string.Empty;
+            _codexPlanSnippet     = result.PlanRawSnippet;
+            _codexApiSnippet      = result.ApiRawSnippet;
+
+            SaveFetchedCodexValues();
+            _codexSessionStatus = result.PlanError is null && result.ApiError is null
+                ? "Codex/OpenAI auto-fetch complete and saved."
+                : "Some Codex/OpenAI pages could not be fetched. Saved available values.";
+            _codexSessionError = result.PlanError is not null || result.ApiError is not null;
+
+            if (NeedsVisibleLogin(result.PlanError, result.ApiError))
+            {
+                _codexSessionStatus = autoTriggered
+                    ? "Codex/OpenAI hidden refresh needs login or security check. Click Codex/OpenAI Login once."
+                    : "Codex/OpenAI refresh still needs login or security check. Click Codex/OpenAI Login once.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _codexSessionError = true;
+            _codexSessionStatus = $"Codex/OpenAI refresh failed: {ex.Message}";
+        }
+        finally
+        {
+            _codexScrapeBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private void DeleteSession()
+    {
+        Scraper.DeleteSession();
+        _sessionStatus = "Session deleted. Please Login again.";
+        _sessionError = false;
+        _imported = false;
+    }
+
+    private void DeleteCodexSession()
+    {
+        CodexScraper.DeleteSession();
+        _codexSessionStatus = "Codex/OpenAI session deleted. Please Login again.";
+        _codexSessionError = false;
+    }
+
+    private void SaveFetchedClaudeValues()
+    {
+        string ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        Repo.SetSetting("AiUsages:ApiCreditBalance", (_apiCreditBalance ?? "").Trim());
+        Repo.SetSetting("AiUsages:ApiUpdatedAt", ts);
+        Repo.SetSetting("AiUsages:SessionUsage",       (_sessionUsage       ?? "").Trim());
+        Repo.SetSetting("AiUsages:WeeklyAllModels",    (_weeklyAllModels    ?? "").Trim());
+        Repo.SetSetting("AiUsages:WeeklySonnet",       (_weeklySonnet       ?? "").Trim());
+        Repo.SetSetting("AiUsages:WeeklyClaudeDesign", (_weeklyClaudeDesign ?? "").Trim());
+        Repo.SetSetting("AiUsages:ExtraUsage",         (_extraUsage         ?? "").Trim());
+        Repo.SetSetting("AiUsages:ExtraBalance",       (_extraBalance       ?? "").Trim());
+        Repo.SetSetting("AiUsages:PlanUpdatedAt", ts);
+        _apiUpdatedAt = ts;
+        _planUpdatedAt = ts;
+    }
+
+    private void SaveFetchedCodexValues()
+    {
+        string ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        Repo.SetSetting("AiUsages:CodexPlanUsage",      (_codexPlanUsage      ?? "").Trim());
+        Repo.SetSetting("AiUsages:CodexPlanLimitUsage", (_codexPlanLimitUsage ?? "").Trim());
+        Repo.SetSetting("AiUsages:CodexPlanNote",       (_codexPlanNote       ?? "").Trim());
+        Repo.SetSetting("AiUsages:CodexPlanUpdatedAt", ts);
+        Repo.SetSetting("AiUsages:CodexApiInputTokens",  (_codexApiInputTokens  ?? "").Trim());
+        Repo.SetSetting("AiUsages:CodexApiOutputTokens", (_codexApiOutputTokens ?? "").Trim());
+        Repo.SetSetting("AiUsages:CodexApiTotalTokens",  (_codexApiTotalTokens  ?? "").Trim());
+        Repo.SetSetting("AiUsages:CodexApiLastRequestAt", ts);
+        _codexPlanUpdatedAt = ts;
+        _codexApiLastRequestAt = ts;
+    }
+
+    private async Task SaveApiAsync()
+    {
+        _apiSaving = true; _apiSaved = false; _apiError = string.Empty;
+        try
+        {
+            string ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            Repo.SetSetting("AiUsages:ApiCreditBalance", (_apiCreditBalance ?? "").Trim());
+            Repo.SetSetting("AiUsages:ApiUpdatedAt", ts);
+            _apiUpdatedAt = ts;
+            _apiSaved = true;
+        }
+        catch (Exception ex) { _apiError = ex.Message; }
+        finally { _apiSaving = false; }
+        await Task.CompletedTask;
+    }
+
+    private async Task SavePlanAsync()
+    {
+        _planSaving = true; _planSaved = false; _planError = string.Empty;
+        try
+        {
+            string ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            Repo.SetSetting("AiUsages:SessionUsage",       (_sessionUsage       ?? "").Trim());
+            Repo.SetSetting("AiUsages:WeeklyAllModels",    (_weeklyAllModels    ?? "").Trim());
+            Repo.SetSetting("AiUsages:WeeklySonnet",       (_weeklySonnet       ?? "").Trim());
+            Repo.SetSetting("AiUsages:WeeklyClaudeDesign", (_weeklyClaudeDesign ?? "").Trim());
+            Repo.SetSetting("AiUsages:ExtraUsage",         (_extraUsage         ?? "").Trim());
+            Repo.SetSetting("AiUsages:ExtraBalance",       (_extraBalance       ?? "").Trim());
+            Repo.SetSetting("AiUsages:PlanUpdatedAt", ts);
+            _planUpdatedAt = ts;
+            _planSaved = true;
+        }
+        catch (Exception ex) { _planError = ex.Message; }
+        finally { _planSaving = false; }
+        await Task.CompletedTask;
+    }
+
+    private async Task SaveCodexPlanAsync()
+    {
+        _codexPlanSaving = true; _codexPlanSaved = false; _codexPlanError = string.Empty;
+        try
+        {
+            string ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            Repo.SetSetting("AiUsages:CodexPlanUsage",      (_codexPlanUsage      ?? "").Trim());
+            Repo.SetSetting("AiUsages:CodexPlanLimitUsage", (_codexPlanLimitUsage ?? "").Trim());
+            Repo.SetSetting("AiUsages:CodexPlanNote",       (_codexPlanNote       ?? "").Trim());
+            Repo.SetSetting("AiUsages:CodexPlanUpdatedAt", ts);
+            _codexPlanUpdatedAt = ts;
+            _codexPlanSaved = true;
+        }
+        catch (Exception ex) { _codexPlanError = ex.Message; }
+        finally { _codexPlanSaving = false; }
+        await Task.CompletedTask;
+    }
+
+    private async Task SaveCodexApiAsync()
+    {
+        _codexApiSaving = true; _codexApiSaved = false; _codexApiError = string.Empty;
+        try
+        {
+            Repo.SetSetting("AiUsages:CodexApiInputTokens",  (_codexApiInputTokens  ?? "").Trim());
+            Repo.SetSetting("AiUsages:CodexApiOutputTokens", (_codexApiOutputTokens ?? "").Trim());
+            Repo.SetSetting("AiUsages:CodexApiTotalTokens",  (_codexApiTotalTokens  ?? "").Trim());
+            if (string.IsNullOrWhiteSpace(_codexApiLastRequestAt))
+                _codexApiLastRequestAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            Repo.SetSetting("AiUsages:CodexApiLastRequestAt", _codexApiLastRequestAt);
+            _codexApiSaved = true;
+        }
+        catch (Exception ex) { _codexApiError = ex.Message; }
+        finally { _codexApiSaving = false; }
+        await Task.CompletedTask;
+    }
+
+    private static string FormatTs(string? ts)
+        => string.IsNullOrWhiteSpace(ts) ? "(no record)" : ts;
+
+    private static bool IsSessionExpiredError(string? message)
+        => !string.IsNullOrWhiteSpace(message) &&
+           (message.Contains("session expired", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("signed out", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("Login again", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("/login", StringComparison.OrdinalIgnoreCase));
+
+    private static bool IsBrowserChallengeError(string? message)
+        => !string.IsNullOrWhiteSpace(message) &&
+           (message.Contains("Cloudflare", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("bot detection", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("CAPTCHA", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("security check", StringComparison.OrdinalIgnoreCase));
+
+    private static bool NeedsVisibleLogin(params string?[] messages)
+        => messages.Any(message => IsSessionExpiredError(message) || IsBrowserChallengeError(message));
+
+    private static bool IsPlainTokenCount(string? value)
+        => !string.IsNullOrWhiteSpace(value) &&
+           value.All(ch => char.IsDigit(ch) || ch == ',');
+
+    private static string CleanTokenSetting(string? value)
+        => IsPlainTokenCount(value) ? value!.Trim() : string.Empty;
+
+    private static double? TryParsePct(string? s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return null;
+        string t = s.Trim().TrimEnd('%').Trim();
+        return double.TryParse(t, System.Globalization.NumberStyles.Float,
+                               System.Globalization.CultureInfo.InvariantCulture, out double v)
+            ? v : null;
+    }
+
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}

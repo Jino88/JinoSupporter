@@ -2180,3 +2180,28 @@ window.jinoDailyTest.openHtml = function (title, html) {
     } catch (_) { }
     return true;
 };
+
+window.jinoQr = window.jinoQr || {};
+// Named window so re-clicking the same target reuses its popup instead of stacking new ones.
+// The name is optional so the original GAUSS scatter call site keeps working unchanged.
+window.jinoQr.openWindow = function (url, features, name) {
+    const win = window.open(url, name || 'jino-qr-gauss-scatter', features || '');
+    if (!win) return false;
+
+    try { win.focus(); } catch (_) { }
+    return true;
+};
+
+// Brings the row a deep link points at into view. The row paints its own highlight; this only
+// scrolls, so a stale id (the QR is not in the loaded page) simply reports false.
+window.jinoQr.focusRow = function (id) {
+    const el = document.getElementById(id);
+    if (!el) return false;
+
+    try {
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    } catch (_) {
+        el.scrollIntoView();
+    }
+    return true;
+};

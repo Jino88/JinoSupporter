@@ -1,4 +1,4 @@
-# JinoSupporter — 검토 데이터 AI 분석 시스템 설계
+# PortalGNLAB — 검토 데이터 AI 분석 시스템 설계
 
 ---
 

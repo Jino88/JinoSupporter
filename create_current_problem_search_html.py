@@ -397,7 +397,7 @@ tbody tr:hover { background: #f3f7ff; }
 const state = JSON.parse(document.getElementById("state").textContent || "{}");
 const sampleDir = "__SAMPLE_DIR__";
 const analyzerScript = "__ANALYZER_SCRIPT__";
-const aiLauncher = "jinosupporter-ai:run";
+const aiLauncher = "portalgnlab-ai:run";
 const rows = state.rows || [];
 const terms = state.terms || [];
 const promptRules = state.promptRules || [];
@@ -750,17 +750,17 @@ def write_launcher(sample_dir: Path) -> Path:
     launcher_path.write_text(
         f"""@echo off
 chcp 65001 >nul
-title JinoSupporter AI Analysis - Codex CLI
+title PortalGNLAB AI Analysis - Codex CLI
 cd /d "{work_dir}"
-echo [JinoSupporter] Running AI analysis command copied by current_problem_search.html
+echo [PortalGNLAB] Running AI analysis command copied by current_problem_search.html
 echo.
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference = 'Stop'; $cmd = (Get-Clipboard -Raw).Trim(); if (-not $cmd) {{ throw 'Clipboard is empty. Press AI 분석 in current_problem_search.html first.' }}; if ($cmd -notmatch 'ai_current_problem_analyze\\.py') {{ throw 'Clipboard does not contain ai_current_problem_analyze.py command. Press AI 분석 in current_problem_search.html first.' }}; Write-Host $cmd; Invoke-Expression $cmd"
 if errorlevel 1 (
   echo.
-  echo [JinoSupporter] AI analysis failed.
+  echo [PortalGNLAB] AI analysis failed.
 ) else (
   echo.
-  echo [JinoSupporter] AI analysis finished. Opening latest report...
+  echo [PortalGNLAB] AI analysis finished. Opening latest report...
   start "" "{report_path}"
 )
 echo.
@@ -777,8 +777,8 @@ def write_protocol_register_script(sample_dir: Path, launcher_path: Path) -> Pat
     script_path.write_text(
         f"""@echo off
 chcp 65001 >nul
-echo Registering jinosupporter-ai URL protocol for current Windows user...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference = 'Stop'; $root = 'HKCU:\\Software\\Classes\\jinosupporter-ai'; $launcher = '{launcher_value}'; New-Item -Path $root -Force | Out-Null; Set-Item -Path $root -Value 'URL:JinoSupporter AI Analysis'; New-ItemProperty -Path $root -Name 'URL Protocol' -Value '' -PropertyType String -Force | Out-Null; New-Item -Path ($root + '\\DefaultIcon') -Force | Out-Null; Set-Item -Path ($root + '\\DefaultIcon') -Value '%%SystemRoot%%\\System32\\cmd.exe,0'; New-Item -Path ($root + '\\shell\\open\\command') -Force | Out-Null; Set-Item -Path ($root + '\\shell\\open\\command') -Value ('\"' + $launcher + '\" \"%%1\"')"
+echo Registering portalgnlab-ai URL protocol for current Windows user...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference = 'Stop'; $root = 'HKCU:\\Software\\Classes\\portalgnlab-ai'; $launcher = '{launcher_value}'; New-Item -Path $root -Force | Out-Null; Set-Item -Path $root -Value 'URL:PortalGNLAB AI Analysis'; New-ItemProperty -Path $root -Name 'URL Protocol' -Value '' -PropertyType String -Force | Out-Null; New-Item -Path ($root + '\\DefaultIcon') -Force | Out-Null; Set-Item -Path ($root + '\\DefaultIcon') -Value '%%SystemRoot%%\\System32\\cmd.exe,0'; New-Item -Path ($root + '\\shell\\open\\command') -Force | Out-Null; Set-Item -Path ($root + '\\shell\\open\\command') -Value ('\"' + $launcher + '\" \"%%1\"')"
 echo.
 echo Done. Chrome may show an external protocol confirmation the first time.
 pause

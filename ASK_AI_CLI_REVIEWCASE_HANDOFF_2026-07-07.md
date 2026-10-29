@@ -19,7 +19,7 @@
 
 수정 파일:
 
-- `JinoSupporter.Web/Services/MicroSpeakerAskEvidenceService.cs`
+- `PortalGNLAB.Web/Services/MicroSpeakerAskEvidenceService.cs`
 - `AI_PROMPTS/data-inference/ask-ai-cli.md`
 - `AI_PROMPTS/data-inference/cli-ask-ai.md`
 
@@ -35,7 +35,7 @@
 
 수정 파일:
 
-- `JinoSupporter.Web/Components/Pages/DataInferenceAskPage.razor`
+- `PortalGNLAB.Web/Components/Pages/DataInferenceAskPage.razor`
 - `AI_PROMPTS/data-inference/ask-ai-cli.md`
 - `AI_PROMPTS/data-inference/cli-ask-ai.md`
 
@@ -58,7 +58,7 @@
 
 수정 파일:
 
-- `JinoSupporter.Web/Services/MicroSpeakerAskEvidenceService.cs`
+- `PortalGNLAB.Web/Services/MicroSpeakerAskEvidenceService.cs`
 - `AI_PROMPTS/data-inference/ask-ai-cli.md`
 - `AI_PROMPTS/data-inference/cli-ask-ai.md`
 
@@ -78,7 +78,7 @@
 - 프롬프트에 여러 모델이 있으면 첫 verified 모델에서 멈추지 말고
   다른 모델도 표시하라고 명시했다.
 - 빌드 확인 완료:
-  `dotnet build .\JinoSupporter.Web\JinoSupporter.Web.csproj --no-restore -p:UseAppHost=false -p:OutputPath='.\artifacts\codex-check\ask-ai-model-coverage\'`
+  `dotnet build .\PortalGNLAB.Web\PortalGNLAB.Web.csproj --no-restore -p:UseAppHost=false -p:OutputPath='.\artifacts\codex-check\ask-ai-model-coverage\'`
   결과: warning 0, error 0
 
 ### 5. 화면 테스트에서 확인한 애매한 점

@@ -21,9 +21,10 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 DEFAULT_DB_PATH = r'D:\000. MyWorks\002. DB\process-review.db'
-DEFAULT_TARGETS_FILE = r'D:\000. MyWorks\005. Program\Repository\JinoSupporter\_batch_selected.txt'
-DEFAULT_PROGRESS_FILE = r'D:\000. MyWorks\005. Program\Repository\JinoSupporter\_ai_batch_progress.jsonl'
-DEFAULT_FAILED_FILE = r'D:\000. MyWorks\005. Program\Repository\JinoSupporter\_ai_batch_failed.txt'
+_REPO_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_TARGETS_FILE = os.path.join(_REPO_DIR, '_batch_selected.txt')
+DEFAULT_PROGRESS_FILE = os.path.join(_REPO_DIR, '_ai_batch_progress.jsonl')
+DEFAULT_FAILED_FILE = os.path.join(_REPO_DIR, '_ai_batch_failed.txt')
 
 DB_PATH = os.environ.get('AI_BATCH_DB_PATH') or DEFAULT_DB_PATH
 TARGETS_FILE = os.environ.get('AI_BATCH_TARGETS_FILE') or DEFAULT_TARGETS_FILE

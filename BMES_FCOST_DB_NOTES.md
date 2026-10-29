@@ -192,8 +192,8 @@ ORDER BY b.POSNR;
 
 Related files:
 
-- `JinoSupporter.Web/Components/Pages/BmesFcostTestPage.razor`
-- `JinoSupporter.Web/Services/BmesFcostMaterialPriceService.cs`
+- `PortalGNLAB.Web/Components/Pages/BmesFcostTestPage.razor`
+- `PortalGNLAB.Web/Services/BmesFcostMaterialPriceService.cs`
 
 Flow:
 

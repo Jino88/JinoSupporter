@@ -22,14 +22,14 @@
 
 관련 코드:
 
-- `JinoSupporter.Web/Components/Pages/BmesTest3Page.razor`
-- `JinoSupporter.Web/Components/Pages/BmesTest4Page.razor`
-- `JinoSupporter.Web/Components/Pages/BmesTest5Page.razor`
-- `JinoSupporter.Web/Components/Pages/BmesFCostPage.razor`
-- `JinoSupporter.Web/Services/ProcessMaterialMappingService.cs`
-- `JinoSupporter.Web/Services/ProcessMaterialNgService.cs`
-- `JinoSupporter.Web/Services/BmesFcostActualService.cs`
-- `JinoSupporter.Web/Services/BmesBomCacheService.cs`
+- `PortalGNLAB.Web/Components/Pages/BmesTest3Page.razor`
+- `PortalGNLAB.Web/Components/Pages/BmesTest4Page.razor`
+- `PortalGNLAB.Web/Components/Pages/BmesTest5Page.razor`
+- `PortalGNLAB.Web/Components/Pages/BmesFCostPage.razor`
+- `PortalGNLAB.Web/Services/ProcessMaterialMappingService.cs`
+- `PortalGNLAB.Web/Services/ProcessMaterialNgService.cs`
+- `PortalGNLAB.Web/Services/BmesFcostActualService.cs`
+- `PortalGNLAB.Web/Services/BmesBomCacheService.cs`
 
 ## 3. 핵심 계산식
 
@@ -388,10 +388,10 @@ S3: COIL, DOME 투입
 
 현재 JSON 공정 설정에는 기존 필드와 함께 `LaneCode`, `MergeProcessNo`를 저장한다. Test 4 유효 자재 상속은 이전 공정뿐 아니라 해당 MAIN 공정으로 합류하는 SUB 마지막 공정도 함께 따라가도록 확장했다.
 
-React 소스는 `JinoSupporter.Web/ClientApp/Test3Editor`에 있고 빌드 결과는 `JinoSupporter.Web/wwwroot/test3-editor`에 생성한다.
+React 소스는 `PortalGNLAB.Web/ClientApp/Test3Editor`에 있고 빌드 결과는 `PortalGNLAB.Web/wwwroot/test3-editor`에 생성한다.
 
 ```powershell
-Set-Location JinoSupporter.Web/ClientApp/Test3Editor
+Set-Location PortalGNLAB.Web/ClientApp/Test3Editor
 npm install
 npm run build
 ```

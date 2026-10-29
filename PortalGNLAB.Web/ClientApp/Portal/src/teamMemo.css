@@ -1,0 +1,451 @@
+.team-memo {
+  color: var(--text, #1e293b);
+}
+.team-memo * {
+  box-sizing: border-box;
+}
+.team-memo button,
+.team-memo input,
+.team-memo select,
+.team-memo textarea {
+  font: inherit;
+}
+.team-memo button {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: var(--card, #fff);
+  color: inherit;
+  cursor: pointer;
+}
+.team-memo button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.team-memo .on {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.team-memo input:not([type="checkbox"]):not([type="file"]),
+.team-memo select,
+.team-memo textarea {
+  padding: 0.45rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: var(--card, #fff);
+  color: inherit;
+  max-width: 100%;
+}
+.team-memo textarea {
+  display: block;
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+}
+.team-memo fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.team-memo label {
+  display: block;
+  margin: 0.4rem 0;
+}
+.team-memo label > input:not([type="checkbox"]),
+.team-memo label > select {
+  display: block;
+  width: 100%;
+}
+.memo-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.5rem 0;
+}
+.memo-bar h1,
+.memo-bar h2 {
+  margin: 0.3rem auto 0.3rem 0;
+}
+.memo-bar small {
+  color: #64748b;
+}
+.memo-language {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+.memo-tree-workspace {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 1rem;
+}
+.memo-tree {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  overflow: auto;
+  max-height: 80vh;
+  padding: 0.5rem;
+  position: sticky;
+  top: 10px;
+  align-self: start;
+}
+.memo-folder-children {
+  margin-left: 14px;
+  border-left: 1px solid #e2e8f0;
+  padding-left: 5px;
+}
+.memo-folder-row {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  position: relative;
+  margin: 0.3rem 0;
+}
+.memo-folder-name {
+  flex: 1;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.memo-folder-row details[open] {
+  position: relative;
+  z-index: 2;
+  background: var(--card, #fff);
+}
+.memo-folder-row details button {
+  display: block;
+  width: 100%;
+  white-space: nowrap;
+}
+.memo-tree-memo {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 0.2rem 0;
+}
+.memo-tree-memo small {
+  display: block;
+  color: #64748b;
+}
+.memo-folder-form {
+  padding: 0.5rem;
+  background: #eff6ff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.memo-detail {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 1rem;
+  min-width: 0;
+  background: var(--card, #fff);
+}
+.memo-title {
+  font-size: 1.5rem !important;
+  font-weight: 700;
+  width: 100%;
+}
+.memo-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+.memo-translation {
+  background: #eff6ff;
+  padding: 0.5rem;
+  white-space: pre-wrap;
+}
+.memo-late {
+  color: #b91c1c;
+  font-weight: 600;
+}
+.memo-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+}
+.memo-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0.7rem 0;
+}
+.memo-editable {
+  cursor: text;
+  min-height: 25px;
+}
+.memo-entry {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin: 0.75rem 0;
+}
+.memo-entry-title {
+  font-weight: 700;
+  text-align: left;
+  flex: 1;
+}
+.memo-entry-form {
+  padding: 1rem;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+.memo-comment {
+  padding: 0.7rem;
+  border-left: 3px solid #cbd5e1;
+  margin: 0.6rem 0;
+  background: var(--card, #f8fafc);
+}
+.memo-comment.result {
+  border-color: #059669;
+  background: #ecfdf5;
+}
+.memo-thread {
+  margin: 0.75rem 0;
+}
+.memo-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+.memo-file {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  padding: 0.4rem;
+  max-width: 240px;
+  overflow-wrap: anywhere;
+}
+.memo-file img {
+  max-width: 220px;
+  max-height: 160px;
+  object-fit: contain;
+}
+.memo-image-button {
+  padding: 0 !important;
+  border: 0 !important;
+}
+.memo-ai {
+  padding: 0.7rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: #f0f7ff;
+  margin: 0.7rem 0;
+}
+.memo-markdown {
+  overflow: auto;
+}
+.memo-markdown th,
+.memo-markdown td {
+  border: 1px solid #cbd5e1;
+  padding: 0.35rem;
+}
+.memo-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #000c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.memo-viewer > div {
+  background: #fff;
+  color: #1e293b;
+  padding: 1rem;
+  max-width: 95vw;
+  max-height: 95vh;
+  overflow: auto;
+}
+.memo-viewer img {
+  display: block;
+  max-width: 85vw;
+  max-height: 75vh;
+  margin-top: 1rem;
+}
+.memo-columns {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(220px, 1fr));
+  gap: 0.7rem;
+  overflow-x: auto;
+  align-items: start;
+}
+.memo-column {
+  background: #f1f5f9;
+  border-radius: 7px;
+  padding: 0.6rem;
+  min-height: 240px;
+}
+.memo-column h2 {
+  font-size: 1rem;
+}
+.memo-board-card {
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  padding: 0.7rem;
+  background: #fff;
+  margin: 0.6rem 0;
+}
+.memo-board-card p {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+.memo-card-title {
+  font-weight: 700;
+  text-align: left;
+  width: 100%;
+}
+.memo-board-card blockquote {
+  margin: 0.5rem 0;
+  padding-left: 0.5rem;
+  border-left: 2px solid #94a3b8;
+  white-space: pre-wrap;
+  max-height: 120px;
+  overflow: auto;
+  font-size: 0.85rem;
+}
+.memo-drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(1000px, 90vw);
+  z-index: 40;
+  overflow: auto;
+  background: var(--card, #fff);
+  box-shadow: -10px 0 30px #0003;
+}
+.memo-gantt {
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  margin-bottom: 1rem;
+  overflow: auto;
+}
+.memo-gantt-axis,
+.memo-gantt-row {
+  display: grid;
+  grid-template-columns: 180px minmax(500px, 1fr);
+  gap: 8px;
+  min-height: 32px;
+  align-items: center;
+}
+.memo-gantt-axis > div {
+  display: flex;
+  justify-content: space-around;
+}
+.memo-gantt-row > button {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+.memo-gantt-track {
+  position: relative;
+  height: 28px;
+  background: repeating-linear-gradient(
+    to right,
+    #e2e8f0 0,
+    #e2e8f0 1px,
+    transparent 1px,
+    transparent 3.3%
+  );
+}
+.memo-gantt-bar {
+  position: absolute;
+  height: 25px;
+  overflow: hidden;
+  white-space: nowrap;
+  background: #bfdbfe !important;
+  font-size: 0.75rem !important;
+}
+.memo-gantt-bar.status-Done {
+  background: #a7f3d0 !important;
+}
+.memo-gantt-bar.status-Hold {
+  background: #fde68a !important;
+}
+.memo-calendar {
+  border: 1px solid #cbd5e1;
+  padding: 0.75rem;
+  border-radius: 7px;
+  margin-bottom: 1rem;
+  overflow: auto;
+}
+.memo-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(100px, 1fr));
+  min-width: 700px;
+}
+.memo-calendar-grid > b {
+  text-align: center;
+  padding: 0.5rem;
+}
+.memo-calendar-day {
+  border: 1px solid #e2e8f0;
+  min-height: 110px;
+  padding: 0.3rem;
+  overflow: hidden;
+}
+.memo-calendar-day.today {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}
+.memo-calendar-day.outside {
+  opacity: 0.55;
+}
+.memo-calendar-day button {
+  display: block;
+  width: 100%;
+  font-size: 0.75rem;
+  text-align: left;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: #dbeafe;
+}
+.memo-calendar-day .status-Done {
+  background: #d1fae5;
+}
+.memo-calendar-day .status-Hold {
+  background: #fef3c7;
+}
+.memo-empty {
+  text-align: center;
+  padding: 5rem 1rem;
+  color: #64748b;
+}
+.team-memo [role="alert"] {
+  color: #b91c1c;
+  background: #fef2f2;
+  padding: 0.5rem;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 900px) {
+  .memo-tree-workspace {
+    grid-template-columns: 1fr;
+  }
+  .memo-tree {
+    position: static;
+    max-height: 45vh;
+  }
+  .memo-drawer {
+    width: 100vw;
+  }
+  .memo-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -1,0 +1,18 @@
+@page "/qr/airleak-data"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using PortalGNLAB.Web.Services
+
+<PageTitle>QR AIRLEAK DATA</PageTitle>
+
+<QrTestDataBrowser TableKey="@QrTestTables.AirleakKey"
+                   Kicker="AIR LEAK TEST RESULTS · DB RECORDS"
+                   Description="Select one or more dates to show the matching TCDB.dbo.ALTD rows together. TestResult is OK / AL (leak)."
+                   FocusDate="@DateQuery"
+                   FocusProductId="@QrQuery" />
+
+@code {
+    // Set when QR SUMMARY opens this page on one of its cells.
+    [SupplyParameterFromQuery(Name = "date")] public string? DateQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "qr")] public string? QrQuery { get; set; }
+}

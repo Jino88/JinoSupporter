@@ -208,7 +208,7 @@ def build_prompt(chunk: list[dict[str, Any]], user_guidance: str = "") -> str:
     header = """
 You are doing first-pass AI classification for manufacturing Excel review reports.
 
-This runner intentionally follows the JinoSupporter INPUT DATA (BATCH) prompt cautions:
+This runner intentionally follows the PortalGNLAB INPUT DATA (BATCH) prompt cautions:
 - The review parameters must be AI-analyzed from Excel/workbook text.
 - Do not use review_index, file name, dataset name, source path, sequence number, DB productType, or DB reportDate as a filename-only substitute for workbook-text analysis.
 - Use workbook text, sheet names, cell coordinates, merged ranges, inherited merged-cell context, headers, result rows, notes, and evidence cells as the source of truth.

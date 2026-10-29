@@ -39,7 +39,7 @@ public sealed class AppPathsConfig
     public string QrBakoDataUserId { get; set; } = string.Empty;
     public string QrBakoDataPassword { get; set; } = string.Empty;
     public int QrBakoDataTimeoutSeconds { get; set; } = 60;
-    public int QrBakoDataDefaultMaxRows { get; set; } = 1000;
+    public int QrBakoDataDefaultMaxRows { get; set; } = 10000;
     public bool QrBakoDataEncrypt { get; set; } = false;
     public bool QrBakoDataTrustServerCertificate { get; set; } = true;
 }
@@ -153,7 +153,7 @@ public sealed class AppPathsService
             QrBakoDataUserId = "TCDB",
             QrBakoDataPassword = string.Empty,
             QrBakoDataTimeoutSeconds = 60,
-            QrBakoDataDefaultMaxRows = 1000,
+            QrBakoDataDefaultMaxRows = 10000,
             QrBakoDataEncrypt = false,
             QrBakoDataTrustServerCertificate = true,
         };

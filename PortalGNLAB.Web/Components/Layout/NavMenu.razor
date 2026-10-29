@@ -1,0 +1,397 @@
+@using PortalGNLAB.Web.Services
+@inject NavigationManager      Nav
+@inject IJSRuntime             JS
+@inject MenuPermissionService  Perms
+@implements IDisposable
+
+@*
+    Icon rail: every menu is a square icon with a one-word label under it. Groups (BMES, QR,
+    Test Data Analysis) are a single icon that opens a flyout panel beside the rail, so the
+    rail itself never grows sub-levels.
+*@
+
+<div class="top-row">
+    <a class="rail-brand" href="" title="GN LAB Supporter">
+        <span class="rail-brand-mark"></span>
+        <span class="rail-brand-text">GN LAB</span>
+    </a>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable rail-nav" @onclick="OnNavScrollableClick">
+    <nav class="rail-list">
+
+<AuthorizeView>
+    <Authorized>
+    @{
+        string userRole = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+        bool can(string id) => Perms.IsAllowed(userRole, id);
+
+        bool showBmesReport = can(AppMenus.NgRate) || can(AppMenus.BmesFCost);
+        bool showSettingModel =
+            can(AppMenus.BmesMakeModelGroup) ||
+            can(AppMenus.BmesRoutingTable) ||
+            can(AppMenus.BmesReasonTable);
+        bool showBmesGroup =
+            showBmesReport || can(AppMenus.BmesWorkerStatus) ||
+            showSettingModel ||
+            can(AppMenus.BmesTest3) ||
+            can(AppMenus.BmesTest4) ||
+            can(AppMenus.BmesTest5) ||
+            can(AppMenus.BmesLpa);
+
+        bool showQr =
+            can(AppMenus.QrSummary) ||
+            can(AppMenus.QrBakoData) ||
+            can(AppMenus.QrAirleakData) ||
+            can(AppMenus.QrGaussData);
+
+        bool showTestDataAnalysis =
+            can(AppMenus.DiInputBatch) ||
+            can(AppMenus.DiDb) ||
+            can(AppMenus.DiAsk);
+
+        bool showDailyTestData = can(AppMenus.DailyTestInput);
+
+        bool showSetting = can(AppMenus.BmesSetting);
+        bool showAdmin = can(AppMenus.AdminUsers) || can(AppMenus.AdminAiUsages) || can(AppMenus.TestExcelConverter) || can(AppMenus.AdminDbQuery);
+        bool showTools = can(AppMenus.GraphMaker) || can(AppMenus.Translate) || can(AppMenus.ReviewReport) || can(AppMenus.PcDownload) || showTestDataAnalysis || showDailyTestData;
+    }
+
+    @if (can(AppMenus.TeamMemo))
+    {
+        @AppTile("/app/memo/plan", "meeting", "Plan", "Plan")
+        @AppTile("/app/memo", "memo", "Memo", "Work Memo")
+        @AppTile("/app/memo/board", "board", "Board", "Board & Schedule")
+        <div class="rail-sep"></div>
+    }
+
+    @if (showBmesGroup)
+    {
+        @GroupTile("bmes", "factory", "BMES", "BMES", IsBmesActive)
+    }
+    @if (can(AppMenus.BmesDailyReport))
+    {
+        @Tile("bmes/daily-report", "daily", "Daily", "Daily Report", exact: true)
+    }
+    @if (showQr)
+    {
+        @GroupTile("qr", "qr", "QR", "QR inspection data", IsQrActive)
+    }
+
+    @if (showTools)
+    {
+        <div class="rail-sep"></div>
+        @if (showTestDataAnalysis)
+        {
+            @GroupTile("ta", "analysis", "Analysis", "Test Data Analysis", IsTestDataAnalysisActive)
+        }
+        @if (showDailyTestData)
+        {
+            @Tile("daily-test-data/input", "clock", "Daily Test", "Daily Test Data — Input Data")
+        }
+        @if (can(AppMenus.GraphMaker))
+        {
+            @AppTile("/app/tools/graph-maker", "graph", "Graph", "Graph Maker")
+        }
+        @if (can(AppMenus.Translate))
+        {
+            @AppTile("/app/tools/translate", "translate", "Translate", "Translate")
+        }
+        @if (can(AppMenus.ReviewReport))
+        {
+            @AppTile("/app/tools/review-report", "write", "Write", "Review Report (AI writes, WorkHub-ready)")
+        }
+        @if (can(AppMenus.PcDownload))
+        {
+            @AppTile("/app/tools/pc-download", "monitor", "Download", "PC Download")
+        }
+    }
+
+    @if (showSetting || showAdmin)
+    {
+        <div class="rail-sep"></div>
+    }
+    @if (showSetting)
+    {
+        @Tile("setting", "gear", "Setting", "Setting")
+    }
+    @if (showAdmin)
+    {
+        @if (can(AppMenus.AdminUsers))
+        {
+            @AppTile("/app/admin/users", "users", "Users", "Users")
+        }
+        @if (can(AppMenus.AdminAiUsages))
+        {
+            @AppTile("/app/admin/ai-usages", "gauge", "AI Usage", "AI Usages")
+        }
+        @if (can(AppMenus.TestExcelConverter))
+        {
+            @AppTile("/app/admin/test-excel-converter", "excel", "Excel", "Test Excel Converter")
+        }
+        @if (can(AppMenus.AdminDbQuery))
+        {
+            @AppTile("/app/admin/db-query", "db", "DB", "DB Query")
+        }
+    }
+
+    @* Flyout for the open group. The backdrop closes it on any click outside. *@
+    @if (_flyout is not null)
+    {
+        <div class="rail-backdrop" @onclick="CloseFlyout" @onclick:stopPropagation="true"></div>
+        <div class="rail-flyout">
+            <div class="rail-flyout-head">
+                <span>@FlyoutTitle</span>
+                <button type="button" class="rail-flyout-close" aria-label="Close"
+                        @onclick="CloseFlyout" @onclick:stopPropagation="true">×</button>
+            </div>
+
+            @if (_flyout == "bmes")
+            {
+                <div class="rail-grid">
+                    @if (can(AppMenus.NgRate))
+                    {
+                        @Tile("ng-rate", "trend", "NG Rate", "Report NG RATE")
+                    }
+                    @if (can(AppMenus.BmesFCost))
+                    {
+                        @Tile("bmes/f-cost", "coin", "F-Cost", "F-Cost")
+                    }
+                    @if (showBmesReport)
+                    {
+                        @Tile("report/bmes", "report", "Report", "Report")
+                    }
+                    @if (can(AppMenus.BmesWorkerStatus))
+                    {
+                        @Tile("bmes/worker-status", "worker", "Worker", "Worker Status")
+                    }
+                    @if (can(AppMenus.BmesTest3))
+                    {
+                        @Tile("bmes/test3", "flask", "Test 3", "Test 3")
+                    }
+                    @if (can(AppMenus.BmesTest4))
+                    {
+                        @Tile("bmes/test4", "flask", "Test 4", "Test 4")
+                    }
+                    @if (can(AppMenus.BmesTest5))
+                    {
+                        @Tile("bmes/test5", "cube", "BOM", "BOM & Drawing")
+                    }
+                    @if (can(AppMenus.BmesLpa))
+                    {
+                        @Tile("bmes/lpa", "check", "LPA", "LPA")
+                    }
+                </div>
+                @if (showSettingModel)
+                {
+                    <div class="rail-flyout-sub">Setting Model</div>
+                    <div class="rail-grid">
+                        @if (can(AppMenus.BmesMakeModelGroup))
+                        {
+                            @Tile("bmes/make-model-group", "grid", "Group", "Model Group")
+                        }
+                        @if (can(AppMenus.BmesRoutingTable))
+                        {
+                            @Tile("bmes/routing-table", "route", "Routing", "Routing Table")
+                        }
+                        @if (can(AppMenus.BmesReasonTable))
+                        {
+                            @Tile("bmes/reason-table", "reason", "Reason", "Reason Table")
+                        }
+                    </div>
+                }
+            }
+            else if (_flyout == "qr")
+            {
+                <div class="rail-grid">
+                    @if (can(AppMenus.QrSummary))
+                    {
+                        @Tile("qr/summary", "list", "Summary", "QR Summary")
+                    }
+                    @if (can(AppMenus.QrBakoData))
+                    {
+                        @Tile("qr/bako-data", "box", "Bako", "QR BAKO DATA")
+                    }
+                    @if (can(AppMenus.QrAirleakData))
+                    {
+                        @Tile("qr/airleak-data", "drop", "Airleak", "QR AIRLEAK DATA")
+                    }
+                    @if (can(AppMenus.QrGaussData))
+                    {
+                        @Tile("qr/gauss-data", "bell", "Gauss", "QR GAUSS DATA")
+                    }
+                </div>
+            }
+            else if (_flyout == "ta")
+            {
+                <div class="rail-grid">
+                    @if (can(AppMenus.DiInputBatch))
+                    {
+                        @Tile("input-data-batch", "layers", "Batch", "INPUT DATA (BATCH)")
+                    }
+                    @if (can(AppMenus.DiDb))
+                    {
+                        @Tile("data-inference/db", "result", "Result", "Result")
+                    }
+                    @if (can(AppMenus.DiAsk))
+                    {
+                        @Tile("data-inference/ask", "chat", "Ask AI", "Ask AI")
+                    }
+                </div>
+            }
+        </div>
+    }
+    </Authorized>
+</AuthorizeView>
+    </nav>
+
+    @* Signed-in user + sign out, compact for the rail. *@
+    <AuthorizeView>
+        <Authorized>
+            @{
+                string name = context.User.Identity?.Name ?? "";
+                string role = context.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+            }
+            <div class="rail-user" title="Signed in as @name (@role)">
+                <span class="rail-avatar">@Initials(name)</span>
+                <span class="rail-role">@role</span>
+                <form method="post" action="/auth/logout">
+                    <button type="submit" class="rail-signout" title="Sign out" aria-label="Sign out">
+                        @Icon("signout")
+                    </button>
+                </form>
+            </div>
+        </Authorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    /// <summary>Key of the group whose flyout is open ("bmes", "qr", "ta"), or null.</summary>
+    private string? _flyout;
+
+    protected override void OnInitialized() => Nav.LocationChanged += OnLocationChanged;
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        _flyout = null;                     // picking a page closes the flyout
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleFlyout(string key) => _flyout = _flyout == key ? null : key;
+    private void CloseFlyout() => _flyout = null;
+
+    private string FlyoutTitle => _flyout switch
+    {
+        "bmes" => "BMES",
+        "qr"   => "QR",
+        "ta"   => "Test Data Analysis",
+        _      => string.Empty,
+    };
+
+    private string CurrentRelativePath =>
+        Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0].TrimEnd('/');
+
+    // Daily Report lives under bmes/ but has its own rail icon, so it does not light up BMES.
+    private bool IsBmesActive =>
+        !CurrentRelativePath.StartsWith("bmes/daily-report", StringComparison.OrdinalIgnoreCase) &&
+        (CurrentRelativePath.StartsWith("report/bmes", StringComparison.OrdinalIgnoreCase) ||
+         CurrentRelativePath.StartsWith("ng-rate", StringComparison.OrdinalIgnoreCase) ||
+         (CurrentRelativePath.StartsWith("bmes/", StringComparison.OrdinalIgnoreCase) &&
+          !CurrentRelativePath.StartsWith("bmes/qr-", StringComparison.OrdinalIgnoreCase)));
+
+    // The BAKO page also answers on its original /bmes/qr-bako-data route, so match both.
+    private bool IsQrActive =>
+        CurrentRelativePath.StartsWith("qr/", StringComparison.OrdinalIgnoreCase) ||
+        CurrentRelativePath.StartsWith("bmes/qr-", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsTestDataAnalysisActive =>
+        Nav.Uri.Contains("/input-data-batch", StringComparison.OrdinalIgnoreCase) ||
+        Nav.Uri.Contains("/data-inference", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(CurrentRelativePath, "report", StringComparison.OrdinalIgnoreCase);
+
+    private RenderFragment Tile(string href, string icon, string label, string title, bool exact = false) =>
+        @<NavLink class="rail-tile" href="@href" title="@title"
+                  Match="@(exact ? NavLinkMatch.All : NavLinkMatch.Prefix)">
+            <span class="rail-ico">@Icon(icon)</span>
+            <span class="rail-lbl">@label</span>
+        </NavLink>;
+
+    /// <summary>Menu already moved to the React app (/app): a plain link so the browser loads
+    /// the React page instead of the Blazor router looking for a matching component.</summary>
+    private RenderFragment AppTile(string href, string icon, string label, string title) =>
+        @<a class="rail-tile" href="@href" title="@title" target="_self">
+            <span class="rail-ico">@Icon(icon)</span>
+            <span class="rail-lbl">@label</span>
+        </a>;
+
+    private RenderFragment GroupTile(string key, string icon, string label, string title, bool active) =>
+        @<button type="button"
+                 class="rail-tile rail-group @(active ? "active" : "") @(_flyout == key ? "open" : "")"
+                 title="@title" aria-expanded="@(_flyout == key ? "true" : "false")"
+                 @onclick="() => ToggleFlyout(key)" @onclick:stopPropagation="true">
+            <span class="rail-ico">@Icon(icon)</span>
+            <span class="rail-lbl">@label</span>
+        </button>;
+
+    private static string Initials(string name)
+    {
+        string n = name.Trim();
+        if (n.Length == 0) return "?";
+        string[] parts = n.Split(new[] { ' ', '.', '_', '-' }, StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            ? string.Concat(parts[0][0], parts[1][0]).ToUpperInvariant()
+            : n[..Math.Min(2, n.Length)].ToUpperInvariant();
+    }
+
+    /// <summary>24×24 stroke icons, drawn in currentColor.</summary>
+    private static readonly Dictionary<string, string> IconPaths = new()
+    {
+        ["memo"]      = "<path d='M6 3h9l4 4v14H6z'/><path d='M14 3v5h5M9 12h7M9 16h5'/>",
+        ["meeting"]   = "<rect x='3' y='5' width='18' height='16' rx='2'/><path d='M3 10h18M8 3v4M16 3v4'/><path d='M8 14h4v3H8z'/>",
+        ["board"]     = "<rect x='3' y='4' width='5' height='16' rx='1'/><rect x='10' y='4' width='5' height='11' rx='1'/><rect x='17' y='4' width='4' height='7' rx='1'/>",
+        ["factory"]   = "<path d='M3 21V10l5 3v-3l5 3V7l5 3h3v11z'/><path d='M7 17h2M12 17h2M17 17h2'/>",
+        ["daily"]     = "<rect x='3' y='4' width='18' height='17' rx='2'/><path d='M3 9h18M8 2v4M16 2v4M7 13h4v4H7z'/>",
+        ["qr"]        = "<rect x='3' y='3' width='7' height='7'/><rect x='14' y='3' width='7' height='7'/><rect x='3' y='14' width='7' height='7'/><path d='M14 14h3v3h-3zM21 14v.01M14 21h.01M17 21h4v-4'/>",
+        ["analysis"]  = "<circle cx='10' cy='10' r='6'/><path d='M14.5 14.5L20 20M7.5 11.5l2-2 2 2 2-3'/>",
+        ["clock"]     = "<circle cx='12' cy='12' r='9'/><path d='M12 7v5l3 2'/>",
+        ["graph"]     = "<path d='M5 20V11M11 20V5M17 20v-7M3 20h18'/>",
+        ["translate"] = "<path d='M4 5h8M8 3v2c0 4-2 7-5 9M6 9c1 2.5 3 4 6 5'/><path d='M13 21l4-9 4 9M14.5 18h5'/>",
+        ["monitor"]   = "<rect x='3' y='4' width='18' height='12' rx='1'/><path d='M8 20h8M12 16v4M12 7v5M9.5 9.5L12 12l2.5-2.5'/>",
+        ["gear"]      = "<circle cx='12' cy='12' r='3'/><path d='M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9L7 7M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1'/>",
+        ["users"]     = "<circle cx='9' cy='8' r='3.5'/><path d='M2.5 20c0-3.5 3-6 6.5-6s6.5 2.5 6.5 6'/><path d='M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3.5 2.6 3.5 6'/>",
+        ["gauge"]     = "<path d='M3 15a9 9 0 1 1 18 0'/><path d='M12 15l4-5'/><path d='M3 19h18'/>",
+        ["excel"]     = "<path d='M6 3h9l4 4v14H6z'/><path d='M14 3v5h5M9.5 11.5l5 6M14.5 11.5l-5 6'/>",
+        ["db"]        = "<ellipse cx='12' cy='5' rx='8' ry='3'/><path d='M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3'/>",
+        ["trend"]     = "<path d='M3 3v18h18'/><path d='M7 9l4 4 3-3 5 6'/>",
+        ["coin"]      = "<circle cx='12' cy='12' r='9'/><path d='M15 9.5c-.5-1-1.6-1.5-3-1.5-1.7 0-3 .8-3 2s1.3 1.7 3 2 3 .8 3 2-1.3 2-3 2c-1.4 0-2.6-.6-3-1.6M12 6v2M12 16v2'/>",
+        ["write"]     = "<path d='M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z'/><path d='M14 3v5h5'/><path d='M9 13h6M9 17h4'/>",
+        ["report"]    = "<path d='M5 3h14v18H5z'/><path d='M9 17v-4M12 17V9M15 17v-6'/>",
+        ["worker"]    = "<circle cx='12' cy='8' r='4'/><path d='M4 21c0-4 3.6-7 8-7s8 3 8 7'/>",
+        ["flask"]     = "<path d='M9 3h6M10 3v6L5 19a1.5 1.5 0 0 0 1.3 2h11.4a1.5 1.5 0 0 0 1.3-2L14 9V3'/><path d='M7.5 15h9'/>",
+        ["cube"]      = "<path d='M12 3l8 4.5v9L12 21l-8-4.5v-9z'/><path d='M4 7.5l8 4.5 8-4.5M12 12v9'/>",
+        ["check"]     = "<path d='M9 3h6v3H9z'/><path d='M7 4.5H5V21h14V4.5h-2'/><path d='M8.5 13l2.5 2.5 4.5-5'/>",
+        ["grid"]      = "<rect x='3' y='3' width='7' height='7' rx='1'/><rect x='14' y='3' width='7' height='7' rx='1'/><rect x='3' y='14' width='7' height='7' rx='1'/><rect x='14' y='14' width='7' height='7' rx='1'/>",
+        ["route"]     = "<circle cx='6' cy='6' r='2'/><circle cx='18' cy='18' r='2'/><path d='M8 6h7a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h7'/>",
+        ["reason"]    = "<path d='M4 6h16M4 12h9M4 18h6'/><circle cx='17.5' cy='16' r='3'/><path d='M19.7 18.2L21.5 20'/>",
+        ["list"]      = "<path d='M9 6h11M9 12h11M9 18h11'/><path d='M4 6h.01M4 12h.01M4 18h.01'/>",
+        ["box"]       = "<path d='M4 8h16v12H4z'/><path d='M4 8l2.5-4h11L20 8M10 12h4'/>",
+        ["drop"]      = "<path d='M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z'/>",
+        ["bell"]      = "<path d='M3 19c4 0 5-13 9-13s5 13 9 13'/><path d='M3 21h18'/>",
+        ["layers"]    = "<path d='M12 3l9 5-9 5-9-5z'/><path d='M3 13l9 5 9-5M3 17.5l9 4.5 9-4.5'/>",
+        ["result"]    = "<circle cx='12' cy='12' r='9'/><path d='M8.5 12l2.5 2.5 4.5-5'/>",
+        ["chat"]      = "<path d='M4 5h16v11H9l-5 4z'/><path d='M9 10.5h.01M12 10.5h.01M15 10.5h.01'/>",
+        ["signout"]   = "<path d='M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10'/>",
+    };
+
+    private static MarkupString Icon(string key) =>
+        new($"<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'>{IconPaths.GetValueOrDefault(key, "")}</svg>");
+
+    private async Task OnNavScrollableClick()
+    {
+        await JS.InvokeVoidAsync("eval", "var t=document.querySelector('.navbar-toggler');if(t&&window.innerWidth<641)t.click();");
+    }
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
+}

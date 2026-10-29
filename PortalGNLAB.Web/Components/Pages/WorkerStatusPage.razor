@@ -1,0 +1,717 @@
+﻿@page "/bmes/worker-status"
+@rendermode InteractiveServer
+@using PortalGNLAB.Web.Services
+@inject WorkerStatusService WorkerStatus
+@inject IJSRuntime JS
+
+<PageTitle>Worker Status</PageTitle>
+
+<style>
+    .ws-header-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    .ws-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--ink, #0f1319);
+    }
+    .ws-query-card { margin-bottom: 16px; }
+    .ws-query-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .ws-query-label { font-size: 12px; font-weight: 600; color: var(--ink-2, #4a5461); }
+    .ws-fetched { margin-left: 4px; color: var(--ink-3, #7f8a98); font-size: 11px; }
+    .ws-summary-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .ws-stat-people { background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461); }
+    .ws-stat-days { background: var(--panel-2, #f5f6f9); color: var(--ink-2, #4a5461); }
+    .ws-stat-in,
+    .ws-stat-out { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
+    .ws-stat-late { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); }
+    .ws-record-count { color: var(--ink-3, #7f8a98); font-size: 11px; font-weight: 400; }
+    .ws-row-number { color: var(--ink-3, #7f8a98); vertical-align: top; }
+    .ws-code-cell { font-family: var(--mono, Bahnschrift, monospace); font-size: 11px; font-variant-numeric: tabular-nums; text-align: right; vertical-align: top; }
+    .ws-card {
+        background: var(--panel, #fff);
+        border: 1px solid var(--line, var(--line, #dde1e7));
+        border-radius: 2px;
+        padding: 16px 20px;
+    }
+    .ws-card-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ink-2, #4a5461);
+        letter-spacing: .3px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .ws-table-wrap { overflow-x: auto; }
+    .ws-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+    .ws-table th {
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
+        font-weight: 700;
+        font-size: 11px;
+        letter-spacing: .3px;
+        padding: 7px 10px;
+        border: 1px solid var(--line, #dde1e7);
+        white-space: nowrap;
+        text-align: left;
+    }
+    .ws-table td {
+        padding: 6px 10px;
+        border: 1px solid var(--line, #dde1e7);
+        color: var(--ink-2, #4a5461);
+        white-space: nowrap;
+    }
+    .ws-table tr:last-child td { }
+    .ws-table tr:hover td { background: var(--panel-2, #f5f6f9); }
+    .ws-badge {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 2px;
+        letter-spacing: .2px;
+    }
+    .ws-in     { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
+    .ws-out    { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
+    .ws-absent { background: var(--crit-wash, #fbedec); color: var(--crit, #c8342a); }
+    .ws-other  { background: var(--panel-3, #eceef2); color: var(--ink-2, #4a5461); }
+    .ws-late   { color: var(--crit, #c8342a); font-weight: 700; }
+    .ws-time   { font-family: var(--mono, Bahnschrift, monospace); font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
+    .ws-check-in-time {
+        display: inline-block;
+        min-width: 38px;
+        padding: 1px 4px;
+        border-radius: 2px;
+        font-weight: 700;
+    }
+    .ws-sched-inline {
+        margin-left: 4px;
+        color: var(--ink-3, #7f8a98);
+        font-size: 11px;
+        font-weight: 400;
+    }
+    .ws-dept-row td {
+        background: var(--signal-wash, #edf0f4) !important;
+        color: var(--ink-2, #4a5461);
+        font-weight: 700;
+        border-top: 2px solid var(--line-2, #c6ccd5);
+        border: 1px solid var(--line, #dde1e7);
+    }
+    .ws-dept-toggle {
+        width: 22px;
+        height: 22px;
+        margin-right: 7px;
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel, #fff);
+        color: var(--ink-2, #4a5461);
+        font-size: 12px;
+        line-height: 1;
+        cursor: pointer;
+    }
+    .ws-dept-meta {
+        margin-left: 10px;
+        color: var(--ink-2, #4a5461);
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .ws-date-th {
+        min-width: 92px;
+        text-align: center;
+        font-family: var(--mono, Bahnschrift, monospace);
+    }
+    .ws-metric-col { width: 90px; }
+    .ws-metric-row td { vertical-align: middle; }
+    .ws-metric-label {
+        font-weight: 700;
+        color: var(--ink-2, #4a5461);
+        background: var(--panel-2, #f5f6f9);
+    }
+    .ws-date-spacer {
+        background: var(--panel-2, #f5f6f9);
+        border-bottom: 2px solid var(--line, var(--line, #dde1e7));
+    }
+    .ws-date-row td,
+    .ws-date-row th {
+        background: var(--panel, #fff);
+        border: 1px solid var(--line, #dde1e7);
+    }
+    .ws-empty-cell { color: var(--ink-3, #7f8a98); }
+    .ws-progress {
+        font-size: 11px;
+        font-family: var(--mono, Bahnschrift, monospace);
+        color: var(--ink-2, #4a5461);
+        background: var(--panel-2, #f5f6f9);
+        border: 1px solid var(--line, var(--line, #dde1e7));
+        border-radius: 2px;
+        padding: 7px 12px;
+        margin-top: 10px;
+    }
+    .ws-error {
+        background: var(--crit-wash, #fbedec);
+        border: 1px solid var(--crit-wash, #fbedec);
+        color: var(--crit, #c8342a);
+        border-radius: 2px;
+        padding: 10px 14px;
+        font-size: 12px;
+        margin-top: 10px;
+    }
+    .ws-empty {
+        text-align: center;
+        padding: 40px 0;
+        color: var(--ink-3, #7f8a98);
+        font-size: 13px;
+    }
+    .ws-fetch {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 2px;
+        border: none;
+        background: var(--signal, #16202b);
+        color: var(--panel, #fff);
+        cursor: pointer;
+        transition: background .15s;
+    }
+    .ws-fetch:hover:not(:disabled) { background: var(--signal, #16202b); }
+    .ws-fetch:disabled { opacity: .55; cursor: not-allowed; }
+    .ws-export {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 2px;
+        border: 1px solid var(--ok, #1f5fa8);
+        background: var(--panel, #fff);
+        color: var(--ok, #1f5fa8);
+        cursor: pointer;
+        transition: background .15s, color .15s;
+    }
+    .ws-export:hover:not(:disabled) { background: var(--ok, #1f5fa8); color: var(--panel, #fff); }
+    .ws-export:disabled { opacity: .55; cursor: not-allowed; }
+    .ws-stat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 9px;
+        border-radius: 2px;
+        background: var(--panel-3, #eceef2);
+        color: var(--ink-2, #4a5461);
+    }
+    .ws-stat-num { font-size: 14px; font-weight: 700; }
+</style>
+
+<div class="ws-header-bar">
+    <span style="font-size:20px;">👷</span>
+    <span class="ws-title">Worker Status</span>
+</div>
+
+<!-- ── Query bar ─────────────────────────────────────────────────────────── -->
+<div class="ws-card ws-query-card">
+    <div class="ws-query-row">
+        <label class="ws-query-label">From</label>
+        <input type="date"
+               class="form-control form-control-sm"
+               style="width:160px;"
+               value="@_startDate.ToString("yyyy-MM-dd")"
+               @onchange="OnStartDateChanged"
+               disabled="@_isBusy" />
+
+        <label class="ws-query-label">To</label>
+        <input type="date"
+               class="form-control form-control-sm"
+               style="width:160px;"
+               value="@_endDate.ToString("yyyy-MM-dd")"
+               @onchange="OnEndDateChanged"
+               disabled="@_isBusy" />
+
+        <button class="ws-fetch" @onclick="FetchAsync" disabled="@_isBusy">
+            @if (_isBusy)
+            {
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+                <span>Fetching…</span>
+            }
+            else
+            {
+                <span>🔍</span><span>Fetch</span>
+            }
+        </button>
+
+        @if (_result is not null && _result.IsSuccess && _result.Records.Count > 0)
+        {
+            <button class="ws-export"
+                    @onclick="ExportExcelAsync"
+                    disabled="@(_isBusy || _isExporting)"
+                    title="Download as Excel (.xlsx)">
+                @if (_isExporting)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                    <span>Exporting…</span>
+                }
+                else
+                {
+                    <span>📥</span><span>Export Excel</span>
+                }
+            </button>
+        }
+
+        @if (_result is not null && _result.IsSuccess)
+        {
+            <span class="ws-fetched">
+                fetched @_result.FetchedAt.ToString("HH:mm:ss")
+            </span>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(_progressMsg))
+    {
+        <div class="ws-progress">@_progressMsg</div>
+    }
+    @if (_result is not null && !string.IsNullOrEmpty(_result.ErrorMessage))
+    {
+        <div class="ws-error">⚠ @_result.ErrorMessage</div>
+    }
+</div>
+
+<!-- ── Summary pills ─────────────────────────────────────────────────────── -->
+@if (_result is not null && _result.IsSuccess && _result.Records.Count > 0)
+{
+    int cntTotal      = _result.TotalCount;
+    int cntPeople     = _result.Records.Select(r => r.EmpNo).Distinct().Count();
+    int cntDays       = _result.Records.Select(r => r.Date).Distinct().Count();
+    int cntCheckedIn  = _result.Records.Count(r => !string.IsNullOrEmpty(r.CheckIn));
+    int cntCheckedOut = _result.Records.Count(r => !string.IsNullOrEmpty(r.CheckOut));
+    int cntLate       = _result.Records.Count(r => IsLate(r));
+
+    <div class="ws-summary-row">
+        <div class="ws-stat-pill">
+            Rows <span class="ws-stat-num">@cntTotal</span>
+        </div>
+        <div class="ws-stat-pill ws-stat-people">
+            People <span class="ws-stat-num">@cntPeople</span>
+        </div>
+        <div class="ws-stat-pill ws-stat-days">
+            Days <span class="ws-stat-num">@cntDays</span>
+        </div>
+        <div class="ws-stat-pill ws-stat-in">
+            Checked In <span class="ws-stat-num">@cntCheckedIn</span>
+        </div>
+        <div class="ws-stat-pill ws-stat-out">
+            Checked Out <span class="ws-stat-num">@cntCheckedOut</span>
+        </div>
+        @if (cntLate > 0)
+        {
+            <div class="ws-stat-pill ws-stat-late">
+                Late <span class="ws-stat-num">@cntLate</span>
+            </div>
+        }
+    </div>
+}
+
+<!-- ── Table ──────────────────────────────────────────────────────────────── -->
+<div class="ws-card">
+    <div class="ws-card-title">
+        <span>📋 Attendance</span>
+        @if (_result is not null && _result.IsSuccess)
+        {
+            <span class="ws-record-count">
+                @_result.TotalCount records
+            </span>
+        }
+    </div>
+
+    @if (_result is null || !_result.IsSuccess || _result.Records.Count == 0)
+    {
+        <div class="ws-empty">
+            @if (_result is null)
+            {
+                <span>Pick a date and click Fetch.</span>
+            }
+            else if (!_result.IsSuccess)
+            {
+                <span>Fetch failed.</span>
+            }
+            else
+            {
+                <span>No records found.</span>
+            }
+        </div>
+    }
+    else
+    {
+        var dateColumns = _result.Records
+            .Select(r => r.Date.Date)
+            .Distinct()
+            .OrderByDescending(d => d)
+            .ToList();
+        int fixedColumnCount = 6; // #, Dept Code, Dept No, Emp No, Name, Metric
+
+        <div class="ws-table-wrap">
+            <table class="ws-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Dept Code</th>
+                        <th>Dept No</th>
+                        <th>Emp No</th>
+                        <th>Name</th>
+                        <th class="ws-metric-col">Metric</th>
+                        @if (dateColumns.Count > 0)
+                        {
+                            <th class="ws-date-spacer" colspan="@dateColumns.Count"></th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ int groupNum = 0; }
+                    @foreach (var deptGroup in _result.Records
+                        .GroupBy(r => new { r.DepartmentCode, r.DepartmentNo, r.DepartmentName })
+                        .OrderBy(g => g.Key.DepartmentCode)
+                        .ThenBy(g => g.Key.DepartmentNo))
+                    {
+                        string deptKey = DeptKey(deptGroup.Key.DepartmentCode, deptGroup.Key.DepartmentNo);
+                        bool deptCollapsed = IsDeptCollapsed(deptKey);
+                        int deptRows = deptGroup.Count();
+                        int deptPeople = deptGroup
+                            .Select(r => string.IsNullOrWhiteSpace(r.EmpNo) ? r.Name : r.EmpNo)
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .Count();
+
+                        <tr class="ws-dept-row">
+                            <td colspan="@(fixedColumnCount + dateColumns.Count)">
+                                <button type="button"
+                                        class="ws-dept-toggle"
+                                        title="Toggle department"
+                                        @onclick="() => ToggleDept(deptKey)">
+                                    @(deptCollapsed ? "▸" : "▾")
+                                </button>
+                                <span>@deptGroup.Key.DepartmentCode</span>
+                                <span class="ws-dept-meta">@deptGroup.Key.DepartmentNo</span>
+                                @if (!string.IsNullOrWhiteSpace(deptGroup.Key.DepartmentName))
+                                {
+                                    <span class="ws-dept-meta">@deptGroup.Key.DepartmentName</span>
+                                }
+                                <span class="ws-dept-meta">@deptPeople people / @deptRows rows</span>
+                            </td>
+                        </tr>
+
+                        @if (!deptCollapsed)
+                        {
+                            <tr class="ws-date-row">
+                                <td colspan="5"></td>
+                                <td class="ws-metric-label">Date</td>
+                                @foreach (var date in dateColumns)
+                                {
+                                    <th class="ws-date-th">@date.ToString("yyyy-MM-dd")</th>
+                                }
+                            </tr>
+
+                            foreach (var group in deptGroup
+                                .GroupBy(r => new { r.DepartmentCode, r.DepartmentNo, r.EmpNo, r.Name })
+                                .OrderBy(g => g.Key.Name)
+                                .ThenBy(g => g.Key.EmpNo))
+                            {
+                                groupNum++;
+                                var byDate = group
+                                    .GroupBy(r => r.Date.Date)
+                                    .ToDictionary(g => g.Key, g => g.First());
+                                int rowSpan = WorkerMetricRows.Length;
+                                string firstRowStyle = groupNum > 1 ? "border-top:2px solid #e2e8f0;" : "";
+
+                                for (int metricIndex = 0; metricIndex < WorkerMetricRows.Length; metricIndex++)
+                                {
+                                    string metric = WorkerMetricRows[metricIndex];
+                                    var rec = group.First();
+
+                                    <tr class="ws-metric-row" style="@(metricIndex == 0 ? firstRowStyle : "")">
+                                        @if (metricIndex == 0)
+                                        {
+                                            <td rowspan="@rowSpan" class="ws-row-number">@groupNum</td>
+                                            <td rowspan="@rowSpan" class="ws-code-cell" title="@rec.DepartmentName">@rec.DepartmentCode</td>
+                                            <td rowspan="@rowSpan" class="ws-code-cell">@rec.DepartmentNo</td>
+                                            <td rowspan="@rowSpan" class="ws-code-cell">@rec.EmpNo</td>
+                                            <td rowspan="@rowSpan" style="font-weight:600; vertical-align:top;">@rec.Name</td>
+                                        }
+                                        <td class="ws-metric-label">@metric</td>
+                                        @foreach (var date in dateColumns)
+                                        {
+                                            <td class="@MetricCellClass(metric)">
+                                                @if (!byDate.TryGetValue(date, out var dayRec))
+                                                {
+                                                    <span class="ws-empty-cell">-</span>
+                                                }
+                                                else if (metric == WorkerMetricDay)
+                                                {
+                                                    <span>@FormatWorkerDay(dayRec.Date)</span>
+                                                }
+                                                else if (metric == WorkerMetricStatus)
+                                                {
+                                                    @if (!string.IsNullOrEmpty(dayRec.WorkStatus))
+                                                    {
+                                                        <span class="ws-badge @StatusClass(dayRec)">@dayRec.WorkStatus</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="ws-empty-cell">-</span>
+                                                    }
+                                                }
+                                                else if (metric == WorkerMetricDateType)
+                                                {
+                                                    @if (!string.IsNullOrEmpty(dayRec.DayType))
+                                                    {
+                                                        <span>@dayRec.DayType</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="ws-empty-cell">-</span>
+                                                    }
+                                                }
+                                                else if (metric == WorkerMetricCheckIn)
+                                                {
+                                                    @if (string.IsNullOrEmpty(dayRec.CheckIn))
+                                                    {
+                                                        <span class="ws-empty-cell">-</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="ws-check-in-time" style="@CheckInStyle(dayRec)">@(IsLate(dayRec) ? "*" : "")@dayRec.CheckIn</span>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(dayRec.SchedStart))
+                                                    {
+                                                        <span class="ws-sched-inline">(@dayRec.SchedStart)</span>
+                                                    }
+                                                }
+                                                else if (metric == WorkerMetricCheckOut)
+                                                {
+                                                    @if (string.IsNullOrEmpty(dayRec.CheckOut))
+                                                    {
+                                                        <span class="ws-empty-cell">-</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        @dayRec.CheckOut
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(dayRec.SchedEnd))
+                                                    {
+                                                        <span class="ws-sched-inline">(@dayRec.SchedEnd)</span>
+                                                    }
+                                                }
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            }
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private DateTime                          _startDate  = DateTime.Today;
+    private DateTime                          _endDate    = DateTime.Today;
+    private bool                              _isBusy;
+    private bool                              _isExporting;
+    private string                            _progressMsg = string.Empty;
+    private WorkerStatusService.FetchResult?  _result;
+    private readonly HashSet<string>          _collapsedDeptKeys = new(StringComparer.OrdinalIgnoreCase);
+
+    private const string WorkerMetricDay      = "Day";
+    private const string WorkerMetricStatus   = "Status";
+    private const string WorkerMetricDateType = "Date Type";
+    private const string WorkerMetricCheckIn  = "Check In";
+    private const string WorkerMetricCheckOut = "Check Out";
+
+    private static readonly string[] WorkerMetricRows =
+    {
+        WorkerMetricDay,
+        WorkerMetricStatus,
+        WorkerMetricDateType,
+        WorkerMetricCheckIn,
+        WorkerMetricCheckOut
+    };
+
+    private void OnStartDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var d))
+        {
+            _startDate = d;
+            if (_endDate < _startDate) _endDate = _startDate;
+        }
+    }
+
+    private void OnEndDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var d))
+        {
+            _endDate = d;
+            if (_endDate < _startDate) _startDate = _endDate;
+        }
+    }
+
+    private async Task FetchAsync()
+    {
+        _isBusy      = true;
+        _progressMsg = string.Empty;
+        _result      = null;
+        _collapsedDeptKeys.Clear();
+        StateHasChanged();
+
+        var progress = new Progress<string>(msg =>
+        {
+            _progressMsg = msg;
+            InvokeAsync(StateHasChanged);
+        });
+
+        _result = await WorkerStatus.FetchRangeAsync(_startDate, _endDate, progress);
+        _isBusy = false;
+        StateHasChanged();
+    }
+
+    /// <summary>Late if actual check-in (CheckIn) is after Schedule In (SchedStart).</summary>
+    private static bool IsLate(WorkerStatusService.WorkerRecord rec)
+    {
+        if (!TryParseWorkerTime(rec.CheckIn, out var checkIn) ||
+            !TryParseWorkerTime(rec.SchedStart, out var schedStart))
+            return false;
+
+        return checkIn > schedStart;
+    }
+
+    private static string CheckInStyle(WorkerStatusService.WorkerRecord rec)
+    {
+        const int windowStartMinutes = -10;
+        const int gradientSpanMinutes = 10;
+
+        if (!TryParseWorkerTime(rec.CheckIn, out var checkIn) ||
+            !TryParseWorkerTime(rec.SchedStart, out var schedStart))
+            return "font-weight:700;";
+
+        int diffMinutes = (int)Math.Floor((checkIn - schedStart).TotalMinutes);
+        if (diffMinutes < windowStartMinutes)
+            return "font-weight:700;";
+
+        int step = Math.Clamp(diffMinutes - windowStartMinutes, 0, gradientSpanMinutes);
+        double t = step / (double)gradientSpanMinutes;
+
+        string bg = MixRgb(220, 252, 231, 255, 237, 213, t);
+        string fg = MixRgb(22, 101, 52, 194, 65, 12, t);
+        return $"font-weight:700; background-color:{bg}; color:{fg};";
+    }
+
+    private static string StatusClass(WorkerStatusService.WorkerRecord rec)
+    {
+        string status = rec.WorkStatus ?? string.Empty;
+
+        if (status.Contains("office", StringComparison.OrdinalIgnoreCase) ||
+            status.Contains("출근", StringComparison.OrdinalIgnoreCase))
+            return "ws-in";
+
+        if (status.Contains("out", StringComparison.OrdinalIgnoreCase) ||
+            status.Contains("퇴근", StringComparison.OrdinalIgnoreCase))
+            return "ws-out";
+
+        if (status.Contains("absent", StringComparison.OrdinalIgnoreCase) ||
+            status.Contains("결근", StringComparison.OrdinalIgnoreCase))
+            return "ws-absent";
+
+        return "ws-other";
+    }
+
+    private static string MetricCellClass(string metric)
+        => metric == WorkerMetricCheckIn || metric == WorkerMetricCheckOut ? "ws-time" : string.Empty;
+
+    private static string FormatWorkerDay(DateTime date)
+        => date.ToString("ddd", System.Globalization.CultureInfo.InvariantCulture);
+
+    private static bool TryParseWorkerTime(string value, out TimeSpan time)
+    {
+        time = default;
+        if (string.IsNullOrWhiteSpace(value)) return false;
+
+        string s = value.Trim();
+        if (TimeSpan.TryParse(s, out time)) return true;
+        if (DateTime.TryParse(s, out var dt))
+        {
+            time = dt.TimeOfDay;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static string MixRgb(
+        int r1, int g1, int b1,
+        int r2, int g2, int b2,
+        double t)
+    {
+        static int Mix(int a, int b, double t) => (int)Math.Round(a + ((b - a) * t));
+        return $"rgb({Mix(r1, r2, t)}, {Mix(g1, g2, t)}, {Mix(b1, b2, t)})";
+    }
+
+    private static string DeptKey(string departmentCode, string departmentNo)
+        => $"{departmentCode}\u001f{departmentNo}";
+
+    private bool IsDeptCollapsed(string deptKey)
+        => _collapsedDeptKeys.Contains(deptKey);
+
+    private void ToggleDept(string deptKey)
+    {
+        if (!_collapsedDeptKeys.Add(deptKey))
+            _collapsedDeptKeys.Remove(deptKey);
+    }
+
+    private async Task ExportExcelAsync()
+    {
+        if (_isExporting) return;
+
+        _isExporting = true;
+        _progressMsg = string.Empty;
+        await InvokeAsync(StateHasChanged);
+        await Task.Yield();
+
+        try
+        {
+            if (_result is null || _result.Records.Count == 0) return;
+
+            var records = _result.Records;
+            var start   = _startDate;
+            var end     = _endDate;
+
+            var bytes = await Task.Run(() =>
+                WorkerStatusExcelExporter.Export(records, start, end));
+
+            string name = start.Date == end.Date
+                ? $"WorkerStatus_{start:yyyyMMdd}.xlsx"
+                : $"WorkerStatus_{start:yyyyMMdd}_{end:yyyyMMdd}.xlsx";
+
+            await BrowserDownload.DownloadBytesAsync(JS, name, bytes, BrowserDownload.XlsxContentType);
+        }
+        catch (Exception ex)
+        {
+            _progressMsg = $"Export failed: {ex.Message}";
+        }
+        finally
+        {
+            _isExporting = false;
+            StateHasChanged();
+        }
+    }
+}
