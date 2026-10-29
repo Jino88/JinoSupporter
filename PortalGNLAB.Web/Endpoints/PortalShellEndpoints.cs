@@ -54,6 +54,9 @@ public static class PortalShellEndpoints
         [AppMenus.AdminAiUsages] = "/app/admin/ai-usages",
         [AppMenus.AdminDbQuery] = "/app/admin/db-query",
         [AppMenus.TestExcelConverter] = "/app/admin/test-excel-converter",
+        [AppMenus.Translate] = "/app/tools/translate",
+        [AppMenus.ReviewReport] = "/app/tools/review-report",
+        [AppMenus.GraphMaker] = "/app/tools/graph-maker",
     };
 
     public sealed record PortalUser(string Name, string Role);
@@ -100,6 +103,7 @@ public static class PortalShellEndpoints
 
         app.MapAdminUsers();
         app.MapAdminTools();
+        app.MapToolPages();
 
         // Every /app route is the React app; it asks /api/portal/me and sends signed-out users to /login.
         app.MapFallbackToFile("/app/{*path:nonfile}", "app/index.html");

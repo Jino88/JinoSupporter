@@ -93,15 +93,15 @@
         }
         @if (can(AppMenus.GraphMaker))
         {
-            @Tile("tools/graph-maker", "graph", "Graph", "Graph Maker")
+            @AppTile("/app/tools/graph-maker", "graph", "Graph", "Graph Maker")
         }
         @if (can(AppMenus.Translate))
         {
-            @Tile("translate", "translate", "Translate", "Translate")
+            @AppTile("/app/tools/translate", "translate", "Translate", "Translate")
         }
         @if (can(AppMenus.ReviewReport))
         {
-            @Tile("tools/review-report", "write", "Write", "Review Report (AI writes, WorkHub-ready)")
+            @AppTile("/app/tools/review-report", "write", "Write", "Review Report (AI writes, WorkHub-ready)")
         }
         @if (can(AppMenus.PcDownload))
         {
