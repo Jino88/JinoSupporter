@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
-using Microsoft.Data.Sqlite;
 
 namespace PortalGNLAB.Web.Services;
 
@@ -14,15 +13,8 @@ public sealed class ProcessMaterialNgService(
     private readonly ProcessMaterialMappingService _mappingService = mappingService;
     private readonly WebRepository _repo = repo;
 
-    public string? FindMostRecentDb()
-    {
-        string dir = _settings.DbSaveDirectory;
-        if (!Directory.Exists(dir)) return null;
-
-        return Directory.GetFiles(dir, "temp_*.db")
-            .OrderByDescending(File.GetLastWriteTime)
-            .FirstOrDefault();
-    }
+    /// <summary>Handle of the most recent NG Rate fetch still in memory (see <see cref="NgRateDataStore"/>).</summary>
+    public string? FindMostRecentDb() => NgRateDataStore.LatestHandle();
 
     public Task<ProcessMaterialNgReport> GenerateAsync(
         string dbPath,
@@ -47,8 +39,8 @@ public sealed class ProcessMaterialNgService(
     {
         if (startDate.HasValue && endDate.HasValue && endDate.Value < startDate.Value)
             throw new InvalidOperationException("End date must be on or after start date.");
-        if (string.IsNullOrWhiteSpace(dbPath) || !File.Exists(dbPath))
-            throw new FileNotFoundException("NG Rate DB was not found.", dbPath);
+        if (!NgRateDataStore.Contains(dbPath))
+            throw new InvalidOperationException("NG Rate data is no longer in memory. Run the query again.");
 
         string query = (modelQuery ?? string.Empty).Trim();
         var mappings = _mappingService.GetAll()
@@ -241,45 +233,14 @@ public sealed class ProcessMaterialNgService(
         return filter;
     }
 
+    /// <summary>NG rows of the NgRateDataSet behind <paramref name="dbPath"/> (the handle
+    /// NgRateService returned), read the way the old temp_*.db reader did.</summary>
     private static List<RawNgRow> LoadNgRows(string dbPath, DateTime? startDate, DateTime? endDate)
     {
         var rows = new List<RawNgRow>();
-        var csb = new SqliteConnectionStringBuilder
+        foreach (var row in NgRateDataStore.Get(dbPath).Rows)
         {
-            DataSource = dbPath,
-            Mode = SqliteOpenMode.ReadOnly,
-        };
-        using var conn = new SqliteConnection(csb.ToString());
-        conn.Open();
-        if (!TableExists(conn, "OrginalTable")) return rows;
-
-        if (!ColumnExists(conn, "OrginalTable", "MATERIALNAME") ||
-            !ColumnExists(conn, "OrginalTable", "PROCESSCODE") ||
-            !ColumnExists(conn, "OrginalTable", "PROCESSNAME") ||
-            !ColumnExists(conn, "OrginalTable", "QTYINPUT") ||
-            !ColumnExists(conn, "OrginalTable", "QTYNG") ||
-            !ColumnExists(conn, "OrginalTable", "PRODUCT_DATE"))
-        {
-            return rows;
-        }
-
-        bool hasLineShift = ColumnExists(conn, "OrginalTable", "LineShift");
-        string lineShiftExpr = hasLineShift
-            ? "[LineShift]"
-            : "([MATERIALNAME] || '_' || [PRODUCTION_LINE])";
-
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = $"""
-            SELECT [MATERIALNAME], {lineShiftExpr}, [PROCESSCODE], [PROCESSNAME],
-                   [QTYINPUT], [QTYNG], [PRODUCT_DATE]
-            FROM [OrginalTable]
-            """;
-
-        using var reader = cmd.ExecuteReader();
-        while (reader.Read())
-        {
-            string productDateText = ReadStr(reader, 6);
-            if (!DateTime.TryParse(productDateText, out var productDate))
+            if (!DateTime.TryParse(row.ProductDate, out var productDate))
                 continue;
 
             productDate = productDate.Date;
@@ -289,14 +250,14 @@ public sealed class ProcessMaterialNgService(
                 continue;
 
             rows.Add(new RawNgRow(
-                ReadStr(reader, 0),
-                ReadStr(reader, 1),
-                ReadStr(reader, 2),
-                NormalizeText(ReadStr(reader, 3)),
+                row.MaterialName,
+                row.LineShift,
+                row.ProcessCode,
+                NormalizeText(row.ProcessName),
                 string.Empty,
                 productDate,
-                ReadDouble(reader, 4),
-                ReadDouble(reader, 5),
+                NgRateReportService.ParseQty(row.QtyInput),
+                NgRateReportService.ParseQty(row.QtyNg),
                 string.Empty));
         }
 
@@ -784,41 +745,6 @@ public sealed class ProcessMaterialNgService(
     {
         if (!string.IsNullOrWhiteSpace(value))
             set.Add(value.Trim());
-    }
-
-    private static bool TableExists(SqliteConnection conn, string tableName)
-    {
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=@t";
-        cmd.Parameters.AddWithValue("@t", tableName);
-        return (long)cmd.ExecuteScalar()! > 0;
-    }
-
-    private static bool ColumnExists(SqliteConnection conn, string table, string column)
-    {
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = $"PRAGMA table_info([{table}])";
-        using var reader = cmd.ExecuteReader();
-        while (reader.Read())
-        {
-            if (reader.GetString(1).Equals(column, StringComparison.OrdinalIgnoreCase))
-                return true;
-        }
-        return false;
-    }
-
-    private static string ReadStr(SqliteDataReader reader, int index)
-        => reader.IsDBNull(index) ? string.Empty : reader.GetValue(index).ToString() ?? string.Empty;
-
-    private static double ReadDouble(SqliteDataReader reader, int index)
-    {
-        if (reader.IsDBNull(index)) return 0;
-        object value = reader.GetValue(index);
-        if (value is double d) return d;
-        if (value is long l) return l;
-        return double.TryParse(value.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out double result)
-            ? result
-            : 0;
     }
 
     private sealed record ModelFilter(string Query)

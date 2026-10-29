@@ -5,8 +5,8 @@ namespace PortalGNLAB.Web.Services;
 /// <summary>
 /// The single SQLite file the app owns: <c>AppStoragePaths.Combine("PortalGNLAB.db")</c>.
 /// Every service that used to keep its own .db file opens its connection here.
-/// Per-request scratch files (NG Rate temp_*.db, fcost_yyyyMMdd_HHmmss.db) are not stores
-/// and stay outside; <see cref="PortalDbMigrator"/> moves the old stores in once.
+/// NG Rate fetch results are kept in memory (NgRateDataStore), not in a scratch file;
+/// <see cref="PortalDbMigrator"/> moves the old stores in once.
 /// </summary>
 public static class PortalDb
 {

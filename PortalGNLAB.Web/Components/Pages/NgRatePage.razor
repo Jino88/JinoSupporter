@@ -215,7 +215,7 @@
             <span style="font-size:18px;">📊</span>
             <h6 class="mb-0 fw-semibold">Report</h6>
             <span class="small text-muted ms-1">
-                @Path.GetFileName(_report.DbPath) ·
+                @_report.DbPath ·
                 @_report.TotalRows.ToString("N0") rows ·
                 @_report.GeneratedAt.ToString("HH:mm:ss")
             </span>
@@ -1829,7 +1829,7 @@
             _savedDbPath = dbPath;
             RefreshGroups();
             Activity.Log("NG Rate By Model", $"Generate Report selectedGroups={_selectedGroupIds.Count:N0}, selectedEntries={_selectedSubEntries.Count:N0}");
-            progress.Report($"Using DB: {Path.GetFileName(dbPath)}");
+            progress.Report($"Using NG data: {dbPath}");
 
             if (_selectedGroupIds.Count == 0 && _selectedSubEntries.Count == 0)
             {
