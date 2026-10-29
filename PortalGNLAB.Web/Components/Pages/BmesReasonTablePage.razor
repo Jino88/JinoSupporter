@@ -275,6 +275,7 @@
     private List<ReasonRow> _reasonRows = [];
     private Dictionary<(string, string), ReasonRow> _pairIndex = new();
     private long _editReasonId = -1;
+    private long _newReasonId = -1;
     private ReasonRow _editReason = new();
 
     private long _quickReasonId = -1;
@@ -448,16 +449,19 @@
         if (_modelActive) ClearModel();
         _chip = string.Empty;
         _search = string.Empty;
+        DiscardUnsavedNewRow();
         long newId = NgRateSettings.AddReasonRow(new ReasonRow());
         Reload();
         _quickReasonId = -1;
         _editReasonId = newId;
+        _newReasonId = newId;
         _editReason = new ReasonRow { Id = newId };
         MarkDirty("Reason row added locally.");
     }
 
     private void AddReasonFromPair(string pn, string ng)
     {
+        DiscardUnsavedNewRow();
         var newRow = new ReasonRow { ProcessName = pn, NgName = ng, Reason = string.Empty };
         long newId = NgRateSettings.AddReasonRow(newRow);
         Reload();
@@ -469,6 +473,7 @@
     private void StartReasonEdit(ReasonRow? r)
     {
         if (r is null) return;
+        if (r.Id != _newReasonId) DiscardUnsavedNewRow();
         _quickReasonId = -1;
         _editReasonId = r.Id;
         _editReason = new ReasonRow
@@ -484,16 +489,34 @@
     {
         NgRateSettings.UpdateReasonRow(_editReason);
         _editReasonId = -1;
+        _newReasonId = -1;
         _quickReasonId = -1;
         Reload();
         MarkDirty("Reason row saved locally.");
     }
 
-    private void CancelReasonEdit() => _editReasonId = -1;
+    private void CancelReasonEdit()
+    {
+        DiscardUnsavedNewRow();
+        _editReasonId = -1;
+    }
+
+    /// <summary>A row created by "+ Add row" and left before its first save is removed again,
+    /// so an empty row never reaches Update To Server.</summary>
+    private void DiscardUnsavedNewRow()
+    {
+        if (_newReasonId <= 0) return;
+        NgRateSettings.DeleteReasonRow(_newReasonId);
+        if (_editReasonId == _newReasonId) _editReasonId = -1;
+        _newReasonId = -1;
+        Reload();
+        SetStatus("Unsaved new reason row discarded.", false);
+    }
 
     private void StartQuickReasonEdit(ReasonRow? r)
     {
         if (r is null || _quickReasonId == r.Id) return;
+        DiscardUnsavedNewRow();
         _editReasonId = -1;
         _quickReasonId = r.Id;
         _quickReasonValue = r.Reason?.Trim() ?? string.Empty;
@@ -568,6 +591,7 @@
     {
         NgRateSettings.DeleteReasonRow(id);
         if (_editReasonId == id) _editReasonId = -1;
+        if (_newReasonId == id) _newReasonId = -1;
         if (_quickReasonId == id) _quickReasonId = -1;
         Reload();
         MarkDirty("Reason row deleted locally.");
@@ -587,6 +611,7 @@
     private async Task FindNewPairs()
     {
         if (_findBusy) return;
+        DiscardUnsavedNewRow();
         _findBusy = true;
         SetStatus(string.Empty, false);
         StateHasChanged();
@@ -606,7 +631,10 @@
             try
             {
                 int r = await BmesRoutingScrape.FetchReasonPairsAsync(progress);
-                if (r < 0) apiFailure = "BMES API step failed";
+                if (r < 0)
+                    apiFailure = string.IsNullOrWhiteSpace(_statusMsg)
+                        ? "BMES API step failed"
+                        : $"BMES API step failed: {_statusMsg.TrimEnd('.')}";
                 else apiAdded = r;
             }
             catch (Exception ex)
@@ -648,6 +676,7 @@
     private async Task UpdateReasonToServer()
     {
         if (_serverSyncBusy) return;
+        DiscardUnsavedNewRow();
         _serverSyncBusy = true;
         SetStatus("Updating server...", false);
         StateHasChanged();

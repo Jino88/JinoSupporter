@@ -206,6 +206,7 @@
     private List<RoutingRow> _routingRows = [];
     private List<ModelEntry> _modelCounts = [];
     private long _editRoutingId = -1;
+    private long _newRoutingId = -1;
     private RoutingRow _editRouting = new();
 
     private string _modelSearch = string.Empty;
@@ -273,6 +274,7 @@
 
     private void SelectModel(string name)
     {
+        DiscardUnsavedNewRow();
         _selectedModel = name;
         _typeFilter = string.Empty;
         _editRoutingId = -1;
@@ -281,11 +283,13 @@
     private void AddProcess()
     {
         if (string.IsNullOrEmpty(_selectedModel)) return;
+        DiscardUnsavedNewRow();
         var newRow = new RoutingRow { ModelName = _selectedModel };
         long newId = NgRateSettings.AddRoutingRow(newRow);
         Reload();
         _typeFilter = string.Empty;
         _editRoutingId = newId;
+        _newRoutingId = newId;
         _editRouting = new RoutingRow { Id = newId, ModelName = _selectedModel };
         MarkDirty("Process row added locally.");
     }
@@ -294,6 +298,7 @@
     {
         string name = _newModel.Trim();
         if (name.Length == 0) return;
+        DiscardUnsavedNewRow();     // before switching: Reload would drop a model that has no rows yet
         _selectedModel = name;
         _newModel = string.Empty;
         _modelSearch = string.Empty;
@@ -307,6 +312,7 @@
 
     private void StartRoutingEdit(RoutingRow r)
     {
+        if (r.Id != _newRoutingId) DiscardUnsavedNewRow();
         _editRoutingId = r.Id;
         _editRouting = new RoutingRow
         {
@@ -322,16 +328,34 @@
     {
         NgRateSettings.UpdateRoutingRow(_editRouting);
         _editRoutingId = -1;
+        _newRoutingId = -1;
         Reload();
         MarkDirty("Process row saved locally.");
     }
 
-    private void CancelRoutingEdit() => _editRoutingId = -1;
+    private void CancelRoutingEdit()
+    {
+        DiscardUnsavedNewRow();
+        _editRoutingId = -1;
+    }
+
+    /// <summary>A row created by "+ Add" and left before its first save is removed again,
+    /// so an empty row never reaches Update To Server.</summary>
+    private void DiscardUnsavedNewRow()
+    {
+        if (_newRoutingId <= 0) return;
+        NgRateSettings.DeleteRoutingRow(_newRoutingId);
+        if (_editRoutingId == _newRoutingId) _editRoutingId = -1;
+        _newRoutingId = -1;
+        Reload();
+        SetStatus("Unsaved new process row discarded.", false);
+    }
 
     private void DeleteRoutingRow(long id)
     {
         NgRateSettings.DeleteRoutingRow(id);
         if (_editRoutingId == id) _editRoutingId = -1;
+        if (_newRoutingId == id) _newRoutingId = -1;
         Reload();
         MarkDirty("Process row deleted locally.");
     }
@@ -391,6 +415,7 @@
     private async Task UpdateRoutingToServer()
     {
         if (_serverSyncBusy) return;
+        DiscardUnsavedNewRow();
         _serverSyncBusy = true;
         SetStatus("Updating server...", false);
         StateHasChanged();
