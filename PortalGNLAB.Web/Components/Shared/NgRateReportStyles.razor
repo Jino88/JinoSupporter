@@ -986,4 +986,185 @@
             padding-top: 10px;
         }
     }
+    /* ── 2026-10-29 redesign (docs/ui-mockups/ng-rate.html): same tables, new look ──────── */
+    .ngrate-setup-card,
+    .ngrate-report-card {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 12px !important;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 4px 16px rgba(15, 23, 42, .05) !important;
+        overflow: hidden;
+    }
+    .ngrate-setup-card > .ngrate-card-header,
+    .ngrate-report-card > .ngrate-card-header {
+        min-height: 44px !important;
+        padding: .7rem 1rem !important;
+        background: #fff !important;
+        color: #0f172a !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        font-size: 13.5px !important;
+        font-weight: 700 !important;
+    }
+    .ngrate-report-card > .ngrate-card-header::before { content: none !important; }
+    .ngrate-setup-card > .ngrate-card-body { padding: .85rem 1rem !important; }
+    .ngrate-log-pane {
+        background: #f8fafc;
+        color: #334155;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-family: Consolas, monospace;
+        font-size: 11.5px;
+        line-height: 1.6;
+    }
+    .ngrate-report-card .card-body.p-2 { padding: 0 !important; }
+
+    .pivot-table {
+        font-size: 12px;
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 0;
+    }
+    .pivot-table th,
+    .pivot-table td {
+        border: 0;
+        border-bottom: 1px solid #eef2f7;
+    }
+    .pivot-table th {
+        background: #f8fafc;
+        color: #64748b;
+        font-weight: 600;
+        font-size: 11px;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .pivot-table td {
+        padding: 5px 8px;
+        font-family: inherit;
+        color: #0f172a;
+    }
+    .pivot-table th:not(.label-th):not(.sep-th),
+    .pivot-table td:not(.label-td):not(.sep-td) {
+        font-size: 11.5px;
+        padding-left: 6px;
+        padding-right: 6px;
+    }
+    .pivot-table th.label-th,
+    .pivot-table td.label-td { font-size: 12px; }
+    .pivot-table th:first-child,
+    .pivot-table td:first-child { padding-left: 14px; }
+    .pivot-table th.sep-th,
+    .pivot-table td.sep-td {
+        background: #fff !important;
+        border: 0 !important;
+        width: 8px;
+        min-width: 8px;
+        max-width: 8px;
+    }
+    .pivot-table th.blk-date,
+    .pivot-table th.blk-week,
+    .pivot-table th.blk-month {
+        font-size: 10.5px;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        border-bottom: 0;
+        border-radius: 6px 6px 0 0;
+    }
+    .pivot-table th.blk-date { background: #eef2ff; color: #4338ca; }
+    .pivot-table th.blk-week { background: #e0f2fe; color: #0369a1; }
+    .pivot-table th.blk-month { background: #d1fae5; color: #047857; }
+    .pivot-table td.ppm-zero { color: #cbd5e1; }
+    .pivot-table td.ppm-val { color: #0f172a; font-weight: 500; }
+
+    .pivot-table tr.total-row td,
+    .pivot-table tr.hier-group-row td {
+        background: #f8fafc;
+        color: #0f172a;
+        font-weight: 700;
+        border: 0 !important;
+        border-top: 1px solid #e2e8f0 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+    .pivot-table tr.total-row td:first-child,
+    .pivot-table tr.hier-group-row td:first-child { border-left: 0 !important; }
+    .pivot-table tr.rank-row:nth-child(odd) td,
+    .pivot-table tr.rank-row td,
+    .pivot-table tr.hier-sub2-row td,
+    .pivot-table tr.hier-ls-row td {
+        background: #fff;
+        color: #0f172a;
+    }
+    .pivot-table tr.group-row td,
+    .pivot-table tr.hier-mid-row td,
+    .pivot-table tr.hier-sub1-row td {
+        background: #fff;
+        color: #334155;
+    }
+    .pivot-table tr.group-row td { font-size: 11.5px; }
+    .pivot-table tr.hier-mid-row td { font-weight: 600; border-top: 0 !important; }
+    .pivot-table tr.hier-sub1-row td:first-child,
+    .pivot-table tr.hier-sub2-row td:first-child,
+    .pivot-table tr.hier-ls-row td:first-child { border-left: 0 !important; }
+    .pivot-table tr.rank-row:hover td,
+    .pivot-table tr.group-row:hover td,
+    .pivot-table tr.hier-group-row:hover td,
+    .pivot-table tr.hier-mid-row:hover td,
+    .pivot-table tr.hier-sub1-row:hover td,
+    .pivot-table tr.hier-ls-row:hover td { background: #f8faff; }
+    .pivot-table tr td.sep-td { background: #fff !important; }
+
+    .ngrate-hier-level {
+        min-width: 0;
+        padding: 1px 5px;
+        border: 0;
+        border-radius: 4px;
+        background: #e0e7ff;
+        color: #3730a3;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: .06em;
+    }
+    .pivot-table tr.hier-group-row .ngrate-hier-level { background: #0f172a; color: #fff; }
+    .tog-icon,
+    .toggle-icon,
+    .wr-tog { color: #94a3b8 !important; font-size: 9px; }
+
+    .pt-badge {
+        width: auto;
+        min-width: 74px;
+        border: 0;
+        border-radius: 5px;
+        font-size: 10.5px;
+        font-weight: 700;
+        padding: 1px 7px;
+        background: #f1f5f9;
+        color: #475569;
+    }
+    .pt-badge.pt-sub { background: #eef2ff; color: #4338ca; }
+    .pt-badge.pt-main { background: #e0f2fe; color: #0369a1; }
+    .pt-badge.pt-func { background: #fef3c7; color: #92400e; }
+    .pt-badge.pt-vis { background: #d1fae5; color: #047857; }
+    .pt-badge.pt-oqc { background: #fce7f3; color: #9d174d; }
+    .process-cell { grid-template-columns: 74px max-content; }
+
+    .expand-btn {
+        font-size: 12px;
+        font-weight: 600;
+        color: #4f46e5;
+        padding: 3px 6px;
+        border-radius: 6px;
+    }
+    .expand-btn:hover { background: #eef2ff; }
+    .row-hide-btn { color: #cbd5e1; }
+    .row-hide-btn:hover { color: #dc2626; }
+    .group-chip { border-radius: 999px; }
+    .group-chip.active { background: #eef2ff; border-color: #c7d2fe; color: #3730a3; }
+    .pivot-table tr.hier-ls-row td,
+    .pivot-table tr.hier-sub2-row td {
+        font-style: normal !important;
+        font-family: inherit !important;
+        letter-spacing: 0 !important;
+        border-top: 0 !important;
+        color: #334155;
+        font-size: 11.5px;
+    }
 </style>

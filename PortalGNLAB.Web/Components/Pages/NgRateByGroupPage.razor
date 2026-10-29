@@ -199,7 +199,7 @@
                                 {
                                     <tr class="grp-sub-row">
                                         <td class="label-td ps-4">
-                                            <span class="pt-badge">@r.ProcessType</span>
+                                            <span class="pt-badge @NgRateUi.ProcessTypeClass(r.ProcessType)">@r.ProcessType</span>
                                         </td>
                                         @foreach (var col in VisibleDateCols)
                                         {
@@ -507,7 +507,7 @@
                                         <td class="label-td font-monospace" style="font-size:11px;">@x.Material</td>
                                         <td class="label-td process-name-col" style="font-size:11px;">
                                             <span class="process-cell">
-                                                <span class="pt-badge">@d.ProcessType</span>
+                                                <span class="pt-badge @NgRateUi.ProcessTypeClass(d.ProcessType)">@d.ProcessType</span>
                                                 <span class="process-label">@d.ProcessName</span>
                                             </span>
                                         </td>
