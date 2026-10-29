@@ -27,7 +27,7 @@ export function FCostTab({
       <p className="view-mode-note">{view.allPeriods ? "All periods" : "Recent periods"} · Regular F-COST · USD</p>
       <Section title="F-COST totals">
         {periods.length === 0 ? <EmptySection /> : (
-          <ReportTable caption="F-COST totals by period" headers={["Metric", ...periods.map((period) => period.header)]}>
+          <ReportTable caption="F-COST totals by period" numericFrom={1} headers={["Metric", ...periods.map((period) => period.header)]}>
             <tr><th scope="row">Input</th>{periods.map((period) => <td className="numeric" key={period.key}>{dim(formatCount(dataset.totals.inputQtyByPeriod[period.key]))}</td>)}</tr>
             <tr><th scope="row">F-COST (USD)</th>{periods.map((period) => <td className="numeric" key={period.key}>{dim(formatUsd(dataset.totals.fcostUsdByPeriod[period.key]))}</td>)}</tr>
             <tr><th scope="row">F-COST Rate</th>{periods.map((period) => <td className="numeric" key={period.key}>{dim(formatPercent(dataset.totals.ratePercentByPeriod[period.key]))}</td>)}</tr>
@@ -37,7 +37,7 @@ export function FCostTab({
 
       <Section title="Model / NG trend" count={dataset.trendRows.length}>
         {dataset.trendRows.length === 0 ? <EmptySection /> : (
-          <ReportTable caption="F-COST trend by model and NG group" headers={[
+          <ReportTable caption="F-COST trend by model and NG group" numericFrom={3} headers={[
             "Group", "Model", "NG Group",
             ...periods.flatMap(() => ["Input", "F-COST", "NG PPM", "Share"]),
           ]} groups={{ lead: 3, items: periods.map((period) => ({ label: period.header, span: 4 })) }}>
@@ -60,7 +60,7 @@ export function FCostTab({
 
       <Section title="F-COST hierarchy" count={dataset.hierarchyRows.length}>
         {dataset.hierarchyRows.length === 0 ? <EmptySection /> : (
-          <ReportTable caption="F-COST by Mid/Sub hierarchy" headers={[
+          <ReportTable caption="F-COST by Mid/Sub hierarchy" numericFrom={4} headers={[
             "Item", "Group", "Model", "NG Group", "Matched",
             ...periods.flatMap(() => ["Input", "F-COST", "Rate"]),
           ]} groups={{ lead: 5, items: periods.map((period) => ({ label: period.header, span: 3 })) }}>
@@ -91,7 +91,7 @@ function MaterialTable({ title, rows, periods }: { title: string; rows: FCostMat
   return (
     <Section title={title} count={rows.length}>
       {rows.length === 0 ? <EmptySection /> : (
-        <ReportTable caption={`${title} F-COST`} headers={[
+        <ReportTable caption={`${title} F-COST`} numericFrom={5} headers={[
           "Name", "Product Group", "Model No", "Material", "VERID",
           ...periods.flatMap(() => ["Input", "F-COST", "Rate"]),
         ]} groups={{ lead: 5, items: periods.map((period) => ({ label: period.header, span: 3 })) }}>
@@ -134,7 +134,7 @@ function RawBreakdown({
       </dl>
       {raw.warningMessage && <p className="inline-warning" role="status">{raw.warningMessage}</p>}
       {raw.exchangeRates.length > 0 && (
-        <ReportTable caption="Raw breakdown exchange rates" headers={["Period", "Standard date", "KRW/USD", "KRW/VND"]}>
+        <ReportTable caption="Raw breakdown exchange rates" numericFrom={2} headers={["Period", "Standard date", "KRW/USD", "KRW/VND"]}>
           {raw.exchangeRates.map((rate) => (
             <tr key={rate.periodKey}>
               <th scope="row">{rate.periodKey}</th><td>{rate.standardDate}</td>
@@ -145,7 +145,7 @@ function RawBreakdown({
         </ReportTable>
       )}
       {raw.rows.length === 0 ? <EmptySection /> : (
-        <ReportTable caption="Raw material VND breakdown" headers={[
+        <ReportTable caption="Raw material VND breakdown" numericFrom={4} headers={[
           "Group", "Model", "Material Code", "Material Name", "Total F-COST", "Source Rows",
           ...periods.flatMap(() => ["F-COST", "Eq. Qty", "Price", "Price VND"]),
         ]} groups={{ lead: 6, items: periods.map((period) => ({ label: period.header, span: 4 })) }}>
@@ -200,11 +200,11 @@ function TargetDefectRateView({
       </Section>
       <Section title="Target defect rate" count={target.rows.length}>
         {target.rows.length === 0 ? <EmptySection /> : (
-          <ReportTable caption="Target defect rate by model" headers={[
+          <ReportTable caption="Target defect rate by model" numericFrom={1} headers={[
             "Model", "Target PPM", "Achievement", ...periods.map((period) => `${period.header} Actual PPM`),
           ]}>
             <tr className="total-row">
-              <th scope="row">Total actual</th><td>-</td><td>-</td>
+              <th scope="row">Total actual</th><td className="numeric">{dim("-")}</td><td className="numeric">{dim("-")}</td>
               {periods.map((period) => <td className="numeric" key={period.key}>{dim(formatPpm(target.totalActualPpmByPeriod[period.key]))}</td>)}
             </tr>
             {target.rows.map((row, index) => (

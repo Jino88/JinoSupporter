@@ -9,7 +9,7 @@ export function WeeklyTab({ data, preferences }: { data: WeeklyTabData; preferen
     <div className="tab-content">
       <Section title="Weekly target" count={data.targetRows.length}>
         {data.targetRows.length === 0 ? <EmptySection /> : (
-          <ReportTable caption="Weekly target and achievement" headers={[
+          <ReportTable caption="Weekly target and achievement" numericFrom={2} headers={[
             "Item", "Kind", "Baseline PPM", "Target PPM", "Achievement", ...periods.map((period) => `${period.header} PPM`),
           ]}>
             {data.targetRows.map((row) => (
@@ -28,7 +28,7 @@ export function WeeklyTab({ data, preferences }: { data: WeeklyTabData; preferen
 
       <Section title="Hierarchy summary" count={data.summaryRows.length}>
         {data.summaryRows.length === 0 ? <EmptySection /> : (
-          <ReportTable caption="Weekly PPM by hierarchy" headers={["Item", "Level / Process", ...periods.map((period) => `${period.header} PPM`)]}>
+          <ReportTable caption="Weekly PPM by hierarchy" numericFrom={2} headers={["Item", "Level / Process", ...periods.map((period) => `${period.header} PPM`)]}>
             {data.summaryRows.map((row) => (
               <tr key={row.rowId}>
                 <th scope="row" style={indentStyle(row.depth)}>{row.display}</th>
@@ -42,7 +42,7 @@ export function WeeklyTab({ data, preferences }: { data: WeeklyTabData; preferen
 
       <Section title="Trend series" count={data.trendSeries.length}>
         {data.trendSeries.length === 0 ? <EmptySection /> : (
-          <ReportTable caption="Weekly trend series" headers={["Series", "Group", ...periods.map((period) => `${period.header} PPM`)]}>
+          <ReportTable caption="Weekly trend series" numericFrom={2} headers={["Series", "Group", ...periods.map((period) => `${period.header} PPM`)]}>
             {data.trendSeries.map((row) => (
               <tr key={row.id}>
                 <th scope="row">{row.label}</th>
@@ -56,7 +56,7 @@ export function WeeklyTab({ data, preferences }: { data: WeeklyTabData; preferen
 
       <Section title="Top Defects" count={data.topDefects.length}>
         {data.topDefects.length === 0 ? <EmptySection /> : (
-          <ReportTable caption="Weekly Top Defects" headers={[
+          <ReportTable caption="Weekly Top Defects" numericFrom={5} numericCols={[0]} headers={[
             "Rank", "Line Shift", "Process Type", "Process", "NG", ...periods.map((period) => `${period.header} PPM`),
           ]}>
             {data.topDefects.map((row, index) => (

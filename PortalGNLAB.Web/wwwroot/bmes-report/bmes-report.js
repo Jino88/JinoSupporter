@@ -8209,14 +8209,14 @@ var D = /* @__PURE__ */ e(((e) => {
 })), O = (/* @__PURE__ */ e(((e, t) => {
 	t.exports = D();
 })))();
-function k({ caption: e, headers: t, groups: n, children: r, className: i = "" }) {
+function k({ caption: e, headers: t, groups: n, numericFrom: r = Infinity, numericCols: i = [], children: a, className: o = "" }) {
 	return /* @__PURE__ */ (0, O.jsx)("div", {
 		className: "table-scroll",
 		tabIndex: 0,
 		role: "region",
 		"aria-label": `${e} scroll area`,
 		children: /* @__PURE__ */ (0, O.jsxs)("table", {
-			className: `report-table ${i}`.trim(),
+			className: `report-table ${o}`.trim(),
 			children: [
 				/* @__PURE__ */ (0, O.jsx)("caption", { children: e }),
 				/* @__PURE__ */ (0, O.jsxs)("thead", { children: [n && /* @__PURE__ */ (0, O.jsxs)("tr", {
@@ -8229,9 +8229,10 @@ function k({ caption: e, headers: t, groups: n, children: r, className: i = "" }
 					}, t))]
 				}), /* @__PURE__ */ (0, O.jsx)("tr", { children: t.map((e, t) => /* @__PURE__ */ (0, O.jsx)("th", {
 					scope: "col",
+					className: t >= r || i.includes(t) ? "numeric" : void 0,
 					children: e
 				}, t)) })] }),
-				/* @__PURE__ */ (0, O.jsx)("tbody", { children: r })
+				/* @__PURE__ */ (0, O.jsx)("tbody", { children: a })
 			]
 		})
 	});
@@ -8278,6 +8279,8 @@ function _e({ data: e, preferences: t }) {
 			count: e.rows.length,
 			children: e.rows.length === 0 ? /* @__PURE__ */ (0, O.jsx)(j, {}) : /* @__PURE__ */ (0, O.jsx)(k, {
 				caption: "Cause share and weighted PPM by model",
+				numericFrom: 6,
+				numericCols: [4],
 				headers: [
 					"Model",
 					"Type",
@@ -8329,6 +8332,7 @@ function _e({ data: e, preferences: t }) {
 			count: e.modelMonthlyRows.length,
 			children: e.modelMonthlyRows.length === 0 ? /* @__PURE__ */ (0, O.jsx)(j, {}) : /* @__PURE__ */ (0, O.jsx)(k, {
 				caption: "Monthly PPM by model",
+				numericFrom: 1,
 				headers: ["Model", ...n.map((e) => `${e.header} PPM`)],
 				children: e.modelMonthlyRows.map((e) => /* @__PURE__ */ (0, O.jsxs)("tr", { children: [/* @__PURE__ */ (0, O.jsx)("th", {
 					scope: "row",
@@ -8353,6 +8357,7 @@ function ve({ data: e, preferences: t }) {
 				count: e.summaryRows.length,
 				children: e.summaryRows.length === 0 ? /* @__PURE__ */ (0, O.jsx)(j, {}) : /* @__PURE__ */ (0, O.jsx)(k, {
 					caption: "Daily Input, NG and PPM by hierarchy",
+					numericFrom: 2,
 					headers: [
 						"Item",
 						"Level",
@@ -8416,6 +8421,8 @@ function ve({ data: e, preferences: t }) {
 							}), /* @__PURE__ */ (0, O.jsxs)("span", { children: [r.lineShiftCount.toLocaleString("en-US"), " line shifts"] })]
 						}), i.filter((e) => !e.isTotal).length === 0 ? /* @__PURE__ */ (0, O.jsx)(j, { message: `No causes at Minimum PPM ${w(t.minimumPpm)} or higher.` }) : /* @__PURE__ */ (0, O.jsxs)(k, {
 							caption: `${r.modelName} defect cause PPM`,
+							numericFrom: 5,
+							numericCols: [0],
 							headers: [
 								"Rank",
 								"Cause",
@@ -8486,6 +8493,7 @@ function ye({ dataset: e, view: t, preferences: n }) {
 				title: "F-COST totals",
 				children: r.length === 0 ? /* @__PURE__ */ (0, O.jsx)(j, {}) : /* @__PURE__ */ (0, O.jsxs)(k, {
 					caption: "F-COST totals by period",
+					numericFrom: 1,
 					headers: ["Metric", ...r.map((e) => e.header)],
 					children: [
 						/* @__PURE__ */ (0, O.jsxs)("tr", { children: [/* @__PURE__ */ (0, O.jsx)("th", {
@@ -8517,6 +8525,7 @@ function ye({ dataset: e, view: t, preferences: n }) {
 				count: e.trendRows.length,
 				children: e.trendRows.length === 0 ? /* @__PURE__ */ (0, O.jsx)(j, {}) : /* @__PURE__ */ (0, O.jsx)(k, {
 					caption: "F-COST trend by model and NG group",
+					numericFrom: 3,
 					headers: [
 						"Group",
 						"Model",
@@ -8571,6 +8580,7 @@ function ye({ dataset: e, view: t, preferences: n }) {
 				count: e.hierarchyRows.length,
 				children: e.hierarchyRows.length === 0 ? /* @__PURE__ */ (0, O.jsx)(j, {}) : /* @__PURE__ */ (0, O.jsx)(k, {
 					caption: "F-COST by Mid/Sub hierarchy",
+					numericFrom: 4,
 					headers: [
 						"Item",
 						"Group",
@@ -8644,6 +8654,7 @@ function be({ title: e, rows: t, periods: n }) {
 		count: t.length,
 		children: t.length === 0 ? /* @__PURE__ */ (0, O.jsx)(j, {}) : /* @__PURE__ */ (0, O.jsx)(k, {
 			caption: `${e} F-COST`,
+			numericFrom: 5,
 			headers: [
 				"Name",
 				"Product Group",
@@ -8712,6 +8723,7 @@ function xe({ dataset: e, preferences: t, allPeriods: n }) {
 			}),
 			r.exchangeRates.length > 0 && /* @__PURE__ */ (0, O.jsx)(k, {
 				caption: "Raw breakdown exchange rates",
+				numericFrom: 2,
 				headers: [
 					"Period",
 					"Standard date",
@@ -8736,6 +8748,7 @@ function xe({ dataset: e, preferences: t, allPeriods: n }) {
 			}),
 			r.rows.length === 0 ? /* @__PURE__ */ (0, O.jsx)(j, {}) : /* @__PURE__ */ (0, O.jsx)(k, {
 				caption: "Raw material VND breakdown",
+				numericFrom: 4,
 				headers: [
 					"Group",
 					"Model",
@@ -8823,6 +8836,7 @@ function Se({ dataset: e, view: t, preferences: n }) {
 				count: r.rows.length,
 				children: r.rows.length === 0 ? /* @__PURE__ */ (0, O.jsx)(j, {}) : /* @__PURE__ */ (0, O.jsxs)(k, {
 					caption: "Target defect rate by model",
+					numericFrom: 1,
 					headers: [
 						"Model",
 						"Target PPM",
@@ -8836,8 +8850,14 @@ function Se({ dataset: e, view: t, preferences: n }) {
 								scope: "row",
 								children: "Total actual"
 							}),
-							/* @__PURE__ */ (0, O.jsx)("td", { children: "-" }),
-							/* @__PURE__ */ (0, O.jsx)("td", { children: "-" }),
+							/* @__PURE__ */ (0, O.jsx)("td", {
+								className: "numeric",
+								children: A("-")
+							}),
+							/* @__PURE__ */ (0, O.jsx)("td", {
+								className: "numeric",
+								children: A("-")
+							}),
 							i.map((e) => /* @__PURE__ */ (0, O.jsx)("td", {
 								className: "numeric",
 								children: A(w(r.totalActualPpmByPeriod[e.key]))
@@ -8884,6 +8904,7 @@ function Ce({ data: e, preferences: t }) {
 				]
 			}), e.lines.length === 0 ? /* @__PURE__ */ (0, O.jsx)(j, {}) : /* @__PURE__ */ (0, O.jsx)(k, {
 				caption: `${e.name} KPI`,
+				numericFrom: 2,
 				headers: [
 					"Metric",
 					"Kind",
@@ -8921,6 +8942,7 @@ function we({ data: e, preferences: t }) {
 				count: e.targetRows.length,
 				children: e.targetRows.length === 0 ? /* @__PURE__ */ (0, O.jsx)(j, {}) : /* @__PURE__ */ (0, O.jsx)(k, {
 					caption: "Weekly target and achievement",
+					numericFrom: 2,
 					headers: [
 						"Item",
 						"Kind",
@@ -8963,6 +8985,7 @@ function we({ data: e, preferences: t }) {
 				count: e.summaryRows.length,
 				children: e.summaryRows.length === 0 ? /* @__PURE__ */ (0, O.jsx)(j, {}) : /* @__PURE__ */ (0, O.jsx)(k, {
 					caption: "Weekly PPM by hierarchy",
+					numericFrom: 2,
 					headers: [
 						"Item",
 						"Level / Process",
@@ -8987,6 +9010,7 @@ function we({ data: e, preferences: t }) {
 				count: e.trendSeries.length,
 				children: e.trendSeries.length === 0 ? /* @__PURE__ */ (0, O.jsx)(j, {}) : /* @__PURE__ */ (0, O.jsx)(k, {
 					caption: "Weekly trend series",
+					numericFrom: 2,
 					headers: [
 						"Series",
 						"Group",
@@ -9010,6 +9034,8 @@ function we({ data: e, preferences: t }) {
 				count: e.topDefects.length,
 				children: e.topDefects.length === 0 ? /* @__PURE__ */ (0, O.jsx)(j, {}) : /* @__PURE__ */ (0, O.jsx)(k, {
 					caption: "Weekly Top Defects",
+					numericFrom: 5,
+					numericCols: [0],
 					headers: [
 						"Rank",
 						"Line Shift",

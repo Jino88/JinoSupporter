@@ -10,7 +10,7 @@ export function DailyTab({ data, preferences }: { data: DailyTabData; preference
       <Section title="Daily summary" count={data.summaryRows.length}>
         {data.summaryRows.length === 0 ? <EmptySection /> : (
           <ReportTable
-            caption="Daily Input, NG and PPM by hierarchy"
+            caption="Daily Input, NG and PPM by hierarchy" numericFrom={2}
             headers={["Item", "Level", ...periods.flatMap(() => ["Input", "NG", "PPM"])]}
             groups={{ lead: 2, items: periods.map((period) => ({ label: period.header, span: 3 })) }}
           >
@@ -47,7 +47,7 @@ export function DailyTab({ data, preferences }: { data: DailyTabData; preference
                 <EmptySection message={`No causes at Minimum PPM ${formatPpm(preferences.minimumPpm)} or higher.`} />
               ) : (
                 <ReportTable
-                  caption={`${section.modelName} defect cause PPM`}
+                  caption={`${section.modelName} defect cause PPM`} numericFrom={5} numericCols={[0]}
                   headers={["Rank", "Cause", "Process", "Process name", "NG", ...periods.map((period) => `${period.header} PPM`)]}
                 >
                   {rows.map((row) => (

@@ -15,7 +15,7 @@ export function KpiTab({ data, preferences }: { data: KpiTabData; preferences: V
             <div><dt>Target</dt><dd>{formatMetric(metric.targetValue, metric.unit)}</dd></div>
           </dl>
           {metric.lines.length === 0 ? <EmptySection /> : (
-            <ReportTable caption={`${metric.name} KPI`} headers={[
+            <ReportTable caption={`${metric.name} KPI`} numericFrom={2} headers={[
               "Metric", "Kind", "Annual", ...periods.map((period) => period.header),
             ]}>
               {metric.lines.map((line, index) => (

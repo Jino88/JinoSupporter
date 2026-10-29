@@ -9,7 +9,7 @@ export function CauseMonthlyTab({ data, preferences }: { data: CauseMonthlyTabDa
     <div className="tab-content">
       <Section title="Cause share" count={data.rows.length}>
         {data.rows.length === 0 ? <EmptySection /> : (
-          <ReportTable caption="Cause share and weighted PPM by model" headers={[
+          <ReportTable caption="Cause share and weighted PPM by model" numericFrom={6} numericCols={[4]} headers={[
             "Model", "Type", "Process", "NG", "No.", "Cause", "Share",
             ...periods.flatMap(() => ["PPM", "Weighted PPM"]),
           ]} groups={{ lead: 7, items: periods.map((period) => ({ label: period.header, span: 2 })) }}>
@@ -34,7 +34,7 @@ export function CauseMonthlyTab({ data, preferences }: { data: CauseMonthlyTabDa
 
       <Section title="Model monthly PPM" count={data.modelMonthlyRows.length}>
         {data.modelMonthlyRows.length === 0 ? <EmptySection /> : (
-          <ReportTable caption="Monthly PPM by model" headers={["Model", ...periods.map((period) => `${period.header} PPM`)]}>
+          <ReportTable caption="Monthly PPM by model" numericFrom={1} headers={["Model", ...periods.map((period) => `${period.header} PPM`)]}>
             {data.modelMonthlyRows.map((row) => (
               <tr key={row.model}>
                 <th scope="row">{row.model}</th>
