@@ -8,11 +8,11 @@ const LABELS: Record<TabKey, string> = {
   daily: "Daily",
   weekly: "Weekly",
   kpi: "KPI",
-  "cause-monthly": "원인 비중",
+  "cause-monthly": "Cause share",
   fcost: "F-COST",
-  "fcost-all": "F-COST 전체",
-  "fcost-weekly": "목표 불량률",
-  "fcost-weekly-all": "목표 불량률 전체",
+  "fcost-all": "F-Cost (all)",
+  "fcost-weekly": "Target defect rate",
+  "fcost-weekly-all": "Target (all)",
 };
 
 export function ReportShell({ report }: { report: BmesReportDocument }) {
@@ -46,7 +46,7 @@ export function ReportShell({ report }: { report: BmesReportDocument }) {
       <header className="report-header">
         <div>
           <p className="eyebrow">BMES INTEGRATED REPORT</p>
-          <h1>BMES 통합 리포트</h1>
+          <h1>BMES Integrated Report</h1>
           <p className="report-context">
             <time dateTime={report.request.startDate}>{report.request.startDate}</time>
             <span aria-hidden="true"> → </span>
@@ -55,15 +55,15 @@ export function ReportShell({ report }: { report: BmesReportDocument }) {
           </p>
         </div>
         <dl className="report-meta">
-          <div><dt>생성</dt><dd><time dateTime={report.generatedAtUtc}>{new Date(report.generatedAtUtc).toLocaleString("ko-KR", { timeZone: report.request.timeZoneId })}</time></dd></div>
-          <div><dt>계산</dt><dd>{report.calculationVersion}</dd></div>
+          <div><dt>Generated</dt><dd><time dateTime={report.generatedAtUtc}>{new Date(report.generatedAtUtc).toLocaleString("en-GB", { timeZone: report.request.timeZoneId })}</time></dd></div>
+          <div><dt>Calculation</dt><dd>{report.calculationVersion}</dd></div>
           <div><dt>Schema</dt><dd>{report.schemaVersion}</dd></div>
         </dl>
       </header>
 
       {report.status.state !== "complete" && (
         <aside className="root-status" role={report.status.state === "failed" ? "alert" : "status"}>
-          <strong>{report.status.message ?? "리포트에 경고가 있습니다."}</strong>
+          <strong>{report.status.message ?? "The report has warnings."}</strong>
           {[...report.status.warnings, ...report.status.errors].length > 0 && (
             <ul>{[...report.status.warnings, ...report.status.errors].map((issue, index) => <li key={`${issue.code}-${index}`}>{issue.message}</li>)}</ul>
           )}
@@ -73,7 +73,7 @@ export function ReportShell({ report }: { report: BmesReportDocument }) {
       <ViewerToolbar preferences={preferences} defaults={report.viewerDefaults} onChange={setPreferences} />
 
       <div className="tab-strip">
-        <div role="tablist" aria-label="BMES 리포트 탭" className="tab-list">
+        <div role="tablist" aria-label="BMES report tabs" className="tab-list">
           {TAB_KEYS.map((tabKey, index) => {
             const selected = activeTab === tabKey;
             return (

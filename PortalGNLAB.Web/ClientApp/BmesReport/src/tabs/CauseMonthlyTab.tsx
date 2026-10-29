@@ -1,30 +1,30 @@
 import type { CauseMonthlyTabData } from "../contract";
 import { formatPpm, formatShareRatio } from "../format";
 import { selectVisiblePeriods, type ViewerPreferences } from "../logic";
-import { EmptySection, ReportTable, Section } from "../components/ReportTable";
+import { dim, EmptySection, ReportTable, Section } from "../components/ReportTable";
 
 export function CauseMonthlyTab({ data, preferences }: { data: CauseMonthlyTabData; preferences: ViewerPreferences }) {
   const periods = selectVisiblePeriods(data.periods, preferences);
   return (
     <div className="tab-content">
-      <Section title="원인 비중" count={data.rows.length}>
+      <Section title="Cause share" count={data.rows.length}>
         {data.rows.length === 0 ? <EmptySection /> : (
-          <ReportTable caption="모델별 원인 비중과 가중 PPM" headers={[
+          <ReportTable caption="Cause share and weighted PPM by model" numericFrom={6} numericCols={[4]} headers={[
             "Model", "Type", "Process", "NG", "No.", "Cause", "Share",
-            ...periods.flatMap((period) => [`${period.header} PPM`, `${period.header} 가중 PPM`]),
-          ]}>
+            ...periods.flatMap(() => ["PPM", "Weighted PPM"]),
+          ]} groups={{ lead: 7, items: periods.map((period) => ({ label: period.header, span: 2 })) }}>
             {data.rows.map((row) => (
               <tr key={row.rowId} className={row.isSubtotal ? "total-row" : ""}>
                 <th scope="row">{row.model}</th>
-                <td>{row.type ?? "-"}</td>
-                <td>{row.process ?? "-"}</td>
-                <td>{row.ngName ?? "-"}</td>
-                <td className="numeric">{row.number ?? "-"}</td>
-                <td>{row.cause ?? "-"}</td>
-                <td className="numeric">{formatShareRatio(row.shareRatio)}</td>
+                <td>{dim(row.type ?? "-")}</td>
+                <td>{dim(row.process ?? "-")}</td>
+                <td>{dim(row.ngName ?? "-")}</td>
+                <td className="numeric">{dim(row.number ?? "-")}</td>
+                <td>{dim(row.cause ?? "-")}</td>
+                <td className="numeric">{dim(formatShareRatio(row.shareRatio))}</td>
                 {periods.flatMap((period) => [
-                  <td className="numeric" key={`${period.key}-ppm`}>{formatPpm(row.ppmByPeriod[period.key])}</td>,
-                  <td className="numeric" key={`${period.key}-weighted`}>{formatPpm(row.weightedPpmByPeriod[period.key])}</td>,
+                  <td className="numeric" key={`${period.key}-ppm`}>{dim(formatPpm(row.ppmByPeriod[period.key]))}</td>,
+                  <td className="numeric" key={`${period.key}-weighted`}>{dim(formatPpm(row.weightedPpmByPeriod[period.key]))}</td>,
                 ])}
               </tr>
             ))}
@@ -32,13 +32,13 @@ export function CauseMonthlyTab({ data, preferences }: { data: CauseMonthlyTabDa
         )}
       </Section>
 
-      <Section title="모델 월별 PPM" count={data.modelMonthlyRows.length}>
+      <Section title="Model monthly PPM" count={data.modelMonthlyRows.length}>
         {data.modelMonthlyRows.length === 0 ? <EmptySection /> : (
-          <ReportTable caption="모델별 월간 PPM" headers={["Model", ...periods.map((period) => `${period.header} PPM`)]}>
+          <ReportTable caption="Monthly PPM by model" numericFrom={1} headers={["Model", ...periods.map((period) => `${period.header} PPM`)]}>
             {data.modelMonthlyRows.map((row) => (
               <tr key={row.model}>
                 <th scope="row">{row.model}</th>
-                {periods.map((period) => <td className="numeric" key={period.key}>{formatPpm(row.ppmByPeriod[period.key])}</td>)}
+                {periods.map((period) => <td className="numeric" key={period.key}>{dim(formatPpm(row.ppmByPeriod[period.key]))}</td>)}
               </tr>
             ))}
           </ReportTable>

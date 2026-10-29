@@ -403,7 +403,7 @@
                                         <tr class="rank-row" data-ppm="@ExportReasonPpm(row, dailyReasonReferenceCol?.Key)">
                                             <td class="label-td" style="color:#94a3b8; font-size:10px;">@row.Reason</td>
                                             <td class="label-td">@row.No</td>
-                                            <td class="label-td"><span class="pt-badge">@row.ProcessType</span></td>
+                                            <td class="label-td"><span class="pt-badge @NgRateUi.ProcessTypeClass(row.ProcessType)">@row.ProcessType</span></td>
                                             <td class="label-td process-name-col">@row.ProcessName</td>
                                             <td class="label-td ng-name-col">@row.NgName</td>
                                             @foreach (var col in VisibleDateCols)

@@ -287,7 +287,7 @@
                 <div class="card-header small fw-semibold d-flex align-items-center gap-2 flex-wrap">
                     <span>FCOST Raw Material Breakdown</span>
                     <span class="text-muted" style="font-size:11px;">
-                        Network DB @_rawMaterialBreakdown.SourceTable,
+                        @_rawMaterialBreakdown.SourceTable,
                         @_rawMaterialBreakdown.Rows.Count.ToString("N0", CultureInfo.InvariantCulture) raw material row(s),
                         Display @_fcostCurrencyMode
                     </span>
@@ -3663,17 +3663,12 @@
         if (lineShifts.Count == 0)
             return;
 
+        // Amounts come from the BMES API; the network DB connection (optional) only adds unit prices and exchange rates.
         var connection = BuildNetworkDbConnection();
-        if (string.IsNullOrWhiteSpace(connection.Server) || string.IsNullOrWhiteSpace(connection.UserId))
-        {
-            _rawBreakdownError = "Network DB connection is not configured for FCOST raw material breakdown.";
-            progress?.Report("[WARN] " + _rawBreakdownError);
-            return;
-        }
 
         try
         {
-            progress?.Report($"Loading network DB FCOST raw material breakdown ({periods.Count:N0} period(s), {lineShifts.Count:N0} line shift(s))...");
+            progress?.Report($"Loading FCOST raw material breakdown from BMES API ({periods.Count:N0} period(s), {lineShifts.Count:N0} line shift(s))...");
             _rawMaterialBreakdown = await FCostActual.FetchRawBreakdownAsync(new BmesFcostRawBreakdownQuery
             {
                 Connection = connection,
@@ -3682,11 +3677,16 @@
                 Periods = periods,
                 LineShifts = lineShifts,
             });
-            progress?.Report($"Network DB FCOST raw material breakdown ready: {_rawMaterialBreakdown.Rows.Count:N0} row(s).");
+            progress?.Report($"FCOST raw material breakdown ready: {_rawMaterialBreakdown.Rows.Count:N0} row(s).");
+            if (!string.IsNullOrWhiteSpace(_rawMaterialBreakdown.WarningMessage))
+            {
+                _rawBreakdownError = _rawMaterialBreakdown.WarningMessage;
+                progress?.Report("[WARN] " + _rawBreakdownError);
+            }
         }
         catch (Exception ex)
         {
-            _rawBreakdownError = "Network DB FCOST raw material breakdown failed: " + ex.Message;
+            _rawBreakdownError = "FCOST raw material breakdown failed: " + ex.Message;
             progress?.Report("[WARN] " + _rawBreakdownError);
             _rawMaterialBreakdown = new BmesFcostRawBreakdownResult
             {

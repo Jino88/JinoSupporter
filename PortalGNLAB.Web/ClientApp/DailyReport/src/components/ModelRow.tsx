@@ -16,7 +16,7 @@ export function ModelRow({ row, rank, recentHeader, noun, stepUnit }: ModelRowPr
   const gap = baselineGapLabel(row.baselineStepsBack, stepUnit);
   return (
     <tr className="dr-model-row">
-      <td className="dr-rank">{rank}</td>
+      <td className="dr-rank"><span className={`dr-rank-badge${rank === 1 ? " dr-rank-first" : ""}`}>{rank}</span></td>
       <td>
         <span className="dr-model-name">{row.modelName}</span>
         <span className="dr-model-path"><span>{row.groupName}</span> · {row.parentModelName}</span>

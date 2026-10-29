@@ -8606,7 +8606,10 @@ function ve({ row: e, rank: t, recentHeader: n, noun: r, stepUnit: i }) {
 		children: [
 			/* @__PURE__ */ (0, w.jsx)("td", {
 				className: "dr-rank",
-				children: t
+				children: /* @__PURE__ */ (0, w.jsx)("span", {
+					className: `dr-rank-badge${t === 1 ? " dr-rank-first" : ""}`,
+					children: t
+				})
 			}),
 			/* @__PURE__ */ (0, w.jsxs)("td", { children: [/* @__PURE__ */ (0, w.jsx)("span", {
 				className: "dr-model-name",

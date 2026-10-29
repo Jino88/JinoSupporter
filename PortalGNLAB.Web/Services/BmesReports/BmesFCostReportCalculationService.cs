@@ -159,20 +159,12 @@ public sealed class BmesFCostReportCalculationService(
         if (periods.Count == 0 || lineShifts.Count == 0)
             return null;
 
+        // Amounts come from the BMES API; the read-only DB connection (optional) only adds unit prices and exchange rates.
         BmesFcostDbConnection connection = BuildReadOnlyConnection();
-        if (string.IsNullOrWhiteSpace(connection.Server) || string.IsNullOrWhiteSpace(connection.UserId))
-        {
-            warnings.Add(new ReportIssueDto(
-                "fcost-raw-breakdown-unavailable",
-                "Network DB connection is not configured for FCOST raw material breakdown.",
-                "fcost",
-                false));
-            return null;
-        }
 
         try
         {
-            progress?.Report($"Loading network DB FCOST raw material breakdown ({periods.Count:N0} period(s), {lineShifts.Count:N0} line shift(s))...");
+            progress?.Report($"Loading FCOST raw material breakdown from BMES API ({periods.Count:N0} period(s), {lineShifts.Count:N0} line shift(s))...");
             BmesFcostRawBreakdownResult result = await actualService.FetchRawBreakdownAsync(new BmesFcostRawBreakdownQuery
             {
                 Connection = connection,
@@ -182,17 +174,19 @@ public sealed class BmesFCostReportCalculationService(
                 LineShifts = lineShifts,
             });
             cancellationToken.ThrowIfCancellationRequested();
-            progress?.Report($"Network DB FCOST raw material breakdown ready: {result.Rows.Count:N0} row(s).");
+            progress?.Report($"FCOST raw material breakdown ready: {result.Rows.Count:N0} row(s).");
+            if (!string.IsNullOrWhiteSpace(result.WarningMessage))
+                warnings.Add(new ReportIssueDto("fcost-raw-breakdown-prices", result.WarningMessage, "fcost", false));
             return result;
         }
         catch (Exception)
         {
             warnings.Add(new ReportIssueDto(
                 "fcost-raw-breakdown-unavailable",
-                "Network DB FCOST raw material breakdown is unavailable.",
+                "FCOST raw material breakdown is unavailable.",
                 "fcost",
                 true));
-            progress?.Report("[WARN] Network DB FCOST raw material breakdown unavailable.");
+            progress?.Report("[WARN] FCOST raw material breakdown unavailable.");
             return null;
         }
     }

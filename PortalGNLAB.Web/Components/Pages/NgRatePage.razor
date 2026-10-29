@@ -307,7 +307,7 @@
                                             <span class="toggle-icon">@(summaryExpanded ? "▼" : "▶")</span>
                                         }
                                     </td>
-                                    <td class="label-td">@sumRow.ProcessType</td>
+                                    <td class="label-td">@if (sumRow.IsTotal) { @sumRow.ProcessType } else { <span class="pt-badge @NgRateUi.ProcessTypeClass(sumRow.ProcessType)">@sumRow.ProcessType</span> }</td>
                                     @foreach (var col in VisibleDateCols)
                                     {
                                         double v = sumRow.Ppm.GetValueOrDefault(col.Key);
@@ -430,7 +430,7 @@
                                         }
                                         @procRank
                                     </td>
-                                    <td class="label-td"><span class="pt-badge">@row.ProcessType</span></td>
+                                    <td class="label-td"><span class="pt-badge @NgRateUi.ProcessTypeClass(row.ProcessType)">@row.ProcessType</span></td>
                                     <td class="label-td process-name-col">@row.ProcessName</td>
                                     @foreach (var col in VisibleDateCols)
                                     {
@@ -540,7 +540,7 @@
                                         }
                                         @ngRank
                                     </td>
-                                    <td class="label-td"><span class="pt-badge">@row.ProcessType</span></td>
+                                    <td class="label-td"><span class="pt-badge @NgRateUi.ProcessTypeClass(row.ProcessType)">@row.ProcessType</span></td>
                                     <td class="label-td process-name-col">@row.ProcessName</td>
                                     <td class="label-td ng-name-col">@row.NgName</td>
                                     @foreach (var col in VisibleDateCols)
@@ -695,7 +695,7 @@
                                                 }
                                                 @row.No
                                             </td>
-                                            <td class="label-td"><span class="pt-badge">@row.ProcessType</span></td>
+                                            <td class="label-td"><span class="pt-badge @NgRateUi.ProcessTypeClass(row.ProcessType)">@row.ProcessType</span></td>
                                             <td class="label-td process-name-col">@row.ProcessName</td>
                                             <td class="label-td ng-name-col">@row.NgName</td>
                                             @foreach (var col in VisibleDateCols)

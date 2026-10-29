@@ -145,6 +145,15 @@ Check(homeSource.Contains("url=/bmes/daily-report", StringComparison.Ordinal) &&
 string settingSource = File.ReadAllText(Path.Combine(webProject, "Components", "Pages", "BmesSettingPage.razor"));
 Check(!settingSource.Contains("Team Memo", StringComparison.Ordinal) && !settingSource.Contains("Moved to its own BMES menu", StringComparison.Ordinal), "Setting has no Team Memo DB or moved-table cards");
 
+// NG Rate redesign: process type badges are coloured by type, the tables keep their markup.
+Check(NgRateUi.ProcessTypeClass("Sub Assy") == "pt-sub" && NgRateUi.ProcessTypeClass("MAIN ASSY") == "pt-main"
+      && NgRateUi.ProcessTypeClass("Function") == "pt-func" && NgRateUi.ProcessTypeClass("Final Visual") == "pt-vis"
+      && NgRateUi.ProcessTypeClass("OQC") == "pt-oqc" && NgRateUi.ProcessTypeClass("IPG") == "pt-other"
+      && NgRateUi.ProcessTypeClass(null) == "pt-other", "process type badge classes");
+string ngRateSource = File.ReadAllText(Path.Combine(webProject, "Components", "Pages", "NgRatePage.razor"));
+Check(!ngRateSource.Contains("<span class=\"pt-badge\">", StringComparison.Ordinal)
+      && ngRateSource.Contains("NgRateUi.ProcessTypeClass(", StringComparison.Ordinal), "NG Rate badges use the type colour");
+
 if (failures.Count > 0)
     throw new InvalidOperationException($"Host-cutover checks failed: {string.Join(", ", failures)}");
 
