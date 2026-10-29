@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>NG Rate — redesign mockup</title>
+<link rel="stylesheet" href="mockup.css" />
+<style>
+  .filter { display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: start; padding: 14px 18px; }
+  .filter-pg { display: flex; flex-direction: column; gap: 6px; }
+  .filter-pg .seg { align-self: flex-start; }
+  .filter-sel { border-left: 1px solid var(--line); padding-left: 18px; min-width: 0; }
+  .filter-sel .lbl { font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .filter-status { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+  .chart-head-r { display: flex; gap: 10px; align-items: center; }
+  .share-list { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+  .share-row { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; font-size: 12px; }
+  .share-row b { font-variant-numeric: tabular-nums; }
+  .share-row .d { font-size: 11px; font-weight: 700; }
+  .donut-box { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .reason-share { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+  .reason-share .bar-track { width: 70px; margin: 0; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="rail" id="rail"></aside>
+  <main class="main"><div class="page">
+
+    <header class="ph">
+      <div>
+        <div class="ph-crumb">BMES <span class="faint">›</span> <b>NG Rate</b></div>
+        <h1>NG Rate</h1>
+        <div class="ph-sub">
+          <span>Defect PPM by model group</span><span class="dot-sep">·</span>
+          <span>2026-08-01 – 2026-10-28</span><span class="dot-sep">·</span>
+          <span>Updated 10-29 08:12</span>
+        </div>
+      </div>
+      <div class="ph-actions">
+        <span class="date-range"><i data-icon="calendar"></i> 2026-08-01 <span class="faint">→</span> 2026-10-28</span>
+        <button class="btn"><i data-icon="download"></i> Export Excel</button>
+        <button class="btn primary"><i data-icon="refresh"></i> Get report</button>
+      </div>
+    </header>
+
+    <section class="card filter">
+      <div class="filter-pg">
+        <div class="field"><label>Product group</label></div>
+        <div class="seg"><button class="on">Speaker</button><button>Receiver</button><button>Motor</button></div>
+      </div>
+      <div class="filter-sel">
+        <div class="lbl"><span>Model groups <span class="faint">· 3 of 9 selected</span></span><a class="muted" href="#">Select all</a></div>
+        <div class="chips">
+          <span class="chip on">MSM-X316 <span class="cnt">4 lines</span></span>
+          <span class="chip on">MSM-X318 <span class="cnt">3 lines</span></span>
+          <span class="chip on">J69 Speaker <span class="cnt">6 lines</span></span>
+          <span class="chip">MSM-X220 <span class="cnt">2</span></span>
+          <span class="chip">MSM-X412 <span class="cnt">5</span></span>
+          <span class="chip">K22 Woofer <span class="cnt">2</span></span>
+          <span class="chip">P-S15 <span class="cnt">3</span></span>
+          <span class="chip">Q7 Mini <span class="cnt">1</span></span>
+          <span class="chip">R2 Bass <span class="cnt">2</span></span>
+        </div>
+      </div>
+      <div class="filter-status">
+        <span class="pill"><span class="led"></span>PLATFORM_API · GN</span>
+        <span class="muted small" style="font-size:11.5px">7.3M rows cached · 3-month window</span>
+      </div>
+    </section>
+
+    <div style="height:14px"></div>
+
+    <div class="tabs" id="tabs"></div>
+
+    <section class="grid g-4" id="kpis"></section>
+    <div style="height:14px"></div>
+
+    <section class="grid g-3-1">
+      <div class="card">
+        <div class="card-h"><h2>Weekly NG PPM by process type <span class="hint">stacked · line = total</span></h2>
+          <div class="chart-head-r"><div class="seg"><button>Day</button><button class="on">Week</button><button>Month</button></div></div>
+        </div>
+        <div class="card-b"><div class="legend" id="legend" style="margin-bottom:8px"></div><div id="chart"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h2>Latest week share</h2><span class="muted">W43</span></div>
+        <div class="card-b donut-box" id="share"></div>
+      </div>
+    </section>
+
+    <div style="height:14px"></div>
+
+    <section class="card">
+      <div class="card-h"><h2>Group → Model → Sub group → Shift <span class="hint">total PPM · darker = worse</span></h2>
+        <div class="chart-head-r"><button class="btn ghost">Expand all</button><button class="btn ghost">Collapse all</button></div>
+      </div>
+      <div class="card-b flush"><div class="tbl-wrap"><table class="t" id="hier"></table></div></div>
+    </section>
+
+    <div style="height:14px"></div>
+
+    <section class="grid g-2">
+      <div class="card"><div class="card-h"><h2>Top 10 worst processes <span class="hint">latest week PPM</span></h2></div><div class="card-b"><div class="bars" id="topProc"></div></div></div>
+      <div class="card"><div class="card-h"><h2>Top 10 worst NG names <span class="hint">latest week PPM</span></h2></div><div class="card-b"><div class="bars" id="topNg"></div></div></div>
+    </section>
+
+    <div style="height:14px"></div>
+
+    <section class="card">
+      <div class="card-h"><h2>Defect cause classification <span class="hint">from Reason Table</span></h2></div>
+      <div class="card-b flush"><div class="tbl-wrap"><table class="t" id="reason"></table></div></div>
+    </section>
+
+  </div></main>
+</div>
+<div class="sample-note">Mockup · sample data</div>
+
+<script src="mockup.js"></script>
+<script>
+  renderRail("ngrate");
+
+  document.getElementById("tabs").innerHTML = ["All selected", "MSM-X316", "MSM-X318", "J69 Speaker"]
+    .map((t, i) => `<button class="${i === 0 ? "on" : ""}">${t}<span class="cnt">${[13, 4, 3, 6][i]}</span></button>`).join("");
+
+  const weeks = ["W32", "W33", "W34", "W35", "W36", "W37", "W38", "W39", "W40", "W41", "W42", "W43"];
+  const series = [
+    { ...TYPES[0], values: [420, 390, 450, 410, 380, 360, 400, 370, 340, 330, 360, 310] },
+    { ...TYPES[1], values: [610, 650, 590, 620, 700, 680, 640, 600, 580, 610, 690, 760] },
+    { ...TYPES[2], values: [280, 300, 260, 310, 290, 270, 250, 240, 260, 230, 220, 240] },
+    { ...TYPES[3], values: [520, 480, 510, 470, 460, 500, 430, 420, 400, 410, 380, 360] },
+    { ...TYPES[4], values: [90, 110, 80, 95, 100, 70, 85, 60, 75, 70, 65, 55] },
+  ];
+  const totals = weeks.map((_, i) => series.reduce((s, x) => s + x.values[i], 0));
+
+  const kpis = [
+    { label: "Total PPM · W43", value: fmt(totals.at(-1)), unit: "ppm", d: totals.at(-1) - totals.at(-2), note: "vs W42", spark: totals },
+    { label: "Inspected · W43", value: "1.84M", unit: "pcs", d: null, note: "13 line-shifts", spark: [1.6, 1.7, 1.65, 1.8, 1.75, 1.82, 1.79, 1.81, 1.9, 1.86, 1.8, 1.84] },
+    { label: "Worst process type", value: "Main Assy", unit: "", d: 70, note: "760 ppm · +10.1%", spark: series[1].values, color: "#0ea5e9" },
+    { label: "Top NG name", value: "Rub & Buzz", unit: "", d: 38, note: "212 ppm · Function", spark: [150, 160, 170, 165, 180, 175, 168, 172, 180, 176, 174, 212], color: "#f59e0b" },
+  ];
+  document.getElementById("kpis").innerHTML = kpis.map((k) => `
+    <div class="card kpi">
+      <div class="kpi-label"><span>${k.label}</span></div>
+      <div class="kpi-value">${k.value}<small>${k.unit}</small></div>
+      <div class="kpi-foot">${k.d == null ? "" : `<span class="delta ${deltaClass(k.d)}">${k.d > 0 ? "▲" : "▼"} ${signed(k.d)}</span>`}<span>${k.note}</span></div>
+      <div class="kpi-spark">${sparkline(k.spark, { w: 96, h: 34, color: k.color || "#4f46e5" })}</div>
+    </div>`).join("");
+
+  document.getElementById("legend").innerHTML = TYPES.map((t) => `<span><i style="background:${t.color}"></i>${t.name}</span>`).join("") + `<span><i style="background:#0f172a;height:2px;border-radius:0"></i>Total</span><span><i style="background:none;border-top:2px dashed #dc2626;height:0;border-radius:0"></i>Target</span>`;
+  document.getElementById("chart").innerHTML = stackedChart(weeks, series, { target: 1500 });
+
+  const last = series.map((s) => ({ name: s.name, color: s.color, value: s.values.at(-1), d: s.values.at(-1) - s.values.at(-2) }));
+  document.getElementById("share").innerHTML = donut(last, { size: 160, thick: 22, center: fmt(totals.at(-1)), sub: "ppm total" }) +
+    `<div class="share-list">${last.map((p) => `<div class="share-row"><span class="pt"><i style="background:${p.color}"></i>${p.name}</span><b>${fmt(p.value)}</b><span class="d" style="color:${p.d > 0 ? "var(--bad)" : "var(--good)"}">${signed(p.d)}</span></div>`).join("")}</div>`;
+
+  // hierarchy
+  const dates = ["10-22", "10-23", "10-24", "10-25", "10-26", "10-27", "10-28"];
+  const wk = ["W40", "W41", "W42", "W43"], mo = ["Aug", "Sep", "Oct"];
+  const rnd = (b, n, s = 1) => Array.from({ length: n }, (_, i) => Math.max(0, Math.round(b * (0.75 + 0.5 * Math.abs(Math.sin((i + 1) * s * 1.7))))));
+  const rows = [
+    { lvl: 0, name: "Speaker", open: true, b: 1650 },
+    { lvl: 1, name: "MSM-X316", open: true, b: 2100 },
+    { lvl: 2, name: "X316B · L1 Day", b: 2600 },
+    { lvl: 2, name: "X316B · L1 Night", b: 1900 },
+    { lvl: 2, name: "X316B · L2 Day", b: 1500 },
+    { lvl: 1, name: "MSM-X318", open: false, b: 1200 },
+    { lvl: 1, name: "J69 Speaker", open: false, b: 980 },
+  ];
+  const max = 3000;
+  const cell = (v) => `<td class="n"><span class="heat" style="${heat(v, max)}">${fmt(v)}</span></td>`;
+  document.getElementById("hier").innerHTML = `
+    <thead><tr><th></th><th class="blk" colspan="${dates.length}">Date</th><th class="gap"></th><th class="blk" colspan="4">Week</th><th class="gap"></th><th class="blk" colspan="3">Month</th></tr>
+    <tr><th class="l" style="min-width:220px">Group / Model / Sub / Shift</th>${dates.map((d) => `<th>${d}</th>`).join("")}<th class="gap"></th>${wk.map((d) => `<th>${d}</th>`).join("")}<th class="gap"></th>${mo.map((d) => `<th>${d}</th>`).join("")}</tr></thead>
+    <tbody>${rows.map((r, i) => `<tr class="lvl-${r.lvl}"><td><span class="tree-caret">${r.lvl < 2 ? (r.open ? "▾" : "▸") : ""}</span>${r.name}</td>${rnd(r.b, 7, i + 1).map(cell).join("")}<td class="gap"></td>${rnd(r.b, 4, i + 3).map(cell).join("")}<td class="gap"></td>${rnd(r.b, 3, i + 5).map(cell).join("")}</tr>`).join("")}</tbody>`;
+
+  const bars = (el, list, maxV) => (document.getElementById(el).innerHTML = list.map((r, i) => `
+    <div class="bar-row"><span class="bar-rank">${i + 1}</span>
+      <div class="bar-name"><b>${r.n}</b><span>${r.s}</span><div class="bar-track"><div class="bar-fill" style="width:${(r.v / maxV) * 100}%;background:${typeColor(r.t)}"></div></div></div>
+      <span class="bar-val">${fmt(r.v)}</span><span class="delta ${deltaClass(r.d)}">${signed(r.d)}</span></div>`).join(""));
+  bars("topProc", [
+    { n: "Voice coil bonding", s: "Main Assy · MSM-X316", t: "Main Assy", v: 312, d: 48 },
+    { n: "Final appearance check", s: "Final Visual · J69", t: "Final Visual", v: 241, d: -22 },
+    { n: "Rub & Buzz test", s: "Function · MSM-X318", t: "Function", v: 212, d: 38 },
+    { n: "Frame welding", s: "Sub Assy · MSM-X316", t: "Sub Assy", v: 188, d: -9 },
+    { n: "Magnet attach", s: "Main Assy · J69", t: "Main Assy", v: 164, d: 12 },
+    { n: "Diaphragm attach", s: "Main Assy · MSM-X318", t: "Main Assy", v: 142, d: 20 },
+    { n: "SPL measure", s: "Function · MSM-X316", t: "Function", v: 120, d: -15 },
+    { n: "Dome press", s: "Sub Assy · J69", t: "Sub Assy", v: 98, d: -4 },
+    { n: "Packing check", s: "OQC · MSM-X316", t: "OQC", v: 55, d: -10 },
+    { n: "Lead wire solder", s: "Sub Assy · MSM-X318", t: "Sub Assy", v: 41, d: 3 },
+  ], 312);
+  bars("topNg", [
+    { n: "Rub & Buzz", s: "Function", t: "Function", v: 212, d: 38 },
+    { n: "Glue overflow", s: "Main Assy", t: "Main Assy", v: 198, d: 31 },
+    { n: "Scratch", s: "Final Visual", t: "Final Visual", v: 176, d: -18 },
+    { n: "Welding offset", s: "Sub Assy", t: "Sub Assy", v: 133, d: 6 },
+    { n: "Coil short", s: "Main Assy", t: "Main Assy", v: 121, d: 14 },
+    { n: "SPL low", s: "Function", t: "Function", v: 102, d: -11 },
+    { n: "Dent", s: "Final Visual", t: "Final Visual", v: 88, d: -7 },
+    { n: "Tape damage", s: "Final Visual", t: "Final Visual", v: 61, d: 9 },
+    { n: "Separate F-PCB", s: "Sub Assy", t: "Sub Assy", v: 47, d: 2 },
+    { n: "Label missing", s: "OQC", t: "OQC", v: 30, d: -5 },
+  ], 212);
+
+  const reasons = [
+    { c: "Material", w: [420, 450, 470, 520], s: 30 },
+    { c: "Process / Equipment", w: [510, 480, 500, 490], s: 28 },
+    { c: "Operator", w: [300, 320, 280, 260], s: 15 },
+    { c: "Design", w: [210, 190, 220, 240], s: 14 },
+    { c: "Unclassified", w: [260, 230, 250, 215], s: 13 },
+  ];
+  document.getElementById("reason").innerHTML = `
+    <thead><tr><th class="l">Cause</th>${wk.map((w) => `<th>${w}</th>`).join("")}<th>Change</th><th>Share · W43</th></tr></thead>
+    <tbody>${reasons.map((r) => `<tr><td><b>${r.c}</b></td>${r.w.map((v) => `<td class="n">${fmt(v)}</td>`).join("")}<td><span class="delta ${deltaClass(r.w[3] - r.w[2])}">${signed(r.w[3] - r.w[2])}</span></td>
+      <td><div class="reason-share"><div class="bar-track"><div class="bar-fill" style="width:${r.s * 3}%;background:var(--accent)"></div></div><b>${r.s}%</b></div></td></tr>`).join("")}</tbody>`;
+</script>
+</body>
+</html>

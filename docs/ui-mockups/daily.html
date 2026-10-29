@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Daily Report — redesign mockup</title>
+<link rel="stylesheet" href="mockup.css" />
+<style>
+  .hero { display: grid; grid-template-columns: 1.3fr 1.3fr 1fr 1fr; gap: 14px; }
+  .hero .kpi { padding: 16px 18px 14px; }
+  .hero .kpi-value { font-size: 30px; }
+  .hero .kpi-spark { top: 36px; bottom: auto; }
+  .vs { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .vs b { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .count-kpi .kpi-value { display: flex; align-items: baseline; gap: 8px; }
+  .count-kpi.bad .kpi-value { color: var(--bad); }
+  .count-kpi.good .kpi-value { color: var(--good); }
+  .count-kpi .bar-track { height: 8px; margin-top: 12px; display: flex; background: #f1f5f9; }
+  .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 18px 0 14px; }
+  .toolbar .grow { flex: 1; }
+  .search { position: relative; }
+  .search input { padding-left: 30px; width: 220px; }
+  .search i, .search svg { position: absolute; left: 9px; top: 9px; color: var(--faint); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+  @media (max-width: 1200px) { .cols { grid-template-columns: 1fr; } .hero { grid-template-columns: 1fr 1fr; } }
+  .col-h { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .col-h h2 { margin: 0; font-size: 14px; }
+  .col-h .badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+  .col-h.bad { border-top: 3px solid var(--bad); border-radius: var(--radius) var(--radius) 0 0; }
+  .col-h.good { border-top: 3px solid var(--good); border-radius: var(--radius) var(--radius) 0 0; }
+  .col-h.bad .badge { background: var(--bad-soft); color: var(--bad); }
+  .col-h.good .badge { background: var(--good-soft); color: var(--good); }
+  .col-h .muted { margin-left: auto; font-size: 12px; }
+  .m { display: grid; grid-template-columns: 26px minmax(0, 1fr) 120px; gap: 4px 12px; padding: 14px 18px; border-bottom: 1px solid var(--line-soft); }
+  .m:last-child { border-bottom: 0; }
+  .m:hover { background: #fafbff; }
+  .m-rank { width: 24px; height: 24px; border-radius: 7px; background: #f1f5f9; color: var(--muted); font-weight: 700; font-size: 11.5px; display: grid; place-items: center; }
+  .m-rank.top { background: var(--ink); color: #fff; }
+  .m-title { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .m-title b { font-size: 14px; }
+  .m-title span { font-size: 11.5px; color: var(--muted); }
+  .m-nums { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .m-nums .now { font-size: 18px; font-weight: 700; }
+  .m-nums .arrow { color: var(--faint); }
+  .m-nums .base { color: var(--muted); }
+  .m-nums .gap-b { font-size: 10.5px; font-weight: 600; color: var(--warn); background: var(--warn-soft); border-radius: 4px; padding: 1px 5px; }
+  .m-spark { grid-row: 1 / span 2; grid-column: 3; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .m-spark .lbl { font-size: 10.5px; color: var(--faint); }
+  .causes { grid-column: 2 / span 2; margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
+  .cause { display: grid; grid-template-columns: minmax(0, 1fr) 96px 54px 56px; gap: 10px; align-items: center; font-size: 12px; }
+  .cause .nm { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .cause .nm b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cause .nm em { font-style: normal; font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+  .tag-new { font-size: 9.5px; font-weight: 800; letter-spacing: .04em; color: #fff; background: var(--accent); border-radius: 4px; padding: 1px 5px; }
+  .cause .bar-track { margin: 0; }
+  .cause .v { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .cause .delta { justify-content: center; }
+  .more { text-align: center; padding: 10px; border-top: 1px solid var(--line); }
+  .more a { color: var(--accent); font-weight: 600; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="rail" id="rail"></aside>
+  <main class="main"><div class="page">
+
+    <header class="ph">
+      <div>
+        <div class="ph-crumb">BMES <span class="faint">›</span> <b>Daily Report</b></div>
+        <h1>Daily Report</h1>
+        <div class="ph-sub">
+          <span>Which models got worse, and why</span><span class="dot-sep">·</span>
+          <span>2026-08-29 – 2026-10-28</span><span class="dot-sep">·</span>
+          <span>As of 10-29 06:00</span><span class="dot-sep">·</span><span>42 models</span>
+        </div>
+      </div>
+      <div class="ph-actions">
+        <span class="pill"><span class="led"></span>Auto refresh 06:00 daily</span>
+        <button class="btn"><i data-icon="refresh"></i> Refresh now</button>
+        <a class="btn primary" href="report.html" style="text-decoration:none">Full report <i data-icon="arrow"></i></a>
+      </div>
+    </header>
+
+    <section class="hero" id="hero"></section>
+
+    <div class="toolbar">
+      <div class="seg"><button class="on">Week</button><button>Day</button></div>
+      <div class="chips"><span class="chip on">All</span><span class="chip">Speaker</span><span class="chip">Receiver</span><span class="chip">Motor</span></div>
+      <div class="grow"></div>
+      <div class="search"><i data-icon="filter"></i><input class="inp" placeholder="Find model…" /></div>
+      <select class="inp"><option>Sort: largest change</option><option>Sort: highest PPM</option><option>Sort: % change</option></select>
+    </div>
+
+    <section class="cols">
+      <div class="card"><div class="col-h bad"><h2>Worsened</h2><span class="badge">9 models</span><span class="muted">W43 vs last week with data</span></div><div id="worse"></div><div class="more"><a href="#">Show 6 more</a></div></div>
+      <div class="card"><div class="col-h good"><h2>Improved</h2><span class="badge">14 models</span><span class="muted">W43 vs last week with data</span></div><div id="better"></div><div class="more"><a href="#">Show 11 more</a></div></div>
+    </section>
+
+  </div></main>
+</div>
+<div class="sample-note">Mockup · sample data</div>
+
+<script src="mockup.js"></script>
+<script>
+  renderRail("daily");
+
+  const wkTrend = [1840, 1790, 1860, 1810, 1830, 1780, 1700, 1650, 1620, 1600, 1655, 1725];
+  const dayTrend = [1610, 1580, 1720, 1690, 1640, 1700, 1810, 1760, 1690, 1740, 1650, 1700, 1780, 1868];
+  document.getElementById("hero").innerHTML = `
+    <div class="card kpi">
+      <div class="kpi-label"><span>Latest week · W43</span><span class="faint">overall PPM</span></div>
+      <div class="kpi-value">1,725<small>ppm</small></div>
+      <div class="kpi-foot"><span class="delta up">▲ +70</span><span>+4.2% vs W42</span></div>
+      <div class="vs"><span>Baseline W42 <b>1,655</b></span><span>12-week low <b>1,600</b></span></div>
+      <div class="kpi-spark">${sparkline(wkTrend, { w: 140, h: 46, color: "#4f46e5" })}</div>
+    </div>
+    <div class="card kpi">
+      <div class="kpi-label"><span>Latest day · 10-28</span><span class="faint">overall PPM</span></div>
+      <div class="kpi-value">1,868<small>ppm</small></div>
+      <div class="kpi-foot"><span class="delta up">▲ +88</span><span>+4.9% vs 10-27</span></div>
+      <div class="vs"><span>Baseline 10-27 <b>1,780</b></span><span>14-day avg <b>1,713</b></span></div>
+      <div class="kpi-spark">${sparkline(dayTrend, { w: 140, h: 46, color: "#0ea5e9" })}</div>
+    </div>
+    <div class="card kpi count-kpi bad">
+      <div class="kpi-label"><span>Models worsened</span></div>
+      <div class="kpi-value">9<small>of 42</small></div>
+      <div class="kpi-foot">Biggest: <b style="color:var(--ink)">X316B · L1</b> +612</div>
+      <div class="bar-track"><div class="bar-fill" style="width:21%;background:var(--bad)"></div><div class="bar-fill" style="width:33%;background:var(--good);margin-left:auto"></div></div>
+    </div>
+    <div class="card kpi count-kpi good">
+      <div class="kpi-label"><span>Models improved</span></div>
+      <div class="kpi-value">14<small>of 42</small></div>
+      <div class="kpi-foot">Biggest: <b style="color:var(--ink)">J69 · L3</b> −540</div>
+      <div class="bar-track"><div class="bar-fill" style="width:33%;background:var(--good)"></div></div>
+    </div>`;
+
+  const model = (r, i, good) => `
+    <div class="m">
+      <span class="m-rank ${i === 0 ? "top" : ""}">${i + 1}</span>
+      <div>
+        <div class="m-title"><b>${r.n}</b><span>${r.g} · ${r.p}</span></div>
+        <div class="m-nums"><span class="now">${fmt(r.now)}</span><span class="arrow">vs</span><span class="base">${fmt(r.base)} <span class="faint">${r.bh}</span></span>
+          ${r.gap ? `<span class="gap-b">${r.gap}</span>` : ""}
+          <span class="delta ${deltaClass(r.now - r.base)}">${signed(r.now - r.base)}</span><span class="muted">${pct(((r.now - r.base) / r.base) * 100)}</span></div>
+      </div>
+      <div class="m-spark">${sparkline(r.t, { w: 118, h: 36, color: good ? "#059669" : "#dc2626" })}<span class="lbl">12 weeks</span></div>
+      <div class="causes">${r.c.map((c) => `
+        <div class="cause"><span class="nm"><b>${c.n}</b><em>${c.pr}</em>${c.isNew ? '<span class="tag-new">NEW</span>' : ""}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100, (c.v / r.now) * 160)}%;background:${typeColor(c.t)}"></div></div>
+          <span class="v">${fmt(c.v)}</span><span class="delta ${deltaClass(c.d)}">${signed(c.d)}</span></div>`).join("")}
+      </div>
+    </div>`;
+
+  const worse = [
+    { n: "X316B · L1 Day", g: "Speaker", p: "MSM-X316", now: 3154, base: 2542, bh: "W42", t: [2400, 2500, 2380, 2450, 2520, 2480, 2460, 2500, 2490, 2470, 2542, 3154],
+      c: [{ n: "Glue overflow", pr: "Voice coil bonding", t: "Main Assy", v: 860, d: 410, isNew: false }, { n: "Rub & Buzz", pr: "R&B test", t: "Function", v: 540, d: 160 }, { n: "Coil short", pr: "Coil check", t: "Main Assy", v: 210, d: 210, isNew: true }] },
+    { n: "X318 · L2 Night", g: "Speaker", p: "MSM-X318", now: 1980, base: 1610, bh: "W41", gap: "2w back", t: [1500, 1550, 1490, 1600, 1580, 1620, 1570, 1600, 1610, null, 1610, 1980].map((v) => v ?? 1610),
+      c: [{ n: "Scratch", pr: "Final appearance", t: "Final Visual", v: 620, d: 180 }, { n: "SPL low", pr: "SPL measure", t: "Function", v: 300, d: 120 }, { n: "Dent", pr: "Final appearance", t: "Final Visual", v: 140, d: 40 }] },
+    { n: "J69 · L1 Day", g: "Speaker", p: "J69 Speaker", now: 1240, base: 1012, bh: "W42", t: [1100, 1080, 1050, 1120, 1090, 1040, 1020, 990, 1000, 1030, 1012, 1240],
+      c: [{ n: "Welding offset", pr: "Frame welding", t: "Sub Assy", v: 330, d: 140 }, { n: "Tape damage", pr: "Visual inspection", t: "Final Visual", v: 180, d: 60, isNew: true }, { n: "Label missing", pr: "Packing check", t: "OQC", v: 60, d: 20 }] },
+  ];
+  const better = [
+    { n: "J69 · L3 Day", g: "Speaker", p: "J69 Speaker", now: 860, base: 1400, bh: "W42", t: [1500, 1480, 1520, 1460, 1440, 1450, 1420, 1410, 1390, 1380, 1400, 860],
+      c: [{ n: "Separate F-PCB", pr: "F-PCB attach", t: "Sub Assy", v: 210, d: -320 }, { n: "Scratch", pr: "Final appearance", t: "Final Visual", v: 180, d: -120 }, { n: "Rub & Buzz", pr: "R&B test", t: "Function", v: 140, d: -40 }] },
+    { n: "X220 · L1 Night", g: "Receiver", p: "MSM-X220", now: 640, base: 910, bh: "W42", t: [980, 960, 940, 970, 930, 920, 950, 940, 900, 920, 910, 640],
+      c: [{ n: "Glue overflow", pr: "Diaphragm attach", t: "Main Assy", v: 190, d: -150 }, { n: "Dent", pr: "Visual inspection", t: "Final Visual", v: 120, d: -70 }, { n: "SPL low", pr: "SPL measure", t: "Function", v: 90, d: -30 }] },
+    { n: "K22 · L1 Day", g: "Motor", p: "K22 Woofer", now: 520, base: 700, bh: "W42", t: [760, 740, 720, 730, 710, 700, 690, 720, 705, 695, 700, 520],
+      c: [{ n: "Magnet offset", pr: "Magnet attach", t: "Main Assy", v: 160, d: -110 }, { n: "Noise", pr: "Function test", t: "Function", v: 110, d: -50 }, { n: "Scratch", pr: "Final appearance", t: "Final Visual", v: 70, d: -20 }] },
+  ];
+  document.getElementById("worse").innerHTML = worse.map((r, i) => model(r, i, false)).join("");
+  document.getElementById("better").innerHTML = better.map((r, i) => model(r, i, true)).join("");
+</script>
+</body>
+</html>

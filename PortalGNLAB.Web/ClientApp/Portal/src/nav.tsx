@@ -19,3 +19,13 @@ export function MenuLink({ item, className }: { item: MenuItem; className?: stri
     </a>
   );
 }
+
+/** Click handler for menu anchors: React pages navigate inside the app, others load normally. */
+export function menuClick(item: MenuItem, after?: () => void) {
+  return (e: MouseEvent<HTMLAnchorElement>) => {
+    after?.();
+    if (!item.react || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    navigate(item.href);
+  };
+}
