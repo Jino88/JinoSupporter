@@ -1,27 +1,463 @@
-import { useEffect, useState } from "react";
-import { getJson, toolPath, toolSend, imageData } from "../toolsApi";
+import { useEffect, useRef, useState } from "react";
+import {
+  downloadBlob,
+  getJson,
+  imageData,
+  toolPath,
+  toolSend,
+} from "../toolsApi";
+import { useImagePaste } from "./translate/useImagePaste";
+import { filterReports, removePicture } from "./reviewReport/logic";
+import {
+  freshReport,
+  type Report,
+  type ReportIndex,
+} from "./reviewReport/types";
+import ReportPreview from "./reviewReport/ReportPreview";
+import ReportEditor from "./reviewReport/ReportEditor";
 import "../tools.css";
-interface Picture { no:number;fileName:string;mediaType:string;data:string; }
-interface Placement {no:number;caption:string;group:string;section:string}
-interface Doc {title:string;purpose:string;background:string;conclusion:string;images:Placement[];[key:string]:unknown}
-interface Report {id:string;title:string;language:string;inputText:string;extraInstruction:string;images:Picture[];doc:Doc|null;revisions:{at:string;by:string;request:string}[];model:string}
-interface Summary {id:string;title:string;createdBy:string;updatedAt:string}
-function DocumentValue({value}:{value:unknown}) {
- if(value==null||value==="")return null;
- if(typeof value!=="object")return <span>{String(value)}</span>;
- if(Array.isArray(value))return <ul>{value.map((v,i)=><li key={i}><DocumentValue value={v}/></li>)}</ul>;
- const obj=value as Record<string,unknown>;
- if(Array.isArray(obj.columns)&&Array.isArray(obj.rows))return <><h4>{String(obj.caption??"")}</h4><div className="tool-scroll"><table><thead><tr>{obj.columns.map((v,i)=><th key={i}>{String(v)}</th>)}</tr></thead><tbody>{(obj.rows as unknown[][]).map((row,i)=><tr key={i}>{row.map((v,j)=><td key={j}>{String(v??"")}</td>)}</tr>)}</tbody></table></div></>;
- return <dl>{Object.entries(obj).map(([k,v])=><div key={k}><dt>{k.replace(/([a-z])([A-Z])/g,"$1 $2")}</dt><dd><DocumentValue value={v}/></dd></div>)}</dl>;
-}
-const fresh=():Report=>({id:"",title:"",language:"Same as input",inputText:"",extraInstruction:"",images:[],doc:null,revisions:[],model:""});
-export default function ReviewReport(){
- const [report,setReport]=useState<Report>(fresh); const [list,setList]=useState<Summary[]>([]); const [languages,setLanguages]=useState<string[]>([]); const [configured,setConfigured]=useState(false); const [request,setRequest]=useState(""); const [busy,setBusy]=useState(false);const [error,setError]=useState("");const [status,setStatus]=useState("");const [markdown,setMarkdown]=useState("");const [edit,setEdit]=useState("");
- async function refresh(){const data=await getJson<{reports:Summary[];languages:string[];configured:boolean}>(toolPath("review-report"));setList(data.reports);setLanguages(data.languages);setConfigured(data.configured);}
- useEffect(()=>{refresh().catch(e=>setError(String(e)));},[]);
- useEffect(()=>{setEdit(JSON.stringify(report.doc,null,2)); if(report.doc) toolSend<{text:string}>("review-report/markdown",{report}).then(r=>setMarkdown(r.text)).catch(e=>setError(String(e)));else setMarkdown("");},[report]);
- function update(p:Partial<Report>){setReport(r=>({...r,...p}));}
- async function action(name:string){setBusy(true);setError("");setStatus("");try{if(name==="export"){const blob=await toolSend<Blob>("review-report/export",{report});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="review-report.xlsx";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}else{setReport(await toolSend<Report>("review-report/"+name,{report,request}));setRequest("");await refresh();setStatus("Report saved.");}}catch(e){setError(String(e));}finally{setBusy(false);}}
- async function add(files:File[]){try{const added=await Promise.all(files.filter(f=>f.type.startsWith("image/")).map(async(f,i)=>({no:i+1,fileName:f.name,mediaType:f.type,data:await imageData(f)})));setReport(r=>({...r,images:[...r.images,...added].map((im,i)=>({...im,no:i+1}))}));}catch(e){setError(String(e));}}
- return <section className="tools"><h1>Review Report</h1>{error&&<p role="alert" className="error">{error}</p>}<p role="status">{busy?"Working… Reports can take several minutes.":status}</p><fieldset disabled={busy}><button onClick={()=>{setReport(fresh());setRequest("");}}>New report</button><select aria-label="Saved reports" value={report.id} onChange={e=>{if(e.target.value)getJson<Report>(toolPath("review-report/"+encodeURIComponent(e.target.value))).then(setReport).catch(e=>setError(String(e)));}}><option value="">Open saved report</option>{list.map(r=><option key={r.id} value={r.id}>{r.title} — {r.createdBy} — {r.updatedAt}</option>)}</select><div className="tool-columns"><div><label>Title<input value={report.title} onChange={e=>update({title:e.target.value})}/></label><label>Content<textarea value={report.inputText} onChange={e=>update({inputText:e.target.value})} onPaste={e=>{if(e.clipboardData.files.length){e.preventDefault();void add(Array.from(e.clipboardData.files));}}} placeholder="Notes, Excel cells, or pasted images"/></label><input type="file" multiple accept="image/*" aria-label="Add pictures" onChange={e=>void add(Array.from(e.target.files??[]))}/><div className="tool-images">{report.images.map(im=><div key={im.no}><img alt={im.fileName} src={`data:${im.mediaType};base64,${im.data}`}/><button onClick={()=>update({images:report.images.filter(i=>i.no!==im.no)})}>Remove IMG {im.no}</button></div>)}</div><label>Language<select value={report.language} onChange={e=>update({language:e.target.value})}>{languages.map(l=><option key={l}>{l}</option>)}</select></label><label>Extra instruction<textarea value={report.extraInstruction} onChange={e=>update({extraInstruction:e.target.value})}/></label><button disabled={!configured||(!report.inputText.trim()&&!report.images.length)} onClick={()=>void action("generate")}>Write report</button><button onClick={()=>void action("save")}>Save</button><button disabled={!report.id} onClick={async()=>{if(!confirm("Delete this report?"))return;try{await toolSend("review-report/"+encodeURIComponent(report.id),undefined,"DELETE");setReport(fresh());await refresh();}catch(e){setError(String(e));}}}>Delete</button>{report.doc&&<><label>Change request<textarea value={request} onChange={e=>setRequest(e.target.value)}/></label><button disabled={!request.trim()||!configured} onClick={()=>void action("revise")}>Apply change</button>{report.revisions.map((rev,i)=><p key={i}>{rev.at} · {rev.by}: {rev.request}</p>)}</>}</div><article className="card"><h2>{report.doc?.title||"Report preview"}</h2><p>{report.model}</p>{report.doc?<>{Object.entries(report.doc).filter(([key])=>key!=="images"&&key!=="title").map(([key,value])=><section key={key}><h3>{key.replace(/([a-z])([A-Z])/g,"$1 $2")}</h3><DocumentValue value={value}/></section>)}</>:<p>Write a report to see the preview.</p>}{report.doc&&<><button onClick={()=>navigator.clipboard.writeText(markdown).then(()=>setStatus("Markdown copied.")).catch(e=>setError(String(e)))}>Copy Markdown</button><button onClick={()=>void action("export")}>Export Excel</button>{["purpose","conditions","results","conclusion","appendix"].map(section=><section key={section}><h3>{section.charAt(0).toUpperCase()+section.slice(1)}</h3>{report.doc!.images.filter(p=>p.section===section).map((p,i)=>{const im=report.images.find(im=>im.no===p.no);return im&&<figure key={i}><img src={`data:${im.mediaType};base64,${im.data}`} alt={p.caption}/><figcaption>{p.caption}</figcaption><select aria-label="Picture section" value={p.section} onChange={e=>{const doc=structuredClone(report.doc!);doc.images.find(x=>x.no===p.no)!.section=e.target.value;update({doc});}}>{["purpose","conditions","results","conclusion","appendix"].map(s=><option key={s}>{s}</option>)}</select><input aria-label="Picture group" value={p.group} onChange={e=>{const doc=structuredClone(report.doc!);doc.images.find(x=>x.no===p.no)!.group=e.target.value;update({doc});}}/><input aria-label="Caption" value={p.caption} onChange={e=>{const doc=structuredClone(report.doc!);doc.images.find(x=>x.no===p.no)!.caption=e.target.value;update({doc});}}/></figure>;})}</section>)}<details><summary>Edit report fields and result tables</summary><textarea aria-label="Report document JSON" value={edit} onChange={e=>setEdit(e.target.value)}/><button onClick={()=>{try{const doc=JSON.parse(edit);if(!doc||!Array.isArray(doc.images))throw Error("A report object with an images array is required.");update({doc});}catch(e){setError(String(e));}}}>Apply edits</button></details></>}</article></div></fieldset></section>;
+
+export default function ReviewReport() {
+  const [report, setReport] = useState<Report>(freshReport);
+  const [index, setIndex] = useState<ReportIndex>({
+    reports: [],
+    languages: [],
+    configured: false,
+  });
+  const [filter, setFilter] = useState("");
+  const [request, setRequest] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [revising, setRevising] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const busyRef = useRef(false);
+  busyRef.current = busy;
+  const paste = useImagePaste(addPastedImage, setError);
+  const controller = useRef<AbortController | null>(null);
+  const hasInput = !!report.inputText.trim() || report.images.length > 0;
+
+  async function refresh() {
+    setIndex(await getJson<ReportIndex>(toolPath("review-report")));
+  }
+  useEffect(() => {
+    refresh().catch((e: Error) => setError(e.message));
+    return () => controller.current?.abort();
+  }, []);
+  useEffect(() => {
+    if (!busy) return;
+    setElapsed(0);
+    const timer = window.setInterval(
+      () => setElapsed((value) => value + 1),
+      1000,
+    );
+    return () => window.clearInterval(timer);
+  }, [busy]);
+
+  function update(change: Partial<Report>) {
+    setReport((current) => ({ ...current, ...change }));
+  }
+  function addPastedImage(mediaType: string, data: string) {
+    if (busyRef.current) return;
+    setReport((current) => ({
+      ...current,
+      images: [
+        ...current.images,
+        {
+          no: Math.max(0, ...current.images.map((image) => image.no)) + 1,
+          fileName: `paste-${Date.now()}.png`,
+          mediaType,
+          data,
+        },
+      ],
+    }));
+  }
+  async function addFiles(files: FileList | null) {
+    setError("");
+    const selected = Array.from(files ?? []);
+    if (selected.length > 30)
+      return setError("Select at most 30 pictures at once.");
+    for (const file of selected) {
+      if (!file.type.startsWith("image/")) continue;
+      if (file.size > 15 * 1024 * 1024) {
+        setError(`${file.name}: maximum file size is 15 MB.`);
+        continue;
+      }
+      try {
+        const data = await imageData(file);
+        setReport((current) => ({
+          ...current,
+          images: [
+            ...current.images,
+            {
+              no: Math.max(0, ...current.images.map((image) => image.no)) + 1,
+              fileName: file.name,
+              mediaType: file.type,
+              data,
+            },
+          ],
+        }));
+      } catch (e) {
+        setError((e as Error).message);
+      }
+    }
+  }
+  function newReport() {
+    setReport(freshReport());
+    setRequest("");
+    setError("");
+    setStatus("");
+  }
+  async function openReport(id: string) {
+    setError("");
+    setStatus("");
+    setRequest("");
+    try {
+      setReport(
+        await getJson<Report>(
+          toolPath(`review-report/${encodeURIComponent(id)}`),
+        ),
+      );
+    } catch (e) {
+      setError((e as Error).message);
+      await refresh();
+    }
+  }
+  async function saveOrGenerate(action: "save" | "generate" | "revise") {
+    if (busyRef.current) return;
+    setBusy(true);
+    setRevising(action === "revise");
+    setError("");
+    setStatus("");
+    controller.current = new AbortController();
+    try {
+      setReport(
+        await toolSend<Report>(
+          `review-report/${action}`,
+          { report, request },
+          "POST",
+          controller.current.signal,
+        ),
+      );
+      setRequest("");
+      await refresh();
+      setStatus(action === "save" ? "Saved." : "Report written and saved.");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+      controller.current = null;
+    }
+  }
+  async function deleteReport() {
+    setBusy(true);
+    try {
+      await toolSend(
+        `review-report/${encodeURIComponent(report.id)}`,
+        undefined,
+        "DELETE",
+      );
+      setDeleteOpen(false);
+      newReport();
+      await refresh();
+      setStatus("Deleted.");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function copyMarkdown() {
+    try {
+      const result = await toolSend<{ text: string }>(
+        "review-report/markdown",
+        { report },
+      );
+      await navigator.clipboard.writeText(result.text);
+      setStatus("Markdown copied.");
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+  async function exportExcel() {
+    try {
+      const blob = await toolSend<Blob>("review-report/export", { report });
+      const title = (report.doc?.title || "review-report").replace(
+        /[<>:"/\\|?*]/g,
+        "_",
+      );
+      downloadBlob(blob, `${title}.xlsx`);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+  function movePicture(no: number, section: string) {
+    if (!report.doc) return;
+    update({
+      doc: {
+        ...report.doc,
+        images: report.doc.images.map((p) =>
+          p.no === no ? { ...p, section } : p,
+        ),
+      },
+    });
+    setStatus("Picture moved. Save to keep it.");
+  }
+
+  return (
+    <div className="tools-page">
+      <header className="page-head">
+        <h1>Review Report</h1>
+        <p className="muted">
+          Paste notes, Excel cells and pictures. AI writes your report for
+          WorkHub Review Data.
+        </p>
+      </header>
+      {error && (
+        <div className="alert" role="alert">
+          {error}
+        </div>
+      )}
+      <p role="status">
+        {busy ? `${revising ? "Changing" : "Working"}… ${elapsed} s` : status}
+      </p>
+      <div className="report-layout">
+        <aside className="card flush report-list">
+          <h2 className="split">
+            Reports
+            <button
+              className="btn sm primary"
+              disabled={busy}
+              onClick={newReport}
+            >
+              + New
+            </button>
+          </h2>
+          <label className="tool-field report-filter">
+            Filter reports
+            <input
+              className="inp"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
+          </label>
+          {filterReports(index.reports, filter).map((item) => (
+            <button
+              className={`report-list-item ${item.id === report.id ? "on" : ""}`}
+              disabled={busy}
+              key={item.id}
+              onClick={() => void openReport(item.id)}
+              title={item.title}
+            >
+              <strong>{item.title}</strong>
+              <span className="muted small">
+                {item.createdBy} ·{" "}
+                {item.updatedAt.slice(0, 16).replace("T", " ")}
+              </span>
+            </button>
+          ))}
+          {index.reports.length === 0 && (
+            <p className="muted report-filter">No saved reports yet.</p>
+          )}
+        </aside>
+        <section className="card">
+          <fieldset className="tool-fieldset" disabled={busy}>
+            <label className="tool-field">
+              Content
+              <textarea
+                className="inp tool-textarea"
+                rows={12}
+                value={report.inputText}
+                onChange={(e) => update({ inputText: e.target.value })}
+                placeholder="What was tested and why, conditions, results and your conclusion. Paste Excel cells here."
+              />
+            </label>
+            <label className="tool-field">
+              Pictures
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => void addFiles(e.target.files)}
+              />
+            </label>
+            <p className="muted small">
+              Ctrl+V anywhere on the page, or pick files. Up to 15 MB per file.
+            </p>
+            <button className="btn sm" onClick={paste.openCapture}>
+              Enable image paste
+            </button>
+            <div className="tool-thumbnails">
+              {report.images.map((image) => (
+                <figure
+                  key={image.no}
+                  title={`IMG ${image.no} · ${image.fileName} · ${Math.round((image.data.length * 0.75) / 1024)} KB`}
+                >
+                  <img
+                    src={`data:${image.mediaType};base64,${image.data}`}
+                    alt={`IMG ${image.no}`}
+                  />
+                  <button
+                    className="btn sm"
+                    onClick={() =>
+                      setReport((current) => removePicture(current, image.no))
+                    }
+                  >
+                    Remove IMG {image.no}
+                  </button>
+                </figure>
+              ))}
+            </div>
+            <label className="tool-field">
+              Report language
+              <select
+                className="inp"
+                value={report.language}
+                onChange={(e) => update({ language: e.target.value })}
+              >
+                {index.languages.map((language) => (
+                  <option key={language}>{language}</option>
+                ))}
+              </select>
+            </label>
+            <label className="tool-field">
+              Instruction to AI (optional)
+              <input
+                className="inp"
+                value={report.extraInstruction}
+                onChange={(e) => update({ extraInstruction: e.target.value })}
+              />
+            </label>
+            {!index.configured && (
+              <div className="alert">
+                Set the Codex API key in Settings to write a report.
+              </div>
+            )}
+            <div className="form-row">
+              <button
+                className="btn sm primary"
+                disabled={!hasInput || !index.configured}
+                onClick={() => void saveOrGenerate("generate")}
+              >
+                {report.doc ? "Rewrite" : "Write report"}
+              </button>
+              <button
+                className="btn sm"
+                disabled={!hasInput}
+                onClick={() => void saveOrGenerate("save")}
+              >
+                Save
+              </button>
+              {report.id && (
+                <button
+                  className="btn sm danger"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+            {report.doc && (
+              <section className="report-revise">
+                <h2>Ask AI to change this report</h2>
+                <ol>
+                  {report.revisions.map((revision, i) => (
+                    <li key={i}>
+                      {revision.request}{" "}
+                      <span className="muted small">
+                        {revision.at.slice(5, 16).replace("T", " ")}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+                <label className="tool-field">
+                  Change request
+                  <textarea
+                    className="inp tool-textarea"
+                    rows={3}
+                    value={request}
+                    onChange={(e) => setRequest(e.target.value)}
+                  />
+                </label>
+                <button
+                  className="btn sm primary"
+                  disabled={!request.trim() || !index.configured}
+                  onClick={() => void saveOrGenerate("revise")}
+                >
+                  Apply change
+                </button>
+              </section>
+            )}
+          </fieldset>
+        </section>
+        <section className="card report-preview">
+          {report.doc && (
+            <div className="form-row report-preview-bar">
+              <span className="muted small">
+                {report.model} ·{" "}
+                {report.updatedAt.slice(0, 16).replace("T", " ")}
+              </span>
+              <button
+                className="btn sm"
+                disabled={busy}
+                onClick={() => void copyMarkdown()}
+              >
+                Copy Markdown
+              </button>
+              <button
+                className="btn sm primary"
+                disabled={busy}
+                onClick={() => void exportExcel()}
+              >
+                Excel for WorkHub
+              </button>
+            </div>
+          )}
+          <fieldset className="tool-fieldset" disabled={busy}>
+            <ReportPreview
+              report={report}
+              onMove={movePicture}
+              onError={setError}
+            />
+            {report.doc && (
+              <ReportEditor
+                doc={report.doc}
+                onChange={(doc) => update({ doc })}
+              />
+            )}
+          </fieldset>
+        </section>
+      </div>
+      {deleteOpen && (
+        <div className="modal-back">
+          <section
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-report-title"
+          >
+            <h2 id="delete-report-title">Delete report?</h2>
+            <p>{report.doc?.title || report.title || "This report"}</p>
+            <div className="modal-actions">
+              <button
+                className="btn sm"
+                disabled={busy}
+                onClick={() => setDeleteOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn sm danger"
+                disabled={busy}
+                onClick={() => void deleteReport()}
+              >
+                Delete
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+    </div>
+  );
 }

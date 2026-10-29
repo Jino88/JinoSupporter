@@ -1,20 +1,304 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { toolSend } from "../toolsApi";
-import { graphFields, graphDefaults, graphKinds, inputMode } from "./graphMaker/options";
+import {
+  exampleData,
+  normalizeGraphData,
+  parseTable,
+  type Table,
+} from "./graphMaker/data";
+import {
+  buildRequests,
+  exampleOptions,
+  graphDefaults,
+  graphKinds,
+  loadedOptions,
+  type GraphOptions as Options,
+} from "./graphMaker/options";
+import GraphOptions from "./graphMaker/GraphOptions";
+import DataSheet from "./graphMaker/DataSheet";
+import Charts, { type Payload } from "./graphMaker/Charts";
 import "../tools.css";
-import { normalizeGraphData } from "./graphMaker/data";
-type Table={headers:string[];rows:string[][]};
-type Payload={title:string;stats:{name:string;value:number}[];statGroups:{label:string;stats:{name:string;value:number}[]}[]};
-type Renderer={render:(id:string,payload:unknown)=>void;destroy:(id:string)=>void};
-let scripts:Promise<void>|undefined;
-function renderer():Promise<void>{return scripts??=(async()=>{for(const src of ["/js/chart.umd.min.js","/js/app.js"]){await new Promise<void>((resolve,reject)=>{const script=document.createElement("script");script.src=src;script.onload=()=>resolve();script.onerror=()=>reject(Error("Chart script could not be loaded."));document.head.appendChild(script);});}})();}
-const chart=()=>(window as unknown as {graphMaker:Renderer}).graphMaker;
-export default function GraphMaker(){
- const [text,setText]=useState("");const [delimiter,setDelimiter]=useState("auto");const [header,setHeader]=useState(1);const [noHeader,setNoHeader]=useState(false);const [kind,setKind]=useState(0);const [options,setOptions]=useState<Record<string,unknown>>({...graphDefaults,showProcessContour:true,showProcessTrendLine:true});const [table,setTable]=useState<Table>({headers:[],rows:[]});const [payloads,setPayloads]=useState<Payload[]>([]);const [busy,setBusy]=useState(false);const [error,setError]=useState("");const chartIds=useRef<string[]>([]);
- const body={text,delimiter,headerRowNumber:header,headerNotUse:noHeader,request:{...options,graphType:kind,inputMode:inputMode(kind),scatterHeaderNotUse:noHeader}};
- useEffect(()=>{let active=true;renderer().then(()=>{if(!active)return;payloads.forEach((p,i)=>chart().render("tools-chart-"+i,p));chartIds.current=payloads.map((_,i)=>"tools-chart-"+i);}).catch(e=>setError(String(e)));return()=>{active=false;chartIds.current.forEach(id=>chart()?.destroy(id));chartIds.current=[];};},[payloads]);
- async function parse(){setBusy(true);setError("");try{const parsed=await toolSend<Table>("graph-maker/parse",{...body,text:normalizeGraphData(text)});setTable(parsed);setOptions(o=>({...o,xColumn:parsed.headers[0]??"",yColumns:parsed.headers.slice(1),heatMapXColumn:parsed.headers[0]??"",heatMapYColumn:parsed.headers[1]??"",heatMapValueColumn:parsed.headers[2]??""}));setPayloads([]);}catch(e){setError(String(e));}finally{setBusy(false);}}
- async function render(){setBusy(true);setError("");try{const ys=options.yColumns as string[];const requests=kind===6&&ys.length>1?ys.map(y=>({...body,request:{...body.request,yColumns:[y]}})):[body];const result:Payload[]=[];for(const request of requests)result.push(await toolSend("graph-maker/render",{...request,text:normalizeGraphData(text)}));setPayloads(result);}catch(e){setError(String(e));}finally{setBusy(false);}}
- function change(key:string,value:unknown){setOptions(o=>({...o,[key]:value}));}
- return <section className="tools"><h1>Graph Maker</h1>{error&&<p role="alert" className="error">{error}</p>}<fieldset disabled={busy}><label>Graph type<select value={kind} onChange={e=>{setKind(+e.target.value);setPayloads([]);}}>{graphKinds.map((k,i)=><option key={i} value={i}>{k}</option>)}</select></label><label>Paste Excel or delimited data<textarea value={text} onChange={e=>setText(e.target.value)}/></label><label>Load data file<input type="file" accept=".txt,.csv,.tsv,.json" onChange={e=>{const f=e.target.files?.[0];if(f)f.text().then(setText).catch(e=>setError(String(e)));}}/></label><label>Delimiter<select value={delimiter} onChange={e=>setDelimiter(e.target.value)}>{[["auto","Auto"],["	","Tab"],[",","Comma"],[";","Semicolon"],["|","Pipe"]].map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label><label>Header row<input type="number" min="1" value={header} onChange={e=>setHeader(Math.max(1,+e.target.value))}/></label><label><input type="checkbox" checked={noHeader} onChange={e=>setNoHeader(e.target.checked)}/>Do not use header</label><button onClick={()=>void parse()}>Parse data</button><button onClick={()=>{setText("");setTable({headers:[],rows:[]});setPayloads([]);setOptions({...graphDefaults});}}>Clear</button><div className="tool-columns"><aside><h2>Chart options</h2>{graphFields.map(f=><label key={f.key}>{f.label}{f.kind==="check"?<input type="checkbox" checked={!!options[f.key]} onChange={e=>change(f.key,e.target.checked)}/>:f.kind==="number"?<input type="number" step="any" value={(options[f.key] as number)??""} onChange={e=>change(f.key,e.target.value===""?null:+e.target.value)}/>:f.kind==="groups"?<>{(options.yColumns as string[]).map(c=><label key={c}>{c}<input value={(options.graphColumnGroups as Record<string,string>)[c]??c} onChange={e=>change("graphColumnGroups",{...options.graphColumnGroups as object,[c]:e.target.value})}/></label>)}</>:f.kind==="column"||f.kind==="multi"?<select multiple={f.kind==="multi"} value={options[f.key] as string|string[]} onChange={e=>change(f.key,f.kind==="multi"?Array.from(e.target.selectedOptions,o=>o.value):e.target.value)}>{f.kind==="column"&&<option value="">None</option>}{table.headers.map(c=><option key={c}>{c}</option>)}</select>:<select value={options[f.key] as number} onChange={e=>change(f.key,+e.target.value)}>{(f.kind==="GraphMakerRateUnit"?["Percent","PPM"]:f.kind==="GraphMakerLineMode"?["Line","Smoothing"]:f.kind==="GraphMakerScatterPointLayout"?["Aligned","Spread"]:["On tick","Between ticks"]).map((l,i)=><option key={i} value={i}>{l}</option>)}</select>}</label>)}<button disabled={!table.rows.length} onClick={()=>void render()}>{busy?"Working…":"Render charts"}</button></aside><div>{payloads.map((p,i)=><article key={i}><h2>{p.title}</h2><div className="tool-chart"><canvas id={"tools-chart-"+i}/></div><p>{p.stats.map(s=>`${s.name}: ${s.value}`).join(" · ")}</p>{p.statGroups.map((g,j)=><p key={j}>{g.label}: {g.stats.map(s=>`${s.name}: ${s.value}`).join(" · ")}</p>)}<button onClick={()=>{const a=document.createElement("a");a.download="chart.png";a.href=(document.getElementById("tools-chart-"+i) as HTMLCanvasElement).toDataURL();a.click();}}>Download PNG</button></article>)}<div className="tool-scroll"><table><thead><tr>{table.headers.map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{table.rows.map((row,i)=><tr key={i}>{row.map((c,j)=><td key={j}>{c}</td>)}</tr>)}</tbody></table></div></div></div></fieldset></section>;
+
+interface Example {
+  text: string;
+  name: string;
+  headerNotUse: boolean;
+}
+export default function GraphMaker() {
+  const [text, setText] = useState("");
+  const [delimiter, setDelimiter] = useState("auto");
+  const [header, setHeader] = useState(1);
+  const [kind, setKind] = useState(0);
+  const [options, setOptions] = useState<Options>({ ...graphDefaults });
+  const [table, setTable] = useState<Table>({ headers: [], rows: [] });
+  const [payloads, setPayloads] = useState<Payload[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [status, setStatus] = useState("Ready");
+  const [source, setSource] = useState("Excel paste");
+  const scatterExampleIndex = useRef(0);
+  const hasData = table.headers.length > 0 && table.rows.length > 0;
+
+  function pasteData(
+    value: string,
+    settings = options,
+    separator = delimiter,
+    headerRow = header,
+  ) {
+    try {
+      const normalized = normalizeGraphData(value);
+      const parsed = parseTable(
+        normalized,
+        separator,
+        headerRow,
+        kind === 1 && settings.scatterHeaderNotUse,
+      );
+      setText(normalized);
+      setTable(parsed);
+      setOptions(loadedOptions(parsed, settings));
+      setPayloads([]);
+      setSource("Excel paste");
+      setStatus(parsed.rows.length ? "Ready to render" : "No rows found.");
+      setError("");
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+  function changeNoHeader(enabled: boolean) {
+    const next = { ...options, scatterHeaderNotUse: enabled };
+    setOptions(next);
+    if (text.trim()) pasteData(text, next);
+  }
+  function clearTable() {
+    setText("");
+    setTable({ headers: [], rows: [] });
+    setOptions((current) => ({
+      ...current,
+      xColumn: "",
+      xColumns: [],
+      yColumns: [],
+      graphColumnGroups: {},
+      heatMapXColumn: "",
+      heatMapYColumn: "",
+      heatMapValueColumn: "",
+      heatMapNgColumn: "",
+      heatMapInputColumn: "",
+      graphSpecColumn: "",
+      graphUpperColumn: "",
+      graphLowerColumn: "",
+      scatterHeaderNotUse: false,
+    }));
+    setPayloads([]);
+    setStatus("Ready");
+    setError("");
+  }
+  async function renderCharts(
+    data = text,
+    settings = options,
+    separator = delimiter,
+    headerRow = header,
+  ) {
+    setBusy(true);
+    setError("");
+    try {
+      const results: Payload[] = [];
+      for (const request of buildRequests(kind, settings)) {
+        results.push(
+          await toolSend<Payload>("graph-maker/render", {
+            text: data,
+            delimiter: separator,
+            headerRowNumber: headerRow,
+            headerNotUse: kind === 1 && settings.scatterHeaderNotUse,
+            request,
+          }),
+        );
+      }
+      setPayloads(results);
+      const normalizedKind = [
+        "Line",
+        "Scatter",
+        "Average",
+        "Cpk",
+        "NormalDistribution",
+        "NoXMultiY",
+        "ProcessTrend",
+        "HeatMap",
+      ].indexOf(results[0]?.kind);
+      if (normalizedKind >= 0) setKind(normalizedKind);
+      setStatus(`${results.length} graph(s) rendered`);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function loadExample() {
+    setBusy(true);
+    setError("");
+    try {
+      const index = kind === 1 ? scatterExampleIndex.current++ : 0;
+      const example = await toolSend<Example>(
+        `graph-maker/example/${kind}/${index}`,
+        undefined,
+        "GET",
+      );
+      const data = exampleData(example.text);
+      const parsed = parseTable(data, "auto", 1, example.headerNotUse);
+      const settings = exampleOptions(kind, example.name, parsed, {
+        ...options,
+        scatterHeaderNotUse: example.headerNotUse,
+      });
+      setDelimiter("auto");
+      setHeader(1);
+      setText(data);
+      setTable(parsed);
+      setOptions(settings);
+      setSource(example.name);
+      setStatus("Example loaded");
+      await renderCharts(data, settings, "auto", 1);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function loadFile(file?: File) {
+    if (!file) return;
+    try {
+      pasteData(await file.text());
+      setSource(file.name);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
+  return (
+    <div className="tools-page">
+      <header className="page-head">
+        <h1>Graph Maker</h1>
+        <p className="muted">
+          One workspace for line, scatter, average, CPK, distribution, heatmap,
+          and process trend views.
+        </p>
+      </header>
+      {error && (
+        <div className="alert" role="alert">
+          {error}
+        </div>
+      )}
+      <fieldset className="tool-fieldset" disabled={busy}>
+        <section className="card">
+          <div className="form-row">
+            <label>
+              Graph type
+              <select
+                className="inp"
+                value={kind}
+                onChange={(e) => setKind(Number(e.target.value))}
+              >
+                {graphKinds.map((name, index) => (
+                  <option key={index} value={index}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              className="btn sm primary"
+              disabled={!hasData}
+              onClick={() => void renderCharts()}
+            >
+              Render
+            </button>
+            <button className="btn sm" onClick={() => void loadExample()}>
+              Example
+            </button>
+            <label>
+              Delimiter
+              <select
+                className="inp"
+                value={delimiter}
+                onChange={(e) => setDelimiter(e.target.value)}
+              >
+                {[
+                  ["auto", "Auto"],
+                  [",", "Comma"],
+                  ["\t", "Tab"],
+                  [";", "Semicolon"],
+                  ["|", "Pipe"],
+                ].map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Header row
+              <input
+                className="inp"
+                type="number"
+                min={1}
+                value={header}
+                onChange={(e) => setHeader(Math.max(1, Number(e.target.value)))}
+              />
+            </label>
+            <button className="btn sm" disabled={!hasData} onClick={clearTable}>
+              Table Clear
+            </button>
+          </div>
+        </section>
+        <div className="graph-layout">
+          <GraphOptions
+            kind={kind}
+            headers={table.headers}
+            options={options}
+            onChange={setOptions}
+            onNoHeader={changeNoHeader}
+          />
+          <section className="graph-workspace">
+            <div className="card">
+              <p role="status">
+                {busy ? "Working…" : status}{" "}
+                {hasData &&
+                  ` · ${source} · ${table.rows.length.toLocaleString("en-US")} rows · ${table.headers.length} columns`}
+              </p>
+              <p className="muted small">
+                Click the data table and press Ctrl+V to paste Excel cells.
+              </p>
+              <DataSheet
+                table={table}
+                kind={kind}
+                options={options}
+                onPaste={pasteData}
+              />
+              <details>
+                <summary>Text and file input</summary>
+                <label className="tool-field">
+                  Delimited data
+                  <textarea
+                    className="inp tool-textarea"
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                  />
+                </label>
+                <button className="btn sm" onClick={() => pasteData(text)}>
+                  Load data
+                </button>
+                <label className="tool-field">
+                  Load data file
+                  <input
+                    type="file"
+                    accept=".txt,.csv,.tsv,.json"
+                    onChange={(e) => void loadFile(e.target.files?.[0])}
+                  />
+                </label>
+              </details>
+            </div>
+            <Charts payloads={payloads} onError={setError} />
+          </section>
+        </div>
+      </fieldset>
+    </div>
+  );
 }

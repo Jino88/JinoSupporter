@@ -1,7 +1,9 @@
 using PortalGNLAB.Web.Services;
 using PortalGNLAB.Web.Services.GraphMaker;
+
 namespace PortalGNLAB.Web.Endpoints;
 
+/// <summary>JSON endpoints for the React tools. Each group uses the existing menu permission.</summary>
 public static class ToolPageEndpoints
 {
     public sealed record PastedImage(string MediaType, string Base64);
@@ -9,70 +11,213 @@ public static class ToolPageEndpoints
     public sealed record TranslateInput(string Text, string TargetLanguage, List<PastedImage> Images);
     public sealed record GraphInput(string Text, string Delimiter, int HeaderRowNumber, bool HeaderNotUse, GraphMakerRequest Request);
     public sealed record ReportInput(ReviewReport Report, string? Request);
-    public static void MapToolPages(this WebApplication app)
+
+    public static IEndpointRouteBuilder MapToolPages(this IEndpointRouteBuilder app)
     {
-        RouteGroupBuilder Group(string path, string menu)
+        var translate = ToolGroup(app, "translate", AppMenus.Translate);
+        translate.MapGet("", (CodexApiService api, AiProviderSettingsService settings) => new
         {
-            var group = app.MapGroup("/api/portal/tools/" + path).RequireAuthorization();
-            group.AddEndpointFilter(async (ctx, next) => {
-                if (!ctx.HttpContext.RequestServices.GetRequiredService<MenuPermissionService>().IsAllowed(ctx.HttpContext.User, menu))
-                    return Results.StatusCode(403);
-                if (!HttpMethods.IsGet(ctx.HttpContext.Request.Method) && ctx.HttpContext.Request.Headers["X-Requested-With"] != "PortalGNLAB")
-                    return Results.BadRequest(new { error = "Required request header missing." });
-                try { return await next(ctx); }
-                catch (OperationCanceledException) { return Results.BadRequest(new { error = "Request cancelled or timed out." }); }
-                catch (Exception ex) { app.Logger.LogError(ex, "Tool request failed"); return Results.BadRequest(new { error = "Tool request failed. Check input and provider settings, then retry." }); }
-            });
-            return group;
-        }
-        var translate = Group("translate", AppMenus.Translate);
-        translate.MapGet("", (CodexApiService api, AiProviderSettingsService settings) => new { api.Model, api.TranslateEffort, available = (!api.IsConfigured || api.Model.Contains("gemini", StringComparison.OrdinalIgnoreCase)) ? settings.CodexCliEnabled : api.IsConfigured });
-        translate.MapPost("", async (TranslateInput body, CodexApiService api, AiProviderSettingsService settings, WebRepository repo, HttpContext context) => {
-            if (string.IsNullOrWhiteSpace(body.Text) && body.Images.Count == 0) return Results.BadRequest(new { error = "Enter text or add images." });
-            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
-            timeout.CancelAfter(TimeSpan.FromMinutes(10));
-            TranslationResult result;
-            if (!api.IsConfigured || api.Model.Contains("gemini", StringComparison.OrdinalIgnoreCase)) {
-                if (!settings.CodexCliEnabled) return Results.BadRequest(new { error = "CLI is disabled in settings." });
-                result = await TranslateWithCodexCliAsync(body.Text, body.TargetLanguage, body.Images, api.Model, context.User.Identity?.Name ?? "unknown", timeout.Token);
-            } else {
-                var value = await api.TranslateAsync(body.Text, body.TargetLanguage, body.Images.Select(i => (i.MediaType, i.Base64)).ToList(), timeout.Token);
-                SaveCodexApiUsage(repo, value.Usage);
-                result = new(value.SourceText, value.Translation, value.Usage, "Codex API", api.Model);
-            }
-            return Results.Ok(new { result.SourceText, result.Translation, usage = FormatUsage(result) });
+            api.Model,
+            api.TranslateEffort,
+            isCli = IsCli(api),
+            available = IsCli(api) ? settings.CodexCliEnabled : api.IsConfigured
         });
-        var reports = Group("review-report", AppMenus.ReviewReport);
-        reports.MapGet("", (ReviewReportService service) => Results.Ok(new { configured = service.IsConfigured, languages = ReviewReportService.Languages, reports = service.List() }));
-        reports.MapGet("/{id}", (string id, ReviewReportService service) => service.Get(id) is {} report ? Results.Ok(report) : Results.NotFound());
-        reports.MapDelete("/{id}", (string id, ReviewReportService service) => { service.Delete(id); return Results.NoContent(); });
-        reports.MapPost("/{action}", async (string action, ReportInput body, ReviewReportService service, HttpContext context) => {
-            var report = body.Report;
-            var existing = string.IsNullOrEmpty(report.Id) ? null : service.Get(report.Id);
-            if (!string.IsNullOrEmpty(report.Id) && existing is null) return Results.NotFound();
-            report.CreatedBy = existing?.CreatedBy ?? context.User.Identity?.Name ?? "unknown";
-            report.CreatedAt = existing?.CreatedAt ?? DateTime.Now;
-            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
-            timeout.CancelAfter(TimeSpan.FromMinutes(10));
-            switch (action) {
-                case "generate": report.Doc = await service.GenerateAsync(report.InputText, report.Images, report.Language, report.ExtraInstruction, timeout.Token); report.Revisions = []; break;
-                case "revise": report.Doc = await service.ReviseAsync(report, body.Request ?? "", timeout.Token); report.Revisions.Add(new() { At = DateTime.Now, By = context.User.Identity?.Name ?? "unknown", Request = body.Request ?? "" }); break;
-                case "markdown": return Results.Ok(new { text = ReviewReportService.ToMarkdown(report) });
-                case "export": return Results.File(ReviewReportService.ExportXlsx(report), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "review-report.xlsx");
-                case "save": break;
-                default: return Results.NotFound();
-            }
-            if (action != "save") report.Model = $"{ReviewReportService.Model} · {ReviewReportService.Effort}";
-            service.Save(report);
-            return Results.Ok(report);
+        translate.MapPost("", TranslateAsync);
+
+        var reports = ToolGroup(app, "review-report", AppMenus.ReviewReport);
+        reports.MapGet("", (ReviewReportService service) => Results.Ok(new
+        {
+            configured = service.IsConfigured,
+            languages = ReviewReportService.Languages,
+            reports = service.List()
+        }));
+        reports.MapGet("/{id}", (string id, ReviewReportService service) =>
+            service.Get(id) is { } report ? Results.Ok(report) : Results.NotFound());
+        reports.MapDelete("/{id}", (string id, ReviewReportService service) =>
+        {
+            service.Delete(id);
+            return Results.NoContent();
         });
-        var graph = Group("graph-maker", AppMenus.GraphMaker);
-        graph.MapPost("/parse", (GraphInput body) => Results.Ok(GraphMakerParser.Parse(body.Text, new(body.Delimiter, body.HeaderRowNumber, body.HeaderNotUse))));
-        graph.MapPost("/render", (GraphInput body) => {
+        reports.MapPost("/{action}", ReportActionAsync);
+
+        var graph = ToolGroup(app, "graph-maker", AppMenus.GraphMaker);
+        graph.MapGet("/example/{kind:int}/{index:int}", GetExampleAsync);
+        graph.MapPost("/parse", (GraphInput body) => Results.Ok(
+            GraphMakerParser.Parse(body.Text, new(body.Delimiter, body.HeaderRowNumber, body.HeaderNotUse))));
+        graph.MapPost("/render", (GraphInput body) =>
+        {
             var table = GraphMakerParser.Parse(body.Text, new(body.Delimiter, body.HeaderRowNumber, body.HeaderNotUse));
             return Results.Ok(GraphMakerPayloadBuilder.Build(table, body.Request));
         });
+        return app;
     }
+
+    private static RouteGroupBuilder ToolGroup(IEndpointRouteBuilder app, string path, string menu)
+    {
+        var group = app.MapGroup("/api/portal/tools/" + path).RequireAuthorization();
+        group.AddEndpointFilter(async (ctx, next) =>
+        {
+            var context = ctx.HttpContext;
+            var permissions = context.RequestServices.GetRequiredService<MenuPermissionService>();
+            if (!permissions.IsAllowed(context.User, menu))
+                return Results.StatusCode(StatusCodes.Status403Forbidden);
+            if (!HttpMethods.IsGet(context.Request.Method) &&
+                context.Request.Headers["X-Requested-With"] != "PortalGNLAB")
+                return Results.BadRequest(new { error = "Required request header missing." });
+            try
+            {
+                return await next(ctx);
+            }
+            catch (OperationCanceledException)
+            {
+                return Results.BadRequest(new { error = "Request cancelled or timed out." });
+            }
+            catch (Exception ex)
+            {
+                context.RequestServices.GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("ToolPages").LogError(ex, "Tool request failed");
+                return Results.BadRequest(new { error = "Tool request failed. Check input and provider settings, then retry." });
+            }
+        });
+        return group;
+    }
+
+    private static bool IsCli(CodexApiService api) =>
+        !api.IsConfigured || api.Model.Contains("gemini", StringComparison.OrdinalIgnoreCase);
+
+    private static async Task<IResult> TranslateAsync(
+        TranslateInput body, CodexApiService api, AiProviderSettingsService settings,
+        WebRepository repo, HttpContext context)
+    {
+        if (string.IsNullOrWhiteSpace(body.Text) && body.Images.Count == 0)
+            return Results.BadRequest(new { error = "Enter text or add images." });
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
+        timeout.CancelAfter(TimeSpan.FromMinutes(10));
+        TranslationResult result;
+        if (IsCli(api))
+        {
+            if (!settings.CodexCliEnabled)
+                return Results.BadRequest(new { error = "CLI is disabled in settings." });
+            string actor = $"user={context.User.Identity?.Name ?? "unknown"}; ip={context.Connection.RemoteIpAddress}";
+            result = await TranslateWithCodexCliAsync(
+                body.Text, body.TargetLanguage, body.Images, api.Model, actor, timeout.Token);
+        }
+        else
+        {
+            var value = await api.TranslateAsync(body.Text, body.TargetLanguage,
+                body.Images.Select(i => (i.MediaType, i.Base64)).ToList(), timeout.Token);
+            SaveCodexApiUsage(repo, value.Usage);
+            result = new(value.SourceText, value.Translation, value.Usage, "Codex API", api.Model);
+        }
+        return Results.Ok(new { result.SourceText, result.Translation, usage = FormatUsage(result) });
+    }
+
+    private static async Task<IResult> ReportActionAsync(
+        string action, ReportInput body, ReviewReportService service, HttpContext context)
+    {
+        var report = body.Report;
+        var existing = string.IsNullOrEmpty(report.Id) ? null : service.Get(report.Id);
+        if (!string.IsNullOrEmpty(report.Id) && existing is null)
+            return Results.NotFound();
+        report.CreatedBy = existing?.CreatedBy ?? context.User.Identity?.Name ?? "unknown";
+        report.CreatedAt = existing?.CreatedAt ?? DateTime.Now;
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
+        timeout.CancelAfter(TimeSpan.FromMinutes(10));
+        switch (action)
+        {
+            case "generate":
+                report.Doc = await service.GenerateAsync(report.InputText, report.Images,
+                    report.Language, report.ExtraInstruction, timeout.Token);
+                report.Revisions = [];
+                break;
+            case "revise":
+                report.Doc = await service.ReviseAsync(report, body.Request ?? "", timeout.Token);
+                report.Revisions.Add(new()
+                {
+                    At = DateTime.Now,
+                    By = context.User.Identity?.Name ?? "unknown",
+                    Request = body.Request ?? ""
+                });
+                break;
+            case "preview":
+                return Preview(report);
+            case "markdown":
+                return Results.Ok(new { text = ReviewReportService.ToMarkdown(report) });
+            case "export":
+                return Results.File(ReviewReportService.ExportXlsx(report),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "review-report.xlsx");
+            case "save":
+                break;
+            default:
+                return Results.NotFound();
+        }
+        if (action != "save")
+            report.Model = $"{ReviewReportService.Model} · {ReviewReportService.Effort}";
+        service.Save(report);
+        return Results.Ok(report);
+    }
+
+    private static IResult Preview(ReviewReport report)
+    {
+        if (report.Doc is null) return Results.Ok(Array.Empty<object>());
+        return Results.Ok(ReviewReportService.ResultTables(report.Doc).Select(table => new
+        {
+            table.Title,
+            showDate = table.Arms.Any(a => !string.IsNullOrWhiteSpace(a.Date)),
+            showModel = table.Arms.Any(a => !string.IsNullOrWhiteSpace(a.Model)),
+            dateSpans = ReviewReportService.Spans(table.Arms.Select(a => a.Date.Trim()).ToList()),
+            modelSpans = ReviewReportService.Spans(table.Arms.Select(a => a.Model.Trim()).ToList()),
+            columns = table.Columns.Select(c => new { c.Header, c.HasBelow, c.BelowHeader }),
+            rows = table.Arms.Select(a => new
+            {
+                a.Date,
+                a.Model,
+                a.Label,
+                test = a.Role == "test",
+                cells = table.Columns.Select(c => new
+                {
+                    main = c.Main.ValueOf(a.Id.Trim()),
+                    below = c.Below(a.Id.Trim()),
+                    c.HasBelow,
+                    rate = c.Main.Kind == "rate"
+                })
+            })
+        }));
+    }
+
+    private static async Task<IResult> GetExampleAsync(int kind, int index)
+    {
+        var candidates = GraphExamples.Where(e => (int)e.Kind == kind).ToArray();
+        if (candidates.Length == 0)
+            return Results.NotFound(new { error = "No example for this graph type." });
+        var example = candidates[Math.Abs(index % candidates.Length)];
+        string[] roots =
+        [
+            Path.GetDirectoryName(example.Path)!,
+            Path.Combine(AppContext.BaseDirectory, "GraphMakerExamples"),
+            Path.Combine(AppContext.BaseDirectory, "wwwroot", "GraphMakerExamples"),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "GraphMakerExamples")
+        ];
+        var path = roots.Select(root => Path.Combine(root, Path.GetFileName(example.Path))).FirstOrDefault(File.Exists);
+        if (path is null)
+            return Results.NotFound(new { error = $"Example file not found: {Path.GetFileName(example.Path)}" });
+        return Results.Ok(new
+        {
+            text = await File.ReadAllTextAsync(path),
+            name = Path.GetFileName(path),
+            example.HeaderNotUse
+        });
+    }
+
+    private static readonly (GraphMakerGraphType Kind, string Path, bool HeaderNotUse)[] GraphExamples =
+    [
+        (GraphMakerGraphType.Line, @"D:\000. MyWorks\005. Program\GRAPH_spl.txt", false),
+        (GraphMakerGraphType.Scatter, @"D:\000. MyWorks\005. Program\SCATTER_NOHEADER_BRKINNER TENSION.txt", true),
+        (GraphMakerGraphType.Scatter, @"D:\000. MyWorks\005. Program\SCATTER_hookdimensiondata.txt", false),
+        (GraphMakerGraphType.ProcessTrend, @"D:\000. MyWorks\005. Program\PROCESSTREND_gausstrend5.txt", false),
+        (GraphMakerGraphType.HeatMap, @"C:\Users\jhbyun\Desktop\새 폴더 (5)\Merged_VP_Test_Data_records.json", false)
+    ];
+
     private static async Task<TranslationResult> TranslateWithCodexCliAsync(
         string text,
         string targetLanguage,

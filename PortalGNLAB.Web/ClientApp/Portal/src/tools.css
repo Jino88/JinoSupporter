@@ -1,1 +1,323 @@
-.tools {display:grid;gap:16px}.tools .tool-columns{display:grid;grid-template-columns: minmax(240px,1fr) minmax(300px,2fr);gap:16px}.tools label{display:grid;gap:5px;margin:8px 0}.tools textarea,.tools input,.tools select{max-width:100%;padding:8px;border:1px solid var(--line,#ccc);border-radius:4px;background:var(--panel,#fff);color:inherit}.tools textarea{width:100%;min-height:130px;box-sizing:border-box}.tools button{margin:4px;padding:7px 12px;cursor:pointer}.tools pre{white-space:pre-wrap;overflow-wrap:anywhere}.tools .tool-images{display:flex;gap:8px;flex-wrap:wrap}.tools img{max-width:100%;max-height:280px}.tools .tool-images img{width:90px;height:70px;object-fit:contain}.tools .tool-scroll{overflow:auto;max-height:400px}.tools table{border-collapse:collapse;width:100%}.tools td,.tools th{border:1px solid var(--line,#ccc);padding:6px;white-space:pre-wrap}.tools .tool-chart{height:520px;position:relative}.tools .error{color:#c8342a}.tools fieldset{border:1px solid var(--line,#ccc)}@media(max-width:900px){.tools .tool-columns{grid-template-columns:1fr}}
+/* Tool-specific layout; shared controls use portal.css. */
+.tools-page {
+  min-width: 0;
+}
+.tools-page .tool-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 12px 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+.tools-page .tool-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.tools-page .tool-textarea {
+  height: auto;
+  min-height: 90px;
+  width: 100%;
+  padding: 8px 10px;
+  resize: vertical;
+  line-height: 1.5;
+}
+.tools-page .tool-thumbnails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.tools-page .tool-thumbnails figure {
+  margin: 0;
+  width: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tools-page .tool-thumbnails img {
+  width: 100%;
+  height: 70px;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  background: white;
+}
+.translate-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 5fr) minmax(320px, 7fr);
+  gap: 16px;
+}
+.translate-output {
+  overflow: auto;
+  max-height: 78vh;
+}
+.translate-result,
+.translate-source {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  line-height: 1.6;
+}
+.translate-source {
+  padding: 10px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+.report-layout {
+  display: grid;
+  grid-template-columns: 210px minmax(300px, 380px) minmax(400px, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+.report-list {
+  position: sticky;
+  top: 8px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto !important;
+}
+.report-filter {
+  padding: 0 12px;
+}
+.report-list-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: white;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+.report-list-item strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.report-list-item.on {
+  background: #e8eefc;
+  box-shadow: inset 3px 0 var(--brand);
+}
+.report-revise {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+  padding-top: 16px;
+}
+.report-revise ol {
+  max-height: 180px;
+  overflow-y: auto;
+  padding-left: 20px;
+}
+.report-preview {
+  min-width: 0;
+}
+.report-preview-bar {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+.report-document p {
+  white-space: pre-wrap;
+  line-height: 1.65;
+}
+.report-document h3 {
+  border: 1px solid #7f7f7f;
+  background: #bfbfbf;
+  padding: 8px;
+  margin: 20px 0 8px;
+}
+.report-document .report-result-grid th,
+.report-document .report-result-grid td {
+  border: 1px solid #595959;
+  text-align: center;
+  white-space: nowrap;
+}
+.report-document .report-result-grid th {
+  background: #c5d9f1;
+  color: var(--ink);
+}
+.report-test {
+  background: #ffff00;
+}
+.report-rate {
+  color: #c00000;
+}
+.report-below {
+  border-top: 1px solid #595959;
+  margin-top: 4px;
+  padding-top: 4px;
+}
+.report-pictures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 12px 0;
+}
+.report-picture-row {
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.report-pictures figure {
+  margin: 0;
+  max-width: 100%;
+}
+.report-pictures img {
+  height: 190px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+.report-pictures.single img {
+  height: auto;
+  max-height: 320px;
+  max-width: min(100%, 560px);
+}
+.report-pictures figcaption,
+.report-picture-caption {
+  background: #ffff00;
+  border: 1px solid red;
+  padding: 5px;
+  text-align: center;
+  font-weight: 700;
+}
+.report-editor {
+  margin-top: 20px;
+}
+.report-editor-group {
+  border: 1px solid var(--line);
+  padding: 12px;
+  margin: 12px 0;
+  min-width: 0;
+}
+.graph-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+.graph-options {
+  min-width: 0;
+}
+.graph-select[multiple] {
+  height: auto;
+  min-height: 100px;
+}
+.graph-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0;
+}
+.graph-sheet {
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  outline-offset: 2px;
+}
+.graph-sheet table {
+  width: max-content;
+  min-width: 100%;
+}
+.graph-sheet th,
+.graph-sheet td {
+  min-width: 86px;
+  height: 28px;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid var(--line);
+}
+.graph-sheet thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  text-align: center;
+}
+.graph-sheet tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+.graph-sheet .graph-col-x {
+  background: #edf0f4;
+  outline: 1px solid #16202b;
+  outline-offset: -1px;
+}
+.graph-sheet .graph-col-y {
+  background: #eaf1f9;
+  outline: 1px solid #1f5fa8;
+  outline-offset: -1px;
+}
+.graph-sheet .graph-col-value {
+  background: #fdf4e0;
+  outline: 1px solid #d6a238;
+  outline-offset: -1px;
+}
+.graph-sheet .graph-limit-row td {
+  background-image: repeating-linear-gradient(
+    135deg,
+    #1118271f 0,
+    #1118271f 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+.graph-chart-frame {
+  height: 520px;
+  min-height: 420px;
+  position: relative;
+}
+.graph-chart-frame canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+.graph-stat-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+.graph-stat-card {
+  padding: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+.graph-stat-card h3 {
+  font-size: 12px;
+}
+.graph-stat-card dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.graph-stat-card dd {
+  margin: 0;
+  font-weight: 700;
+}
+@media (max-width: 1400px) {
+  .report-layout {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+  .report-preview {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 900px) {
+  .translate-layout,
+  .report-layout,
+  .graph-layout {
+    grid-template-columns: 1fr;
+  }
+  .report-list {
+    position: static;
+    max-height: 300px;
+  }
+  .report-preview {
+    grid-column: auto;
+  }
+}
