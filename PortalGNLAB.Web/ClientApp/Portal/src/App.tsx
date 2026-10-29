@@ -5,6 +5,9 @@ import { MenuLink, navigate } from "./nav";
 import Home from "./pages/Home";
 import PcDownloadPage from "./pages/PcDownload";
 import AdminUsersPage from "./pages/AdminUsers";
+import AdminAiUsages from "./pages/AdminAiUsages";
+import AdminDbQuery from "./pages/AdminDbQuery";
+import TestExcelConverter from "./pages/TestExcelConverter";
 
 /** React pages by their path inside /app. A page added here also needs its menu id in
  *  PortalShellEndpoints.ReactRoutes so the menus (React and Blazor) link to it. */
@@ -12,6 +15,9 @@ const pages: Record<string, { title: string; render: (menu: MenuItem[]) => React
   "/": { title: "Home", render: (menu) => <Home menu={menu} /> },
   "/tools/pc-download": { title: "PC Download", render: () => <PcDownloadPage /> },
   "/admin/users": { title: "User Management", render: () => <AdminUsersPage /> },
+  "/admin/ai-usages": { title: "AI Usages", render: () => <AdminAiUsages /> },
+  "/admin/db-query": { title: "DB Query", render: () => <AdminDbQuery /> },
+  "/admin/test-excel-converter": { title: "Test Excel Converter", render: () => <TestExcelConverter /> },
 };
 
 export default function App() {

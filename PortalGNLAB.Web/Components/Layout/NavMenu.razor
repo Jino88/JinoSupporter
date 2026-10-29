@@ -125,15 +125,15 @@
         }
         @if (can(AppMenus.AdminAiUsages))
         {
-            @Tile("admin/ai-usages", "gauge", "AI Usage", "AI Usages")
+            @AppTile("/app/admin/ai-usages", "gauge", "AI Usage", "AI Usages")
         }
         @if (can(AppMenus.TestExcelConverter))
         {
-            @Tile("admin/test-excel-converter", "excel", "Excel", "Test Excel Converter")
+            @AppTile("/app/admin/test-excel-converter", "excel", "Excel", "Test Excel Converter")
         }
         @if (can(AppMenus.AdminDbQuery))
         {
-            @Tile("admin/db-query", "db", "DB", "DB Query")
+            @AppTile("/app/admin/db-query", "db", "DB", "DB Query")
         }
     }
 

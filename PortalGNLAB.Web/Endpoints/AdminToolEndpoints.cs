@@ -21,7 +21,7 @@ public static class AdminToolEndpoints
                 field.SetValue(state, value.Deserialize(field.FieldType, Json));
             }
     }
-    public static void MapAdminTools(this WebApplication app)
+    public static void MapAdminTools(this IEndpointRouteBuilder app)
     {
         var api = app.MapGroup("/api/portal/admin").RequireAuthorization(p => p.RequireRole(AppRoles.Admin));
         api.AddEndpointFilter(async (ctx, next) => {

@@ -51,6 +51,9 @@ public static class PortalShellEndpoints
     {
         [AppMenus.PcDownload] = "/app/tools/pc-download",
         [AppMenus.AdminUsers] = "/app/admin/users",
+        [AppMenus.AdminAiUsages] = "/app/admin/ai-usages",
+        [AppMenus.AdminDbQuery] = "/app/admin/db-query",
+        [AppMenus.TestExcelConverter] = "/app/admin/test-excel-converter",
     };
 
     public sealed record PortalUser(string Name, string Role);
@@ -96,6 +99,7 @@ public static class PortalShellEndpoints
                 : Results.StatusCode(StatusCodes.Status403Forbidden));
 
         app.MapAdminUsers();
+        app.MapAdminTools();
 
         // Every /app route is the React app; it asks /api/portal/me and sends signed-out users to /login.
         app.MapFallbackToFile("/app/{*path:nonfile}", "app/index.html");
