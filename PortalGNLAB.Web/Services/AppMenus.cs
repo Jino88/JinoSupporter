@@ -59,6 +59,11 @@ public static class AppMenus
     /// <summary>AI review report writer: notes + pictures in, a WorkHub-ready .xlsx out.</summary>
     public const string ReviewReport       = "review-report";
 
+    /// <summary>
+    /// Menus shown in the nav and the permission editor. Retired 2026-10-29 (ids stay for DB rows):
+    /// Plan / Work Memo / Board (TeamMemo), Test 3, Test 4, LPA, Test Data Analysis (DiInputBatch, DiDb, DiAsk),
+    /// Daily Test (DailyTestInput), Graph Maker, PC Download.
+    /// </summary>
     public static readonly MenuItemDef[] All =
     [
         new(NgRate,             "Report NG RATE",           "BMES"),
@@ -68,29 +73,19 @@ public static class AppMenus
         new(BmesSetting,        "Setting",                  "Setting"),
         new(BmesRoutingTable,   "Routing Table",            "BMES"),
         new(BmesReasonTable,    "Reason Table",             "BMES"),
-        new(BmesTest3,          "Test 3",                   "BMES"),
-        new(BmesTest4,          "Test 4",                   "BMES"),
         new(BmesTest5,          "BOM & Drawing",            "BMES"),
-        new(BmesLpa,            "LPA",                      "BMES"),
         new(BmesDailyReport,    "DAILY REPORT",             "BMES"),
         new(QrSummary,          "SUMMARY",                  "QR"),
         new(QrBakoData,         "QR BAKO DATA",             "QR"),
         new(QrAirleakData,      "QR AIRLEAK DATA",          "QR"),
         new(QrGaussData,        "QR GAUSS DATA",            "QR"),
-        new(GraphMaker,         "Graph Maker",              "Tools"),
-        new(DiInputBatch,       "INPUT DATA (BATCH)",       "Test Data Analysis"),
-        new(DiDb,               "Result",                   "Test Data Analysis"),
-        new(DiAsk,              "Ask AI",                   "Test Data Analysis"),
-        new(DailyTestInput,     "Input Data",               "Daily Test Data"),
-        new(Report,             "Report",                   "Test Data Analysis"),
+        new(Report,             "Report",                   "BMES"),
         new(Translate,          "Translate",                "Tools"),
-        new(PcDownload,         "PC Download",              "Tools"),
         new(AdminUsers,         "Users",                    "Admin"),
         new(AdminAiUsages,      "AI Usages",                "Admin"),
         new(TestExcelConverter, "Test Excel Converter",     "Admin"),
         new(AdminDbQuery,       "DB Query",                 "Admin"),
         new(NewVer,             "New Ver",                  "Preview"),
-        new(TeamMemo,           "Work Memo",                "Team Memo"),
         new(ReviewReport,       "Review Report",            "Tools"),
     ];
 
@@ -103,27 +98,27 @@ public static class AppMenus
         [AppRoles.Admin] = All.Select(m => m.Id).ToArray(),
         [AppRoles.Manager] =
         [
-            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesSetting, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest3, BmesTest4, BmesTest5,
-            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, GraphMaker, DiInputBatch, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload, TeamMemo, ReviewReport
+            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesSetting, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest5,
+            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, Report, Translate, ReviewReport
         ],
         [AppRoles.ManagerAi] =
         [
-            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesSetting, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest3, BmesTest4, BmesTest5,
-            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, GraphMaker, DiInputBatch, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload, TeamMemo, ReviewReport
+            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesSetting, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest5,
+            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, Report, Translate, ReviewReport
         ],
         [AppRoles.Leader] =
         [
-            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest3, BmesTest4, BmesTest5,
-            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, GraphMaker, DiInputBatch, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload, TeamMemo, ReviewReport
+            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest5,
+            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, Report, Translate, ReviewReport
         ],
         [AppRoles.Editor] =
         [
-            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest3, BmesTest4, BmesTest5,
-            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, GraphMaker, DiInputBatch, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload, TeamMemo, ReviewReport
+            NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest5,
+            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, Report, Translate, ReviewReport
         ],
         [AppRoles.Viewer] =
         [
-            NgRate, BmesWorkerStatus, BmesFCost, QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, GraphMaker, DiDb, DiAsk, DailyTestInput, Report, Translate, PcDownload, TeamMemo, ReviewReport
+            NgRate, BmesWorkerStatus, BmesFCost, QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, Report, Translate, ReviewReport
         ],
     };
 }

@@ -120,6 +120,31 @@ Check(!File.Exists(Path.Combine(webRoot, "bmes-report", "report.json")), "report
 Check(new FileInfo(Path.Combine(webRoot, "bmes-report", "bmes-report.js")).Length > 0, "built ESM asset is non-empty");
 Check(new FileInfo(Path.Combine(webRoot, "bmes-report", "bmes-report.css")).Length > 0, "built CSS asset is non-empty");
 
+// Menus retired 2026-10-29: Plan / Memo / Board, Test 3, Test 4, LPA, Analysis, Daily Test, Graph, Download.
+string[] retiredMenus =
+[
+    AppMenus.TeamMemo, AppMenus.BmesTest3, AppMenus.BmesTest4, AppMenus.BmesLpa, AppMenus.DiInputBatch,
+    AppMenus.DiDb, AppMenus.DiAsk, AppMenus.DailyTestInput, AppMenus.GraphMaker, AppMenus.PcDownload,
+];
+Check(!AppMenus.All.Any(m => retiredMenus.Contains(m.Id)), "retired menus left out of AppMenus.All");
+Check(!AppMenus.DefaultsByRole.Values.Any(ids => ids.Any(retiredMenus.Contains)), "retired menus left out of role defaults");
+var adminMenu = PortalGNLAB.Web.Endpoints.PortalShellEndpoints.MenuFor(AppRoles.Admin, (_, _) => true);
+Check(!adminMenu.Any(m => retiredMenus.Contains(m.Id)), "React menu lists no retired menu");
+Check(adminMenu.Any(m => m.Id == AppMenus.Report && m.Group == "BMES" && m.Href == "/report/bmes"), "React menu keeps BMES Report");
+string navMenuSource = File.ReadAllText(Path.Combine(webProject, "Components", "Layout", "NavMenu.razor"));
+string[] retiredLinks =
+[
+    "/app/memo", "bmes/test3", "bmes/test4", "bmes/lpa", "input-data-batch", "data-inference/",
+    "daily-test-data/input", "/app/tools/graph-maker", "/app/tools/pc-download",
+];
+Check(!retiredLinks.Any(navMenuSource.Contains), "classic rail links no retired page");
+string instrumentSource = File.ReadAllText(Path.Combine(webProject, "Components", "Layout", "InstrumentLayout.razor"));
+Check(!retiredLinks.Select(l => l.TrimStart('/')).Any(l => instrumentSource.Contains($"\"{l}", StringComparison.Ordinal)), "new UI rail links no retired page");
+string homeSource = File.ReadAllText(Path.Combine(webProject, "Components", "Pages", "Home.razor"));
+Check(homeSource.Contains("url=/bmes/daily-report", StringComparison.Ordinal) && !homeSource.Contains("memo", StringComparison.OrdinalIgnoreCase), "start page opens Daily Report, not Plan");
+string settingSource = File.ReadAllText(Path.Combine(webProject, "Components", "Pages", "BmesSettingPage.razor"));
+Check(!settingSource.Contains("Team Memo", StringComparison.Ordinal) && !settingSource.Contains("Moved to its own BMES menu", StringComparison.Ordinal), "Setting has no Team Memo DB or moved-table cards");
+
 if (failures.Count > 0)
     throw new InvalidOperationException($"Host-cutover checks failed: {string.Join(", ", failures)}");
 

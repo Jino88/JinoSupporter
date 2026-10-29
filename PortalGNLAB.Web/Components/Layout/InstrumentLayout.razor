@@ -298,9 +298,6 @@
     /// it is restored here on the same condition and at the same position.
     /// </summary>
     private const string BmesReportId = "bmes-report";
-    // Plan and Board are Team Memo pages under the same permission, not separate AppMenus entries.
-    private const string TeamMemoMeetingsId = "team-memo-meetings";
-    private const string TeamMemoBoardId = "team-memo-board";
 
     private List<MenuItemDef> VisibleMenu(string role)
     {
@@ -308,18 +305,12 @@
 
         foreach (MenuItemDef m in AppMenus.All)
         {
-            if (!Perms.IsAllowed(role, m.Id)) continue;
-            // Plan sits above Work Memo.
-            if (m.Id == AppMenus.TeamMemo)
-                items.Add(new MenuItemDef(TeamMemoMeetingsId, "Plan", m.Group));
+            // AppMenus.Report opens the same BMES report, which is added below on the classic gate.
+            if (m.Id == AppMenus.Report || !Perms.IsAllowed(role, m.Id)) continue;
             items.Add(m);
 
             if (m.Id == AppMenus.BmesFCost)
                 items.Add(new MenuItemDef(BmesReportId, "Report", "BMES"));
-            if (m.Id == AppMenus.TeamMemo)
-            {
-                items.Add(new MenuItemDef(TeamMemoBoardId, "Board & Schedule", m.Group));
-            }
         }
 
         if (_menuQuery is { Length: > 0 })
@@ -338,36 +329,24 @@
         AppMenus.NgRate             => "mi-trend",
         AppMenus.BmesFCost          => "mi-cost",
         BmesReportId                => "mi-doc",
-        TeamMemoMeetingsId          => "mi-cal",
-        TeamMemoBoardId             => "mi-table",
         AppMenus.BmesWorkerStatus   => "mi-worker",
         AppMenus.BmesMakeModelGroup => "mi-sliders",
         AppMenus.BmesRoutingTable   => "mi-route",
         AppMenus.BmesReasonTable    => "mi-reason",
-        AppMenus.BmesTest3          => "mi-test",
-        AppMenus.BmesTest4          => "mi-test",
         AppMenus.BmesTest5          => "mi-bom",
-        AppMenus.BmesLpa            => "mi-lpa",
         AppMenus.QrSummary          => "mi-qr",
         AppMenus.QrBakoData         => "mi-qr",
         AppMenus.QrAirleakData      => "mi-qr",
         AppMenus.QrGaussData        => "mi-qr",
         AppMenus.BmesDailyReport    => "mi-cal",
         AppMenus.BmesSetting        => "mi-gear",
-        AppMenus.GraphMaker         => "mi-graph",
         AppMenus.Translate          => "mi-globe",
         AppMenus.ReviewReport       => "mi-doc",
-        AppMenus.PcDownload         => "mi-down",
-        AppMenus.DiInputBatch       => "mi-inbox",
-        AppMenus.DiDb               => "mi-table",
-        AppMenus.DiAsk              => "mi-ai",
         AppMenus.Report             => "mi-doc",
-        AppMenus.DailyTestInput     => "mi-pencil",
         AppMenus.AdminUsers         => "mi-users",
         AppMenus.AdminAiUsages      => "mi-usage",
         AppMenus.TestExcelConverter => "mi-swap",
         AppMenus.AdminDbQuery       => "mi-db",
-        AppMenus.TeamMemo           => "mi-pencil",
         _                           => "mi-dot",
     };
 
@@ -486,34 +465,22 @@
         [AppMenus.BmesMakeModelGroup] = "bmes/make-model-group",
         [AppMenus.BmesRoutingTable]   = "bmes/routing-table",
         [AppMenus.BmesReasonTable]    = "bmes/reason-table",
-        [AppMenus.BmesTest3]          = "bmes/test3",
-        [AppMenus.BmesTest4]          = "bmes/test4",
         [AppMenus.BmesTest5]          = "bmes/test5",
-        [AppMenus.BmesLpa]            = "bmes/lpa",
         [AppMenus.QrSummary]          = "qr/summary",
         [AppMenus.QrBakoData]         = "qr/bako-data",
         [AppMenus.QrAirleakData]      = "qr/airleak-data",
         [AppMenus.QrGaussData]        = "qr/gauss-data",
         [AppMenus.BmesDailyReport]    = "bmes/daily-report",
         [AppMenus.BmesSetting]        = "setting",
-        [AppMenus.GraphMaker]         = "tools/graph-maker",
-        [AppMenus.DiInputBatch]       = "input-data-batch",
-        [AppMenus.DiDb]               = "data-inference/db",
-        [AppMenus.DiAsk]              = "data-inference/ask",
-        [AppMenus.DailyTestInput]     = "daily-test-data/input",
-        [AppMenus.Report]             = "report",
+        [AppMenus.Report]             = "report/bmes",
         [AppMenus.Translate]          = "translate",
         [AppMenus.ReviewReport]       = "tools/review-report",
-        [AppMenus.PcDownload]         = "tools/pc-download",
         [AppMenus.AdminUsers]         = "admin/users",
         [AppMenus.AdminAiUsages]      = "admin/ai-usages",
         [AppMenus.TestExcelConverter] = "admin/test-excel-converter",
         [AppMenus.AdminDbQuery]       = "admin/db-query",
         [AppMenus.NewVer]             = "new-ver",
-        [AppMenus.TeamMemo]           = "memo",
         [BmesReportId]                = "report/bmes",
-        [TeamMemoMeetingsId]          = "memo/plan",
-        [TeamMemoBoardId]             = "memo/board",
     };
 
     private static string RouteFor(string id) => Routes.TryGetValue(id, out string? r) ? r : "";

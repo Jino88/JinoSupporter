@@ -14,31 +14,21 @@ public static class PortalShellEndpoints
     /// <summary>Blazor route of every menu (same targets as Components/Layout/NavMenu.razor).</summary>
     public static readonly IReadOnlyDictionary<string, string> BlazorRoutes = new Dictionary<string, string>
     {
-        [AppMenus.TeamMemo]           = "/memo",
         [AppMenus.NgRate]             = "/ng-rate",
         [AppMenus.BmesFCost]          = "/bmes/f-cost",
         [AppMenus.BmesWorkerStatus]   = "/bmes/worker-status",
         [AppMenus.BmesMakeModelGroup] = "/bmes/make-model-group",
         [AppMenus.BmesRoutingTable]   = "/bmes/routing-table",
         [AppMenus.BmesReasonTable]    = "/bmes/reason-table",
-        [AppMenus.BmesTest3]          = "/bmes/test3",
-        [AppMenus.BmesTest4]          = "/bmes/test4",
         [AppMenus.BmesTest5]          = "/bmes/test5",
-        [AppMenus.BmesLpa]            = "/bmes/lpa",
         [AppMenus.BmesDailyReport]    = "/bmes/daily-report",
         [AppMenus.QrSummary]          = "/qr/summary",
         [AppMenus.QrBakoData]         = "/qr/bako-data",
         [AppMenus.QrAirleakData]      = "/qr/airleak-data",
         [AppMenus.QrGaussData]        = "/qr/gauss-data",
-        [AppMenus.GraphMaker]         = "/tools/graph-maker",
-        [AppMenus.DiInputBatch]       = "/input-data-batch",
-        [AppMenus.DiDb]               = "/data-inference/db",
-        [AppMenus.DiAsk]              = "/data-inference/ask",
-        [AppMenus.DailyTestInput]     = "/daily-test-data/input",
         [AppMenus.Report]             = "/report/bmes",
         [AppMenus.Translate]          = "/translate",
         [AppMenus.ReviewReport]       = "/tools/review-report",
-        [AppMenus.PcDownload]         = "/tools/pc-download",
         [AppMenus.BmesSetting]        = "/setting",
         [AppMenus.AdminUsers]         = "/admin/users",
         [AppMenus.AdminAiUsages]      = "/admin/ai-usages",
@@ -49,15 +39,12 @@ public static class PortalShellEndpoints
     /// <summary>Menus already ported to React, with their route inside the React app.</summary>
     public static readonly IReadOnlyDictionary<string, string> ReactRoutes = new Dictionary<string, string>
     {
-        [AppMenus.PcDownload] = "/app/tools/pc-download",
         [AppMenus.AdminUsers] = "/app/admin/users",
         [AppMenus.AdminAiUsages] = "/app/admin/ai-usages",
         [AppMenus.AdminDbQuery] = "/app/admin/db-query",
         [AppMenus.TestExcelConverter] = "/app/admin/test-excel-converter",
         [AppMenus.Translate] = "/app/tools/translate",
         [AppMenus.ReviewReport] = "/app/tools/review-report",
-        [AppMenus.GraphMaker] = "/app/tools/graph-maker",
-        [AppMenus.TeamMemo] = "/app/memo",
     };
 
     public sealed record PortalUser(string Name, string Role);
