@@ -4,12 +4,14 @@ import { appPath, groupMenu, isActive } from "./menu";
 import { MenuLink, navigate } from "./nav";
 import Home from "./pages/Home";
 import PcDownloadPage from "./pages/PcDownload";
+import AdminUsersPage from "./pages/AdminUsers";
 
 /** React pages by their path inside /app. A page added here also needs its menu id in
  *  PortalShellEndpoints.ReactRoutes so the menus (React and Blazor) link to it. */
 const pages: Record<string, { title: string; render: (menu: MenuItem[]) => ReactNode }> = {
   "/": { title: "Home", render: (menu) => <Home menu={menu} /> },
   "/tools/pc-download": { title: "PC Download", render: () => <PcDownloadPage /> },
+  "/admin/users": { title: "User Management", render: () => <AdminUsersPage /> },
 };
 
 export default function App() {

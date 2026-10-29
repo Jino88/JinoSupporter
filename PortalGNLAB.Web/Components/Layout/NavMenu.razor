@@ -121,7 +121,7 @@
     {
         @if (can(AppMenus.AdminUsers))
         {
-            @Tile("admin/users", "users", "Users", "Users")
+            @AppTile("/app/admin/users", "users", "Users", "Users")
         }
         @if (can(AppMenus.AdminAiUsages))
         {

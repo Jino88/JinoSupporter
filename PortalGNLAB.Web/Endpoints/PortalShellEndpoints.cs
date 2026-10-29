@@ -50,6 +50,7 @@ public static class PortalShellEndpoints
     public static readonly IReadOnlyDictionary<string, string> ReactRoutes = new Dictionary<string, string>
     {
         [AppMenus.PcDownload] = "/app/tools/pc-download",
+        [AppMenus.AdminUsers] = "/app/admin/users",
     };
 
     public sealed record PortalUser(string Name, string Role);
@@ -93,6 +94,8 @@ public static class PortalShellEndpoints
             perms.IsAllowed(user, AppMenus.PcDownload)
                 ? Results.Ok(ToPortalDownload(StandaloneDownloadCatalog.Read(env.ContentRootPath)))
                 : Results.StatusCode(StatusCodes.Status403Forbidden));
+
+        app.MapAdminUsers();
 
         // Every /app route is the React app; it asks /api/portal/me and sends signed-out users to /login.
         app.MapFallbackToFile("/app/{*path:nonfile}", "app/index.html");
