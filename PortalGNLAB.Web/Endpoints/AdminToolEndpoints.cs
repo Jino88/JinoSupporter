@@ -176,7 +176,7 @@ public sealed class AiState(WebRepository Repo, ClaudeUsageScraper Scraper, Code
         _loginBusy = true;
         _sessionError = false;
         _sessionStatus = "Opening browser. Sign in on both tabs, then close it.";
-        
+
         try
         {
             await Scraper.OpenLoginBrowserAsync();
@@ -201,7 +201,7 @@ public sealed class AiState(WebRepository Repo, ClaudeUsageScraper Scraper, Code
         _sessionError = false;
         _sessionStatus = autoTriggered ? "Auto-fetching Claude usage..." : "Fetching Claude usage...";
         _billingScrapeError = _usageScrapeError = string.Empty;
-        
+
 
         try
         {
@@ -209,7 +209,7 @@ public sealed class AiState(WebRepository Repo, ClaudeUsageScraper Scraper, Code
             if (!autoTriggered && NeedsVisibleLogin(result.BillingError, result.UsageError))
             {
                 _sessionStatus = "Hidden refresh needs login or security check. Opening Claude browser...";
-                
+
                 await Scraper.OpenLoginBrowserAsync();
                 result = await Scraper.ScrapeAsync();
             }
@@ -248,7 +248,7 @@ public sealed class AiState(WebRepository Repo, ClaudeUsageScraper Scraper, Code
         finally
         {
             _scrapeBusy = false;
-            
+
         }
     }
 
@@ -257,7 +257,7 @@ public sealed class AiState(WebRepository Repo, ClaudeUsageScraper Scraper, Code
         _codexLoginBusy = true;
         _codexSessionError = false;
         _codexSessionStatus = "Opening browser. Sign in to ChatGPT and OpenAI Platform, then close it.";
-        
+
         try
         {
             await CodexScraper.OpenLoginBrowserAsync();
@@ -282,7 +282,7 @@ public sealed class AiState(WebRepository Repo, ClaudeUsageScraper Scraper, Code
         _codexSessionError = false;
         _codexSessionStatus = autoTriggered ? "Auto-fetching Codex/OpenAI usage..." : "Fetching Codex/OpenAI usage...";
         _codexPlanScrapeError = _codexApiScrapeError = string.Empty;
-        
+
 
         try
         {
@@ -290,7 +290,7 @@ public sealed class AiState(WebRepository Repo, ClaudeUsageScraper Scraper, Code
             if (!autoTriggered && NeedsVisibleLogin(result.PlanError, result.ApiError))
             {
                 _codexSessionStatus = "Hidden refresh needs login or security check. Opening Codex/OpenAI browser...";
-                
+
                 await CodexScraper.OpenLoginBrowserAsync();
                 result = await CodexScraper.ScrapeAsync();
             }
@@ -328,7 +328,7 @@ public sealed class AiState(WebRepository Repo, ClaudeUsageScraper Scraper, Code
         finally
         {
             _codexScrapeBusy = false;
-            
+
         }
     }
 
