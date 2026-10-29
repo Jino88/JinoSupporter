@@ -1,0 +1,14 @@
+import { useEffect, useState } from "react";
+import { getJson, toolPath, toolSend, imageData } from "../toolsApi";
+import "../tools.css";
+export default function Translate() {
+ const [text,setText]=useState(""); const [target,setTarget]=useState("Korean");
+ const [images,setImages]=useState<{mediaType:string;base64:string}[]>([]);
+ const [settings,setSettings]=useState<{available:boolean;model:string;translateEffort:string}>();
+ const [result,setResult]=useState<{sourceText:string;translation:string;usage:string}>();
+ const [busy,setBusy]=useState(false); const [error,setError]=useState("");
+ useEffect(()=>{getJson<typeof settings>(toolPath("translate")).then(setSettings).catch(e=>setError(e.message));},[]);
+ async function add(files:File[]){try { const added=await Promise.all(files.filter(f=>f.type.startsWith("image/")).map(async f=>({mediaType:f.type,base64:await imageData(f)}))); setImages(old=>[...old,...added]); }catch(e){setError(String(e));}}
+ async function run(){setBusy(true);setError("");try{setResult(await toolSend("translate",{text,targetLanguage:target,images}));}catch(e){setError(String(e));}finally{setBusy(false);}}
+ return <section className="tools"><h1>Translate</h1>{error&&<p role="alert" className="error">{error}</p>}{settings&&!settings.available&&<p>Translation is unavailable. Configure an API key or enable CLI in Settings.</p>}<div className="tool-columns"><div className="card"><h2>Source</h2><textarea aria-label="Source text" value={text} onChange={e=>setText(e.target.value)} onPaste={e=>{const files=Array.from(e.clipboardData.files);if(files.length){e.preventDefault();void add(files);}}} placeholder="Enter text or paste images"/><input aria-label="Add images" type="file" accept="image/*" multiple onChange={e=>void add(Array.from(e.target.files??[]))}/><div className="tool-images">{images.map((im,i)=><div key={i}><img alt={`Source ${i+1}`} src={`data:${im.mediaType};base64,${im.base64}`}/><button disabled={busy} onClick={()=>setImages(images.filter((_,j)=>i!==j))}>Remove</button></div>)}</div><button onClick={()=>setImages([])} disabled={busy}>Clear images</button><label>Target language<select value={target} onChange={e=>setTarget(e.target.value)}>{["Korean","English","Japanese","Chinese (Simplified)","Chinese (Traditional)","Spanish","French","German","Vietnamese"].map(l=><option key={l}>{l}</option>)}</select></label><button disabled={busy||!settings?.available||(!text.trim()&&!images.length)} onClick={()=>void run()}>{busy?"Translating…":`Translate (${settings?.model??""})`}</button></div><div className="card"><h2>Translation Result</h2>{result?<><p>{result.usage}</p>{images.length>0&&<><h3>AI OCR source text</h3><pre>{result.sourceText}</pre></>}<pre>{result.translation}</pre><button onClick={()=>navigator.clipboard.writeText(result.translation).catch(e=>setError(String(e)))}>Copy</button></>:<p>Translation will appear here.</p>}</div></div></section>;
+}
