@@ -95,6 +95,44 @@ BmesApiResult Load(string name) => BmesToolRows.ParseExecuteResponse(Fixture(nam
     Check((string)d["ZTYPE"] == "D" && (string)d["LQRNO"] == "LPA-261001-001", "LPA checklist: request parameters (view D)");
 }
 
+// -- MES073010 routing + NG codes (AI_TOOL_00055 view R + AI_TOOL_00056) -----
+{
+    var source = BmesGateway.RoutingSourceFromResults(Load("routing_view_r.json"), Load("codes_00056.json"));
+    Check(source.Routes.Count == 6 && source.Routes.All(r => r.Matnr == "P-S-151100800"), "Routing: 6 routed steps, L99 (IPG) row left out");
+    var awf = source.Routes.Single(r => r.ProcessCode == "UM03005");
+    Check(awf.Werks == "3200" && awf.ProcessName == "AWF" && awf.StageCode == "L02" && awf.StageName == "Main Assy",
+        "Routing: KTSCH name and ZLRTP name from AI_TOOL_00056");
+    Check(source.Routes.Single(r => r.ProcessCode == "UM06186").ProcessName == "Vision Inspection Ass'y YOKE",
+        "Routing: blanks in names collapsed");
+    Check(source.UnnamedRoutes == 0 && source.UnnamedNgCodes == 0, "Routing: every fixture code has a name");
+
+    Check(source.NgCodes.Count == 5, "NG codes: 5 process x NG code pairs");
+    var spl = source.NgCodes.Single(c => c.ProcessCode == "UM10003" && c.NgCode == "0001");
+    Check(spl.ProcessName == "Audio Bus Test" && spl.NgName == "SPL", "NG codes: names trimmed");
+    Check(source.NgCodes.Single(c => c.NgCode == "0009").NgName == "Noise", "NG codes: trailing blank trimmed");
+
+    // the same material x process on two stages keeps the smaller stage code; a process without a name is counted
+    var raw = System.Text.Json.Nodes.JsonNode.Parse(Fixture("routing_view_r.json"))!;
+    var input = raw["resultSets"]![0]!;
+    var cols = input["columns"]!.AsArray().Select(c => c!.GetValue<string>()).ToList();
+    var copy = input["rows"]![0]!.DeepClone();
+    copy[cols.IndexOf("ZLRTP")] = "L01";
+    input["rows"]!.AsArray().Add(copy);
+    var unknown = input["rows"]![1]!.DeepClone();
+    unknown[cols.IndexOf("KTSCH")] = "XX99999";
+    input["rows"]!.AsArray().Add(unknown);
+    var edited = BmesGateway.RoutingSourceFromResults(BmesToolRows.ParseExecuteResponse(raw.ToJsonString()), Load("codes_00056.json"));
+    Check(edited.Routes.Single(r => r.ProcessCode == "UM03005").StageCode == "L01", "Routing: two stages -> smaller stage code");
+    Check(edited.Routes.Count == 6 && edited.UnnamedRoutes == 1, "Routing: process without a name counted, not added");
+
+    var p = BmesGateway.RoutingRawParameters(new DateTime(2026, 7, 28), new DateTime(2026, 10, 27));
+    Check((string)p["ZTYPE"] == "R" && (string)p["FRDAT"] == "2026-07-28" && (string)p["STDAT"] == "2026-10-27"
+          && ((string[])p["FACCO"]).SequenceEqual(["GN"]), "Routing: request parameters (view R, GN, 3 months)");
+    var c = BmesGateway.CodeMasterParameters(new DateTime(2026, 7, 28));
+    Check(((string[])c["CODTP"]).SequenceEqual(["KTSCH", "ZCODE", "ZLRTP"]) && (string)c["SDATE"] == "2026-07-28",
+        "Routing: code master parameters (KTSCH with ZCODE so ZCODE gets its process name)");
+}
+
 // -- shared helpers -----------------------------------------------------------
 {
     // Boundary measured on the API: 2026-07-28..2026-10-27 passes, from 2026-07-27 it is MSG0001207.

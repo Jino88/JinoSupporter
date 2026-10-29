@@ -360,71 +360,30 @@ public sealed class NgRateSettingsService
     }
 
     /// <summary>
-    /// Reads the standalone BMES routing dump (bmes_routing_raw.db) produced by
-    /// BmesRoutingScrapeService and inserts rows missing from RoutingTable.
-    /// Mapping:
-    ///   MAKTX    → ModelName
-    ///   VLSCH    → ProcessCode
-    ///   VLSCH_TX → ProcessName
-    ///   LGUBN_TX → ProcessType (Main Assy→MAIN, Sub Assy→SUB,
-    ///                           Final Visual→VISUAL, Function→FUNCTION,
-    ///                           others: raw value)
+    /// Inserts routing rows missing from RoutingTable (BMES API routing, see BmesRoutingScrapeService).
+    /// Input per row: material name (MAKTX) → ModelName, process code (KTSCH = routing VLSCH) → ProcessCode,
+    /// process name → ProcessName, line stage name (C0127 = routing LGUBN_TX) → ProcessType
+    /// (Main Assy→MAIN, Sub Assy→SUB, Final Visual→VISUAL, Function→FUNCTION, others: raw value).
     /// Model/Code/Name are NormalizeText-ed on both sides before comparison
     /// (and on insert), matching the normalization applied downstream in
-    /// Get Data's temp DB.
+    /// Get Data's temp DB. Existing rows are never changed or removed.
     /// </summary>
-    public int MergeRoutingFromRawDb(string rawDbPath, IProgress<string>? progress = null)
+    public int MergeRoutingRows(
+        IEnumerable<(string Model, string Code, string Name, string StageName)> rows, IProgress<string>? progress = null)
     {
-        if (!File.Exists(rawDbPath))
+        var dedup = new Dictionary<(string Model, string Code, string Name), string>();
+        int total = 0;
+        foreach (var (rawModel, rawCode, rawName, stageName) in rows)
         {
-            progress?.Report($"[WARN] Raw routing DB not found: {rawDbPath}");
-            return 0;
+            total++;
+            string model = NormalizeText(rawModel);
+            string code  = NormalizeText(rawCode);
+            string name  = NormalizeText(rawName);
+            if (model.Length == 0 || code.Length == 0 || name.Length == 0) continue;
+            dedup.TryAdd((model, code, name), MapProcessType(stageName ?? string.Empty));
         }
 
-        var rawDedup = new Dictionary<(string Model, string Code, string Name), string>();
-        int rawTotal = 0;
-        try
-        {
-            var cs = new SqliteConnectionStringBuilder
-            {
-                DataSource = rawDbPath,
-                Mode       = SqliteOpenMode.ReadOnly,
-            }.ToString();
-            using var conn = new SqliteConnection(cs);
-            conn.Open();
-
-            using (var check = conn.CreateCommand())
-            {
-                check.CommandText =
-                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='BmesRouting';";
-                if (Convert.ToInt64(check.ExecuteScalar() ?? 0L) == 0)
-                {
-                    progress?.Report("[WARN] BmesRouting table not found in raw DB.");
-                    return 0;
-                }
-            }
-
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT MAKTX, VLSCH, VLSCH_TX, LGUBN_TX FROM BmesRouting;";
-            using var rdr = cmd.ExecuteReader();
-            while (rdr.Read())
-            {
-                rawTotal++;
-                string model = NormalizeText(rdr.IsDBNull(0) ? string.Empty : rdr.GetString(0));
-                string code  = NormalizeText(rdr.IsDBNull(1) ? string.Empty : rdr.GetString(1));
-                string name  = NormalizeText(rdr.IsDBNull(2) ? string.Empty : rdr.GetString(2));
-                string lgTx  = rdr.IsDBNull(3) ? string.Empty : rdr.GetString(3).Trim();
-                if (model.Length == 0 || code.Length == 0 || name.Length == 0) continue;
-                rawDedup.TryAdd((model, code, name), MapProcessType(lgTx));
-            }
-        }
-        catch (Exception ex)
-        {
-            progress?.Report($"[ERROR] Read raw DB failed: {ex.Message}");
-            return 0;
-        }
-
-        progress?.Report($"Raw: {rawTotal:N0} rows → {rawDedup.Count:N0} unique (Model, Code, Name) tuples.");
+        progress?.Report($"Routing: {total:N0} rows → {dedup.Count:N0} unique (Model, Code, Name) tuples.");
 
         var existing = GetRoutingRows()
             .Select(r => (
@@ -433,7 +392,7 @@ public sealed class NgRateSettingsService
                 Name:  NormalizeText(r.ProcessName)))
             .ToHashSet();
 
-        var missing = rawDedup.Where(kv => !existing.Contains(kv.Key)).ToList();
+        var missing = dedup.Where(kv => !existing.Contains(kv.Key)).ToList();
         if (missing.Count == 0)
         {
             progress?.Report("No new routing rows to add.");
@@ -461,6 +420,44 @@ public sealed class NgRateSettingsService
         return missing.Count;
     }
 
+    /// <summary>
+    /// Material code → material name already in PortalGNLAB.db: the NG Rate cache (MATERIALCODE / MATERIALNAME,
+    /// from AI_TOOL_00055 view S), then the old MES020240 routing dump (BmesRouting MATNR / MAKTX) when present.
+    /// </summary>
+    public Dictionary<string, string> GetKnownMaterialNames()
+    {
+        var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            using var conn = Open();
+            void Read(string table, string sql)
+            {
+                using var check = conn.CreateCommand();
+                check.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=@t;";
+                check.Parameters.AddWithValue("@t", table);
+                if (Convert.ToInt64(check.ExecuteScalar() ?? 0L) == 0) return;
+
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = sql;
+                using var rdr = cmd.ExecuteReader();
+                while (rdr.Read())
+                {
+                    string code = rdr.IsDBNull(0) ? string.Empty : rdr.GetString(0).Trim();
+                    string name = rdr.IsDBNull(1) ? string.Empty : rdr.GetString(1).Trim();
+                    if (code.Length > 0 && name.Length > 0) names.TryAdd(code, name);
+                }
+            }
+
+            Read("NgRateCache", "SELECT DISTINCT [MATERIALCODE], [MATERIALNAME] FROM [NgRateCache];");
+            Read("BmesRouting", "SELECT DISTINCT [MATNR], [MAKTX] FROM [BmesRouting];");
+        }
+        catch
+        {
+            // Unreadable tables just give fewer names; the caller asks the API for the rest.
+        }
+        return names;
+    }
+
     private static string MapProcessType(string lgubnTx) => lgubnTx.Trim() switch
     {
         "Main Assy"    => "MAIN",
@@ -482,12 +479,25 @@ public sealed class NgRateSettingsService
         progress?.Report("Scanning NG Rate cache…");
         var dailyPairs = ReadCachedProcessNgPairs(null);
         progress?.Report($"Collected {dailyPairs.Count} distinct pair(s) from the NG Rate cache.");
+        return MergeReasonPairs(dailyPairs, progress);
+    }
 
+    /// <summary>
+    /// Inserts (ProcessName, NgName) pairs missing from ReasonTable with an empty Reason. Both columns are
+    /// NormalizeText-ed and compared normalized; existing rows are never changed or removed.
+    /// Returns the number of newly inserted rows.
+    /// </summary>
+    public int MergeReasonPairs(IEnumerable<(string ProcessName, string NgName)> pairs, IProgress<string>? progress = null)
+    {
         var existing = GetReasonRows()
             .Select(r => (Pn: NormalizeText(r.ProcessName), Ng: NormalizeText(r.NgName)))
             .ToHashSet();
 
-        var missing = dailyPairs.Where(p => !existing.Contains(p)).ToList();
+        var missing = pairs
+            .Select(p => (Pn: NormalizeText(p.ProcessName), Ng: NormalizeText(p.NgName)))
+            .Where(p => (p.Pn.Length > 0 || p.Ng.Length > 0) && !existing.Contains(p))
+            .Distinct()
+            .ToList();
         if (missing.Count == 0)
         {
             progress?.Report("No new pairs to add.");

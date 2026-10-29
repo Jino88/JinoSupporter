@@ -1,101 +1,92 @@
-using Microsoft.Data.Sqlite;
-
 namespace PortalGNLAB.Web.Services;
 
 /// <summary>
-/// Fetches routing master records from BMES MES020240/SearchList for each WERKS
-/// (3200, 3210, 3220) and dumps all rows verbatim to a standalone SQLite DB
-/// (BmesRouting table in PortalGNLAB.db). Column set mirrors the API
-/// response; all values are stored as TEXT. Full refresh — table is dropped and
-/// recreated on every call.
+/// Fills RoutingTable and ReasonTable from PLATFORM_API (the old portal's NG type refresh):
+/// AI_TOOL_00055 view R (GN raw data, last 3 months) gives material × process × line stage and the
+/// process × NG codes that occurred; AI_TOOL_00056 gives the process / NG code / line stage names.
+/// Both merges only add rows that are missing; existing rows and their Reason values stay.
 /// </summary>
 public sealed class BmesRoutingScrapeService(NgRateSettingsService settings)
 {
-    private static string[] Columns => BmesGateway.RoutingColumns;
-
-    public string RawDbPath => PortalDb.FilePath;
-
     /// <summary>
-    /// Returns number of rows saved across all WERKS requests, or -1 on failure.
+    /// Adds missing RoutingTable rows. Returns the number of routing rows received from BMES, or -1 on failure.
     /// </summary>
     public async Task<int> FetchAllAsync(IProgress<string>? progress = null)
     {
-        string loginId  = settings.LoginId;
-        string password = settings.Password;
-        if (string.IsNullOrWhiteSpace(loginId) || string.IsNullOrWhiteSpace(password))
+        using BmesWebSession? session = await OpenAsync(progress);
+        if (session is null) return -1;
+        BmesRoutingSource? source = await FetchSourceAsync(session, progress);
+        if (source is null) return -1;
+
+        Dictionary<string, string> names = await Task.Run(settings.GetKnownMaterialNames);
+        var unnamed = source.Routes.Where(r => !names.ContainsKey(r.Matnr))
+            .GroupBy(r => r.Werks, StringComparer.OrdinalIgnoreCase).ToList();
+        foreach (var plant in unnamed)
         {
-            progress?.Report("[ERROR] BMES credentials not configured.");
-            return -1;
+            var matnrs = plant.Select(r => r.Matnr).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            progress?.Report($"Calling AI_TOOL_00055 view S for {matnrs.Count} material name(s) (WERKS {plant.Key})…");
+            try
+            {
+                foreach (var (code, name) in await BmesGateway.FetchMaterialNamesAsync(session, plant.Key, matnrs, DateTime.Today))
+                    names.TryAdd(code, name);
+            }
+            catch (BmesApiException ex)
+            {
+                progress?.Report($"[WARN] Material names (WERKS {plant.Key}): {ex.Message}");
+            }
         }
 
-        var opened = await BmesWebSession.OpenAsync(loginId, password, new BmesWebSessionOptions
-        {
-            Timeout      = TimeSpan.FromSeconds(300),
-            TokenMessage = "Fetching verification token…",
-            LoginMessage = "Logging in…",
-        }, progress);
-        if (opened.Session is null)
-        {
-            progress?.Report(opened.Failure == BmesLoginFailure.Token
-                ? "[ERROR] Failed to obtain token."
-                : "[ERROR] Login failed — check credentials in Setting.");
-            return -1;
-        }
+        var rows = source.Routes.Where(r => names.ContainsKey(r.Matnr))
+            .Select(r => (names[r.Matnr], r.ProcessCode, r.ProcessName, r.StageName)).ToList();
+        int noName = source.Routes.Count - rows.Count;
+        if (noName > 0) progress?.Report($"[WARN] {noName:N0} routing row(s) skipped: no material name.");
+        if (source.UnnamedRoutes > 0) progress?.Report($"[WARN] {source.UnnamedRoutes:N0} routing row(s) skipped: no process name in AI_TOOL_00056.");
 
-        List<Dictionary<string, string>>? allRows;
-        using (var session = opened.Session)
-            allRows = await BmesGateway.FetchRoutingRowsAsync(session, progress);
-        if (allRows is null) return -1;
-
-        progress?.Report($"Parsed {allRows.Count:N0} total rows. Saving to {Path.GetFileName(RawDbPath)}…");
-        int saved = await Task.Run(() => SaveToSqlite(allRows));
-        progress?.Report($"✓ Saved {saved:N0} row(s) to PortalGNLAB.db (BmesRouting)");
-
-        progress?.Report("Merging into RoutingTable…");
-        int added = await Task.Run(() => settings.MergeRoutingFromRawDb(RawDbPath, progress));
+        progress?.Report($"Received {source.Routes.Count:N0} routing row(s). Merging into RoutingTable…");
+        int added = await Task.Run(() => settings.MergeRoutingRows(rows, progress));
         progress?.Report(added > 0
-            ? $"✓ Done. Saved {saved:N0} raw / added {added:N0} new RoutingTable row(s)."
-            : $"✓ Done. Saved {saved:N0} raw / no new RoutingTable rows.");
-        return saved;
+            ? $"✓ Done. {source.Routes.Count:N0} routing row(s) from BMES API / added {added:N0} new RoutingTable row(s)."
+            : $"✓ Done. {source.Routes.Count:N0} routing row(s) from BMES API / no new RoutingTable rows.");
+        return source.Routes.Count;
     }
 
-    private int SaveToSqlite(List<Dictionary<string, string>> rows)
+    /// <summary>
+    /// Adds missing (ProcessName, NgName) pairs to ReasonTable with an empty Reason.
+    /// Returns the number of added rows, or -1 on failure.
+    /// </summary>
+    public async Task<int> FetchReasonPairsAsync(IProgress<string>? progress = null)
     {
-        using var conn = new SqliteConnection($"Data Source={RawDbPath}");
-        conn.Open();
+        using BmesWebSession? session = await OpenAsync(progress);
+        if (session is null) return -1;
+        BmesRoutingSource? source = await FetchSourceAsync(session, progress);
+        if (source is null) return -1;
 
-        string colDefs = string.Join(", ", Columns.Select(c => $"[{c}] TEXT"));
-        using (var drop = conn.CreateCommand())
+        if (source.UnnamedNgCodes > 0)
+            progress?.Report($"[WARN] {source.UnnamedNgCodes:N0} NG code(s) skipped: no name in AI_TOOL_00056.");
+        progress?.Report($"Received {source.NgCodes.Count:N0} process / NG code pair(s). Merging into ReasonTable…");
+        int added = await Task.Run(() => settings.MergeReasonPairs(
+            source.NgCodes.Select(c => (c.ProcessName, c.NgName)), progress));
+        return added;
+    }
+
+    private async Task<BmesWebSession?> OpenAsync(IProgress<string>? progress)
+    {
+        BmesLoginOutcome login = await BmesWebSession.OpenAsync(settings.LoginId, settings.Password, progress: progress);
+        if (login.Succeeded) return login.Session;
+        progress?.Report("[ERROR] BMES API login not configured. Set it in Setting.");
+        return null;
+    }
+
+    private static async Task<BmesRoutingSource?> FetchSourceAsync(BmesWebSession session, IProgress<string>? progress)
+    {
+        try
         {
-            drop.CommandText = "DROP TABLE IF EXISTS [BmesRouting];";
-            drop.ExecuteNonQuery();
+            return await BmesGateway.FetchRoutingSourceAsync(session, DateTime.Today, progress);
         }
-        using (var create = conn.CreateCommand())
+        catch (BmesApiException ex)
         {
-            create.CommandText = $"CREATE TABLE [BmesRouting] ({colDefs}, [FetchedAt] TEXT);";
-            create.ExecuteNonQuery();
+            progress?.Report($"[ERROR] BMES API: {ex.Message}" + (ex.TraceId is null ? "" : $" (trace {ex.TraceId})"));
+            return null;
         }
-
-        string colList   = string.Join(", ", Columns.Select(c => $"[{c}]"));
-        string paramList = string.Join(", ", Columns.Select((_, i) => $"@p{i}"));
-        string fetchedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
-        using var tx  = conn.BeginTransaction();
-        using var ins = conn.CreateCommand();
-        ins.CommandText = $"INSERT INTO [BmesRouting] ({colList}, [FetchedAt]) VALUES ({paramList}, @fetchedAt);";
-        for (int i = 0; i < Columns.Length; i++) ins.Parameters.Add(new SqliteParameter($"@p{i}", string.Empty));
-        ins.Parameters.Add(new SqliteParameter("@fetchedAt", fetchedAt));
-
-        int saved = 0;
-        foreach (var row in rows)
-        {
-            for (int i = 0; i < Columns.Length; i++)
-                ins.Parameters[i].Value = row.TryGetValue(Columns[i], out var v) ? v : string.Empty;
-            ins.Parameters[Columns.Length].Value = fetchedAt;
-            ins.ExecuteNonQuery();
-            saved++;
-        }
-        tx.Commit();
-        return saved;
     }
 }
