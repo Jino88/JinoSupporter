@@ -490,7 +490,7 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
         string? dbPath = MaterialNg.FindMostRecentDb();
         if (string.IsNullOrWhiteSpace(dbPath))
         {
-            _errorMessage = "NG Rate DB was not found.";
+            _errorMessage = "No NG Rate data in memory yet. Run Get Data first.";
             _statusMessage = string.Empty;
             return;
         }
@@ -582,7 +582,7 @@ else if (!string.IsNullOrWhiteSpace(_fcostError))
         _report = await MaterialNg.GenerateAsync(dbPath, _modelFilter, progress);
         EnsureSelectedWeek();
         await LoadFcostComparisonAsync(progress);
-        _statusMessage = $"Report generated: {Path.GetFileName(dbPath)}";
+        _statusMessage = $"Report generated: {dbPath}";
     }
 
     private void EnsureSelectedWeek()

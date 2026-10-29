@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
-using Microsoft.Data.Sqlite;
 
 namespace PortalGNLAB.Web.Services;
 
@@ -227,14 +226,8 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
 
     // ── Public API ────────────────────────────────────────────────────────────────
 
-    public string? FindMostRecentDb()
-    {
-        string dir = _settings.DbSaveDirectory;
-        if (!Directory.Exists(dir)) return null;
-        return Directory.GetFiles(dir, "temp_*.db")
-            .OrderByDescending(File.GetLastWriteTime)
-            .FirstOrDefault();
-    }
+    /// <summary>Handle of the most recent NG Rate fetch still in memory (see <see cref="NgRateDataStore"/>).</summary>
+    public string? FindMostRecentDb() => NgRateDataStore.LatestHandle();
 
     /// <summary>
     /// Report generator. All callers (By Model, By Group) provide a pre-built
@@ -1716,24 +1709,18 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         return result;
     }
 
-    // ── SQLite ────────────────────────────────────────────────────────────────────
+    // ── NG data (NgRateDataStore) ─────────────────────────────────────────────────
+    // dbPath below is the NgRateDataSet handle NgRateService returned. The readers keep the
+    // exact reading of the old temp_*.db file: text values, ProcessName / NgName normalized,
+    // quantities parsed with NumberStyles.Any, the date range as a text comparison.
 
     private static Dictionary<string, string> LoadReasonLookup(string dbPath)
     {
         var lookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        using var conn = new SqliteConnection($"Data Source={dbPath};Mode=ReadOnly");
-        conn.Open();
-        if (!TableExists(conn, "Reason")) return lookup;
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT [processName], [NgName], [Reason] FROM [Reason]";
-        using var r = cmd.ExecuteReader();
-        while (r.Read())
+        foreach (var reason in NgRateDataStore.Get(dbPath).Reasons)
         {
-            string pn     = ReadStr(r, 0);
-            string ngName = ReadStr(r, 1);
-            string reason = ReadStr(r, 2);
-            if (!string.IsNullOrEmpty(pn) && !string.IsNullOrEmpty(ngName))
-                lookup.TryAdd(pn + "\0" + ngName, reason);
+            if (!string.IsNullOrEmpty(reason.ProcessName) && !string.IsNullOrEmpty(reason.NgName))
+                lookup.TryAdd(reason.ProcessName + "\0" + reason.NgName, reason.Reason);
         }
         return lookup;
     }
@@ -1744,45 +1731,32 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         DateTime? requestedStart = null,
         DateTime? requestedEnd = null)
     {
-        var rows = new List<OrgRow>();
-        using var conn = new SqliteConnection($"Data Source={dbPath};Mode=ReadOnly");
-        conn.Open();
-        if (!TableExists(conn, "OrginalTable")) return rows;
-
-        bool hasLineShift = ColumnExists(conn, "OrginalTable", "LineShift");
-        string lineShiftExpr = hasLineShift
-            ? "[LineShift]"
-            : "([MATERIALNAME] || '_' || [PRODUCTION_LINE])";
-
-        using var cmd = conn.CreateCommand();
+        var data = NgRateDataStore.Get(dbPath);
         bool hasDateRange = requestedStart.HasValue && requestedEnd.HasValue
             && requestedEnd.Value.Date >= requestedStart.Value.Date;
-        cmd.CommandText = $"""
-            SELECT [MATERIALNAME], {lineShiftExpr}, [PROCESSCODE], [PROCESSNAME],
-                   [NGNAME], [QTYINPUT], [QTYNG], [PRODUCT_DATE]
-            FROM [OrginalTable]
-            {(hasDateRange ? "WHERE [PRODUCT_DATE] >= @start AND [PRODUCT_DATE] < @endExclusive" : string.Empty)}
-            """;
-        if (hasDateRange)
+        string start = hasDateRange
+            ? requestedStart!.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : string.Empty;
+        string endExclusive = hasDateRange
+            ? requestedEnd!.Value.Date.AddDays(1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : string.Empty;
+
+        var rows = new List<OrgRow>();
+        foreach (var row in data.Rows)
         {
-            cmd.Parameters.AddWithValue("@start", requestedStart!.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
-            cmd.Parameters.AddWithValue("@endExclusive", requestedEnd!.Value.Date.AddDays(1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
-        }
-        using var r = cmd.ExecuteReader();
-        while (r.Read())
-        {
-            string lineShift = ReadStr(r, 1);
-            if (modelFilter is not null && !modelFilter.Contains(lineShift)) continue;
+            if (hasDateRange
+                && (string.CompareOrdinal(row.ProductDate, start) < 0
+                    || string.CompareOrdinal(row.ProductDate, endExclusive) >= 0))
+                continue;
+            if (modelFilter is not null && !modelFilter.Contains(row.LineShift)) continue;
             rows.Add(new OrgRow
             {
-                MaterialName = ReadStr(r, 0),
-                LineShift    = lineShift,
-                ProcessCode  = ReadStr(r, 2),
-                ProcessName  = NormalizeText(ReadStr(r, 3)),
-                NgName       = NormalizeText(ReadStr(r, 4)),
-                QtyInput     = ReadDouble(r, 5),
-                QtyNg        = ReadDouble(r, 6),
-                ProductDate  = ReadStr(r, 7),
+                MaterialName = row.MaterialName,
+                LineShift    = row.LineShift,
+                ProcessCode  = row.ProcessCode,
+                ProcessName  = NormalizeText(row.ProcessName),
+                NgName       = NormalizeText(row.NgName),
+                QtyInput     = ParseQty(row.QtyInput),
+                QtyNg        = ParseQty(row.QtyNg),
+                ProductDate  = row.ProductDate,
             });
         }
         return rows;
@@ -1791,36 +1765,8 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
     private Dictionary<(string, string, string), string> LoadProcessTypeLookup(string dbPath)
     {
         var lookup = new Dictionary<(string, string, string), string>();
-        using var conn = new SqliteConnection($"Data Source={dbPath};Mode=ReadOnly");
-        conn.Open();
-
-        if (TableExists(conn, "RoutingTable"))
-        {
-            string? modelCol = FindColumn(conn, "RoutingTable", "모델명", "ModelName", "MATERIALNAME");
-            string? codeCol = FindColumn(conn, "RoutingTable", "ProcessCode", "PROCESSCODE");
-            string? nameCol = FindColumn(conn, "RoutingTable", "ProcessName", "PROCESSNAME");
-            string? typeCol = FindColumn(conn, "RoutingTable", "ProcessType", "PROCESSTYPE");
-
-            if (!string.IsNullOrEmpty(codeCol)
-                && !string.IsNullOrEmpty(nameCol)
-                && !string.IsNullOrEmpty(typeCol))
-            {
-                using var cmd = conn.CreateCommand();
-                string modelExpr = string.IsNullOrEmpty(modelCol) ? "''" : QuoteIdentifier(modelCol);
-                cmd.CommandText =
-                    $"SELECT {modelExpr}, {QuoteIdentifier(codeCol)}, {QuoteIdentifier(nameCol)}, {QuoteIdentifier(typeCol)} FROM [RoutingTable]";
-                using var r = cmd.ExecuteReader();
-                while (r.Read())
-                {
-                    AddProcessTypeLookup(
-                        lookup,
-                        ReadStr(r, 0),
-                        ReadStr(r, 1),
-                        ReadStr(r, 2),
-                        ReadStr(r, 3));
-                }
-            }
-        }
+        foreach (var row in NgRateDataStore.Get(dbPath).Routing)
+            AddProcessTypeLookup(lookup, row.ModelName, row.ProcessCode, row.ProcessName, row.ProcessType);
 
         if (lookup.Count == 0)
         {
@@ -1851,42 +1797,6 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         lookup.TryAdd((string.Empty, code, name), pt);
     }
 
-    private static string? FindColumn(SqliteConnection conn, string table, params string[] names)
-    {
-        var wanted = names.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = $"PRAGMA table_info({QuoteIdentifier(table)})";
-        using var r = cmd.ExecuteReader();
-        while (r.Read())
-        {
-            string name = r.GetString(1);
-            if (wanted.Contains(name))
-                return name;
-        }
-        return null;
-    }
-
-    private static string QuoteIdentifier(string identifier) =>
-        "[" + identifier.Replace("]", "]]", StringComparison.Ordinal) + "]";
-
-    private static bool TableExists(SqliteConnection conn, string t)
-    {
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=@t";
-        cmd.Parameters.AddWithValue("@t", t);
-        return (long)cmd.ExecuteScalar()! > 0;
-    }
-
-    private static bool ColumnExists(SqliteConnection conn, string table, string col)
-    {
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = $"PRAGMA table_info([{table}])";
-        using var r = cmd.ExecuteReader();
-        while (r.Read())
-            if (r.GetString(1).Equals(col, StringComparison.OrdinalIgnoreCase)) return true;
-        return false;
-    }
-
     private static string NormalizeText(string input)
     {
         if (string.IsNullOrWhiteSpace(input)) return string.Empty;
@@ -1899,17 +1809,10 @@ public sealed class NgRateReportService(NgRateSettingsService settings)
         return input.Trim();
     }
 
-    private static string ReadStr(SqliteDataReader r, int i)
-        => r.IsDBNull(i) ? string.Empty : r.GetValue(i).ToString()!;
-
-    private static double ReadDouble(SqliteDataReader r, int i)
+    /// <summary>Quantity text → number, as the old temp DB reader parsed TEXT cells.</summary>
+    public static double ParseQty(string text)
     {
-        if (r.IsDBNull(i)) return 0;
-        var val = r.GetValue(i);
-        if (val is double d) return d;
-        if (val is long   l) return l;
-        double.TryParse(val?.ToString(), NumberStyles.Any,
-                        CultureInfo.InvariantCulture, out double res);
+        double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double res);
         return res;
     }
 }

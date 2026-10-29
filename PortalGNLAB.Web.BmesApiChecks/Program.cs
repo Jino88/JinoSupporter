@@ -99,6 +99,31 @@ BmesApiResult Load(string name) => BmesToolRows.ParseExecuteResponse(Fixture(nam
         "F-Cost raw: one call covers 7 ISO weeks (W38..W44) or 7 months (04..10), as the Tool answered");
 }
 
+// -- NG Rate data set (in memory, replaces temp_*.db) --------------------------
+{
+    var rows = BmesGateway.NgRecordRowsFromResult(Load("ng_view_s.json"));
+    var data = NgRateDataSet.Create(rows, [], []);
+    var first = data.Rows[0];
+    Check(data.Rows.Count == rows.Count && first.LineShift == rows[0]["MATERIALNAME"] + "_" + rows[0]["PRODUCTION_LINE"],
+        "NG data: LineShift = MATERIALNAME_PRODUCTION_LINE, one row per fetched row");
+    Check(first.QtyInput == "12000" && first.QtyNg == "0" && first.ProductDate == "2026-10-27" && first.ProcessName == "FORMING",
+        "NG data: values kept as the fetched text");
+    var partial = NgRateDataSet.Create([new Dictionary<string, string> { ["MATERIALNAME"] = "M1" }], [], []);
+    Check(partial.Rows[0].NgName == "" && partial.Rows[0].LineShift == "M1_", "NG data: missing column reads as empty text");
+    Check(NgRateReportService.ParseQty("1,234.5") == 1234.5 && NgRateReportService.ParseQty("x") == 0, "NG data: quantity text parsed like the old temp DB reader");
+
+    var handles = Enumerable.Range(0, NgRateDataStore.Capacity + 1)
+        .Select(_ => { var d = NgRateDataSet.Create(rows, [], []); NgRateDataStore.Add(d); return d.Handle; })
+        .ToList();
+    Check(handles.Distinct().Count() == handles.Count, "NG data: every fetch gets its own handle");
+    Check(!NgRateDataStore.Contains(handles[0]) && handles.Skip(1).All(NgRateDataStore.Contains),
+        $"NG data: store keeps the newest {NgRateDataStore.Capacity} fetches");
+    Check(NgRateDataStore.LatestHandle() == handles[^1], "NG data: latest handle is the newest fetch");
+    bool threw = false;
+    try { NgRateDataStore.Get(handles[0]); } catch (InvalidOperationException) { threw = true; }
+    Check(threw, "NG data: a dropped handle fails with a clear message instead of empty results");
+}
+
 // -- MES072410 Core-parts F-Cost (AI_TOOL_00001 view G) -----------------------
 {
     var parsed = BmesGateway.CorePartsFromResult(Load("coreparts_view_g.json"));

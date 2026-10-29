@@ -15,14 +15,14 @@ public sealed class BmesWeeklyReportCalculationService(NgRateReportService repor
     {
         if (!daily.Hierarchy.HasData || daily.Hierarchy.ByGroup is null)
             throw new InvalidOperationException("Daily hierarchy is required for Weekly calculation.");
-        if (string.IsNullOrWhiteSpace(daily.SourceDbPath) || !File.Exists(daily.SourceDbPath))
-            throw new InvalidOperationException("Shared NG Rate DB was not found.");
+        if (!NgRateDataStore.Contains(daily.SourceDbPath))
+            throw new InvalidOperationException("Shared NG Rate data is no longer in memory. Run the report again.");
 
         NgRateGroupMappings mappings = NgRateModeSupport.BuildGroupMappings(request.Groups);
         if (!mappings.HasData)
             throw new InvalidOperationException("No LineShift found in the selected groups.");
 
-        progress?.Report($"Reusing Daily hierarchy report: {Path.GetFileName(daily.SourceDbPath)}");
+        progress?.Report($"Reusing Daily hierarchy report: {daily.SourceDbPath}");
         Task<NgRateReportService.LineShiftNgReport> lineShiftTask =
             reportService.ComputeLineShiftNgDetailsAsync(
                 daily.SourceDbPath,

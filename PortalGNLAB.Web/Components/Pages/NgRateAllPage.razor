@@ -247,7 +247,7 @@
                 <span class="badge bg-secondary" style="font-size:11px;">@(mi + 1)</span>
                 <h6 class="mb-0 fw-semibold" style="color:#1e40af;">@lbl</h6>
                 <span class="small text-muted ms-1">
-                    @Path.GetFileName(rpt.DbPath) |
+                    @rpt.DbPath |
                     @rpt.TotalRows.ToString("N0") rows |
                     @rpt.GeneratedAt.ToString("HH:mm:ss")
                 </span>
@@ -1228,7 +1228,7 @@
             _savedDbPath = dbPath;
             RefreshGroups();
             Activity.Log("NG Rate By Section", $"Generate Report selectedGroups={_selectedGroupIds.Count:N0}, selectedEntries={_selectedSubEntries.Count:N0}");
-            progress.Report($"Using DB: {Path.GetFileName(dbPath)}");
+            progress.Report($"Using NG data: {dbPath}");
 
             if (_selectedGroupIds.Count == 0 && _selectedSubEntries.Count == 0)
             {

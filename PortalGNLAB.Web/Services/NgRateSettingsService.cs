@@ -366,7 +366,7 @@ public sealed class NgRateSettingsService
     /// (Main Assy→MAIN, Sub Assy→SUB, Final Visual→VISUAL, Function→FUNCTION, others: raw value).
     /// Model/Code/Name are NormalizeText-ed on both sides before comparison
     /// (and on insert), matching the normalization applied downstream in
-    /// Get Data's temp DB. Existing rows are never changed or removed.
+    /// the NG Rate report. Existing rows are never changed or removed.
     /// </summary>
     public int MergeRoutingRows(
         IEnumerable<(string Model, string Code, string Name, string StageName)> rows, IProgress<string>? progress = null)

@@ -36,7 +36,7 @@ public sealed class BmesDailyReportCalculationService(
         if (string.IsNullOrWhiteSpace(dbPath))
             throw new InvalidOperationException("Daily data fetch or save failed.");
 
-        progress?.Report($"Using DB: {Path.GetFileName(dbPath)}");
+        progress?.Report($"Using NG data: {dbPath}");
         HierReports hierarchy = await HierReportBuilder.BuildAsync(
             reportService,
             dbPath,

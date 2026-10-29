@@ -7,7 +7,7 @@ using Microsoft.Data.Sqlite;
 namespace PortalGNLAB.Web.Services;
 
 /// <summary>
-/// BMES NG Rate data collection → SQLite save → Processing service.
+/// BMES NG Rate data collection → in-memory data set (NgRateDataStore) service.
 /// Web port of the DataMaker WPF app's clFetchBMES + clFetchBMESNGDATA + clDataProcessor logic.
 /// Paths / credentials are read from NgRateSettingsService.
 /// </summary>
@@ -33,7 +33,7 @@ public sealed class NgRateService(
         DateTime EndDate,
         string LineShiftFilterKey,
         DateTimeOffset CachedAt,
-        string DbPath);
+        string Handle);
 
     /// <summary>Mirrors a progress message to both the UI and the Debug/launching-console output.
     /// Use this for every status line so you can diagnose stalls live in the dotnet console
@@ -53,10 +53,11 @@ public sealed class NgRateService(
     // ── Public API ──────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Full flow: BMES data fetch → SQLite save → processing.
+    /// Full flow: BMES data fetch → merged in-memory data set.
     /// - Dates 3+ days ago : use monthly DB cache (fetch + cache if missing)
     /// - Dates 0–2 days ago: always fetch from server (data may still change)
-    /// - Result is merged into a temp DB (temp_*.db); previous temp DBs are auto-deleted.
+    /// - Returns the <see cref="NgRateDataSet.Handle"/> of the merged rows in
+    ///   <see cref="NgRateDataStore"/>; nothing is written to disk besides the NgRateCache.
     /// </summary>
     public async Task<string?> GetOrFetchAsync(
         DateTime startDate,
@@ -66,10 +67,10 @@ public sealed class NgRateService(
     {
         HashSet<string>? normalizedLineShifts = NormalizeLineShiftFilter(lineShiftFilter);
         string filterKey = BuildLineShiftFilterKey(normalizedLineShifts);
-        if (TryGetReusableDb(startDate, endDate, filterKey, out string? dbPath))
+        if (TryGetReusableDb(startDate, endDate, filterKey, out string? handle))
         {
-            Log(progress, $"Reusing fetched DB: {Path.GetFileName(dbPath)}");
-            return dbPath;
+            Log(progress, $"Reusing fetched data: {handle}");
+            return handle;
         }
 
         return await FetchAndSaveAsync(startDate, endDate, progress, normalizedLineShifts);
@@ -235,32 +236,22 @@ public sealed class NgRateService(
             return null;
         }
 
-        // ── 5. Clean up old temp DBs → create new temp DB ───────────────────
-        await Task.Run(() => CleanupTempDbs(progress));
-
-        string tempPath = GetTempDbPath();
-        try { Directory.CreateDirectory(Path.GetDirectoryName(tempPath)!); }
-        catch (Exception ex)
-        {
-            Log(progress, $"[ERROR] Cannot create output folder: {ex.Message}");
-            return null;
-        }
-
-        var swSave = System.Diagnostics.Stopwatch.StartNew();
-        Log(progress, $"Saving to temp DB: {Path.GetFileName(tempPath)} ({allRows.Count:N0} rows)");
-        await Task.Run(() => SaveToSqlite(tempPath, allRows));
-        Log(progress, $"[FetchAndSave] SaveToSqlite done ({swSave.ElapsedMilliseconds} ms)");
-
-        // ── 6. Post-processing ───────────────────────────────────────────────
-        var swProc = System.Diagnostics.Stopwatch.StartNew();
+        // ── 5. Routing / Reason tables, frozen with the rows ────────────────
+        await Task.Run(() => DeleteLeftoverTempDbs(progress));
         await EnsureServerTablesAsync(progress);
-        Log(progress, "Running post-processing (Routing / Reason / LineShift)…");
-        await Task.Run(() => ProcessData(tempPath, progress));
-        Log(progress, $"[FetchAndSave] ProcessData done ({swProc.ElapsedMilliseconds} ms)");
+        var swBuild = System.Diagnostics.Stopwatch.StartNew();
+        var routing = LoadRoutingEntries(progress);
+        var reasons = LoadReasonEntries(progress);
 
-        RememberReusableDb(startDate, endDate, filterKey, tempPath);
-        Log(progress, $"Done. DB: {Path.GetFileName(tempPath)}  (total {swStart.ElapsedMilliseconds} ms since start)");
-        return tempPath;
+        // ── 6. Keep the merged rows in memory ───────────────────────────────
+        NgRateDataSet data = await Task.Run(() => NgRateDataSet.Create(allRows, routing, reasons));
+        NgRateDataStore.Add(data);
+        Log(progress, $"NG data ready in memory: {data.Handle} ({data.Rows.Count:N0} rows, " +
+                      $"routing {routing.Count:N0}, reason {reasons.Count:N0}, {swBuild.ElapsedMilliseconds} ms)");
+
+        RememberReusableDb(startDate, endDate, filterKey, data.Handle);
+        Log(progress, $"Done. Data: {data.Handle}  (total {swStart.ElapsedMilliseconds} ms since start)");
+        return data.Handle;
     }
 
     private bool TryGetReusableDb(
@@ -277,9 +268,9 @@ public sealed class NgRateService(
                 && string.Equals(cached.LineShiftFilterKey, lineShiftFilterKey, StringComparison.Ordinal)
                 && (endDate.Date < DateTime.Today.AddDays(-RecentWindowDays) ||
                     DateTimeOffset.Now - cached.CachedAt <= RecentRangeReuseTtl)
-                && File.Exists(cached.DbPath))
+                && NgRateDataStore.Contains(cached.Handle))
             {
-                dbPath = cached.DbPath;
+                dbPath = cached.Handle;
                 return true;
             }
         }
@@ -292,7 +283,7 @@ public sealed class NgRateService(
         DateTime startDate,
         DateTime endDate,
         string lineShiftFilterKey,
-        string dbPath)
+        string handle)
     {
         lock (ReusableDbLock)
         {
@@ -301,7 +292,7 @@ public sealed class NgRateService(
                 endDate.Date,
                 lineShiftFilterKey,
                 DateTimeOffset.Now,
-                dbPath);
+                handle);
         }
     }
 
@@ -342,15 +333,7 @@ public sealed class NgRateService(
         }
     }
 
-    // ── Monthly DB / Temp DB helpers ─────────────────────────────────────────
-
-    /// <summary>Temp merged DB path: {DbSaveDirectory}/temp_yyyyMMdd_HHmmss.db
-    /// (a per-request scratch file for the report services, not a store).</summary>
-    private string GetTempDbPath()
-    {
-        string ts = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        return Path.Combine(_settings.DbSaveDirectory, $"temp_{ts}.db");
-    }
+    // ── Monthly DB helpers ───────────────────────────────────────────────────
 
     private void SaveMonthlyDateDb(
         DateTime date, List<Dictionary<string, string>> rows, IProgress<string>? progress)
@@ -581,7 +564,8 @@ public sealed class NgRateService(
         }
     }
 
-    private void CleanupTempDbs(IProgress<string>? progress)
+    /// <summary>Removes temp_*.db files the old flow left in DbSaveDirectory (one per fetch).</summary>
+    private void DeleteLeftoverTempDbs(IProgress<string>? progress)
     {
         try
         {
@@ -592,7 +576,7 @@ public sealed class NgRateService(
                 try
                 {
                     File.Delete(f);
-                    progress?.Report($"  Deleted old temp DB: {Path.GetFileName(f)}");
+                    progress?.Report($"  Deleted leftover temp DB: {Path.GetFileName(f)}");
                 }
                 catch { }
             }
@@ -702,313 +686,75 @@ public sealed class NgRateService(
         return input.Trim();
     }
 
-    // ── Private: SQLite ──────────────────────────────────────────────────────────
+    // ── Private: Routing / Reason ───────────────────────────────────────────────
 
-    private static void SaveToSqlite(string dbPath, List<Dictionary<string, string>> rows)
+    /// <summary>Routing rows for the report: the settings DB rows, else the Routing file
+    /// (tab-separated, header row skipped). ProcessName / ProcessType are normalized,
+    /// as the old temp DB RoutingTable was.</summary>
+    private List<NgRateRoutingEntry> LoadRoutingEntries(IProgress<string>? progress)
     {
-        // Detect which keys are actually present and order them by OrgTableColumns
-        var dataKeys = rows.SelectMany(r => r.Keys)
-                           .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        var columns = OrgTableColumns
-            .Where(c => dataKeys.Contains(c))
-            .ToList();
-
-        // Append any remaining columns not listed in OrgTableColumns
-        foreach (string k in dataKeys)
+        var settingsRows = _settings.GetRoutingRows();
+        if (settingsRows.Count > 0)
         {
-            if (!columns.Any(c => c.Equals(k, StringComparison.OrdinalIgnoreCase)))
-                columns.Add(k);
+            Log(progress, $"Routing table from settings DB ({settingsRows.Count} rows).");
+            return settingsRows
+                .Select(r => new NgRateRoutingEntry(
+                    r.ModelName ?? string.Empty, r.ProcessCode ?? string.Empty,
+                    NormalizeText(r.ProcessName ?? string.Empty), NormalizeText(r.ProcessType ?? string.Empty)))
+                .ToList();
         }
-
-        using var conn = new SqliteConnection($"Data Source={dbPath}");
-        conn.Open();
-
-        // Create table
-        string colDefs = string.Join(", ", columns.Select(c => $"[{c}] TEXT"));
-        using (var cmd = conn.CreateCommand())
+        if (File.Exists(_settings.RoutingFilePath))
         {
-            cmd.CommandText = $"CREATE TABLE IF NOT EXISTS [OrginalTable] ({colDefs})";
-            cmd.ExecuteNonQuery();
+            Log(progress, "Routing table from file.");
+            return ReadTsvRows(_settings.RoutingFilePath, 4)
+                .Select(c => new NgRateRoutingEntry(c[0], c[1], NormalizeText(c[2]), NormalizeText(c[3])))
+                .ToList();
         }
-
-        // Insert rows (transactional)
-        string colList  = string.Join(", ", columns.Select(c => $"[{c}]"));
-        string paramList = string.Join(", ", columns.Select((_, i) => $"@p{i}"));
-        string insertSql = $"INSERT INTO [OrginalTable] ({colList}) VALUES ({paramList})";
-
-        using var tx        = conn.BeginTransaction();
-        using var insertCmd = conn.CreateCommand();
-        insertCmd.CommandText = insertSql;
-
-        foreach (var row in rows)
-        {
-            insertCmd.Parameters.Clear();
-            for (int i = 0; i < columns.Count; i++)
-            {
-                insertCmd.Parameters.AddWithValue(
-                    $"@p{i}",
-                    row.TryGetValue(columns[i], out var v) ? v : string.Empty);
-            }
-            insertCmd.ExecuteNonQuery();
-        }
-        tx.Commit();
-
-        // Persist meta table
-        SaveMeta(conn);
+        Log(progress, "[WARN] No Routing data (settings DB empty, file not found).");
+        return [];
     }
 
-    private static void SaveMeta(SqliteConnection conn)
+    /// <summary>Reason rows for the report: the settings DB rows, else the Reason file.
+    /// ProcessName / NgName are normalized, as the old temp DB Reason table was.</summary>
+    private List<NgRateReasonEntry> LoadReasonEntries(IProgress<string>? progress)
     {
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText =
-            "CREATE TABLE IF NOT EXISTS [__DataMakerMeta] " +
-            "([MetaKey] TEXT PRIMARY KEY, [MetaValue] TEXT NOT NULL)";
-        cmd.ExecuteNonQuery();
-
-        cmd.CommandText =
-            "INSERT INTO [__DataMakerMeta] ([MetaKey], [MetaValue]) VALUES (@key, @val) " +
-            "ON CONFLICT([MetaKey]) DO UPDATE SET [MetaValue] = excluded.[MetaValue]";
-        cmd.Parameters.AddWithValue("@key", "OriginalTableUpdatedAt");
-        cmd.Parameters.AddWithValue("@val", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-        cmd.ExecuteNonQuery();
+        var settingsRows = _settings.GetReasonRows();
+        if (settingsRows.Count > 0)
+        {
+            Log(progress, $"Reason table from settings DB ({settingsRows.Count} rows).");
+            return settingsRows
+                .Select(r => new NgRateReasonEntry(
+                    NormalizeText(r.ProcessName ?? string.Empty), NormalizeText(r.NgName ?? string.Empty),
+                    r.Reason ?? string.Empty))
+                .ToList();
+        }
+        if (File.Exists(_settings.ReasonFilePath))
+        {
+            Log(progress, "Reason table from file.");
+            return ReadTsvRows(_settings.ReasonFilePath, 3)
+                .Select(c => new NgRateReasonEntry(NormalizeText(c[0]), NormalizeText(c[1]), c[2]))
+                .ToList();
+        }
+        Log(progress, "[WARN] No Reason data (settings DB empty, file not found).");
+        return [];
     }
 
-    // ── Private: Processing ──────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Same flow as DataMaker clDataProcessor.ProcessData():
-    ///   1. Load RoutingTable (Routing.txt)
-    ///   2. Load ReasonTable  (reason.txt)
-    ///   3. Populate OrginalTable's LineShift column
-    /// </summary>
-    private void ProcessData(string dbPath, IProgress<string>? progress)
+    /// <summary>Tab-separated text file → rows of <paramref name="columnCount"/> trimmed cells
+    /// (header row and blank lines skipped, missing cells empty). Same reading as the WPF
+    /// clMakeTxtTable.MakeDataTable.</summary>
+    private static List<string[]> ReadTsvRows(string filePath, int columnCount)
     {
-        var swTotal = System.Diagnostics.Stopwatch.StartNew();
-        Log(progress, $"[ProcessData] Open SQLite: {Path.GetFileName(dbPath)}");
-        using var conn = new SqliteConnection($"Data Source={dbPath}");
-        conn.Open();
-        Log(progress, $"[ProcessData] DB opened ({swTotal.ElapsedMilliseconds} ms)");
-
-        // ── Routing ──────────────────────────────────────────────────────────
-        var swSection = System.Diagnostics.Stopwatch.StartNew();
-        var routingDbRows = _settings.GetRoutingRows();
-        Log(progress, $"[ProcessData] Routing source = settings DB rows={routingDbRows.Count} ({swSection.ElapsedMilliseconds} ms)");
-        if (routingDbRows.Count > 0)
-        {
-            swSection.Restart();
-            Log(progress, $"Loading Routing table from settings DB ({routingDbRows.Count} rows)…");
-            LoadRoutingFromSettings(conn, routingDbRows);
-            Log(progress, $"[ProcessData]   LoadRoutingFromSettings done ({swSection.ElapsedMilliseconds} ms)");
-            swSection.Restart();
-            NormalizeTableColumns(conn, "RoutingTable", new[] { "ProcessName", "ProcessType" });
-            Log(progress, $"[ProcessData]   NormalizeTableColumns(RoutingTable) done ({swSection.ElapsedMilliseconds} ms)");
-            Log(progress, "Routing table done.");
-        }
-        else if (File.Exists(_settings.RoutingFilePath))
-        {
-            swSection.Restart();
-            Log(progress, "Loading Routing table from file…");
-            LoadTsvToTable(conn, _settings.RoutingFilePath, "RoutingTable",
-                new[] { "모델명", "ProcessCode", "ProcessName", "ProcessType" });
-            Log(progress, $"[ProcessData]   LoadTsvToTable(Routing) done ({swSection.ElapsedMilliseconds} ms)");
-            swSection.Restart();
-            NormalizeTableColumns(conn, "RoutingTable", new[] { "ProcessName", "ProcessType" });
-            Log(progress, $"[ProcessData]   NormalizeTableColumns(RoutingTable) done ({swSection.ElapsedMilliseconds} ms)");
-            Log(progress, "Routing table done.");
-        }
-        else
-        {
-            Log(progress, "[WARN] No Routing data (settings DB empty, file not found).");
-        }
-
-        // ── Reason ───────────────────────────────────────────────────────────
-        swSection.Restart();
-        var reasonDbRows = _settings.GetReasonRows();
-        Log(progress, $"[ProcessData] Reason source = settings DB rows={reasonDbRows.Count} ({swSection.ElapsedMilliseconds} ms)");
-        if (reasonDbRows.Count > 0)
-        {
-            swSection.Restart();
-            Log(progress, $"Loading Reason table from settings DB ({reasonDbRows.Count} rows)…");
-            LoadReasonFromSettings(conn, reasonDbRows);
-            Log(progress, $"[ProcessData]   LoadReasonFromSettings done ({swSection.ElapsedMilliseconds} ms)");
-            swSection.Restart();
-            NormalizeTableColumns(conn, "Reason", new[] { "processName", "NgName" });
-            Log(progress, $"[ProcessData]   NormalizeTableColumns(Reason) done ({swSection.ElapsedMilliseconds} ms)");
-            Log(progress, "Reason table done.");
-        }
-        else if (File.Exists(_settings.ReasonFilePath))
-        {
-            swSection.Restart();
-            Log(progress, "Loading Reason table from file…");
-            LoadTsvToTable(conn, _settings.ReasonFilePath, "Reason",
-                new[] { "processName", "NgName", "Reason" });
-            Log(progress, $"[ProcessData]   LoadTsvToTable(Reason) done ({swSection.ElapsedMilliseconds} ms)");
-            swSection.Restart();
-            NormalizeTableColumns(conn, "Reason", new[] { "processName", "NgName" });
-            Log(progress, $"[ProcessData]   NormalizeTableColumns(Reason) done ({swSection.ElapsedMilliseconds} ms)");
-            Log(progress, "Reason table done.");
-        }
-        else
-        {
-            Log(progress, "[WARN] No Reason data (settings DB empty, file not found).");
-        }
-
-        // ── LineShift column population ──────────────────────────────────────
-        swSection.Restart();
-        Log(progress, "Setting LineShift column…");
-        SetLineShift(conn);
-        Log(progress, $"[ProcessData] SetLineShift done ({swSection.ElapsedMilliseconds} ms)");
-        Log(progress, $"[ProcessData] Processing complete (total {swTotal.ElapsedMilliseconds} ms)");
-    }
-
-    /// <summary>
-    /// Tab-separated text file → SQLite table (skip header row; use Columns parameter).
-    /// Same logic as clMakeTxtTable.MakeDataTable.
-    /// </summary>
-    private static void LoadRoutingFromSettings(SqliteConnection conn, List<RoutingRow> rows)
-    {
-        using (var drop = conn.CreateCommand()) { drop.CommandText = "DROP TABLE IF EXISTS [RoutingTable]"; drop.ExecuteNonQuery(); }
-        using (var create = conn.CreateCommand())
-        {
-            create.CommandText = "CREATE TABLE [RoutingTable] ([모델명] TEXT, [ProcessCode] TEXT, [ProcessName] TEXT, [ProcessType] TEXT)";
-            create.ExecuteNonQuery();
-        }
-        using var tx = conn.BeginTransaction();
-        foreach (var r in rows)
-        {
-            using var ins = conn.CreateCommand();
-            ins.CommandText = "INSERT INTO [RoutingTable] ([모델명],[ProcessCode],[ProcessName],[ProcessType]) VALUES (@m,@pc,@pn,@pt)";
-            ins.Parameters.AddWithValue("@m",  r.ModelName);
-            ins.Parameters.AddWithValue("@pc", r.ProcessCode);
-            ins.Parameters.AddWithValue("@pn", r.ProcessName);
-            ins.Parameters.AddWithValue("@pt", r.ProcessType);
-            ins.ExecuteNonQuery();
-        }
-        tx.Commit();
-    }
-
-    private static void LoadReasonFromSettings(SqliteConnection conn, List<ReasonRow> rows)
-    {
-        using (var drop = conn.CreateCommand()) { drop.CommandText = "DROP TABLE IF EXISTS [Reason]"; drop.ExecuteNonQuery(); }
-        using (var create = conn.CreateCommand())
-        {
-            create.CommandText = "CREATE TABLE [Reason] ([processName] TEXT, [NgName] TEXT, [Reason] TEXT)";
-            create.ExecuteNonQuery();
-        }
-        using var tx = conn.BeginTransaction();
-        foreach (var r in rows)
-        {
-            using var ins = conn.CreateCommand();
-            ins.CommandText = "INSERT INTO [Reason] ([processName],[NgName],[Reason]) VALUES (@pn,@ng,@rs)";
-            ins.Parameters.AddWithValue("@pn", r.ProcessName);
-            ins.Parameters.AddWithValue("@ng", r.NgName);
-            ins.Parameters.AddWithValue("@rs", r.Reason);
-            ins.ExecuteNonQuery();
-        }
-        tx.Commit();
-    }
-
-    private static void LoadTsvToTable(
-        SqliteConnection conn, string filePath,
-        string tableName, string[] columns)
-    {
-        // Drop existing
-        using (var drop = conn.CreateCommand())
-        {
-            drop.CommandText = $"DROP TABLE IF EXISTS [{tableName}]";
-            drop.ExecuteNonQuery();
-        }
-
-        // Read file
+        var rows = new List<string[]>();
         string[] lines = File.ReadAllLines(filePath, Encoding.UTF8);
-        if (lines.Length < 2) return; // header-only or empty file
-
-        // Create table
-        string colDefs = string.Join(", ", columns.Select(c => $"[{c}] TEXT"));
-        using (var create = conn.CreateCommand())
-        {
-            create.CommandText = $"CREATE TABLE [{tableName}] ({colDefs})";
-            create.ExecuteNonQuery();
-        }
-
-        // Insert (skip first line = header)
-        string colList  = string.Join(", ", columns.Select(c => $"[{c}]"));
-        string paramList = string.Join(", ", columns.Select((_, i) => $"@p{i}"));
-
-        using var tx  = conn.BeginTransaction();
-        using var ins = conn.CreateCommand();
-        ins.CommandText = $"INSERT INTO [{tableName}] ({colList}) VALUES ({paramList})";
-
         for (int i = 1; i < lines.Length; i++)
         {
             if (string.IsNullOrWhiteSpace(lines[i])) continue;
             string[] parts = lines[i].Split('\t');
-            ins.Parameters.Clear();
-            for (int j = 0; j < columns.Length; j++)
-                ins.Parameters.AddWithValue($"@p{j}",
-                    j < parts.Length ? parts[j].Trim() : string.Empty);
-            ins.ExecuteNonQuery();
+            var cells = new string[columnCount];
+            for (int j = 0; j < columnCount; j++)
+                cells[j] = j < parts.Length ? parts[j].Trim() : string.Empty;
+            rows.Add(cells);
         }
-        tx.Commit();
-    }
-
-    /// <summary>
-    /// Apply the same normalization as CONSTANT.Normalize to the given columns and persist.
-    /// </summary>
-    private static void NormalizeTableColumns(
-        SqliteConnection conn, string tableName, string[] columnNames)
-    {
-        // Normalize column-by-column via UPDATE (SQLite has no regex func; load + save approach).
-        // Use only for small master tables.
-        using var selCmd = conn.CreateCommand();
-        selCmd.CommandText = $"SELECT rowid, {string.Join(", ", columnNames.Select(c => $"[{c}]"))} FROM [{tableName}]";
-
-        var updates = new List<(long Rowid, string[] Values)>();
-        using (var reader = selCmd.ExecuteReader())
-        {
-            while (reader.Read())
-            {
-                long rowid  = reader.GetInt64(0);
-                var  values = new string[columnNames.Length];
-                for (int i = 0; i < columnNames.Length; i++)
-                    values[i] = NormalizeText(reader.IsDBNull(i + 1) ? string.Empty : reader.GetString(i + 1));
-                updates.Add((rowid, values));
-            }
-        }
-
-        string setClause = string.Join(", ",
-            columnNames.Select((c, i) => $"[{c}] = @v{i}"));
-
-        using var tx  = conn.BeginTransaction();
-        using var upd = conn.CreateCommand();
-        upd.CommandText = $"UPDATE [{tableName}] SET {setClause} WHERE rowid = @rowid";
-
-        foreach (var (rowid, values) in updates)
-        {
-            upd.Parameters.Clear();
-            upd.Parameters.AddWithValue("@rowid", rowid);
-            for (int i = 0; i < values.Length; i++)
-                upd.Parameters.AddWithValue($"@v{i}", values[i]);
-            upd.ExecuteNonQuery();
-        }
-        tx.Commit();
-    }
-
-    private static void SetLineShift(SqliteConnection conn)
-    {
-        // ADD COLUMN (ignore if it already exists)
-        try
-        {
-            using var alter = conn.CreateCommand();
-            alter.CommandText = "ALTER TABLE [OrginalTable] ADD COLUMN [LineShift] TEXT";
-            alter.ExecuteNonQuery();
-        }
-        catch { /* already exists */ }
-
-        using var upd = conn.CreateCommand();
-        upd.CommandText =
-            "UPDATE [OrginalTable] SET [LineShift] = MATERIALNAME || '_' || PRODUCTION_LINE";
-        upd.ExecuteNonQuery();
+        return rows;
     }
 }

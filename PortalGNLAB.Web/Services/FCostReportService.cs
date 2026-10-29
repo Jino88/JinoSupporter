@@ -9,22 +9,6 @@ public sealed class FCostReportService(NgRateSettingsService settings)
 {
     private readonly NgRateSettingsService _settings = settings;
 
-    public string? FindMostRecentDb()
-    {
-        string dir = _settings.FCostDbSaveDirectory;
-        if (!Directory.Exists(dir)) return null;
-        return Directory.GetFiles(dir, "fcost_????????_??????.db")
-            .OrderByDescending(File.GetLastWriteTime)
-            .FirstOrDefault();
-    }
-
-    public Task<FCostReport> GenerateReportAsync(
-        string dbPath,
-        IReadOnlyList<ModelGroupRecord>? groupsForSubGroupRollup = null,
-        IReadOnlyCollection<string>?     selectedGroupNames      = null,
-        IProgress<string>? progress = null)
-        => Task.Run(() => GenerateReport(dbPath, groupsForSubGroupRollup, selectedGroupNames, progress));
-
     public Task<FCostReport> GenerateRawRangeReportAsync(
         string rawDbPath,
         DateTime startDate,
@@ -42,52 +26,6 @@ public sealed class FCostReportService(NgRateSettingsService settings)
             string label = $"{startDate:yyyy-MM-dd} - {endDate:yyyy-MM-dd}";
             return BuildReport(rawDbPath, rows, columns, label, groupsForSubGroupRollup, selectedGroupNames);
         });
-
-    private FCostReport GenerateReport(
-        string dbPath,
-        IReadOnlyList<ModelGroupRecord>? groups,
-        IReadOnlyCollection<string>?     selectedGroupNames,
-        IProgress<string>? progress)
-    {
-        progress?.Report("Loading fcost rows…");
-        var rows    = LoadRows(dbPath);
-        var columns = LoadColumns(dbPath);
-
-        // BMES emits rows in strict sequential triplets: INAMT → FCOST → FRATE for the same
-        // (FACCO/MODNO/MATNR) bucket, then on to the next bucket. The continuation rows often
-        // come back with blank _TX fields (the BMES UI relies on the user "seeing" the prior
-        // row's label) so a naive GroupBy on (Mod, Mat) breaks. Walk the rows in their stored
-        // order instead and pair each FCOST/FRATE with the nearest preceding INAMT.
-        var (totalBlock, perMaterial) = BuildMaterialBlocks(rows);
-
-        // Sort biggest input first so the rows the user cares about are at the top.
-        perMaterial = perMaterial
-            .OrderByDescending(MaterialSortInput)
-            .ThenBy(b => b.DisplayName, StringComparer.Ordinal)
-            .ToList();
-
-        // ── SubGroup roll-up ────────────────────────────────────────────────────
-        var subGroupAggs    = new List<FCostSubGroupAggregate>();
-        var unmappedBlocks  = new List<FCostMaterialBlock>();
-        if (groups is not null && groups.Count > 0)
-        {
-            BuildSubGroupAggregates(
-                perMaterial, groups, selectedGroupNames, columns,
-                out subGroupAggs, out unmappedBlocks);
-        }
-
-        return new FCostReport
-        {
-            DbPath            = dbPath,
-            QueryDate         = rows.FirstOrDefault()?.QueryDate ?? "",
-            TotalRows         = rows.Count,
-            Total             = totalBlock,
-            Materials         = perMaterial,
-            SubGroups         = subGroupAggs,
-            UnmappedMaterials = unmappedBlocks,
-            Columns           = columns,
-        };
-    }
 
     private static FCostReport BuildReport(
         string dbPath,
@@ -214,37 +152,6 @@ public sealed class FCostReportService(NgRateSettingsService settings)
         && string.IsNullOrWhiteSpace(row.ModNoTx)
         && (string.IsNullOrWhiteSpace(row.MatnrTx) ||
             string.Equals(row.MatnrTx.Trim(), "Total", StringComparison.OrdinalIgnoreCase));
-
-    private static List<FCostColumnMeta> LoadColumns(string dbPath)
-    {
-        var list = new List<FCostColumnMeta>();
-        using var conn = new SqliteConnection($"Data Source={dbPath};Mode=ReadOnly");
-        conn.Open();
-
-        // FCostColumns table is optional — older fcost_*.db files (pre-column-meta) won't
-        // have it. Probe sqlite_master once and bail with an empty list when missing so the
-        // report layer falls back to generic "C1..C14" headers via FCostReport.ColumnHeaders.
-        using (var probe = conn.CreateCommand())
-        {
-            probe.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='FCostColumns';";
-            if (probe.ExecuteScalar() is null) return list;
-        }
-
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT ColIndex, Code, Header, PDate FROM FCostColumns ORDER BY ColIndex;";
-        using var r = cmd.ExecuteReader();
-        while (r.Read())
-        {
-            list.Add(new FCostColumnMeta
-            {
-                Index  = r.GetInt32(0),
-                Code   = r.IsDBNull(1) ? "" : r.GetString(1),
-                Header = r.IsDBNull(2) ? "" : r.GetString(2),
-                PDate  = r.IsDBNull(3) ? "" : r.GetString(3),
-            });
-        }
-        return list;
-    }
 
     private static List<FCostColumnMeta> BuildPeriodColumns(DateTime startDate, DateTime endDate)
     {
@@ -785,58 +692,4 @@ public sealed class FCostReportService(NgRateSettingsService settings)
         return -1;
     }
 
-    private static List<FCostRow> LoadRows(string dbPath)
-    {
-        var rows = new List<FCostRow>();
-        using var conn = new SqliteConnection($"Data Source={dbPath};Mode=ReadOnly");
-        conn.Open();
-
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText =
-            """
-            SELECT Id, FetchedAt, QueryDate,
-                   FaccoTx, PrdGrTx, VeridTx, ModNoTx, AssemTx, AbChgTx,
-                   MCodeTx, MatnrTx, ZTypeTx, ZType, TSort, ZSort,
-                   Facco, Werks, PrdGr, ModNo, Verid, AbChg, Cat01, Matnr, Assem,
-                   TwSyn, ZValu,
-                   Col0001, Col0002, Col0003, Col0004, Col0005, Col0006, Col0007,
-                   Col0008, Col0009, Col0010, Col0011, Col0012, Col0013, Col0014
-            FROM FCostRows
-            ORDER BY Id;
-            """;
-
-        using var r = cmd.ExecuteReader();
-        while (r.Read())
-        {
-            // Manual column-index walker — i++ inside a ternary skips past DBNull columns
-            // so we'd lose alignment; advance once per cell with explicit Sx()/Dx() locals.
-            int i = 0;
-            long   id  = r.GetInt64(i++);
-            string fea = r.IsDBNull(i) ? "" : r.GetString(i); i++;
-            string qd  = r.IsDBNull(i) ? "" : r.GetString(i); i++;
-
-            string Sx() { string v = r.IsDBNull(i) ? "" : r.GetString(i); i++; return v; }
-            double Dx() { double v = r.IsDBNull(i) ? 0  : r.GetDouble(i); i++; return v; }
-
-            var row = new FCostRow
-            {
-                Id        = id,
-                FetchedAt = fea,
-                QueryDate = qd,
-                FaccoTx   = Sx(), PrdGrTx = Sx(), VeridTx = Sx(), ModNoTx = Sx(),
-                AssemTx   = Sx(), AbChgTx = Sx(), MCodeTx = Sx(), MatnrTx = Sx(),
-                ZTypeTx   = Sx(), ZType   = Sx(), TSort   = Sx(), ZSort   = Sx(),
-                Facco     = Sx(), Werks   = Sx(), PrdGr   = Sx(), ModNo   = Sx(),
-                Verid     = Sx(), AbChg   = Sx(), Cat01   = Sx(), Matnr   = Sx(),
-                Assem     = Sx(), TwSyn   = Sx(), ZValu   = Sx(),
-                Col0001   = Dx(), Col0002 = Dx(), Col0003 = Dx(), Col0004 = Dx(),
-                Col0005   = Dx(), Col0006 = Dx(), Col0007 = Dx(), Col0008 = Dx(),
-                Col0009   = Dx(), Col0010 = Dx(), Col0011 = Dx(), Col0012 = Dx(),
-                Col0013   = Dx(), Col0014 = Dx(),
-            };
-            rows.Add(row);
-        }
-
-        return rows;
-    }
 }

@@ -1355,7 +1355,7 @@
     }
 
     private bool HasUsableDb =>
-        (!string.IsNullOrEmpty(_savedDbPath) && File.Exists(_savedDbPath)) ||
+        NgRateDataStore.Contains(_savedDbPath) ||
         NgRateReportSvc.FindMostRecentDb() is { Length: > 0 };
 
     protected override void OnInitialized()
@@ -1516,13 +1516,13 @@
         try
         {
             string dbPath = sharedHierarchy.ByGroup?.DbPath ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(dbPath) || !File.Exists(dbPath))
+            if (!NgRateDataStore.Contains(dbPath))
             {
-                _reportError = "Shared NG Rate DB was not found.";
+                _reportError = "Shared NG Rate data is no longer in memory. Run the report again.";
                 return;
             }
 
-            progress?.Report($"Reusing Daily hierarchy report: {Path.GetFileName(dbPath)}");
+            progress?.Report($"Reusing Daily hierarchy report: {dbPath}");
             _savedDbPath      = dbPath;
             _report           = sharedHierarchy.ByGroup;
             _reportByMid      = sharedHierarchy.ByMid;
@@ -1583,7 +1583,7 @@
             else
             {
                 _savedDbPath = dbPath;
-                AddLog($"Saved DB: {Path.GetFileName(dbPath)}");
+                AddLog($"NG data: {dbPath}");
             }
         }
         catch (Exception ex)
@@ -1672,7 +1672,7 @@
             _savedDbPath = dbPath;
             ReloadGroups();
             Activity.Log("NG Rate Weekly", $"Generate Report selectedGroups={_selectedGroupNames.Count:N0}");
-            progress.Report($"Using DB: {Path.GetFileName(dbPath)}");
+            progress.Report($"Using NG data: {dbPath}");
 
             var mapping        = new Dictionary<string, string>(StringComparer.Ordinal); // LS ???洹몃９
             var midMapping     = new Dictionary<string, string>(StringComparer.Ordinal); // LS ??以묎렇猷?(Material)

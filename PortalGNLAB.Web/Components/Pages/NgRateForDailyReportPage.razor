@@ -869,7 +869,7 @@
             ReloadGroups();
             selectedGroups = SelectedGroups;
             Activity.Log("NG Rate Daily", $"Generate Report selectedGroups={selectedGroups.Count:N0}");
-            progress.Report($"Using DB: {Path.GetFileName(dbPath)}");
+            progress.Report($"Using NG data: {dbPath}");
 
             var hier = await HierReportBuilder.BuildAsync(
                 NgRateReportSvc, dbPath, selectedGroups, progress,

@@ -758,7 +758,7 @@
     }
 
     private bool HasUsableDb =>
-        (!string.IsNullOrEmpty(_savedDbPath) && File.Exists(_savedDbPath)) ||
+        NgRateDataStore.Contains(_savedDbPath) ||
         NgRateReportSvc.FindMostRecentDb() is { Length: > 0 };
 
     protected override void OnInitialized()
@@ -818,7 +818,7 @@
             else
             {
                 _savedDbPath = dbPath;
-                AddLog($"Saved DB: {Path.GetFileName(dbPath)}");
+                AddLog($"NG data: {dbPath}");
             }
         }
         catch (Exception ex)
@@ -881,7 +881,7 @@
             _savedDbPath = dbPath;
             ReloadGroups();
             Activity.Log("NG Rate By Group", $"Generate Report selectedGroups={_selectedGroupNames.Count:N0}");
-            progress.Report($"Using DB: {Path.GetFileName(dbPath)}");
+            progress.Report($"Using NG data: {dbPath}");
 
             var mapping        = new Dictionary<string, string>(StringComparer.Ordinal); // LS → 대그룹
             var midMapping     = new Dictionary<string, string>(StringComparer.Ordinal); // LS → 중그룹 (Material)
