@@ -98,6 +98,36 @@
           WorkingDirectory="$(MSBuildProjectDirectory)\ClientApp\DailyReport" />
   </Target>
 
+  <!-- React app (ClientApp/Portal) served under /app. Pages move here from Blazor one by
+       one; the built wwwroot/app stays committed for deployed machines and is rebuilt when
+       any input changes. Set SkipPortalAppBuild=true only as a local diagnostic escape hatch. -->
+  <ItemGroup>
+    <PortalAppSource Include="ClientApp\Portal\src\**\*" />
+    <PortalAppSource Include="ClientApp\Portal\index.html" />
+    <PortalAppSource Include="ClientApp\Portal\package.json" />
+    <PortalAppSource Include="ClientApp\Portal\package-lock.json" />
+    <PortalAppSource Include="ClientApp\Portal\tsconfig.json" />
+    <PortalAppSource Include="ClientApp\Portal\vite.config.ts" />
+  </ItemGroup>
+
+  <Target Name="RestorePortalApp"
+          Inputs="$(MSBuildProjectDirectory)\ClientApp\Portal\package.json;$(MSBuildProjectDirectory)\ClientApp\Portal\package-lock.json"
+          Outputs="$(MSBuildProjectDirectory)\ClientApp\Portal\node_modules\.package-lock.json"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(SkipPortalAppBuild)' != 'true'">
+    <Exec Command="npm ci --no-audit --no-fund"
+          WorkingDirectory="$(MSBuildProjectDirectory)\ClientApp\Portal" />
+  </Target>
+
+  <Target Name="BuildPortalApp"
+          BeforeTargets="Build;Publish"
+          DependsOnTargets="RestorePortalApp"
+          Inputs="@(PortalAppSource)"
+          Outputs="$(MSBuildProjectDirectory)\wwwroot\app\index.html"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(SkipPortalAppBuild)' != 'true'">
+    <Exec Command="npm run build"
+          WorkingDirectory="$(MSBuildProjectDirectory)\ClientApp\Portal" />
+  </Target>
+
   <!-- wwwroot/ui-redesign/assets/instrument.scoped.css is generated from
        instrument.css by tools/scope-css.js. Editing the source and forgetting to
        regenerate ships stale CSS with no visible failure, so the build checks.

@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Syncfusion.Blazor;
 using PortalGNLAB.Web.Components;
+using PortalGNLAB.Web.Endpoints;
 using PortalGNLAB.Web.Services;
 using PortalGNLAB.Web.Services.BmesReports;
 using Microsoft.AspNetCore.Authentication;
@@ -38,6 +39,19 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         o.AccessDeniedPath  = "/login";
         o.ExpireTimeSpan    = TimeSpan.FromDays(30);
         o.SlidingExpiration = true;
+        // The React app's JSON API answers 401/403 instead of redirecting to the login page.
+        o.Events.OnRedirectToLogin = ctx =>
+        {
+            if (ctx.Request.Path.StartsWithSegments("/api/portal")) ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            else ctx.Response.Redirect(ctx.RedirectUri);
+            return Task.CompletedTask;
+        };
+        o.Events.OnRedirectToAccessDenied = ctx =>
+        {
+            if (ctx.Request.Path.StartsWithSegments("/api/portal")) ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+            else ctx.Response.Redirect(ctx.RedirectUri);
+            return Task.CompletedTask;
+        };
     });
 builder.Services.AddAuthorizationCore();
 builder.Services.AddCascadingAuthenticationState();
@@ -700,6 +714,8 @@ static string PrepareAskHistoryHtml(string html)
 
     return css + text;
 }
+
+app.MapPortalShell();
 
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode();

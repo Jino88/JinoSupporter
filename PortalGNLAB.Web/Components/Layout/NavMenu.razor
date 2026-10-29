@@ -105,7 +105,7 @@
         }
         @if (can(AppMenus.PcDownload))
         {
-            @Tile("tools/pc-download", "monitor", "Download", "PC Download")
+            @AppTile("/app/tools/pc-download", "monitor", "Download", "PC Download")
         }
     }
 
@@ -317,6 +317,14 @@
             <span class="rail-ico">@Icon(icon)</span>
             <span class="rail-lbl">@label</span>
         </NavLink>;
+
+    /// <summary>Menu already moved to the React app (/app): a plain link so the browser loads
+    /// the React page instead of the Blazor router looking for a matching component.</summary>
+    private RenderFragment AppTile(string href, string icon, string label, string title) =>
+        @<a class="rail-tile" href="@href" title="@title" target="_self">
+            <span class="rail-ico">@Icon(icon)</span>
+            <span class="rail-lbl">@label</span>
+        </a>;
 
     private RenderFragment GroupTile(string key, string icon, string label, string title, bool active) =>
         @<button type="button"
