@@ -1,17 +1,30 @@
 import type { PropsWithChildren, ReactNode } from "react";
 
+export interface HeaderGroup {
+  label: ReactNode;
+  span: number;
+}
+
 interface ReportTableProps extends PropsWithChildren {
   caption: string;
   headers: ReactNode[];
+  /** Optional upper header row. `lead` columns stay blank, each group spans `span` of the lower headers. */
+  groups?: { lead: number; items: HeaderGroup[] };
   className?: string;
 }
 
-export function ReportTable({ caption, headers, children, className = "" }: ReportTableProps) {
+export function ReportTable({ caption, headers, groups, children, className = "" }: ReportTableProps) {
   return (
-    <div className="table-scroll" tabIndex={0} role="region" aria-label={`${caption} 스크롤 영역`}>
+    <div className="table-scroll" tabIndex={0} role="region" aria-label={`${caption} scroll area`}>
       <table className={`report-table ${className}`.trim()}>
         <caption>{caption}</caption>
         <thead>
+          {groups && (
+            <tr className="group-row">
+              {groups.lead > 0 && <th colSpan={groups.lead} />}
+              {groups.items.map((group, index) => <th key={index} colSpan={group.span} scope="colgroup" className="period-group">{group.label}</th>)}
+            </tr>
+          )}
           <tr>{headers.map((header, index) => <th key={index} scope="col">{header}</th>)}</tr>
         </thead>
         <tbody>{children}</tbody>
@@ -20,7 +33,14 @@ export function ReportTable({ caption, headers, children, className = "" }: Repo
   );
 }
 
-export function EmptySection({ message = "표시할 데이터가 없습니다." }: { message?: string }) {
+/** Dim placeholder for empty / zero values. */
+export function dim(value: ReactNode): ReactNode {
+  if (value === null || value === undefined || value === "-" || value === 0) return <span className="z">-</span>;
+  if (typeof value === "string" && /^[$]?0(\.0+)?%?( VND)?$/.test(value)) return <span className="z">-</span>;
+  return value;
+}
+
+export function EmptySection({ message = "No data to show" }: { message?: string }) {
   return <p className="empty-state" role="status">{message}</p>;
 }
 
@@ -31,7 +51,7 @@ export function Section({ title, count, children }: PropsWithChildren<{ title: s
         <h2>{title}</h2>
         {count !== undefined && <span className="count-badge">{count.toLocaleString("en-US")}</span>}
       </div>
-      {children}
+      <div className="section-body">{children}</div>
     </section>
   );
 }

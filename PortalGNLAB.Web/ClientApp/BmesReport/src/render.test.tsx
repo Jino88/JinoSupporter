@@ -23,4 +23,12 @@ describe("eight tab render paths", () => {
     expect(html).toContain('role="tabpanel"');
     for (const tabKey of TAB_KEYS) expect(html).toContain(TAB_LABELS[tabKey]);
   });
+
+  it("renders English UI text and two-row period headers", () => {
+    const shell = renderToStaticMarkup(<ReportShell report={report} />);
+    for (const text of ["BMES Integrated Report", "Generated", "Calculation", "Periods shown", "Defaults", "Print"]) expect(shell).toContain(text);
+    const daily = renderToStaticMarkup(<ReportTabContent report={report} tabKey="daily" preferences={preferences} />);
+    expect(daily).toContain("Daily summary");
+    expect(daily).toContain('scope="colgroup"');
+  });
 });

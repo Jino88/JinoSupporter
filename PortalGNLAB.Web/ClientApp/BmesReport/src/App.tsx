@@ -21,7 +21,7 @@ export function App({ reportUrl }: { reportUrl: string }) {
         if (error instanceof DOMException && error.name === "AbortError") return;
         const reportError = error instanceof ReportLoadError
           ? error
-          : new ReportLoadError("network", "리포트를 불러오는 중 알 수 없는 오류가 발생했습니다.");
+          : new ReportLoadError("network", "An unknown error occurred while loading the report.");
         setState({ kind: "error", error: reportError });
       });
     return () => controller.abort();
@@ -31,8 +31,8 @@ export function App({ reportUrl }: { reportUrl: string }) {
     return (
       <main className="center-state" aria-busy="true" aria-live="polite">
         <span className="loading-mark" aria-hidden="true" />
-        <h1>BMES 리포트를 불러오는 중입니다</h1>
-        <p>데이터 크기에 따라 잠시 걸릴 수 있습니다.</p>
+        <h1>Loading the BMES report</h1>
+        <p>This may take a moment depending on the data size.</p>
       </main>
     );
   }
@@ -46,18 +46,18 @@ export function App({ reportUrl }: { reportUrl: string }) {
 
 function LoadError({ error, onRetry }: { error: ReportLoadError; onRetry: () => void }) {
   const title = error.kind === "expired"
-    ? "리포트 링크가 만료되었습니다"
+    ? "The report link has expired"
     : error.kind === "unauthorized"
-      ? "로그인이 필요합니다"
+      ? "Sign-in required"
       : error.kind === "unsupported-schema"
-        ? "뷰어 업데이트가 필요합니다"
-        : "리포트를 표시할 수 없습니다";
+        ? "Viewer update required"
+        : "The report cannot be displayed";
   return (
     <main className="center-state error-card" role="alert">
       <p className="state-kicker">{error.kind}</p>
       <h1>{title}</h1>
       <p>{error.message}</p>
-      <button type="button" className="primary-button" onClick={onRetry}>다시 시도</button>
+      <button type="button" className="primary-button" onClick={onRetry}>Retry</button>
     </main>
   );
 }

@@ -54,7 +54,7 @@ export function ReportTabContent({
       const dataset = follower ? resolveFCostDataset(report, follower) : null;
       content = follower && dataset
         ? <FCostTab dataset={dataset} view={follower.view} preferences={preferences} />
-        : <TabFailure status={{ ...status, message: "F-COST 원본 dataset을 찾을 수 없습니다." }} />;
+        : <TabFailure status={{ ...status, message: "The source F-COST dataset was not found." }} />;
       break;
     }
   }
@@ -68,10 +68,10 @@ export function ReportTabContent({
 }
 
 function TabFailure({ status }: { status: ReportStatus }) {
-  const messages = status.errors.length > 0 ? status.errors.map((issue) => issue.message) : [status.message ?? "탭 데이터를 생성하지 못했습니다."];
+  const messages = status.errors.length > 0 ? status.errors.map((issue) => issue.message) : [status.message ?? "Tab data could not be generated."];
   return (
     <div className="state-card error-card" role="alert">
-      <h2>탭을 표시할 수 없습니다</h2>
+      <h2>This tab cannot be displayed</h2>
       <ul>{messages.map((message, index) => <li key={`${index}-${message}`}>{message}</li>)}</ul>
       <p className="state-code">Code: {status.code}</p>
     </div>
@@ -80,8 +80,8 @@ function TabFailure({ status }: { status: ReportStatus }) {
 
 function IssueBanner({ status }: { status: ReportStatus }) {
   return (
-    <aside className="issue-banner" aria-label="부분 데이터 경고">
-      <strong>{status.message ?? "일부 데이터를 사용할 수 없습니다."}</strong>
+    <aside className="issue-banner" aria-label="Partial data warning">
+      <strong>{status.message ?? "Some data is unavailable."}</strong>
       {status.warnings.length > 0 && (
         <ul>{status.warnings.map((issue, index) => <li key={`${issue.code}-${index}`}>{issue.message}</li>)}</ul>
       )}
