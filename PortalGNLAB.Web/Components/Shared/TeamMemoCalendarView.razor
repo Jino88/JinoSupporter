@@ -1,0 +1,140 @@
+@using System.Globalization
+@using PortalGNLAB.Web.Services
+
+@* Month calendar of every memo: weekly plans (WorkHub repeats), one-off schedules and due dates. *@
+@{
+    DateOnly first = new(_month.Year, _month.Month, 1);
+    int lead = (int)first.DayOfWeek;                       // weeks start on Sunday
+    DateOnly gridStart = first.AddDays(-lead);
+    DateOnly gridEnd = gridStart.AddDays(41);
+    DateOnly today = TeamMemoUi.Today;
+    var items = TeamMemoCalendar.Build(Memos, gridStart, gridEnd, IsPlan, _showDue)
+        .Where(i => _showPlan || !i.IsPlan)
+        .Where(i => _showWork || i.IsPlan)
+        .ToList();
+    var byDay = items.Where(i => i.Kind != TeamMemoCalendarKind.Span).GroupBy(i => i.Day).ToDictionary(g => g.Key, g => g.ToList());
+    var spanByDay = items.Where(i => i.Kind == TeamMemoCalendarKind.Span).ToLookup(i => (i.Day, i.MemoId));
+    var lanes = AssignLanes(items);
+    var barColor = lanes.Select((l, n) => (l.MemoId, Palette[n % Palette.Length])).ToDictionary(x => x.MemoId, x => x.Item2);
+}
+<div class="tm-cal">
+    <div class="tm-cal-bar">
+        <button class="tm-btn tm-btn-ghost" @onclick="() => _month = _month.AddMonths(-1)">‹</button>
+        <b>@_month.ToString("MMMM yyyy", CultureInfo.InvariantCulture)</b>
+        <button class="tm-btn tm-btn-ghost" @onclick="() => _month = _month.AddMonths(1)">›</button>
+        <button class="tm-btn tm-btn-ghost tm-small" @onclick="() => _month = new DateOnly(today.Year, today.Month, 1)">Today</button>
+        <span style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+            <span class="tm-chip @(_showPlan ? "on" : "")" @onclick="() => _showPlan = !_showPlan"><i class="tm-cal-dot plan"></i> Plan</span>
+            <span class="tm-chip @(_showWork ? "on" : "")" @onclick="() => _showWork = !_showWork"><i class="tm-cal-dot work"></i> Work schedule</span>
+            <span class="tm-chip @(_showDue ? "on" : "")" @onclick="() => _showDue = !_showDue"><i class="tm-cal-dot due"></i> Due dates</span>
+        </span>
+    </div>
+    <div class="tm-cal-grid">
+        @foreach (string wd in new[] { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" })
+        {
+            <div class="tm-cal-wd">@wd</div>
+        }
+        @for (int i = 0; i < 42; i++)
+        {
+            DateOnly day = gridStart.AddDays(i);
+            var list = byDay.GetValueOrDefault(day) ?? new();
+            bool expanded = _expanded == day;
+            int shown = expanded ? list.Count : Math.Min(list.Count, MaxPerDay);
+            <div class="tm-cal-day @(day.Month != _month.Month ? "other" : "") @(day == today ? "today" : "") @(day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday ? "we" : "")">
+                <div class="tm-cal-num">@day.Day</div>
+                @* Start → due bars: each memo keeps one lane (row) over its whole run; empty lanes keep the gap. *@
+                @{
+                    int topLane = lanes.Where(l => l.Start <= day && day <= l.End).Select(l => l.Lane).DefaultIfEmpty(-1).Max();
+                }
+                @for (int lane = 0; lane <= topLane; lane++)
+                {
+                    var bar = lanes.FirstOrDefault(l => l.Lane == lane && l.Start <= day && day <= l.End);
+                    var sp = bar is null ? null : spanByDay[(day, bar.MemoId)].FirstOrDefault();
+                    if (sp is null)
+                    {
+                        <div class="tm-cal-span gap"></div>
+                        continue;
+                    }
+                    bool isFirst = sp.Day == sp.SpanStart, isLast = sp.Day == sp.SpanEnd;
+                    bool label = isFirst || day.DayOfWeek == DayOfWeek.Sunday || i == 0;
+                    var (bg, fg) = barColor[sp.MemoId];
+                    <div class="tm-cal-span @(isFirst ? "first" : "") @(isLast ? "last" : "") @(TeamMemoStatus.IsClosed(sp.Status) ? "closed" : "")"
+                         style="background:@bg;color:@fg;" title="@Label(sp)" @onclick="() => OnOpen.InvokeAsync(sp.MemoId)">
+                        @(label ? Tr(sp.Title) : " ")
+                    </div>
+                }
+                @foreach (var it in list.Take(shown))
+                {
+                    string cls = it.Kind == TeamMemoCalendarKind.Due ? "due" : it.IsPlan ? "plan" : "work";
+                    <div class="tm-cal-item @cls @(TeamMemoStatus.IsClosed(it.Status) ? "closed" : "")"
+                         title="@Label(it)" @onclick="() => OnOpen.InvokeAsync(it.MemoId)">
+                        @if (it.Kind == TeamMemoCalendarKind.Due) { <span>⏰ </span> }
+                        @Tr(it.Title)
+                    </div>
+                }
+                @if (list.Count > shown)
+                {
+                    <button class="tm-cal-more" @onclick="() => _expanded = day">+@(list.Count - shown) more</button>
+                }
+                else if (expanded && list.Count > MaxPerDay)
+                {
+                    <button class="tm-cal-more" @onclick="() => _expanded = null">less</button>
+                }
+            </div>
+        }
+    </div>
+    <div class="tm-muted tm-small" style="margin-top:6px;">
+        Weekly plans come from the memo's Repeat days (same as WorkHub's schedule). Click an item to open its memo.
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IEnumerable<TeamMemoSummary> Memos { get; set; } = [];
+    [Parameter, EditorRequired] public Func<TeamMemoSummary, bool> IsPlan { get; set; } = _ => false;
+    [Parameter] public Func<string?, string>? Translate { get; set; }
+    [Parameter] public EventCallback<string> OnOpen { get; set; }
+
+    private const int MaxPerDay = 4;
+    private DateOnly _month = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private DateOnly? _expanded;
+    private bool _showPlan = true, _showWork = true, _showDue = true;
+
+    private string Tr(string? s) => Translate?.Invoke(s) ?? s ?? "";
+
+    private sealed record BarLane(string MemoId, DateOnly Start, DateOnly End, int Lane);
+
+    /// <summary>Gives every start → due bar the lowest free lane over its visible days, earliest and longest first.</summary>
+    private static List<BarLane> AssignLanes(List<TeamMemoCalendarItem> items)
+    {
+        var bars = items.Where(i => i.Kind == TeamMemoCalendarKind.Span)
+            .GroupBy(i => i.MemoId)
+            .Select(g => (MemoId: g.Key, Start: g.Min(i => i.Day), End: g.Max(i => i.Day)))
+            .OrderBy(b => b.Start).ThenByDescending(b => b.End.DayNumber - b.Start.DayNumber).ThenBy(b => b.MemoId, StringComparer.Ordinal);
+        var laneEnds = new List<DateOnly>();
+        var result = new List<BarLane>();
+        foreach (var b in bars)
+        {
+            int lane = laneEnds.FindIndex(end => end < b.Start);
+            if (lane < 0) { lane = laneEnds.Count; laneEnds.Add(b.End); }
+            else laneEnds[lane] = b.End;
+            result.Add(new BarLane(b.MemoId, b.Start, b.End, lane));
+        }
+        return result;
+    }
+
+    // Pastel bar + dark text; bars shown in the same month get different colours (in start order).
+    private static readonly (string Bg, string Fg)[] Palette =
+    [
+        ("#dbeafe", "#1e40af"), ("#dcfce7", "#166534"), ("#fef3c7", "#92400e"), ("#fce7f3", "#9d174d"),
+        ("#ede9fe", "#5b21b6"), ("#cffafe", "#155e75"), ("#ffedd5", "#9a3412"), ("#e0e7ff", "#3730a3"),
+        ("#fee2e2", "#991b1b"), ("#ecfccb", "#3f6212"), ("#f3e8ff", "#6b21a8"), ("#ccfbf1", "#115e59"),
+    ];
+
+    private string Label(TeamMemoCalendarItem it) => it.Kind switch
+    {
+        TeamMemoCalendarKind.Due => $"Due: {it.Title} ({TeamMemoStatus.Label(it.Status)})",
+        TeamMemoCalendarKind.Repeat => $"Weekly: {it.Title}",
+        TeamMemoCalendarKind.Span => $"{it.SpanStart:MM-dd} → {it.SpanEnd:MM-dd}: {it.Title} ({TeamMemoStatus.Label(it.Status)})",
+        _ => $"{(it.Time is { } t ? t.ToString("HH:mm") + " " : "")}{it.Title}",
+    };
+}

@@ -1,0 +1,120 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.102.3" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.9" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.3" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Playwright" Version="1.59.0" />
+    <PackageReference Include="Syncfusion.Blazor.Core" Version="33.1.49" />
+    <PackageReference Include="Syncfusion.Blazor.Spreadsheet" Version="33.1.49" />
+    <PackageReference Include="Syncfusion.Blazor.WordProcessor" Version="33.1.49" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.10" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\AI_PROMPTS\**\*">
+      <Link>AI_PROMPTS\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </Content>
+    <Content Update="GraphMakerExamples\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </Content>
+    <None Include="GraphMakerExamples\*.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </None>
+    <Content Include="tools\input_data_excel_com_extract.py" Condition="Exists('tools\input_data_excel_com_extract.py')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!-- BMES React viewer host-cutover. The stable JS/CSS outputs stay committed for
+       deployed machines, while clean developer/CI builds install dependencies when
+       needed and rebuild only when viewer inputs are newer. Set
+       SkipBmesReportViewerBuild=true only as a local diagnostic escape hatch. -->
+  <ItemGroup>
+    <BmesReportViewerSource Include="ClientApp\BmesReport\src\**\*" />
+    <BmesReportViewerSource Include="ClientApp\BmesReport\package.json" />
+    <BmesReportViewerSource Include="ClientApp\BmesReport\package-lock.json" />
+    <BmesReportViewerSource Include="ClientApp\BmesReport\tsconfig.json" />
+    <BmesReportViewerSource Include="ClientApp\BmesReport\vite.config.ts" />
+  </ItemGroup>
+
+  <Target Name="EnsureBmesReportViewerDependencies"
+          Inputs="$(MSBuildProjectDirectory)\ClientApp\BmesReport\package.json;$(MSBuildProjectDirectory)\ClientApp\BmesReport\package-lock.json"
+          Outputs="$(MSBuildProjectDirectory)\ClientApp\BmesReport\node_modules\.package-lock.json"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(SkipBmesReportViewerBuild)' != 'true'">
+    <Exec Command="npm ci --no-audit --no-fund"
+          WorkingDirectory="$(MSBuildProjectDirectory)\ClientApp\BmesReport" />
+  </Target>
+
+  <Target Name="BuildBmesReportViewer"
+          BeforeTargets="Build;Publish"
+          DependsOnTargets="EnsureBmesReportViewerDependencies"
+          Inputs="@(BmesReportViewerSource)"
+          Outputs="$(MSBuildProjectDirectory)\wwwroot\bmes-report\bmes-report.js;$(MSBuildProjectDirectory)\wwwroot\bmes-report\bmes-report.css"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(SkipBmesReportViewerBuild)' != 'true'">
+    <Exec Command="npm run build"
+          WorkingDirectory="$(MSBuildProjectDirectory)\ClientApp\BmesReport" />
+  </Target>
+
+  <!-- DAILY REPORT React island. Stable ESM/CSS outputs are committed for deployed
+       machines and rebuilt incrementally when any island input changes. -->
+  <ItemGroup>
+    <DailyReportViewerSource Include="ClientApp\DailyReport\src\**\*" />
+    <DailyReportViewerSource Include="ClientApp\DailyReport\test\**\*" />
+    <DailyReportViewerSource Include="ClientApp\DailyReport\package.json" />
+    <DailyReportViewerSource Include="ClientApp\DailyReport\package-lock.json" />
+    <DailyReportViewerSource Include="ClientApp\DailyReport\tsconfig.json" />
+    <DailyReportViewerSource Include="ClientApp\DailyReport\vite.config.ts" />
+  </ItemGroup>
+
+  <Target Name="RestoreDailyReportViewer"
+          Inputs="$(MSBuildProjectDirectory)\ClientApp\DailyReport\package.json;$(MSBuildProjectDirectory)\ClientApp\DailyReport\package-lock.json"
+          Outputs="$(MSBuildProjectDirectory)\ClientApp\DailyReport\node_modules\.package-lock.json"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(SkipDailyReportViewerBuild)' != 'true'">
+    <Exec Command="npm ci --no-audit --no-fund"
+          WorkingDirectory="$(MSBuildProjectDirectory)\ClientApp\DailyReport" />
+  </Target>
+
+  <Target Name="BuildDailyReportViewer"
+          BeforeTargets="Build;Publish"
+          DependsOnTargets="RestoreDailyReportViewer"
+          Inputs="@(DailyReportViewerSource)"
+          Outputs="$(MSBuildProjectDirectory)\wwwroot\daily-report\daily-report.js;$(MSBuildProjectDirectory)\wwwroot\daily-report\daily-report.css"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(SkipDailyReportViewerBuild)' != 'true'">
+    <Exec Command="npm run build"
+          WorkingDirectory="$(MSBuildProjectDirectory)\ClientApp\DailyReport" />
+  </Target>
+
+  <!-- wwwroot/ui-redesign/assets/instrument.scoped.css is generated from
+       instrument.css by tools/scope-css.js. Editing the source and forgetting to
+       regenerate ships stale CSS with no visible failure, so the build checks.
+
+       Node is treated as optional: exit code 1 means real drift and fails the
+       build, anything else (9009/127 = node not installed) only warns, so a
+       machine without Node can still build. Set SkipScopedCssCheck=true to opt out. -->
+  <Target Name="CheckScopedCss" BeforeTargets="Build" Condition="'$(SkipScopedCssCheck)' != 'true'">
+    <Exec Command="node tools/scope-css.js check"
+          WorkingDirectory="$(MSBuildProjectDirectory)/.."
+          ContinueOnError="true">
+      <Output TaskParameter="ExitCode" PropertyName="ScopedCssExit" />
+    </Exec>
+    <Warning Condition="'$(ScopedCssExit)' != '0' and '$(ScopedCssExit)' != '1'"
+             Text="Skipped the scoped-CSS check: node exited $(ScopedCssExit). Install Node.js to enable it." />
+    <Error Condition="'$(ScopedCssExit)' == '1'"
+           Text="instrument.scoped.css is out of date with instrument.css. Run: node tools/scope-css.js" />
+  </Target>
+
+</Project>

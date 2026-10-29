@@ -40,7 +40,7 @@ Status as of 2026-07-06:
   - rerun check returned `processed=0`, so there are no remaining unprocessed entries
 - Continued on 2026-07-07 by wiring the 13 approved `verified` ReviewCases
   into Ask AI's deterministic MicroSpeaker evidence pack:
-  - service: `JinoSupporter.Web/Services/MicroSpeakerAskEvidenceService.cs`
+  - service: `PortalGNLAB.Web/Services/MicroSpeakerAskEvidenceService.cs`
   - evidence field: `microSpeakerEvidence.microSpeaker.verifiedReviewCases`
   - reads `REVIEWCASE_AI_DRAFTS/verified/reviewcase_ai_verification_manifest.json`
     and approved per-file verification/draft JSON without modifying the DB
@@ -59,7 +59,7 @@ changed factors and outcome groups from source file/table/header/row text.
 
 ## Current Decision
 
-Current MicroSpeaker/JinoSupporter DB parsing is useful for searching related
+Current MicroSpeaker/PortalGNLAB DB parsing is useful for searching related
 evidence and doing some Normal/Test numeric comparisons, but it is not yet a
 reliable answer layer for this real working question:
 
@@ -545,7 +545,7 @@ Main parsed tables:
 - `comparison_pairs`
 - `measurement_stats`
 
-JinoSupporter process review DB:
+PortalGNLAB process review DB:
 
 `D:\000. MyWorks\002. DB\process-review.db`
 
@@ -645,7 +645,7 @@ Recommended conceptual schema:
 | source_system | `MicroSpeaker` or `Jino` |
 | file_id / document_id | source identity |
 | source_file | original file name/path |
-| original_file_url | JinoSupporter source-file link when available |
+| original_file_url | PortalGNLAB source-file link when available |
 | sheet_name | evidence sheet |
 | source_rows / source_cells | row/cell evidence |
 | review_title | source table title or report title |
@@ -756,9 +756,9 @@ Parser fix already made:
   - `3.1 MSU-L20S15-07 Report test change method Dry VP+CD...`
   - DB now includes `960/26` vs `80928/608`, `2.708%` vs `0.751%`.
 
-JinoSupporter ASK AI evidence changes:
+PortalGNLAB ASK AI evidence changes:
 
-`JinoSupporter.Web\Services\MicroSpeakerAskEvidenceService.cs`
+`PortalGNLAB.Web\Services\MicroSpeakerAskEvidenceService.cs`
 
 - Builds deterministic `microSpeakerEvidence`.
 - Adds `questionAnalysis`.
@@ -787,7 +787,7 @@ Suggested implementation path:
 
 1. Add a ReviewCase extraction service.
    - Possible file:
-     `JinoSupporter.Web\Services\MicroSpeakerReviewCaseService.cs`
+     `PortalGNLAB.Web\Services\MicroSpeakerReviewCaseService.cs`
 
 2. Add a generated SQLite table or in-memory pack.
    - If persisted, suggested DB/table:
@@ -818,7 +818,7 @@ Per repository instructions:
 - Verify code changes with the narrowest relevant command.
 - For prompt/docs-only changes, `git diff --check` is enough.
 - For C# service changes, run:
-  `dotnet build .\JinoSupporter.Web\JinoSupporter.Web.csproj --no-restore -p:UseAppHost=false -p:OutputPath=.\artifacts\codex-check\<name>\`
+  `dotnet build .\PortalGNLAB.Web\PortalGNLAB.Web.csproj --no-restore -p:UseAppHost=false -p:OutputPath=.\artifacts\codex-check\<name>\`
 - Remove generated verification artifacts after build.
 
 ## Bottom Line

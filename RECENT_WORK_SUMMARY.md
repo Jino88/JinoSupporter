@@ -1,15 +1,15 @@
-# JinoSupporter Recent Work Summary
+# PortalGNLAB Recent Work Summary
 
 Checked at: 2026-07-06 06:29:54 +07:00
 
 ## Basis
 
-- Repository: `D:\000. MyWorks\005. Program\Repository\JinoSupporter`
+- Repository: `D:\000. MyWorks\005. Program\Repository\PortalGNLAB`
 - Current Git HEAD: `13e88b0` (`123`, committed 2026-05-19 16:47:49 +0700)
 - Working tree status at check time:
   - Tracked changed/deleted/renamed files, excluding `bin` and `obj`: 103
   - Untracked files, excluding `bin` and `obj`: 104
-  - Main changed areas: `JinoSupporter.Web/Components/Pages`, `JinoSupporter.Web/Services`, `BmesNgRateStandalone/Components/Pages`, `BmesNgRateStandalone/Services`, and `AI_PROMPTS`
+  - Main changed areas: `PortalGNLAB.Web/Components/Pages`, `PortalGNLAB.Web/Services`, `BmesNgRateStandalone/Components/Pages`, `BmesNgRateStandalone/Services`, and `AI_PROMPTS`
 - Existing detailed handoff MD found:
   - `ASK_AI_REVIEWCASE_NEXT_STEPS.md` last modified 2026-07-04 16:53:17
   - `BMES_FCOST_DB_NOTES.md` last modified 2026-06-17 15:29:35
@@ -26,7 +26,7 @@ The next meaningful implementation is to build `MicroSpeakerReviewCaseService` o
 ### 2026-07-06
 
 - Added first diagnostic ReviewCase extractor:
-  - `JinoSupporter.Web/Services/MicroSpeakerReviewCaseService.cs`
+  - `PortalGNLAB.Web/Services/MicroSpeakerReviewCaseService.cs`
 - Added DI registration and JSON sample endpoint:
   - `GET /microspeaker/review-cases/sample.json?limit=80`
   - optional query filter: `q=...`
@@ -41,7 +41,7 @@ The next meaningful implementation is to build `MicroSpeakerReviewCaseService` o
   - Uses generic evidence structure: source title, table headers, Normal/Test condition labels, and before/after contrast; no specific workbook title or example part/process name is hard-coded.
   - Does not create or modify MicroSpeaker DB tables yet.
 - Verification:
-  - `dotnet build .\JinoSupporter.Web\JinoSupporter.Web.csproj --no-restore -p:UseAppHost=false -p:OutputPath=.\artifacts\codex-check\reviewcase\`
+  - `dotnet build .\PortalGNLAB.Web\PortalGNLAB.Web.csproj --no-restore -p:UseAppHost=false -p:OutputPath=.\artifacts\codex-check\reviewcase\`
   - Build succeeded with existing unrelated warnings only; no new warnings from `MicroSpeakerReviewCaseService.cs`.
 
 ### 2026-07-06 ReviewCase AI Packet Update
@@ -59,7 +59,7 @@ The next meaningful implementation is to build `MicroSpeakerReviewCaseService` o
   - optional limits: `rowLimit=1200`, `candidateLimit=300`
   - reads MicroSpeaker SQLite in read-only mode and does not modify DB tables.
 - Verification:
-  - `dotnet build .\JinoSupporter.Web\JinoSupporter.Web.csproj --no-restore -p:UseAppHost=false -p:OutputPath=.\artifacts\codex-check\reviewcase-ai-packet\`
+  - `dotnet build .\PortalGNLAB.Web\PortalGNLAB.Web.csproj --no-restore -p:UseAppHost=false -p:OutputPath=.\artifacts\codex-check\reviewcase-ai-packet\`
   - Build succeeded with 26 existing unrelated warnings and 0 errors.
 
 ### 2026-07-06 Full Excel ReviewCase Batch
@@ -118,7 +118,7 @@ The next meaningful implementation is to build `MicroSpeakerReviewCaseService` o
 
 - Wired approved verified ReviewCases into the deterministic Ask AI evidence
   pack:
-  - service: `JinoSupporter.Web/Services/MicroSpeakerAskEvidenceService.cs`
+  - service: `PortalGNLAB.Web/Services/MicroSpeakerAskEvidenceService.cs`
   - JSON field: `microSpeakerEvidence.microSpeaker.verifiedReviewCases`
   - source: `REVIEWCASE_AI_DRAFTS/verified/reviewcase_ai_verification_manifest.json`
     plus approved per-file verification and draft JSON
@@ -129,7 +129,7 @@ The next meaningful implementation is to build `MicroSpeakerReviewCaseService` o
   - `AI_PROMPTS/data-inference/ask-ai-cli.md`
   - `AI_PROMPTS/data-inference/cli-ask-ai.md`
 - Verification:
-  - `dotnet build .\JinoSupporter.Web\JinoSupporter.Web.csproj --no-restore -p:UseAppHost=false -p:OutputPath=.\artifacts\codex-check\reviewcase-ask-evidence\`
+  - `dotnet build .\PortalGNLAB.Web\PortalGNLAB.Web.csproj --no-restore -p:UseAppHost=false -p:OutputPath=.\artifacts\codex-check\reviewcase-ask-evidence\`
   - Build succeeded with 26 existing unrelated warnings and 0 errors.
 
 ## Recent Work By Area
@@ -158,34 +158,34 @@ The next meaningful implementation is to build `MicroSpeakerReviewCaseService` o
 ### Data Inference / Input Data
 
 - Added or expanded MicroSpeaker and input-data pages:
-  - `JinoSupporter.Web/Components/Pages/InputDataBatchPage.razor`
-  - `JinoSupporter.Web/Components/Pages/MicroSpeakerResultPage.razor`
-  - `JinoSupporter.Web/Components/Pages/DataInferenceAskPage.razor`
-  - `JinoSupporter.Web/Components/Pages/DataInferenceDbPage.razor`
-  - `JinoSupporter.Web/Components/Pages/DataInferenceModelAnalysisPage.razor`
+  - `PortalGNLAB.Web/Components/Pages/InputDataBatchPage.razor`
+  - `PortalGNLAB.Web/Components/Pages/MicroSpeakerResultPage.razor`
+  - `PortalGNLAB.Web/Components/Pages/DataInferenceAskPage.razor`
+  - `PortalGNLAB.Web/Components/Pages/DataInferenceDbPage.razor`
+  - `PortalGNLAB.Web/Components/Pages/DataInferenceModelAnalysisPage.razor`
 - Added service layer for MicroSpeaker DB and Ask evidence:
-  - `JinoSupporter.Web/Services/MicroSpeakerInputDataService.cs`
-  - `JinoSupporter.Web/Services/MicroSpeakerAskEvidenceService.cs`
-  - `JinoSupporter.Web/Services/InputDataTestBatchExtractor.cs`
-  - `JinoSupporter.Web/Services/InputDataTestAnalysisSupport.cs`
+  - `PortalGNLAB.Web/Services/MicroSpeakerInputDataService.cs`
+  - `PortalGNLAB.Web/Services/MicroSpeakerAskEvidenceService.cs`
+  - `PortalGNLAB.Web/Services/InputDataTestBatchExtractor.cs`
+  - `PortalGNLAB.Web/Services/InputDataTestAnalysisSupport.cs`
 - Added Program endpoints for MicroSpeaker dashboards and source-file downloads:
   - `/microspeaker/dashboard/{kind}`
   - `/microspeaker/source-file/{fileId}`
   - `/data-inference/ask-history/{id}/html`
-- Added many prompt files under `AI_PROMPTS` and included them in `JinoSupporter.Web.csproj` so they copy to output/publish.
+- Added many prompt files under `AI_PROMPTS` and included them in `PortalGNLAB.Web.csproj` so they copy to output/publish.
 
 ### Daily Test Data / Current Problem Workflow
 
 - Added Daily Test Data input workflow:
-  - `JinoSupporter.Web/Components/Pages/DailyTestDataInputPage.razor`
-  - `JinoSupporter.Web/Services/DailyTestExtractionSettingsService.cs`
-  - `JinoSupporter.Web/Services/DailyTestDataCliRecoveryService.cs`
-  - `JinoSupporter.Web/Services/DailyTestReportBuilder.cs`
+  - `PortalGNLAB.Web/Components/Pages/DailyTestDataInputPage.razor`
+  - `PortalGNLAB.Web/Services/DailyTestExtractionSettingsService.cs`
+  - `PortalGNLAB.Web/Services/DailyTestDataCliRecoveryService.cs`
+  - `PortalGNLAB.Web/Services/DailyTestReportBuilder.cs`
   - `daily-test-extraction-settings.json`
 - Added Current Problem analysis workflow:
-  - `JinoSupporter.Web/Components/Pages/CurrentProblemAnalysisPage.razor`
-  - `JinoSupporter.Web/Components/Shared/CurrentProblemWorkflowStrip.razor`
-  - `JinoSupporter.Web/Services/CurrentProblemAnalysisService.cs`
+  - `PortalGNLAB.Web/Components/Pages/CurrentProblemAnalysisPage.razor`
+  - `PortalGNLAB.Web/Components/Shared/CurrentProblemWorkflowStrip.razor`
+  - `PortalGNLAB.Web/Services/CurrentProblemAnalysisService.cs`
   - `ai_current_problem_analyze.py`
   - `ai_first_pass_classify.py`
   - `create_current_problem_search_html.py`
@@ -194,11 +194,11 @@ The next meaningful implementation is to build `MicroSpeakerReviewCaseService` o
 ### AI Provider / Prompt / Translation Support
 
 - Added or expanded:
-  - `JinoSupporter.Web/Services/CodexApiService.cs`
-  - `JinoSupporter.Web/Services/CodexUsageScraper.cs`
-  - `JinoSupporter.Web/Services/AiProviderSettingsService.cs`
-  - `JinoSupporter.Web/Services/AiPromptRegistry.cs`
-  - `JinoSupporter.Web/Components/Pages/AiPromptPage.razor`
+  - `PortalGNLAB.Web/Services/CodexApiService.cs`
+  - `PortalGNLAB.Web/Services/CodexUsageScraper.cs`
+  - `PortalGNLAB.Web/Services/AiProviderSettingsService.cs`
+  - `PortalGNLAB.Web/Services/AiPromptRegistry.cs`
+  - `PortalGNLAB.Web/Components/Pages/AiPromptPage.razor`
 - Added AI usage/admin visibility and prompt folders:
   - `AI_PROMPTS/claude`
   - `AI_PROMPTS/data-inference`
@@ -211,19 +211,19 @@ The next meaningful implementation is to build `MicroSpeakerReviewCaseService` o
 
 - Added detailed BMES DB exploration notes in `BMES_FCOST_DB_NOTES.md`.
 - Expanded F-COST page and services:
-  - `JinoSupporter.Web/Components/Pages/BmesFCostPage.razor`
-  - `JinoSupporter.Web/Services/BmesFcostActualService.cs`
-  - `JinoSupporter.Web/Services/FCostReportService.cs`
-  - `JinoSupporter.Web/Services/FCostService.cs`
-  - `JinoSupporter.Web/Services/FCostRawBreakdownExcelExporter.cs`
+  - `PortalGNLAB.Web/Components/Pages/BmesFCostPage.razor`
+  - `PortalGNLAB.Web/Services/BmesFcostActualService.cs`
+  - `PortalGNLAB.Web/Services/FCostReportService.cs`
+  - `PortalGNLAB.Web/Services/FCostService.cs`
+  - `PortalGNLAB.Web/Services/FCostRawBreakdownExcelExporter.cs`
 - Added BMES reporting pages:
-  - `JinoSupporter.Web/Components/Pages/BmesReportPage.razor`
-  - `JinoSupporter.Web/Components/Pages/BmesCauseMonthlyReportPage.razor`
-  - `JinoSupporter.Web/Components/Pages/BmesTest3Page.razor`
-  - `JinoSupporter.Web/Components/Pages/BmesTest4Page.razor`
+  - `PortalGNLAB.Web/Components/Pages/BmesReportPage.razor`
+  - `PortalGNLAB.Web/Components/Pages/BmesCauseMonthlyReportPage.razor`
+  - `PortalGNLAB.Web/Components/Pages/BmesTest3Page.razor`
+  - `PortalGNLAB.Web/Components/Pages/BmesTest4Page.razor`
 - Added process/material mapping and NG services:
-  - `JinoSupporter.Web/Services/ProcessMaterialMappingService.cs`
-  - `JinoSupporter.Web/Services/ProcessMaterialNgService.cs`
+  - `PortalGNLAB.Web/Services/ProcessMaterialMappingService.cs`
+  - `PortalGNLAB.Web/Services/ProcessMaterialNgService.cs`
 
 ### NG Rate / Reporting
 
@@ -234,14 +234,14 @@ The next meaningful implementation is to build `MicroSpeakerReviewCaseService` o
   - `NgRateSimpleGroupPicker.razor`
   - `NgRateViewNav.razor`
 - Added/expanded daily and weekly report pages:
-  - `JinoSupporter.Web/Components/Pages/NgRateForDailyReportPage.razor`
-  - `JinoSupporter.Web/Components/Pages/NgRateForWeeklyReportPage.razor`
-  - `JinoSupporter.Web/Components/Pages/NgRateAllPage.razor`
-  - `JinoSupporter.Web/Components/Pages/NgRateByGroupPage.razor`
-  - `JinoSupporter.Web/Components/Pages/NgRatePage.razor`
+  - `PortalGNLAB.Web/Components/Pages/NgRateForDailyReportPage.razor`
+  - `PortalGNLAB.Web/Components/Pages/NgRateForWeeklyReportPage.razor`
+  - `PortalGNLAB.Web/Components/Pages/NgRateAllPage.razor`
+  - `PortalGNLAB.Web/Components/Pages/NgRateByGroupPage.razor`
+  - `PortalGNLAB.Web/Components/Pages/NgRatePage.razor`
 - Added CSV/export support:
-  - `JinoSupporter.Web/Services/NgRateCsvExporter.cs`
-  - `JinoSupporter.Web/Services/CsvExportUtility.cs`
+  - `PortalGNLAB.Web/Services/NgRateCsvExporter.cs`
+  - `PortalGNLAB.Web/Services/CsvExportUtility.cs`
   - changes in `NgRateExcelExporter.cs`
   - `NgRateModeSupport.cs`
 

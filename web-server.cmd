@@ -1,16 +1,16 @@
 @echo off
 REM ─────────────────────────────────────────────────────────────────────
-REM  JinoSupporter Web — server toolbox (menu).
+REM  PortalGNLAB Web — server toolbox (menu).
 REM  Double-click. Pick a number. Window stays open until you press Q.
 REM ─────────────────────────────────────────────────────────────────────
 
 setlocal enabledelayedexpansion
 
 set "ROOT=%~dp0"
-set "CSPROJ=%ROOT%JinoSupporter.Web\JinoSupporter.Web.csproj"
-set "DIST=%ROOT%dist\JinoSupporterWeb"
-set "EXE=%DIST%\JinoSupporter.Web.exe"
-set "TASK=JinoSupporterWebAutoStart"
+set "CSPROJ=%ROOT%PortalGNLAB.Web\PortalGNLAB.Web.csproj"
+set "DIST=%ROOT%dist\PortalGNLABWeb"
+set "EXE=%DIST%\PortalGNLAB.Web.exe"
+set "TASK=PortalGNLABWebAutoStart"
 set "PORT=5050"
 
 
@@ -18,7 +18,7 @@ set "PORT=5050"
 cls
 echo.
 echo  ╔══════════════════════════════════════════════════╗
-echo  ║   JinoSupporter Web — Server Toolbox             ║
+echo  ║   PortalGNLAB Web — Server Toolbox             ║
 echo  ╚══════════════════════════════════════════════════╝
 echo   Project root : %ROOT%
 echo   Publish dir  : %DIST%
@@ -26,7 +26,7 @@ if exist "%EXE%" (echo   Build status : OK ^(exe found^)) else (echo   Build sta
 echo.
 echo   [1] Publish        - build deployable copy
 echo   [2] Start server   - launch published exe ^(port %PORT%^)
-echo   [3] User shortcut  - generate JinoSupporter.url
+echo   [3] User shortcut  - generate PortalGNLAB.url
 echo   [4] Open firewall  - allow inbound TCP %PORT% ^(Admin needed^)
 echo   [5] Install autostart   - run on logon ^(Admin needed^)
 echo   [6] Remove  autostart
@@ -85,7 +85,7 @@ if errorlevel 1 (
     echo setlocal
     echo set ASPNETCORE_ENVIRONMENT=Production
     echo set ASPNETCORE_URLS=http://*:%PORT%
-    echo "%%~dp0JinoSupporter.Web.exe"
+    echo "%%~dp0PortalGNLAB.Web.exe"
 )
 echo.
 echo [publish] Done.
@@ -123,7 +123,7 @@ set "PORT_INPUT="
 set /p "PORT_INPUT=Port [%PORT%]: "
 if "!PORT_INPUT!"=="" set "PORT_INPUT=%PORT%"
 
-set "OUT=%ROOT%JinoSupporter.url"
+set "OUT=%ROOT%PortalGNLAB.url"
 (
     echo [InternetShortcut]
     echo URL=http://!HOST!:!PORT_INPUT!
@@ -138,8 +138,8 @@ exit /b 0
 
 :do_firewall
 echo.
-echo [firewall] Adding inbound TCP %PORT% rule "JinoSupporter Web" ...
-netsh advfirewall firewall add rule name="JinoSupporter Web" dir=in action=allow protocol=TCP localport=%PORT%
+echo [firewall] Adding inbound TCP %PORT% rule "PortalGNLAB Web" ...
+netsh advfirewall firewall add rule name="PortalGNLAB Web" dir=in action=allow protocol=TCP localport=%PORT%
 if errorlevel 1 (
     echo [firewall] FAILED. Re-run this cmd as Administrator.
     exit /b 1

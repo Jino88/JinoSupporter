@@ -1,4 +1,4 @@
-# JinoSupporter Migration Plan
+# PortalGNLAB Migration Plan
 
 ## Goal
 

@@ -436,7 +436,7 @@ def write_plan(path: Path) -> None:
 Run this after `classification_summary.json` shows all 989 rows completed:
 
 ```powershell
-python "JinoSupporter\\prepare_ai_review_demo.py" `
+python "PortalGNLAB\\prepare_ai_review_demo.py" `
   --results "C:\\Users\\jhbyun\\Desktop\\새 폴더 (4)\\classification_results.jsonl" `
   --out-dir "C:\\Users\\jhbyun\\Desktop\\새 폴더 (4)\\sample_ready" `
   --model-map "C:\\Users\\jhbyun\\Desktop\\새 폴더 (4)\\sample_ready\\model_mapping_conditions.csv" `

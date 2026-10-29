@@ -1,0 +1,634 @@
+﻿@page "/admin/test-excel-converter"
+@rendermode InteractiveServer
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
+@implements IDisposable
+@using System.Text.Json
+@using PortalGNLAB.Web.Services
+@inject AppPathsService    Paths
+@inject ExcelHelperRunner  Helper
+@inject IJSRuntime         JS
+
+<PageTitle>Test Excel Converter</PageTitle>
+
+<div class="tec-page">
+<div class="d-flex align-items-center gap-2 mb-3">
+    <span style="font-size:20px;">📑</span>
+    <h5 class="mb-0 fw-semibold">Test Excel Converter</h5>
+    <span class="badge bg-secondary ms-2" style="font-size:10px;">Admin only</span>
+</div>
+
+<p class="small text-muted">
+    <code>ExcelDuplicator</code>의 Python CLI를 web이 subprocess로 호출합니다.
+    변환은 <code>excel_drm_cli.py</code>만 사용하며, 경로는 자동 저장됩니다.
+</p>
+
+@if (!Helper.ConverterExists)
+{
+    <div class="alert alert-warning small">
+        <strong>Python converter not found.</strong> ExcelDuplicator 경로와 venv를 확인해주세요.
+        <div class="tec-mono mt-1" style="font-size:11px;">@Helper.ConverterStatus</div>
+    </div>
+}
+
+<div class="card tec-panel mb-3 tec-settings-card">
+    <div class="card-header small fw-semibold">Files</div>
+    <div class="card-body">
+        <div class="mb-3">
+            <label class="form-label small mb-1">Input files</label>
+            <div class="tec-drop-zone @(_isBusy ? "disabled" : "")">
+                <InputFile class="tec-drop-input"
+                           OnChange="OnFilesSelected"
+                           multiple
+                           accept=".xlsx,.xlsm,.xlsb,.xls"
+                           disabled="@_isBusy" />
+                <div class="tec-drop-content">
+                    <div class="tec-drop-title">Drag Excel files here or click to select</div>
+                    <div class="tec-drop-sub">Multiple .xlsx / .xlsm / .xlsb / .xls files are supported.</div>
+                </div>
+            </div>
+            @if (_selectedFiles.Count > 0)
+            {
+                <div class="tec-file-list mt-2">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small fw-semibold">@_selectedFiles.Count file(s) selected</span>
+                        <button class="btn btn-link btn-sm p-0" @onclick="() => ClearSelectedFiles()" disabled="@_isBusy">Clear</button>
+                    </div>
+                    @foreach (var file in _selectedFiles)
+                    {
+                        <div class="tec-file-row">
+                            <span class="text-truncate" title="@file.OriginalName">@file.OriginalName</span>
+                            <span class="text-muted">@FormatSize(file.Size)</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        <div class="mb-3">
+            <label class="form-label small mb-1">Input files</label>
+            <div class="input-group input-group-sm">
+                <input class="form-control tec-mono"
+                       @bind="_sourceDir" @bind:after="SaveSettings"
+                       placeholder="e.g. D:\reports\input" />
+                <button class="btn btn-outline-secondary"
+                        @onclick="PickSourceAsync" disabled="@(_isBusy || !Helper.FolderPickerExists)"
+                        title="Browse for source folder">📁 Browse</button>
+            </div>
+            <small class="text-muted">이 폴더와 하위 폴더 안의 모든 *.xlsx / *.xlsm / *.xlsb / *.xls 을 변환.</small>
+        </div>
+        <div class="mb-3">
+            <label class="form-label small mb-1">Destination folder</label>
+            <small class="text-muted d-block mb-1">Output files are written directly inside this folder as <code>&lt;original&gt;_clean.xlsx</code>.</small>
+            <div class="input-group input-group-sm">
+                <input class="form-control tec-mono"
+                       @bind="_destDir" @bind:after="SaveSettings"
+                       placeholder="e.g. D:\reports\output" />
+                <button class="btn btn-outline-secondary"
+                        @onclick="PickDestAsync" disabled="@(_isBusy || !Helper.FolderPickerExists)"
+                        title="Browse for destination folder">📁 Browse</button>
+            </div>
+            <small class="text-muted">Output files are written directly inside this folder as <code>&lt;original&gt;_clean.xlsx</code>.</small>
+        </div>
+        <div class="form-check form-check-inline mb-2">
+            <input class="form-check-input" type="checkbox"
+                   id="cb-verbose" @bind="_verbose" disabled="@_isBusy" />
+            <label class="form-check-label small" for="cb-verbose">
+                Verbose log
+                <span class="text-muted">— per-chunk / per-shape / per-5K-cells progress (helps diagnose stalls)</span>
+            </label>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <button class="btn btn-primary btn-sm" @onclick="ConvertAsync"
+                    disabled="@(_isBusy || !Helper.ConverterExists
+                              || _selectedFiles.Count == 0
+                              || string.IsNullOrWhiteSpace(_destDir))">
+                @if (_isBusy)
+                { <span class="spinner-border spinner-border-sm me-1"></span><span>Converting…</span> }
+                else
+                { <span>Convert Selected Files</span> }
+            </button>
+            @if (_isBusy)
+            {
+                <button class="btn btn-danger btn-sm"
+                        @onclick="Cancel"
+                        disabled="@(_cts is null || _cts.IsCancellationRequested)">
+                    <span>■ Stop</span>
+                </button>
+            }
+            @if (_lastSummary is not null)
+            {
+                <span class="ms-2 small">
+                    <span class="badge tec-badge-ok me-1">OK @_lastSummary.Value.Ok</span>
+                    @if (_lastSummary.Value.Fail > 0)
+                    { <span class="badge bg-danger">Fail @_lastSummary.Value.Fail</span> }
+                </span>
+            }
+        </div>
+        @* Progress bar — driven by converter "scan" (sets total) and "progress"
+           (sets current + filename). Stays visible after a run finishes so
+           the user can see the final N/N completion until next start. *@
+        @if (_progTotal > 0)
+        {
+            int pct = (int)Math.Round(100.0 * _progCurrent / _progTotal);
+            <div class="mt-3">
+                <div class="d-flex justify-content-between small mb-1">
+                    <span class="text-muted">@_progCurrent / @_progTotal files</span>
+                    <span class="text-muted text-truncate ms-2" style="max-width:60%;" title="@_progFile">@_progFile</span>
+                    <span class="fw-semibold">@pct %</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar tec-progress-bar @(_isBusy ? "progress-bar-striped progress-bar-animated" : "tec-progress-done")"
+                         role="progressbar" style="width:@(pct)%;"></div>
+                </div>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="alert alert-danger mt-3 mb-0 py-2 small">@_error</div>
+        }
+    </div>
+</div>
+
+<div class="card tec-panel">
+    <div class="card-header small fw-semibold d-flex align-items-center gap-2">
+        <span>📜 Log</span>
+        @if (_log.Count > 0)
+        {
+            <button class="btn btn-link btn-sm p-0 text-secondary ms-auto"
+                    @onclick="() => _log.Clear()">Clear</button>
+        }
+    </div>
+    <div class="card-body p-0">
+        @* id="tec-log" — needed by JS to scroll-to-bottom on each new entry.
+           Without this the user has to scroll manually as logs stream in. *@
+        <div id="tec-log" class="tec-log tec-mono p-2 overflow-auto">
+            @if (_log.Count == 0)
+            {
+                <span class="tec-empty-log">No log entries yet.</span>
+            }
+            else
+            {
+                @foreach (var entry in _log)
+                {
+                    <div class="@LogClassFor(entry.Kind)">@entry.Text</div>
+                }
+            }
+        </div>
+    </div>
+</div>
+</div>
+
+<style>
+    .tec-panel {
+        background: var(--panel, #fff);
+        border: 1px solid var(--line-2, #c6ccd5);
+        border-radius: 2px;
+    }
+    .tec-mono { font-family: var(--mono, Bahnschrift, monospace); }
+    .tec-settings-card > .card-body > .mb-3:nth-of-type(2) {
+        display: none;
+    }
+    .tec-settings-card > .card-body > .mb-3:nth-of-type(3) > small:last-child {
+        display: none;
+    }
+    .tec-drop-zone {
+        position: relative;
+        display: grid;
+        place-items: center;
+        min-height: 138px;
+        border: 2px dashed var(--line-2, #c6ccd5);
+        border-radius: 2px;
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink, #0f1319);
+        cursor: pointer;
+        transition: border-color .15s ease, background .15s ease;
+    }
+    .tec-drop-zone:hover {
+        border-color: var(--signal, #16202b);
+        background: var(--signal-wash, #edf0f4);
+    }
+    .tec-drop-zone.disabled {
+        opacity: .6;
+        cursor: not-allowed;
+    }
+    .tec-drop-input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+    .tec-drop-zone.disabled .tec-drop-input {
+        cursor: not-allowed;
+    }
+    .tec-drop-content {
+        pointer-events: none;
+        text-align: center;
+        padding: 18px;
+    }
+    .tec-drop-title {
+        font-weight: 700;
+        font-size: 14px;
+    }
+    .tec-drop-sub {
+        color: var(--ink-2, #4a5461);
+        font-size: 12px;
+        margin-top: 4px;
+    }
+    .tec-file-list {
+        border: 1px solid var(--line, var(--line, #dde1e7));
+        border-radius: 2px;
+        padding: 8px;
+        background: var(--panel, #fff);
+    }
+    .tec-file-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 4px 0;
+        font-size: 12px;
+        border-top: 1px solid var(--panel-3, #eceef2);
+    }
+    .tec-file-row:first-of-type {
+        border-top: 0;
+    }
+    .log-info  { color: var(--ink-3, #7f8a98); }
+    .tec-log {
+        height: 380px;
+        background: var(--panel-2, #f5f6f9);
+        color: var(--ink-2, #4a5461);
+        font-size: 11px;
+        border-top: 1px solid var(--line, #dde1e7);
+    }
+    .tec-empty-log { color: var(--ink-3, #7f8a98); }
+    .tec-progress-bar { background: var(--signal, #16202b); }
+    .tec-progress-done { background: var(--ok, #1f5fa8); }
+    .tec-badge-ok { background: var(--ok-wash, #eaf1f9); color: var(--ok, #1f5fa8); }
+    .log-ok    { color: var(--ok, #1f5fa8); }
+    .log-warn  { color: var(--warn-ink, #92610a); }
+    .log-err   { color: var(--crit, #c8342a); }
+    .log-step  { color: var(--signal, #16202b); }
+</style>
+
+@code {
+    private string _sourceDir = string.Empty;
+    private string _destDir   = string.Empty;
+    private string _error     = string.Empty;
+    private bool   _isBusy;
+    private bool   _verbose;
+    private CancellationTokenSource? _cts;
+    private string _uploadDir = string.Empty;
+
+    private sealed record LogEntry(string Kind, string Text);
+    private sealed record SelectedExcelFile(string OriginalName, string StoredPath, long Size);
+
+    private readonly List<LogEntry>  _log = new();
+    private readonly List<SelectedExcelFile> _selectedFiles = new();
+    private (int Ok, int Fail)?      _lastSummary;
+    private const int MaxSelectedFiles = 200;
+    private const long MaxExcelUploadBytes = 1024L * 1024L * 1024L;
+
+    // Progress state — populated by helper "scan" + "progress" events.
+    private int _progTotal;
+    private int _progCurrent;
+    private string _progFile = "";
+
+    protected override void OnInitialized()
+    {
+        var cfg = Paths.Current;
+        _sourceDir = cfg.TestExcelConverterSourceDir ?? string.Empty;
+        _destDir   = cfg.TestExcelConverterDestDir   ?? string.Empty;
+    }
+
+    // Track the last log size we scrolled past so we don't pin the viewport
+    // when nothing new arrived (would steal user's manual scroll).
+    private int _lastLogScrollCount;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_log.Count != _lastLogScrollCount)
+        {
+            _lastLogScrollCount = _log.Count;
+            try
+            {
+                await JS.InvokeVoidAsync("eval",
+                    "(()=>{var e=document.getElementById('tec-log');if(e)e.scrollTop=e.scrollHeight;})()");
+            }
+            catch { /* JS unavailable (prerender etc.) — fine */ }
+        }
+    }
+
+    private void SaveSettings()
+    {
+        var cur = Paths.Current;
+        Paths.Save(new AppPathsConfig
+        {
+            DbRootDirectory           = cur.DbRootDirectory,
+            MainDbPath                = cur.MainDbPath,
+            NgRateDbSaveDirectory     = cur.NgRateDbSaveDirectory,
+            NgRateRoutingFilePath     = cur.NgRateRoutingFilePath,
+            NgRateReasonFilePath      = cur.NgRateReasonFilePath,
+            NgRateSettingsDbDirectory = cur.NgRateSettingsDbDirectory,
+            ModelBmesJsonFolder       = cur.ModelBmesJsonFolder,
+            TestExcelConverterSourceDir = (_sourceDir ?? string.Empty).Trim(),
+            TestExcelConverterDestDir   = (_destDir   ?? string.Empty).Trim(),
+        });
+    }
+
+    private async Task OnFilesSelected(InputFileChangeEventArgs e)
+    {
+        if (_isBusy) return;
+
+        _error = string.Empty;
+        ClearSelectedFiles(deleteOnly: true);
+
+        string uploadDir = Path.Combine(Path.GetTempPath(), "jinosupp-test-excel-converter", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(uploadDir);
+        _uploadDir = uploadDir;
+
+        try
+        {
+            foreach (var file in e.GetMultipleFiles(MaxSelectedFiles))
+            {
+                if (!IsAllowedExcelFile(file.Name))
+                {
+                    AddLog($"[skip] Unsupported file type: {file.Name}", "warn");
+                    continue;
+                }
+
+                string storedName = UniqueStagedFileName(uploadDir, SafeFileName(file.Name));
+                string storedPath = Path.Combine(uploadDir, storedName);
+
+                await using (var src = file.OpenReadStream(MaxExcelUploadBytes))
+                await using (var dst = File.Create(storedPath))
+                {
+                    await src.CopyToAsync(dst);
+                }
+
+                _selectedFiles.Add(new SelectedExcelFile(file.Name, storedPath, file.Size));
+            }
+
+            if (_selectedFiles.Count == 0)
+            {
+                ClearSelectedFiles(deleteOnly: true);
+                _error = "Select one or more Excel files.";
+            }
+            else
+            {
+                AddLog($"[files] {_selectedFiles.Count} file(s) ready.", "ok");
+            }
+        }
+        catch (Exception ex)
+        {
+            ClearSelectedFiles(deleteOnly: true);
+            _error = $"File load failed: {ex.Message}";
+            AddLog($"[files] {ex.Message}", "err");
+        }
+    }
+
+    private void ClearSelectedFiles(bool deleteOnly = false)
+    {
+        _selectedFiles.Clear();
+        if (!string.IsNullOrWhiteSpace(_uploadDir))
+        {
+            try
+            {
+                if (Directory.Exists(_uploadDir)) Directory.Delete(_uploadDir, recursive: true);
+            }
+            catch { }
+            _uploadDir = string.Empty;
+        }
+
+        if (!deleteOnly)
+        {
+            _error = string.Empty;
+            _progTotal = 0;
+            _progCurrent = 0;
+            _progFile = "";
+            _lastSummary = null;
+        }
+    }
+
+    private static bool IsAllowedExcelFile(string name)
+    {
+        string ext = Path.GetExtension(name);
+        return ext.Equals(".xlsx", StringComparison.OrdinalIgnoreCase)
+               || ext.Equals(".xlsm", StringComparison.OrdinalIgnoreCase)
+               || ext.Equals(".xlsb", StringComparison.OrdinalIgnoreCase)
+               || ext.Equals(".xls", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string SafeFileName(string name)
+    {
+        string safe = Path.GetFileName(name);
+        foreach (char c in Path.GetInvalidFileNameChars())
+            safe = safe.Replace(c, '_');
+        return string.IsNullOrWhiteSpace(safe) ? "workbook.xlsx" : safe;
+    }
+
+    private static string UniqueStagedFileName(string folder, string fileName)
+    {
+        string stem = Path.GetFileNameWithoutExtension(fileName);
+        string ext = Path.GetExtension(fileName);
+        if (string.IsNullOrWhiteSpace(stem)) stem = "workbook";
+        if (string.IsNullOrWhiteSpace(ext)) ext = ".xlsx";
+
+        string candidate = $"{stem}{ext}";
+        int index = 2;
+        while (File.Exists(Path.Combine(folder, candidate)))
+            candidate = $"{stem}_{index++}{ext}";
+        return candidate;
+    }
+
+    private static string FormatSize(long bytes)
+    {
+        string[] units = ["B", "KB", "MB", "GB"];
+        double size = bytes;
+        int unit = 0;
+        while (size >= 1024 && unit < units.Length - 1)
+        {
+            size /= 1024;
+            unit++;
+        }
+        return $"{size:0.#} {units[unit]}";
+    }
+
+    private async Task PickSourceAsync()
+    {
+        if (!Helper.FolderPickerExists)
+        {
+            AddLog("[browse] Folder picker helper not found. Type the path manually.", "warn");
+            return;
+        }
+        AddLog("[browse] Opening folder dialog (source)…", "step");
+        StateHasChanged();
+        string? picked = await Helper.PickFolderAsync(string.IsNullOrWhiteSpace(_sourceDir) ? null : _sourceDir);
+        if (picked is not null)
+        {
+            _sourceDir = picked;
+            SaveSettings();
+            AddLog($"[browse] Source = {picked}", "ok");
+        }
+        else
+        {
+            AddLog("[browse] Source pick cancelled.", "warn");
+        }
+    }
+
+    private async Task PickDestAsync()
+    {
+        if (!Helper.FolderPickerExists)
+        {
+            AddLog("[browse] Folder picker helper not found. Type the path manually.", "warn");
+            return;
+        }
+        AddLog("[browse] Opening folder dialog (destination)…", "step");
+        StateHasChanged();
+        string? picked = await Helper.PickFolderAsync(string.IsNullOrWhiteSpace(_destDir) ? null : _destDir);
+        if (picked is not null)
+        {
+            _destDir = picked;
+            SaveSettings();
+            AddLog($"[browse] Destination = {picked}", "ok");
+        }
+        else
+        {
+            AddLog("[browse] Destination pick cancelled.", "warn");
+        }
+    }
+
+    private async Task ConvertAsync()
+    {
+        if (_isBusy || !Helper.ConverterExists) return;
+        if (_selectedFiles.Count == 0 || string.IsNullOrWhiteSpace(_destDir))
+        {
+            _error = "Select Excel files and a destination folder.";
+            return;
+        }
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+
+        _isBusy = true;
+        _error  = string.Empty;
+        _lastSummary = null;
+        _progTotal = 0; _progCurrent = 0; _progFile = "";
+        AddLog($"[start] {_selectedFiles.Count} selected file(s) -> {_destDir}", "step");
+        StateHasChanged();
+
+        try
+        {
+            var files = _selectedFiles.Select(x => x.StoredPath).ToList();
+            await foreach (var evt in Helper.CleanFilesToDestinationRootAsync(files, _destDir, verbose: _verbose, ct: _cts.Token))
+            {
+                HandleHelperEvent(evt);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            AddLog("[stopped] User cancelled — Python process killed.", "warn");
+        }
+        catch (Exception ex)
+        {
+            _error = $"Convert failed: {ex.Message}";
+            AddLog($"[fatal] {ex}", "err");
+        }
+        finally
+        {
+            _isBusy = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void Cancel()
+    {
+        if (_cts is null || _cts.IsCancellationRequested) return;
+        // Cancellation propagates into the Python converter wrapper, which
+        // kills the subprocess tree so any Excel.exe it spawned exits too.
+        AddLog("[stop] Cancellation requested…", "warn");
+        try { _cts.Cancel(); } catch { }
+    }
+
+    public void Dispose()
+    {
+        // Page navigated away mid-conversion → cancel so the helper doesn't
+        // outlive the circuit. The Job Object would catch it on web exit too,
+        // but per-circuit cancellation kills the process the moment the user
+        // leaves the page rather than holding it open until shutdown.
+        try { _cts?.Cancel(); } catch { }
+        _cts?.Dispose();
+        ClearSelectedFiles(deleteOnly: true);
+    }
+
+    private void HandleHelperEvent(ExcelHelperRunner.HelperEvent evt)
+    {
+        var raw = evt.Raw;
+        switch (evt.Kind)
+        {
+            case "scan":
+                int count = raw.TryGetProperty("count", out var c) ? c.GetInt32() : 0;
+                _progTotal = count; _progCurrent = 0; _progFile = "";
+                AddLog($"[scan] {count} Excel file(s) under {raw.GetProperty("source").GetString()}", "info");
+                break;
+
+            case "progress":
+                int cur = raw.GetProperty("current").GetInt32();
+                int tot = raw.GetProperty("total").GetInt32();
+                string file = raw.GetProperty("file").GetString() ?? "";
+                _progCurrent = cur; _progTotal = tot; _progFile = file;
+                AddLog($"[{cur}/{tot}] {file}", "step");
+                break;
+
+            case "result":
+                bool ok = raw.GetProperty("success").GetBoolean();
+                if (ok)
+                {
+                    string strat = raw.TryGetProperty("strategy", out var s) ? s.GetString() ?? "?" : "?";
+                    string dest  = raw.TryGetProperty("dest",  out var d) ? d.GetString() ?? "" : "";
+                    AddLog($"  ✓ {strat} → {dest}", "ok");
+                }
+                else
+                {
+                    string src = raw.TryGetProperty("source", out var sp) ? Path.GetFileName(sp.GetString() ?? "") : "?";
+                    string err = raw.TryGetProperty("error",  out var ep) ? ep.GetString() ?? "" : "";
+                    AddLog($"  ✗ {src} — {err}", "err");
+                }
+                break;
+
+            case "log":
+                string msg = raw.TryGetProperty("message", out var m) ? m.GetString() ?? "" : "";
+                AddLog(msg, msg.StartsWith("⚠", StringComparison.Ordinal) ? "warn" : "info");
+                break;
+
+            case "done":
+                int dOk   = raw.TryGetProperty("ok",   out var ok2) ? ok2.GetInt32() : 0;
+                int dFail = raw.TryGetProperty("fail", out var fl)  ? fl.GetInt32()  : 0;
+                _lastSummary = (dOk, dFail);
+                AddLog($"[done] OK={dOk}, FAIL={dFail}", dFail > 0 ? "warn" : "ok");
+                break;
+
+            case "fatal":
+            case "error":
+            case "stderr":
+                string em = raw.TryGetProperty("message", out var em2) ? em2.GetString() ?? "" : evt.Kind;
+                _error = em;
+                AddLog($"[converter] {em}", "err");
+                break;
+        }
+    }
+
+    private void AddLog(string message, string kind = "info")
+    {
+        _log.Add(new LogEntry(kind, $"{DateTime.Now:HH:mm:ss}  {message}"));
+        const int Cap = 2000;
+        if (_log.Count > Cap) _log.RemoveRange(0, _log.Count - Cap);
+    }
+
+    private static string LogClassFor(string kind) => kind switch
+    {
+        "ok"   => "log-ok",
+        "warn" => "log-warn",
+        "err"  => "log-err",
+        "step" => "log-step",
+        _      => "log-info",
+    };
+}

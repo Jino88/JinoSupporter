@@ -237,7 +237,7 @@ def build_prompt(package: dict[str, Any], candidate_limit: int) -> str:
         "retrievedCandidates": candidates,
     }
     return f"""
-You are analyzing historical manufacturing validation/review reports for JinoSupporter.
+You are analyzing historical manufacturing validation/review reports for PortalGNLAB.
 
 The user has a current manufacturing problem. A retrieval step already selected related historical reports from `demo_index.json`.
 You must now do the AI analysis step, not just keyword grouping.
@@ -689,7 +689,7 @@ def build_ai_html_prompt(
         "measurementExtraction": measurement,
     }
     return f"""
-You are generating the final browser report HTML for JinoSupporter.
+You are generating the final browser report HTML for PortalGNLAB.
 
 Do not return JSON. Do not return markdown. Return ONLY a complete standalone HTML document.
 

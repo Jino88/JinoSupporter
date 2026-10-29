@@ -7,6 +7,6 @@ REM ─────────────────────────�
 setlocal
 set ASPNETCORE_ENVIRONMENT=Development
 set ASPNETCORE_URLS=http://*:5050
-cd /d "%~dp0JinoSupporter.Web"
+cd /d "%~dp0PortalGNLAB.Web"
 dotnet watch run --no-launch-profile
 endlocal

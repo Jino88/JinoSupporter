@@ -1,0 +1,628 @@
+﻿@page "/bmes/reason-table"
+@rendermode InteractiveServer
+@using PortalGNLAB.Web.Services
+@using Microsoft.AspNetCore.Components.Web
+@inject NgRateSettingsService NgRateSettings
+@inject BmesSettingsSyncService BmesSettingsSync
+
+<PageTitle>BMES Reason Table</PageTitle>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <span style="font-size:20px;">RS</span>
+    <h5 class="mb-0 fw-semibold">Reason Table</h5>
+</div>
+
+@if (!string.IsNullOrEmpty(_statusMsg))
+{
+    <div class="alert @(_statusError ? "alert-danger" : "alert-success") py-2 small mb-3 d-flex align-items-center">
+        <span class="flex-fill">@_statusMsg</span>
+        <button class="btn-close btn-sm" @onclick="() => _statusMsg = string.Empty"></button>
+    </div>
+}
+
+@{
+    var filtered = GetFilteredReason();
+    var modelFiltered = ModelPairsFiltered().ToList();
+}
+
+<div class="card reason-card">
+    <div class="card-header d-flex align-items-center gap-2">
+        <span class="fw-semibold small">Reason Table</span>
+        <span class="badge bg-secondary ms-1" style="font-size:10px;">@_reasonRows.Count rows</span>
+        @if (_modelScanActive)
+        {
+            <span class="text-muted ms-1" style="font-size:10px;">@modelFiltered.Count shown for "@_rsqModel"</span>
+        }
+        else if (_anyReasonSearch)
+        {
+            <span class="text-muted ms-1" style="font-size:10px;">@filtered.Count shown</span>
+        }
+
+        <div class="ms-auto d-flex gap-2 align-items-center">
+            @if (_reasonRefreshBusy)
+            {
+                <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+            }
+            @if (!string.IsNullOrEmpty(_reasonRefreshMsg))
+            {
+                <span class="small @(_reasonRefreshError ? "text-danger" : "text-success") fw-semibold">
+                    @_reasonRefreshMsg
+                </span>
+            }
+            <button class="btn btn-primary btn-sm" @onclick="UpdateReasonToServer"
+                    disabled="@(_serverSyncBusy || _reasonRefreshBusy)"
+                    title="Send local Reason Table rows to the server DB">
+                @if (_serverSyncBusy)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status" style="width:10px; height:10px;"></span>
+                }
+                Update To Server
+            </button>
+            <button class="btn btn-outline-primary btn-sm" @onclick="RefreshReasonFromDailyDbs"
+                    disabled="@_reasonRefreshBusy"
+                    title="Scan all Daily DBs and add missing (ProcessName, NgName) pairs">
+                Refresh from Daily DBs
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="ImportReasonFromFile"
+                    disabled="@_reasonRefreshBusy"
+                    title="Import from reason.txt">
+                Import from file
+            </button>
+        </div>
+    </div>
+    <div style="overflow-x:auto; max-height:calc(var(--view-h, 100vh) - 190px); overflow-y:auto;">
+        <datalist id="reason-options">
+            @foreach (var reason in ReasonOptions)
+            {
+                <option value="@reason"></option>
+            }
+        </datalist>
+        <table class="bmes-table">
+            <thead>
+                <tr>
+                    <th style="min-width:260px;">Model</th>
+                    <th style="min-width:200px;">ProcessName</th>
+                    <th style="min-width:200px;">NgName</th>
+                    <th style="min-width:220px;">Reason</th>
+                    <th style="width:70px;"></th>
+                </tr>
+                <tr class="bmes-search-row">
+                    <td>
+                        <div class="bmes-model-search">
+                            <input class="bmes-search-input"
+                                   placeholder="Model search, Enter"
+                                   @bind="_rsqModel"
+                                   @bind:event="oninput"
+                                   @bind:after="OnModelSearchChanged"
+                                   @onkeydown="OnModelSearchKeyDown" />
+                            <button class="btn btn-outline-primary btn-sm"
+                                    disabled="@(_modelScanBusy || string.IsNullOrWhiteSpace(_rsqModel))"
+                                    @onclick="RunModelScan"
+                                    title="Scan daily DBs for distinct ProcessName/NgName pairs whose MATERIALNAME contains this model.">
+                                @if (_modelScanBusy)
+                                {
+                                    <span class="spinner-border spinner-border-sm" style="width:10px; height:10px;"></span>
+                                }
+                                else
+                                {
+                                    <span>Scan</span>
+                                }
+                            </button>
+                            @if (_modelScanActive)
+                            {
+                                <button class="btn btn-outline-secondary btn-sm" @onclick="ClearModelScan" title="Clear model scan">
+                                    Clear
+                                </button>
+                            }
+                        </div>
+                    </td>
+                    <td><input class="bmes-search-input" placeholder="Search" @bind="_rsqProcessName" @bind:event="oninput" @bind:after="OnReasonSearchChanged" /></td>
+                    <td><input class="bmes-search-input" placeholder="Search" @bind="_rsqNgName" @bind:event="oninput" @bind:after="OnReasonSearchChanged" /></td>
+                    <td><input class="bmes-search-input" placeholder="Search" @bind="_rsqReason" @bind:event="oninput" @bind:after="OnReasonSearchChanged" /></td>
+                    <td></td>
+                </tr>
+            </thead>
+            <tbody>
+                @if (_modelScanActive)
+                {
+                    @if (modelFiltered.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4 small">
+                                @(_modelScanBusy
+                                    ? "Scanning..."
+                                    : "No ProcessName/NgName pair found in daily DBs for this model.")
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var p in modelFiltered)
+                        {
+                            var existing = FindReasonRow(p.ProcessName, p.NgName);
+                            bool missing = existing is null;
+                            bool editing = existing is not null && _editReasonId == existing.Id;
+
+                            @if (editing)
+                            {
+                                <tr class="bmes-edit-row">
+                                    <td class="text-muted">@_rsqModel</td>
+                                    <td><input class="bmes-input" @bind="_editReason.ProcessName" /></td>
+                                    <td><input class="bmes-input" @bind="_editReason.NgName" /></td>
+                                    <td><input class="bmes-input" @bind="_editReason.Reason" /></td>
+                                    <td class="bmes-actions">
+                                        <button class="btn btn-success btn-sm py-0 px-2" @onclick="SaveReasonEdit">Save</button>
+                                        <button class="btn btn-secondary btn-sm py-0 px-2" @onclick="CancelReasonEdit">Cancel</button>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                var pn = p.ProcessName;
+                                var ng = p.NgName;
+                                <tr class="bmes-row @(missing ? "bmes-row-missing" : "")">
+                                    <td class="text-muted">@_rsqModel</td>
+                                    <td>@pn</td>
+                                    <td>@ng</td>
+                                    <td class="bmes-reason-cell" @onclick="() => StartQuickReasonEdit(existing)">
+                                        @if (missing)
+                                        {
+                                            <span class="text-danger small fst-italic">(not in Reason Table)</span>
+                                        }
+                                        else if (_quickReasonId == existing!.Id)
+                                        {
+                                            <input class="bmes-input bmes-reason-select"
+                                                   list="reason-options"
+                                                   @bind="_quickReasonValue"
+                                                   @bind:event="oninput"
+                                                   @onkeydown="OnQuickReasonKeyDown"
+                                                   @onblur="() => SaveQuickReasonEdit(existing.Id)"
+                                                   @onclick:stopPropagation="true"
+                                                   autofocus />
+                                        }
+                                        else
+                                        {
+                                            @existing!.Reason
+                                        }
+                                    </td>
+                                    <td class="bmes-actions">
+                                        @if (missing)
+                                        {
+                                            <button class="btn btn-outline-primary btn-sm py-0 px-1"
+                                                    @onclick="() => AddReasonFromPair(pn, ng)"
+                                                    title="Add to Reason Table">Add</button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-outline-primary btn-sm py-0 px-1"
+                                                    @onclick="() => StartReasonEdit(existing!)" title="Edit">Edit</button>
+                                            <button class="btn btn-outline-danger btn-sm py-0 px-1"
+                                                    @onclick="() => DeleteReasonRow(existing!.Id)" title="Delete">Del</button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    }
+                }
+                else if (!_anyReasonSearch)
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4 small">
+                            Type in a table search field, or enter a Model and click Scan.
+                        </td>
+                    </tr>
+                }
+                else if (filtered.Count == 0)
+                {
+                    <tr>
+                        <td colspan="5" class="py-3 px-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="text-muted small">No matching rows.</span>
+                                <button class="btn btn-primary btn-sm" @onclick="AddReasonFromSearch">
+                                    + Add Row with these values
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var r in filtered)
+                    {
+                        @if (_editReasonId == r.Id)
+                        {
+                            <tr class="bmes-edit-row">
+                                <td class="text-muted">-</td>
+                                <td><input class="bmes-input" @bind="_editReason.ProcessName" /></td>
+                                <td><input class="bmes-input" @bind="_editReason.NgName" /></td>
+                                <td><input class="bmes-input" @bind="_editReason.Reason" /></td>
+                                <td class="bmes-actions">
+                                    <button class="btn btn-success btn-sm py-0 px-2" @onclick="SaveReasonEdit">Save</button>
+                                    <button class="btn btn-secondary btn-sm py-0 px-2" @onclick="CancelReasonEdit">Cancel</button>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            <tr class="bmes-row" @ondblclick="() => StartReasonEdit(r)">
+                                <td class="text-muted">-</td>
+                                <td>@r.ProcessName</td>
+                                <td>@r.NgName</td>
+                                <td class="bmes-reason-cell" @onclick="() => StartQuickReasonEdit(r)">
+                                    @if (_quickReasonId == r.Id)
+                                    {
+                                        <input class="bmes-input bmes-reason-select"
+                                               list="reason-options"
+                                               @bind="_quickReasonValue"
+                                               @bind:event="oninput"
+                                               @onkeydown="OnQuickReasonKeyDown"
+                                               @onblur="() => SaveQuickReasonEdit(r.Id)"
+                                               @onclick:stopPropagation="true"
+                                               autofocus />
+                                    }
+                                    else
+                                    {
+                                        @r.Reason
+                                    }
+                                </td>
+                                <td class="bmes-actions">
+                                    <button class="btn btn-outline-primary btn-sm py-0 px-1" @onclick="() => StartReasonEdit(r)" title="Edit">Edit</button>
+                                    <button class="btn btn-outline-danger btn-sm py-0 px-1" @onclick="() => DeleteReasonRow(r.Id)" title="Delete">Del</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .ins .reason-card,
+    .ins .reason-card .card-header { border-radius: 2px !important; }
+    .bmes-table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+    .bmes-table thead th {
+        background: var(--panel-2, #f5f6f9); font-weight: 700; font-size: 10px; color: var(--ink-2, #4a5461);
+        text-transform: uppercase; letter-spacing: .4px; padding: 6px 10px;
+        border: 1px solid var(--line, #dde1e7); position: sticky; top: 0; z-index: 2;
+    }
+    .bmes-search-row { position: sticky; top: 29px; z-index: 1; background: var(--panel, #fff); }
+    .bmes-search-row td { padding: 4px 6px; border: 1px solid var(--line, #dde1e7); background: var(--panel, #fff); }
+    .bmes-model-search { display: grid; grid-template-columns: minmax(130px, 1fr) auto auto; gap: 4px; align-items: center; }
+    .bmes-model-search .btn { font-size: 10px; padding: 2px 6px; }
+    .bmes-search-input {
+        width: 100%; font-size: 11px; padding: 3px 6px; border: 1px solid var(--line, var(--line, #dde1e7));
+        border-radius: 2px; background: var(--panel-2, #f5f6f9); outline: none; color: var(--ink-2, #4a5461);
+    }
+    .bmes-search-input:focus { border-color: var(--signal, #16202b); background: var(--panel, #fff);}
+    .bmes-table td { padding: 4px 10px; border: 1px solid var(--line, #dde1e7); vertical-align: middle; }
+    .bmes-row:hover td { background: var(--panel-2, #f5f6f9); }
+    .bmes-row-missing td { background: var(--crit-wash, #fbedec); }
+    .bmes-row-missing:hover td { background: var(--crit-wash, #fbedec); }
+    .bmes-edit-row td { background: var(--signal-wash, #edf0f4); }
+    .bmes-actions { text-align: center; white-space: nowrap; }
+    .bmes-actions .btn { font-size: 10px; }
+    .bmes-input {
+        width: 100%; font-size: 12px; padding: 2px 6px; border: 1px solid var(--signal, #16202b);
+        border-radius: 2px; background: var(--panel, #fff); outline: none;
+    }
+    .bmes-input:focus { border-color: var(--signal, #16202b);}
+    .bmes-reason-cell { cursor: text; min-width: 220px; }
+    .bmes-reason-cell:hover { background: var(--signal-wash, #edf0f4) !important; }
+    .bmes-reason-select { min-width: 220px; }
+</style>
+
+@code {
+    private List<ReasonRow> _reasonRows = [];
+    private long _editReasonId = -1;
+    private ReasonRow _editReason = new();
+    private long _quickReasonId = -1;
+    private string _quickReasonValue = string.Empty;
+    private bool _quickReasonSaving;
+
+    private string _rsqModel = string.Empty;
+    private string _rsqProcessName = string.Empty;
+    private string _rsqNgName = string.Empty;
+    private string _rsqReason = string.Empty;
+    private bool _anyReasonSearch;
+
+    private bool _modelScanBusy;
+    private bool _modelScanActive;
+    private List<(string ProcessName, string NgName)> _modelPairs = new();
+
+    private bool _reasonRefreshBusy;
+    private string _reasonRefreshMsg = string.Empty;
+    private bool _reasonRefreshError;
+    private bool _serverSyncBusy;
+
+    private string _statusMsg = string.Empty;
+    private bool _statusError;
+
+    protected override void OnInitialized()
+    {
+        _reasonRows = NgRateSettings.GetReasonRows();
+    }
+
+    private IReadOnlyList<string> ReasonOptions => _reasonRows
+        .Select(r => r.Reason?.Trim() ?? string.Empty)
+        .Where(r => !string.IsNullOrWhiteSpace(r))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(r => r, StringComparer.OrdinalIgnoreCase)
+        .ToList();
+
+    private List<ReasonRow> GetFilteredReason()
+    {
+        if (!_anyReasonSearch) return [];
+        return _reasonRows.Where(r =>
+            (string.IsNullOrEmpty(_rsqProcessName) || r.ProcessName.Contains(_rsqProcessName, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(_rsqNgName) || r.NgName.Contains(_rsqNgName, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(_rsqReason) || r.Reason.Contains(_rsqReason, StringComparison.OrdinalIgnoreCase))
+        ).ToList();
+    }
+
+    private Task OnReasonSearchChanged()
+    {
+        _anyReasonSearch = !string.IsNullOrEmpty(_rsqProcessName) ||
+                           !string.IsNullOrEmpty(_rsqNgName) ||
+                           !string.IsNullOrEmpty(_rsqReason);
+        return Task.CompletedTask;
+    }
+
+    private Task OnModelSearchChanged()
+    {
+        if (_modelScanActive) ClearModelScan();
+        return Task.CompletedTask;
+    }
+
+    private async Task OnModelSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await RunModelScan();
+    }
+
+    private async Task RunModelScan()
+    {
+        if (_modelScanBusy) return;
+        if (string.IsNullOrWhiteSpace(_rsqModel))
+        {
+            ClearModelScan();
+            return;
+        }
+
+        _modelScanBusy = true;
+        _modelScanActive = true;
+        _modelPairs = new();
+        StateHasChanged();
+
+        try
+        {
+            string pattern = _rsqModel.Trim();
+            _modelPairs = await Task.Run(() => NgRateSettings.GetProcessNgPairsByMaterial(pattern));
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Model scan failed: {ex.Message}", true);
+        }
+        finally
+        {
+            _modelScanBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ClearModelScan()
+    {
+        _modelScanActive = false;
+        _modelPairs.Clear();
+    }
+
+    private IEnumerable<(string ProcessName, string NgName)> ModelPairsFiltered()
+    {
+        IEnumerable<(string ProcessName, string NgName)> q = _modelPairs;
+        if (!string.IsNullOrEmpty(_rsqProcessName))
+            q = q.Where(p => p.ProcessName.Contains(_rsqProcessName, StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrEmpty(_rsqNgName))
+            q = q.Where(p => p.NgName.Contains(_rsqNgName, StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrEmpty(_rsqReason))
+            q = q.Where(p => FindReasonRow(p.ProcessName, p.NgName)?.Reason.Contains(_rsqReason, StringComparison.OrdinalIgnoreCase) == true);
+        return q;
+    }
+
+    private ReasonRow? FindReasonRow(string pn, string ng)
+        => _reasonRows.FirstOrDefault(r =>
+               string.Equals(r.ProcessName, pn, StringComparison.Ordinal)
+            && string.Equals(r.NgName, ng, StringComparison.Ordinal));
+
+    private void AddReasonFromSearch()
+    {
+        var newRow = new ReasonRow
+        {
+            ProcessName = _rsqProcessName.Trim(),
+            NgName = _rsqNgName.Trim(),
+            Reason = _rsqReason.Trim(),
+        };
+        long newId = NgRateSettings.AddReasonRow(newRow);
+        _reasonRows = NgRateSettings.GetReasonRows();
+        _rsqProcessName = _rsqNgName = _rsqReason = string.Empty;
+        _anyReasonSearch = false;
+        _editReasonId = newId;
+        _editReason = new ReasonRow
+        {
+            Id = newId,
+            ProcessName = newRow.ProcessName,
+            NgName = newRow.NgName,
+            Reason = newRow.Reason,
+        };
+        SetStatus("Reason row added locally. Click Update To Server to sync.", false);
+    }
+
+    private void AddReasonFromPair(string pn, string ng)
+    {
+        var newRow = new ReasonRow { ProcessName = pn, NgName = ng, Reason = string.Empty };
+        long newId = NgRateSettings.AddReasonRow(newRow);
+        _reasonRows = NgRateSettings.GetReasonRows();
+        _editReasonId = newId;
+        _editReason = new ReasonRow { Id = newId, ProcessName = pn, NgName = ng, Reason = string.Empty };
+        SetStatus("Reason row added locally. Click Update To Server to sync.", false);
+    }
+
+    private void StartReasonEdit(ReasonRow r)
+    {
+        _quickReasonId = -1;
+        _editReasonId = r.Id;
+        _editReason = new ReasonRow
+        {
+            Id = r.Id,
+            ProcessName = r.ProcessName,
+            NgName = r.NgName,
+            Reason = r.Reason,
+        };
+    }
+
+    private void SaveReasonEdit()
+    {
+        NgRateSettings.UpdateReasonRow(_editReason);
+        _reasonRows = NgRateSettings.GetReasonRows();
+        _editReasonId = -1;
+        _quickReasonId = -1;
+        SetStatus("Reason row saved locally. Click Update To Server to sync.", false);
+    }
+
+    private void CancelReasonEdit() => _editReasonId = -1;
+
+    private void StartQuickReasonEdit(ReasonRow? r)
+    {
+        if (r is null) return;
+        _editReasonId = -1;
+        _quickReasonId = r.Id;
+        _quickReasonValue = r.Reason ?? string.Empty;
+    }
+
+    private Task OnQuickReasonKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            SaveQuickReasonEdit(_quickReasonId);
+        else if (e.Key == "Escape")
+            _quickReasonId = -1;
+        return Task.CompletedTask;
+    }
+
+    private void SaveQuickReasonEdit(long id)
+    {
+        if (_quickReasonSaving || id <= 0 || _quickReasonId != id) return;
+        var row = _reasonRows.FirstOrDefault(r => r.Id == id);
+        if (row is null)
+        {
+            _quickReasonId = -1;
+            return;
+        }
+
+        string next = (_quickReasonValue ?? string.Empty).Trim();
+        if (string.Equals(row.Reason ?? string.Empty, next, StringComparison.Ordinal))
+        {
+            _quickReasonId = -1;
+            return;
+        }
+
+        _quickReasonSaving = true;
+        try
+        {
+            row.Reason = next;
+            NgRateSettings.UpdateReasonRow(row);
+            _reasonRows = NgRateSettings.GetReasonRows();
+            _quickReasonId = -1;
+            SetStatus("Reason row saved locally. Click Update To Server to sync.", false);
+        }
+        finally
+        {
+            _quickReasonSaving = false;
+        }
+    }
+
+    private void DeleteReasonRow(long id)
+    {
+        NgRateSettings.DeleteReasonRow(id);
+        _reasonRows = NgRateSettings.GetReasonRows();
+        if (_editReasonId == id) _editReasonId = -1;
+        SetStatus("Reason row deleted locally. Click Update To Server to sync.", false);
+    }
+
+    private void ImportReasonFromFile()
+    {
+        int count = NgRateSettings.ImportReasonFromFile(NgRateSettings.ReasonFilePath);
+        _reasonRows = NgRateSettings.GetReasonRows();
+        _editReasonId = -1;
+        if (count > 0)
+            SetStatus($"Imported {count} reason rows locally. Click Update To Server to sync.", false);
+        else
+            SetStatus("File not found or empty.", true);
+    }
+
+    private async Task RefreshReasonFromDailyDbs()
+    {
+        if (_reasonRefreshBusy) return;
+        _reasonRefreshBusy = true;
+        _reasonRefreshMsg = string.Empty;
+        _reasonRefreshError = false;
+        StateHasChanged();
+
+        try
+        {
+            var progress = new Progress<string>(msg =>
+            {
+                _reasonRefreshMsg = msg;
+                InvokeAsync(StateHasChanged);
+            });
+
+            int added = await Task.Run(() => NgRateSettings.RefreshReasonFromDailyDbs(progress));
+            _reasonRows = NgRateSettings.GetReasonRows();
+            _editReasonId = -1;
+            _reasonRefreshMsg = added > 0
+                ? $"Added {added} new pair(s)."
+                : "No new pairs. ReasonTable already covers all DB values.";
+            SetStatus($"{_reasonRefreshMsg} Saved locally. Click Update To Server to sync.", false);
+        }
+        catch (Exception ex)
+        {
+            _reasonRefreshError = true;
+            _reasonRefreshMsg = ex.Message;
+        }
+        finally
+        {
+            _reasonRefreshBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private void SetStatus(string msg, bool isError)
+    {
+        _statusMsg = msg;
+        _statusError = isError;
+    }
+
+    private async Task UpdateReasonToServer()
+    {
+        if (_serverSyncBusy) return;
+        _serverSyncBusy = true;
+        try
+        {
+            _reasonRows = NgRateSettings.GetReasonRows();
+            await SyncReasonToServer();
+        }
+        finally
+        {
+            _serverSyncBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SyncReasonToServer()
+    {
+        var result = await BmesSettingsSync.SyncReasonRowsAsync(_reasonRows);
+        if (result.Succeeded)
+            SetStatus($"Reason table updated to server ({result.Rows} rows).", false);
+        else
+            SetStatus($"Server update failed. Local DB is unchanged: {result.Message}", true);
+    }
+}

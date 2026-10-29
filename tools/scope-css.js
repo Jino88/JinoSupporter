@@ -19,8 +19,8 @@
  * BRIDGE gets !important, RESET is dropped. See the constants below.
  *
  * Usage: node tools/scope-css.js
- *   in  JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.css
- *   out JinoSupporter.Web/wwwroot/ui-redesign/assets/instrument.scoped.css
+ *   in  PortalGNLAB.Web/wwwroot/ui-redesign/assets/instrument.css
+ *   out PortalGNLAB.Web/wwwroot/ui-redesign/assets/instrument.scoped.css
  *
  * Re-run after every edit to instrument.css — the scoped file is generated,
  * never hand-edited.
@@ -30,8 +30,8 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = '.ins';
-const SRC = path.join(__dirname, '..', 'JinoSupporter.Web', 'wwwroot', 'ui-redesign', 'assets', 'instrument.css');
-const OUT = path.join(__dirname, '..', 'JinoSupporter.Web', 'wwwroot', 'ui-redesign', 'assets', 'instrument.scoped.css');
+const SRC = path.join(__dirname, '..', 'PortalGNLAB.Web', 'wwwroot', 'ui-redesign', 'assets', 'instrument.css');
+const OUT = path.join(__dirname, '..', 'PortalGNLAB.Web', 'wwwroot', 'ui-redesign', 'assets', 'instrument.scoped.css');
 
 /**
  * Declarations between these markers are emitted with !important.

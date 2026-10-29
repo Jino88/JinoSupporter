@@ -1,0 +1,649 @@
+@page "/tools/review-report"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using PortalGNLAB.Web.Services
+@inject ReviewReportService Reports
+@inject MenuPermissionService Permissions
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<PageTitle>Review Report</PageTitle>
+
+@if (!_authorized)
+{
+    <div class="rr-empty">@(_loaded ? "You do not have permission to open Review Report." : "Loading…")</div>
+}
+else
+{
+<div class="rr">
+    @* ── Saved reports ─────────────────────────────────────────────── *@
+    <aside class="rr-list">
+        <div class="rr-list-hd">
+            <b>Reports</b>
+            <button class="rr-btn rr-btn-pri rr-sm" @onclick="NewReport">+ New</button>
+        </div>
+        @if (_list.Count == 0)
+        {
+            <div class="rr-muted rr-pad">No saved reports yet.</div>
+        }
+        @foreach (ReviewReportSummary s in _list)
+        {
+            <button class="rr-item @(s.Id == _report.Id ? "on" : "")" @onclick="() => Open(s.Id)" title="@s.Title">
+                <span class="rr-item-title">@s.Title</span>
+                <span class="rr-muted rr-xs">@s.CreatedBy · @s.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</span>
+            </button>
+        }
+    </aside>
+
+    @* ── Input ─────────────────────────────────────────────────────── *@
+    <section class="rr-input">
+        <h4 class="rr-h">Review Report</h4>
+        <p class="rr-muted rr-sm-text">
+            Paste your notes, Excel cells and pictures. AI writes the report in your Excel report
+            form (I. Purpose, II. Content, III. Result, IV. Conclusion) and places each picture
+            in its section. Download the .xlsx and register it in WorkHub Review Data.
+        </p>
+
+        <label class="rr-lbl" for="rr-content">Content</label>
+        <textarea id="rr-content" class="rr-ta" rows="12" @bind="_report.InputText" @bind:event="oninput"
+                  placeholder="What was tested and why, conditions (before / after), results, your conclusion… Paste Excel cells here as they are."></textarea>
+
+        <div class="rr-lbl">Pictures <span class="rr-muted rr-xs">(Ctrl+V anywhere on the page, or pick files)</span></div>
+        <div class="rr-drop">
+            @foreach (ReviewReportImage img in _report.Images)
+            {
+                <div class="rr-thumb" title="IMG @img.No · @img.FileName · @(img.Data.Length / 1024) KB">
+                    <img src="@img.DataUrl" alt="IMG @img.No" />
+                    <span class="rr-thumb-no">@img.No</span>
+                    <button class="rr-thumb-x" title="Remove picture" @onclick="() => RemoveImage(img.No)">×</button>
+                </div>
+            }
+            <label class="rr-add" title="Add pictures">
+                <InputFile OnChange="OnFilesPicked" accept="image/*" multiple style="display:none;" />
+                + Add
+            </label>
+        </div>
+
+        <div class="rr-row">
+            <div style="flex:1;">
+                <label class="rr-lbl" for="rr-lang">Report language</label>
+                <select id="rr-lang" class="rr-in" @bind="_report.Language">
+                    @foreach (string l in ReviewReportService.Languages) { <option value="@l">@l</option> }
+                </select>
+            </div>
+        </div>
+        <label class="rr-lbl" for="rr-extra">Instruction to AI <span class="rr-muted rr-xs">(optional)</span></label>
+        <input id="rr-extra" class="rr-in" @bind="_report.ExtraInstruction" @bind:event="oninput"
+               placeholder="e.g. Compare the 3 lots as separate conditions; keep the defect photo in Results" />
+
+        <div class="rr-actions">
+            <button class="rr-btn rr-btn-ai" disabled="@(_busy || !Reports.IsConfigured || !HasInput)" @onclick="GenerateAsync"
+                    title="@(Reports.IsConfigured ? $"Write the report with {ReviewReportService.Model} ({ReviewReportService.Effort})" : "Set the Codex API key in Setting first")">
+                @if (_busy && !_revising) { <span class="rr-spin"></span><span>Writing… @_elapsed s</span> }
+                else { <span>✨ @(_report.Doc is null ? "Write report" : "Rewrite")</span> }
+            </button>
+            <button class="rr-btn" disabled="@(_busy || !HasInput)" @onclick="Save">Save</button>
+            @if (!string.IsNullOrEmpty(_report.Id))
+            {
+                <button class="rr-btn rr-btn-danger" disabled="@_busy" @onclick="DeleteAsync">Delete</button>
+            }
+        </div>
+        @if (!string.IsNullOrEmpty(_status)) { <div class="rr-ok">@_status</div> }
+        @if (!string.IsNullOrEmpty(_error)) { <div class="rr-err">@_error</div> }
+
+        @if (_report.Doc is not null)
+        {
+            <div class="rr-revise">
+                <label class="rr-lbl" for="rr-revise">Ask AI to change this report</label>
+                @if (_report.Revisions.Count > 0)
+                {
+                    <ol class="rr-revs">
+                        @foreach (ReviewReportRevision r in _report.Revisions)
+                        {
+                            <li><span>@r.Request</span> <span class="rr-muted rr-xs">@r.At.ToString("MM-dd HH:mm")</span></li>
+                        }
+                    </ol>
+                }
+                <textarea id="rr-revise" class="rr-ta" rows="3" @bind="_reviseText" @bind:event="oninput"
+                          placeholder="e.g. Split L and R into two tables; write the purpose in Korean; the Sóng cao NG of (R) is 33"></textarea>
+                <div class="rr-actions" style="margin-top:8px;">
+                    <button class="rr-btn rr-btn-ai" disabled="@(_busy || !Reports.IsConfigured || string.IsNullOrWhiteSpace(_reviseText))" @onclick="ReviseAsync"
+                            title="Apply this change to the current report; earlier changes are kept">
+                        @if (_busy && _revising) { <span class="rr-spin"></span><span>Changing… @_elapsed s</span> }
+                        else { <span>✨ Apply change</span> }
+                    </button>
+                </div>
+            </div>
+        }
+    </section>
+
+    @* ── Preview ───────────────────────────────────────────────────── *@
+    <section class="rr-preview">
+        @if (_report.Doc is not { } d)
+        {
+            <div class="rr-empty">The report appears here after <b>Write report</b>.</div>
+        }
+        else
+        {
+            <div class="rr-prev-bar">
+                <span class="rr-muted rr-xs">@_report.Model · @_report.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</span>
+                <span style="margin-left:auto;display:flex;gap:6px;">
+                    <button class="rr-btn rr-sm" @onclick="CopyMarkdownAsync">Copy Markdown</button>
+                    <button class="rr-btn rr-btn-pri rr-sm" @onclick="DownloadXlsxAsync">⬇ Excel for WorkHub</button>
+                </span>
+            </div>
+            <article class="rr-doc">
+                <h2>@d.Title</h2>
+                <table class="rr-kv">
+                    @if (!string.IsNullOrWhiteSpace(d.ProductModel)) { <tr><th>Product model</th><td>@d.ProductModel</td></tr> }
+                    @if (!string.IsNullOrWhiteSpace(d.ReportDate)) { <tr><th>Report date</th><td>@d.ReportDate</td></tr> }
+                    <tr><th>Author</th><td>@_report.CreatedBy</td></tr>
+                    @if (d.Tags.Count > 0)
+                    {
+                        <tr><th>Tags</th><td>@foreach (string t in d.Tags) { <span class="rr-tag">@t</span> }</td></tr>
+                    }
+                </table>
+
+                <div class="rr-sec">I. Purpose.</div>
+                @if (!string.IsNullOrWhiteSpace(d.Purpose)) { <p class="rr-p">@Dash(d.Purpose)</p> }
+                @if (!string.IsNullOrWhiteSpace(d.Background)) { <p class="rr-p">@Dash(d.Background)</p> }
+                @Pictures(d, "purpose")
+
+                <div class="rr-sec">II. Content.</div>
+                @foreach (string line in d.Content.Where(l => !string.IsNullOrWhiteSpace(l))) { <p class="rr-p">@Dash(line)</p> }
+                @foreach (var f in d.ChangedFactors.Where(f => !string.IsNullOrWhiteSpace(f.Name))) { <p class="rr-p">- @f.Name: @f.Baseline → @f.Changed</p> }
+                @foreach (var c in d.Conditions.Where(c => !string.IsNullOrWhiteSpace(c.Details))) { <p class="rr-p">- @c.Label: @c.Details</p> }
+                @Pictures(d, "conditions")
+
+                <div class="rr-sec">III. Result</div>
+                @{ int resultNo = 1; }
+                @foreach (ReviewReportResultTable table in ReviewReportService.ResultTables(d))
+                {
+                    <div class="rr-sub">@(resultNo++). @table.Title</div>
+                    @ResultTable(table)
+                }
+                @foreach (var t in d.ResultTables)
+                {
+                    <div class="rr-sub">@(resultNo++). @(string.IsNullOrWhiteSpace(t.Caption) ? "Result" : t.Caption)</div>
+                    <table class="rr-form">
+                        <thead><tr>@foreach (string col in t.Columns) { <th>@col</th> }</tr></thead>
+                        <tbody>
+                            @foreach (var r in t.Rows)
+                            {
+                                <tr>@for (int i = 0; i < Math.Max(t.Columns.Count, r.Count); i++) { <td>@(i < r.Count ? r[i] : "")</td> }</tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                @Pictures(d, "results")
+                @foreach (string f in d.Findings.Where(f => !string.IsNullOrWhiteSpace(f))) { <p class="rr-p">@Dash(f)</p> }
+
+                <div class="rr-sec">IV. Conclusion</div>
+                @if (!string.IsNullOrWhiteSpace(d.Conclusion)) { <p class="rr-p">@Dash(d.Conclusion)</p> }
+                @foreach (string l in d.Limitations.Where(l => !string.IsNullOrWhiteSpace(l))) { <p class="rr-p">@Dash(l)</p> }
+                @foreach (string n in d.NextActions.Where(n => !string.IsNullOrWhiteSpace(n))) { <p class="rr-p">→ @n</p> }
+                @Pictures(d, "conclusion")
+
+                @if (HasPictures(d, "appendix"))
+                {
+                    <div class="rr-sec">Appendix</div>
+                    @Pictures(d, "appendix")
+                }
+            </article>
+        }
+    </section>
+</div>
+}
+
+<style>
+    .rr { display: grid; grid-template-columns: 210px minmax(320px, 400px) minmax(0, 1fr); gap: 14px; align-items: start; min-height: calc(100vh - 90px); }
+    .rr-muted { color: #64748b; }
+    .rr-xs { font-size: 11px; }
+    .rr-sm-text { font-size: 12.5px; line-height: 1.5; margin: 0 0 10px; }
+    .rr-pad { padding: 10px; font-size: 12px; }
+    .rr-empty { padding: 80px 20px; text-align: center; color: #64748b; }
+
+    .rr-list { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; position: sticky; top: 8px; max-height: calc(100vh - 100px); overflow-y: auto; }
+    .rr-list-hd { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #e2e8f0; }
+    .rr-item { display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; padding: 8px 10px; border: 0; border-bottom: 1px solid #f1f5f9; background: #fff; cursor: pointer; }
+    .rr-item:hover { background: #f8fafc; }
+    .rr-item.on { background: #eff6ff; box-shadow: inset 3px 0 0 #2563eb; }
+    .rr-item-title { font-size: 12.5px; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .rr-input { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; position: sticky; top: 8px; }
+    .rr-h { font-size: 17px; font-weight: 700; margin: 0 0 4px; color: #0f172a; }
+    .rr-lbl { display: block; font-size: 12px; font-weight: 600; color: #334155; margin: 10px 0 4px; }
+    .rr-ta, .rr-in { width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 7px 9px; font-size: 13px; font-family: inherit; }
+    .rr-ta { resize: vertical; line-height: 1.5; }
+    .rr-ta:focus, .rr-in:focus { outline: 2px solid #93c5fd; border-color: #3b82f6; }
+    .rr-row { display: flex; gap: 10px; }
+
+    .rr-drop { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; min-height: 76px; border: 1px dashed #cbd5e1; border-radius: 6px; background: #f8fafc; }
+    .rr-thumb { position: relative; width: 64px; height: 64px; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; background: #fff; }
+    .rr-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .rr-thumb-no { position: absolute; left: 2px; bottom: 2px; font-size: 10px; font-weight: 700; color: #fff; background: rgba(15,23,42,.7); border-radius: 4px; padding: 0 4px; }
+    .rr-thumb-x { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border: 0; border-radius: 50%; background: rgba(15,23,42,.6); color: #fff; font-size: 13px; line-height: 16px; padding: 0; cursor: pointer; }
+    .rr-thumb-x:hover { background: #dc2626; }
+    .rr-add { width: 64px; height: 64px; display: grid; place-items: center; border: 1px dashed #94a3b8; border-radius: 6px; color: #475569; font-size: 12px; cursor: pointer; margin: 0; }
+    .rr-add:hover { border-color: #2563eb; color: #2563eb; }
+
+    .rr-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .rr-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; color: #0f172a; font-size: 13px; cursor: pointer; }
+    .rr-btn:hover:not(:disabled) { background: #f1f5f9; }
+    .rr-btn:disabled { opacity: .5; cursor: default; }
+    .rr-btn.rr-sm { padding: 3px 9px; font-size: 12px; }
+    .rr-btn-pri { background: #2563eb; border-color: #2563eb; color: #fff; }
+    .rr-btn-pri:hover:not(:disabled) { background: #1d4ed8; }
+    .rr-btn-ai { background: #7c3aed; border-color: #7c3aed; color: #fff; font-weight: 600; }
+    .rr-btn-ai:hover:not(:disabled) { background: #6d28d9; }
+    .rr-btn-danger { color: #b91c1c; border-color: #fecaca; }
+    .rr-btn-danger:hover:not(:disabled) { background: #fef2f2; }
+    .rr-spin { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: rr-spin .8s linear infinite; }
+    @@keyframes rr-spin { to { transform: rotate(360deg); } }
+    .rr-ok { margin-top: 8px; font-size: 12px; color: #15803d; }
+    .rr-revise { margin-top: 16px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
+    .rr-revs { margin: 0 0 8px; padding-left: 18px; font-size: 12px; color: #334155; max-height: 180px; overflow-y: auto; }
+    .rr-revs li { margin-bottom: 3px; }
+    .rr-err { margin-top: 8px; font-size: 12px; color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 6px 8px; white-space: pre-wrap; }
+
+    .rr-preview { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; min-height: 400px; min-width: 0; }
+    .rr-prev-bar { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; background: #fff; z-index: 1; border-radius: 8px 8px 0 0; }
+    .rr-doc { padding: 18px 24px 30px; max-width: 100%; box-sizing: border-box; color: #0f172a; }
+    .rr-doc h2 { font-size: 21px; font-weight: 700; margin: 0 0 10px; }
+    .rr-p { font-size: 13.5px; line-height: 1.65; white-space: pre-wrap; margin: 0 0 8px; }
+    .rr-kv { font-size: 13px; margin-bottom: 6px; }
+    .rr-kv th { color: #64748b; font-weight: 600; padding: 2px 14px 2px 0; vertical-align: top; white-space: nowrap; }
+    .rr-tag { display: inline-block; font-size: 11.5px; padding: 1px 8px; margin: 0 4px 3px 0; border-radius: 999px; background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
+    /* The author's Excel report form */
+    .rr-doc { font-family: "Malgun Gothic", "맑은 고딕", sans-serif; }
+    .rr-sec { background: #bfbfbf; border: 1px solid #7f7f7f; font-weight: 700; font-size: 15px; padding: 7px 8px; margin: 20px 0 8px; }
+    .rr-sub { font-weight: 700; font-size: 14px; margin: 12px 0 6px; }
+    .rr-form { border-collapse: collapse; font-size: 13px; margin: 4px 0 14px; }
+    .rr-form th { background: #c5d9f1; font-weight: 700; padding: 8px 6px; min-width: 44px; border: 1px solid #595959; text-align: center; vertical-align: middle; }
+    .rr-form td { border: 1px solid #595959; padding: 5px 8px; text-align: center; vertical-align: middle; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .rr-form td.split { padding: 0; }
+    .rr-form td.split > div { padding: 5px 8px; }
+    .rr-form td.split > div + div { border-top: 1px solid #595959; }
+    .rr-form .test { background: #ffff00; }
+    .rr-form .rate { color: #ff0000; }
+    .rr-th-sub { font-weight: 400; font-size: 11px; color: #c00000; }
+    .rr-form td.type { white-space: normal; text-align: left; min-width: 140px; max-width: 280px; }
+    .rr-scroll { overflow-x: auto; max-width: 100%; }
+    .rr-pics { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; margin: 8px 0 16px 4%; }
+    .rr-pgroup { display: flex; flex-direction: column; }
+    .rr-prow { display: flex; gap: 4px; align-items: flex-end; }
+    .rr-fig { margin: 0; display: flex; flex-direction: column; }
+    .rr-fig img { height: 190px; width: auto; max-width: 420px; object-fit: contain; display: block; }
+    .rr-pics.single .rr-fig img { height: auto; max-height: 320px; max-width: min(100%, 560px); }
+    .rr-bar { background: #ffff00; border: 1px solid #ff0000; font-weight: 700; font-size: 13.5px; text-align: center; padding: 4px 6px; margin-top: 2px; }
+    .rr-fig-tools { font-size: 11px; color: #64748b; margin-top: 2px; display: flex; gap: 6px; align-items: center; font-family: system-ui, sans-serif; }
+    .rr-fig-tools select { font-size: 11px; padding: 1px 4px; border: 1px solid #cbd5e1; border-radius: 4px; color: #475569; }
+
+    @@media (max-width: 1200px) {
+        .rr { grid-template-columns: 1fr; }
+        .rr-list, .rr-input { position: static; max-height: none; }
+    }
+</style>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
+
+    private const long MaxFileBytes = 15L * 1024 * 1024;
+
+    private bool _authorized;
+    private bool _loaded;
+    private string _user = "";
+    private List<ReviewReportSummary> _list = [];
+    private ReviewReport _report = new();
+    private bool _busy;
+    private int _elapsed;
+    private string? _error;
+    private string? _status;
+    private System.Threading.Timer? _ticker;
+    private DotNetObjectReference<ReviewReportPage>? _dotnetRef;
+    private bool _pasteReady;
+    private string _reviseText = "";
+    private bool _revising;
+
+    private bool HasInput => !string.IsNullOrWhiteSpace(_report.InputText) || _report.Images.Count > 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthenticationState auth = await AuthState;
+        _user = auth.User.Identity?.Name ?? "";
+        _authorized = Permissions.IsAllowed(auth.User, AppMenus.ReviewReport);
+        _loaded = true;
+        if (!_authorized) return;
+        _report = new ReviewReport { CreatedBy = _user };
+        LoadList();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_authorized && !_pasteReady)
+        {
+            _pasteReady = true;
+            _dotnetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("reviewReportPaste.init", _dotnetRef);
+        }
+    }
+
+    private void LoadList()
+    {
+        try { _list = Reports.List(); }
+        catch (Exception ex) { _error = "Could not read saved reports: " + ex.Message; }
+    }
+
+    // ── Pictures ───────────────────────────────────────────────────────────
+
+    [JSInvokable]
+    public void OnImagePasted(string mediaType, string dataUrl)
+    {
+        int comma = dataUrl.IndexOf(',');
+        string b64 = comma >= 0 ? dataUrl[(comma + 1)..] : dataUrl;
+        if (b64.Length > 0)
+        {
+            try { AddImage($"paste-{DateTime.Now:HHmmss}-{_report.Images.Count + 1}.png", mediaType, Convert.FromBase64String(b64)); }
+            catch (FormatException) { }
+        }
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnFilesPicked(InputFileChangeEventArgs e)
+    {
+        _error = null;
+        foreach (IBrowserFile f in e.GetMultipleFiles(30))
+        {
+            if (!f.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)) continue;
+            try
+            {
+                await using Stream s = f.OpenReadStream(MaxFileBytes);
+                using var ms = new MemoryStream();
+                await s.CopyToAsync(ms);
+                AddImage(f.Name, f.ContentType, ms.ToArray());
+            }
+            catch (Exception ex) { _error = $"{f.Name}: {ex.Message}"; }
+        }
+    }
+
+    private void AddImage(string name, string mediaType, byte[] data)
+    {
+        int no = _report.Images.Count == 0 ? 1 : _report.Images.Max(i => i.No) + 1;
+        _report.Images.Add(new ReviewReportImage(no, name, mediaType, data));
+    }
+
+    /// <summary>Removes one picture and renumbers the rest so IMG numbers stay 1..n, placements included.</summary>
+    private void RemoveImage(int no)
+    {
+        _report.Images.RemoveAll(i => i.No == no);
+        var renumber = new Dictionary<int, int>();
+        var images = new List<ReviewReportImage>();
+        foreach (ReviewReportImage img in _report.Images.OrderBy(i => i.No))
+        {
+            renumber[img.No] = images.Count + 1;
+            images.Add(img with { No = images.Count + 1 });
+        }
+        _report.Images = images;
+        if (_report.Doc is { } d)
+        {
+            d.Images = d.Images.Where(p => renumber.ContainsKey(p.No)).ToList();
+            foreach (var p in d.Images) p.No = renumber[p.No];
+        }
+    }
+
+    private bool HasPictures(ReviewReportDoc d, string section) =>
+        d.Images.Any(p => p.Section == section && _report.Images.Any(i => i.No == p.No));
+
+    private static string Dash(string? text)
+    {
+        string t = (text ?? "").Trim();
+        return t.Length == 0 || t.StartsWith('-') || t.StartsWith('•') ? t : "- " + t;
+    }
+
+    /// <summary>
+    /// Pictures as in the report form: side by side, a yellow label bar under each picture; a group of
+    /// three or more shares one bar with the group name.
+    /// </summary>
+    private RenderFragment Pictures(ReviewReportDoc d, string section) => __builder =>
+    {
+        var groups = ReviewReportService.GroupPictures(d.Images.Where(p => p.Section == section))
+            .Select(g => g.Where(p => _report.Images.Any(i => i.No == p.No)).ToList())
+            .Where(g => g.Count > 0).ToList();
+        if (groups.Count == 0) return;
+        <div class="rr-pics @(groups.Sum(g => g.Count) == 1 ? "single" : "")">
+            @foreach (var group in groups)
+            {
+                bool shared = group.Count >= 3;
+                <div class="rr-pgroup">
+                    <div class="rr-prow">
+                        @foreach (ReviewReportImagePlacement p in group)
+                        {
+                            ReviewReportImage img = _report.Images.First(i => i.No == p.No);
+                            <figure class="rr-fig">
+                                <img src="@img.DataUrl" alt="IMG @p.No" title="IMG @p.No. @p.Caption" />
+                                @if (!shared) { <div class="rr-bar">@(string.IsNullOrWhiteSpace(p.Caption) ? p.Group : p.Caption)</div> }
+                                <div class="rr-fig-tools">
+                                    <span>IMG @p.No</span>
+                                    <select title="Move this picture to another section" value="@p.Section" @onchange="e => MovePicture(p, e.Value?.ToString())">
+                                        @foreach (string s in ReviewReportService.Sections) { <option value="@s">@s</option> }
+                                    </select>
+                                </div>
+                            </figure>
+                        }
+                    </div>
+                    @if (shared) { <div class="rr-bar">@(string.IsNullOrWhiteSpace(group[0].Group) ? group[0].Caption : group[0].Group)</div> }
+                </div>
+            }
+        </div>
+    };
+
+    /// <summary>
+    /// One result table as in the report form: No | Date | (Model) | Type | metrics. An NG count has its
+    /// NG rate in ppm (red) underneath, another count its paired rate; the test row is yellow.
+    /// </summary>
+    private RenderFragment ResultTable(ReviewReportResultTable t) => __builder =>
+    {
+        var arms = t.Arms;
+        bool showDate = arms.Any(a => !string.IsNullOrWhiteSpace(a.Date));
+        bool showModel = arms.Any(a => !string.IsNullOrWhiteSpace(a.Model));
+        int[] dateSpan = ReviewReportService.Spans(arms.Select(a => a.Date.Trim()).ToList());
+        int[] modelSpan = ReviewReportService.Spans(arms.Select(a => a.Model.Trim()).ToList());
+        <div class="rr-scroll">
+            <table class="rr-form">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        @if (showDate) { <th>Date</th> }
+                        @if (showModel) { <th>Model</th> }
+                        <th>Type</th>
+                        @foreach (ReviewReportColumn c in t.Columns)
+                        {
+                            <th>@c.Header@if (c.HasBelow) { <div class="rr-th-sub">@c.BelowHeader</div> }</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < arms.Count; i++)
+                    {
+                        ReviewReportCondition a = arms[i];
+                        string id = a.Id.Trim();
+                        string test = a.Role == "test" ? "test" : "";
+                        <tr>
+                            <td>@(i + 1)</td>
+                            @if (showDate && dateSpan[i] > 0) { <td rowspan="@dateSpan[i]">@a.Date</td> }
+                            @if (showModel && modelSpan[i] > 0) { <td rowspan="@modelSpan[i]">@a.Model</td> }
+                            <td class="type @test">@a.Label</td>
+                            @foreach (ReviewReportColumn c in t.Columns)
+                            {
+                                string main = c.Main.ValueOf(id);
+                                if (c.HasBelow)
+                                {
+                                    <td class="split @test"><div>@main</div><div class="rate">@c.Below(id)</div></td>
+                                }
+                                else
+                                {
+                                    <td class="@test @(c.Main.Kind == "rate" ? "rate" : "")">@main</td>
+                                }
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    };
+
+    private void MovePicture(ReviewReportImagePlacement p, string? section)
+    {
+        if (section is null || !ReviewReportService.Sections.Contains(section)) return;
+        p.Section = section;
+        _status = "Picture moved — Save to keep it.";
+    }
+
+    // ── Actions ────────────────────────────────────────────────────────────
+
+    private void NewReport()
+    {
+        _report = new ReviewReport { CreatedBy = _user };
+        _reviseText = "";
+        _error = null;
+        _status = null;
+    }
+
+    private void Open(string id)
+    {
+        _error = null;
+        _status = null;
+        _reviseText = "";
+        try { _report = Reports.Get(id) ?? throw new InvalidOperationException("That report no longer exists."); }
+        catch (Exception ex) { _error = ex.Message; LoadList(); }
+    }
+
+    private async Task GenerateAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        _error = null;
+        _status = null;
+        _elapsed = 0;
+        _ticker = new System.Threading.Timer(_ => { _elapsed++; InvokeAsync(StateHasChanged); }, null, 1000, 1000);
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
+            ReviewReportDoc doc = await Reports.GenerateAsync(_report.InputText, _report.Images, _report.Language, _report.ExtraInstruction, cts.Token);
+            _report.Doc = doc;
+            _report.Revisions = [];   // a fresh write starts over from the content
+            _report.Model = $"{ReviewReportService.Model} · {ReviewReportService.Effort}";
+            if (string.IsNullOrEmpty(_report.CreatedBy)) _report.CreatedBy = _user;
+            // Saved right away so a paid-for report is not lost when the tab closes.
+            Reports.Save(_report);
+            LoadList();
+            _status = $"Report written in {_elapsed} s and saved.";
+        }
+        catch (OperationCanceledException) { _error = $"The AI did not answer within {_elapsed} s. Try again, or with fewer pictures."; }
+        catch (Exception ex) { _error = "Write report failed: " + ex.Message; }
+        finally
+        {
+            _ticker?.Dispose();
+            _ticker = null;
+            _busy = false;
+        }
+    }
+
+    private async Task ReviseAsync()
+    {
+        if (_busy || string.IsNullOrWhiteSpace(_reviseText)) return;
+        _busy = true;
+        _revising = true;
+        _error = null;
+        _status = null;
+        _elapsed = 0;
+        _ticker = new System.Threading.Timer(_ => { _elapsed++; InvokeAsync(StateHasChanged); }, null, 1000, 1000);
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
+            string request = _reviseText.Trim();
+            ReviewReportDoc doc = await Reports.ReviseAsync(_report, request, cts.Token);
+            _report.Doc = doc;
+            _report.Revisions.Add(new ReviewReportRevision { At = DateTime.Now, By = _user, Request = request });
+            _report.Model = $"{ReviewReportService.Model} · {ReviewReportService.Effort}";
+            Reports.Save(_report);
+            LoadList();
+            _reviseText = "";
+            _status = $"Change applied in {_elapsed} s and saved.";
+        }
+        catch (OperationCanceledException) { _error = $"The AI did not answer within {_elapsed} s. Try again."; }
+        catch (Exception ex) { _error = "Change failed: " + ex.Message; }
+        finally
+        {
+            _ticker?.Dispose();
+            _ticker = null;
+            _busy = false;
+            _revising = false;
+        }
+    }
+
+    private void Save()
+    {
+        _error = null;
+        try
+        {
+            if (string.IsNullOrEmpty(_report.CreatedBy)) _report.CreatedBy = _user;
+            Reports.Save(_report);
+            LoadList();
+            _status = "Saved.";
+        }
+        catch (Exception ex) { _error = "Save failed: " + ex.Message; }
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (string.IsNullOrEmpty(_report.Id)) return;
+        if (!await JS.InvokeAsync<bool>("confirm", $"Delete \"{_report.Title}\"?")) return;
+        try
+        {
+            Reports.Delete(_report.Id);
+            NewReport();
+            LoadList();
+            _status = "Deleted.";
+        }
+        catch (Exception ex) { _error = "Delete failed: " + ex.Message; }
+    }
+
+    private async Task DownloadXlsxAsync()
+    {
+        _error = null;
+        try
+        {
+            byte[] bytes = ReviewReportService.ExportXlsx(_report);
+            string name = SafeFileName(_report.Doc?.Title is { Length: > 0 } t ? t : "review-report");
+            await BrowserDownload.DownloadBytesAsync(JS, $"{name}.xlsx", bytes, BrowserDownload.XlsxContentType);
+        }
+        catch (Exception ex) { _error = "Excel export failed: " + ex.Message; }
+    }
+
+    private async Task CopyMarkdownAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", ReviewReportService.ToMarkdown(_report));
+            _status = "Markdown copied.";
+        }
+        catch (Exception ex) { _error = "Copy failed: " + ex.Message; }
+    }
+
+    private static string SafeFileName(string s)
+    {
+        foreach (char c in Path.GetInvalidFileNameChars()) s = s.Replace(c, '_');
+        return s.Length > 80 ? s[..80] : s;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _ticker?.Dispose();
+        if (_pasteReady)
+        {
+            try { await JS.InvokeVoidAsync("reviewReportPaste.dispose"); } catch { }
+        }
+        _dotnetRef?.Dispose();
+    }
+}
