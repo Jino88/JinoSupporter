@@ -11,6 +11,8 @@ import TestExcelConverter from "./pages/TestExcelConverter";
 import Translate from "./pages/Translate";
 import ReviewReport from "./pages/ReviewReport";
 import GraphMaker from "./pages/GraphMaker";
+import TeamMemo from "./pages/TeamMemo";
+import TeamMemoBoard from "./pages/TeamMemoBoard";
 
 /** React pages by their path inside /app. A page added here also needs its menu id in
  *  PortalShellEndpoints.ReactRoutes so the menus (React and Blazor) link to it. */
@@ -24,6 +26,10 @@ const pages: Record<string, { title: string; render: (menu: MenuItem[]) => React
   "/tools/translate": { title: "Translate", render: () => <Translate /> },
   "/tools/review-report": { title: "Review Report", render: () => <ReviewReport /> },
   "/tools/graph-maker": { title: "Graph Maker", render: () => <GraphMaker /> },
+  "/memo": { title: "Work Memo", render: () => <TeamMemo /> },
+  "/memo/board": { title: "Memo Board", render: () => <TeamMemoBoard /> },
+  "/memo/plan": { title: "Plan", render: () => <TeamMemo /> },
+  "/memo/meetings": { title: "Plan", render: () => <TeamMemo /> },
 };
 
 export default function App() {

@@ -61,9 +61,9 @@
 
     @if (can(AppMenus.TeamMemo))
     {
-        @Tile("memo/plan", "meeting", "Plan", "Plan", exact: true)
-        @Tile("memo", "memo", "Memo", "Work Memo", exact: true)
-        @Tile("memo/board", "board", "Board", "Board & Schedule", exact: true)
+        @AppTile("/app/memo/plan", "meeting", "Plan", "Plan")
+        @AppTile("/app/memo", "memo", "Memo", "Work Memo")
+        @AppTile("/app/memo/board", "board", "Board", "Board & Schedule")
         <div class="rail-sep"></div>
     }
 
