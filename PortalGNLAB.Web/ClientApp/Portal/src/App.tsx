@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { api, type MenuItem, type PortalUser } from "./api";
-import { appPath, groupMenu, isActive } from "./menu";
-import { MenuLink, navigate } from "./nav";
+import { appPath, buildRail } from "./menu";
+import Rail from "./Rail";
 import Home from "./pages/Home";
 import PcDownloadPage from "./pages/PcDownload";
 import AdminUsersPage from "./pages/AdminUsers";
@@ -63,28 +63,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <aside className="side">
-        <a className="side-logo" href="/app/" onClick={(e) => { e.preventDefault(); navigate("/app/"); }}>
-          <span className="b1">GN LAB</span><span className="b2">PORTAL</span>
-        </a>
-        <nav className="side-nav">
-          {groupMenu(menu).map((group) => (
-            <div key={group.name}>
-              <div className="side-group">{group.name}</div>
-              {group.items.map((item) => (
-                <MenuLink key={item.id} item={item} className={isActive(item, pathname) ? "on" : ""} />
-              ))}
-            </div>
-          ))}
-        </nav>
-        <div className="side-foot">
-          <div className="who">{user.name} <span className="muted">· {user.role}</span></div>
-          <a className="muted" href="/">Classic UI</a>
-          <form method="post" action="/auth/logout" className="inline">
-            <button type="submit" className="link">Sign out</button>
-          </form>
-        </div>
-      </aside>
+      <Rail entries={buildRail(menu)} pathname={pathname} user={user} />
       <main className="main">
         {page ? page.render(menu) : (
           <section className="card">
