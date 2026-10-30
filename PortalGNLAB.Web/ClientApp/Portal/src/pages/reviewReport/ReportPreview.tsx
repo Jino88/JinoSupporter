@@ -1,7 +1,19 @@
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { useEffect, useState, type DragEvent, type KeyboardEvent } from "react";
 import { toolSend } from "../../toolsApi";
-import { addTag, dash, editLine, groupPictures, removeTag } from "./logic";
 import {
+  addTag,
+  dash,
+  editLine,
+  groupPictures,
+  removeTag,
+  renameMetric,
+  renameTable,
+  replaceText,
+  setArms,
+  setMetricValue,
+} from "./logic";
+import {
+  pictureDragType,
   sections,
   type Placement,
   type PreviewTable,
@@ -28,11 +40,14 @@ function Editable({
   value,
   editable,
   multiline = false,
+  placeholder = "(empty)",
   onCommit,
 }: {
   value: string;
   editable: boolean;
   multiline?: boolean;
+  /** Shown while the text is empty, so an empty field can still be clicked. */
+  placeholder?: string;
   onCommit: (value: string) => void;
 }) {
   if (!editable) return <>{value}</>;
@@ -52,6 +67,7 @@ function Editable({
       contentEditable="plaintext-only"
       suppressContentEditableWarning
       title="Click to edit"
+      data-placeholder={placeholder}
       onKeyDown={keyDown}
       onBlur={(e) => {
         const next = e.currentTarget.innerText.replace(/ /g, " ");
@@ -63,10 +79,48 @@ function Editable({
   );
 }
 
-function ResultGrid({ table }: { table: PreviewTable }) {
+/**
+ * A result table worked out by the server. Every cell writes back to what it was made from:
+ * the title to the conditions' table name, Date / Model / Type to the conditions, headers and
+ * numbers to the metrics. The NG ppm and an added Total NG are worked out from the counts, so
+ * they change when a count or the input changes.
+ */
+function ResultGrid({
+  table,
+  number,
+  doc,
+  editable,
+  onChange,
+}: {
+  table: PreviewTable;
+  number: number;
+  doc: ReportDoc;
+  editable: boolean;
+  onChange: (doc: ReportDoc) => void;
+}) {
+  const rows = table.rows;
+  const spanned = (spans: number[], i: number) =>
+    rows.slice(i, i + spans[i]).map((row) => row.armId);
+  const cell = (
+    value: string,
+    commit: ((value: string) => ReportDoc) | null,
+  ) =>
+    commit && editable ? (
+      <Editable
+        value={value}
+        editable
+        placeholder="-"
+        onCommit={(next) => onChange(commit(next))}
+      />
+    ) : (
+      value
+    );
   return (
     <div className="scroll-x">
-      <h4>{table.title}</h4>
+      <h4>
+        {number}.{" "}
+        {cell(table.title, (title) => renameTable(doc, table.tableKey, title))}
+      </h4>
       <table className="grid report-result-grid">
         <thead>
           <tr>
@@ -76,39 +130,128 @@ function ResultGrid({ table }: { table: PreviewTable }) {
             <th>Type</th>
             {table.columns.map((column, i) => (
               <th key={i}>
-                {column.header}
+                {cell(
+                  column.header,
+                  column.mainId
+                    ? (header) => renameMetric(doc, column.mainId, header)
+                    : null,
+                )}
                 {column.hasBelow && (
-                  <div className="report-rate">{column.belowHeader}</div>
+                  <div className="report-rate">
+                    {cell(
+                      column.belowHeader,
+                      column.rateId
+                        ? (name) =>
+                            renameMetric(doc, column.rateId, name, false)
+                        : null,
+                    )}
+                  </div>
                 )}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {table.rows.map((row, i) => (
+          {rows.map((row, i) => (
             <tr key={i}>
               <td>{i + 1}</td>
               {table.showDate && table.dateSpans[i] > 0 && (
-                <td rowSpan={table.dateSpans[i]}>{row.date}</td>
-              )}
-              {table.showModel && table.modelSpans[i] > 0 && (
-                <td rowSpan={table.modelSpans[i]}>{row.model}</td>
-              )}
-              <td className={row.test ? "report-test" : ""}>{row.label}</td>
-              {row.cells.map((cell, j) => (
-                <td key={j} className={row.test ? "report-test" : ""}>
-                  <div className={cell.rate ? "report-rate" : ""}>
-                    {cell.main}
-                  </div>
-                  {cell.hasBelow && (
-                    <div className="report-rate report-below">{cell.below}</div>
+                <td rowSpan={table.dateSpans[i]}>
+                  {cell(row.date, (date) =>
+                    setArms(doc, spanned(table.dateSpans, i), { date }),
                   )}
                 </td>
-              ))}
+              )}
+              {table.showModel && table.modelSpans[i] > 0 && (
+                <td rowSpan={table.modelSpans[i]}>
+                  {cell(row.model, (model) =>
+                    setArms(doc, spanned(table.modelSpans, i), { model }),
+                  )}
+                </td>
+              )}
+              <td className={row.test ? "report-test" : ""}>
+                {cell(row.label, (label) =>
+                  setArms(doc, [row.armId], { label }),
+                )}
+              </td>
+              {row.cells.map((value, j) => {
+                const column = table.columns[j];
+                return (
+                  <td key={j} className={row.test ? "report-test" : ""}>
+                    <div className={value.rate ? "report-rate" : ""}>
+                      {cell(
+                        value.main,
+                        column?.mainId
+                          ? (v) =>
+                              setMetricValue(doc, column.mainId, row.armId, v)
+                          : null,
+                      )}
+                    </div>
+                    {value.hasBelow && (
+                      <div className="report-rate report-below">
+                        {cell(
+                          value.below,
+                          column?.rateId
+                            ? (v) =>
+                                setMetricValue(doc, column.rateId, row.armId, v)
+                            : null,
+                        )}
+                      </div>
+                    )}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/** Replaces a word everywhere in the report at once (e.g. a model name the AI misread). */
+function ReplaceBar({
+  doc,
+  onChange,
+}: {
+  doc: ReportDoc;
+  onChange: (doc: ReportDoc) => void;
+}) {
+  const [find, setFind] = useState("");
+  const [replacement, setReplacement] = useState("");
+  const [result, setResult] = useState("");
+  function replace() {
+    const next = replaceText(doc, find, replacement);
+    if (next.count) onChange(next.doc);
+    setResult(
+      next.count
+        ? `Replaced ${next.count} place${next.count === 1 ? "" : "s"}.`
+        : `"${find}" is not in the report.`,
+    );
+  }
+  return (
+    <div className="form-row report-replace">
+      <input
+        className="inp sm"
+        placeholder="Find"
+        aria-label="Find in report"
+        value={find}
+        onChange={(e) => setFind(e.target.value)}
+      />
+      <input
+        className="inp sm"
+        placeholder="Replace with"
+        aria-label="Replace with"
+        value={replacement}
+        onChange={(e) => setReplacement(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && find) replace();
+        }}
+      />
+      <button className="btn sm" disabled={!find} onClick={replace}>
+        Replace all
+      </button>
+      {result && <span className="muted small">{result}</span>}
     </div>
   );
 }
@@ -176,6 +319,7 @@ export default function ReportPreview({
   onError,
 }: Props) {
   const [tables, setTables] = useState<PreviewTable[]>([]);
+  const [dropSection, setDropSection] = useState("");
   const doc = report.doc;
   useEffect(() => {
     let active = true;
@@ -205,37 +349,72 @@ export default function ReportPreview({
   /** "- line" paragraphs of a string list; clearing a line removes it. */
   function lines(
     key: "content" | "findings" | "limitations" | "nextActions",
+    addLabel: string,
     prefix?: string,
   ) {
-    return d[key].map((line, i) =>
-      line.trim() ? (
-        <p key={`${i}:${line}`}>
-          {editable ? (
-            <>
-              {prefix ?? (/^[-•]/.test(line.trim()) ? "" : "- ")}
-              <Editable
-                value={line}
-                editable
-                onCommit={(value) =>
-                  set({ [key]: editLine(d[key], i, value) } as Partial<ReportDoc>)
-                }
-              />
-            </>
-          ) : prefix ? (
-            `${prefix}${line}`
-          ) : (
-            dash(line)
-          )}
-        </p>
-      ) : null,
+    const list = d[key];
+    return (
+      <>
+        {list.map((line, i) =>
+          line.trim() ? (
+            <p key={`${i}:${line}`}>
+              {editable ? (
+                <>
+                  {prefix ?? (/^[-•]/.test(line.trim()) ? "" : "- ")}
+                  <Editable
+                    value={line}
+                    editable
+                    onCommit={(value) =>
+                      set({
+                        [key]: editLine(d[key], i, value),
+                      } as Partial<ReportDoc>)
+                    }
+                  />
+                </>
+              ) : prefix ? (
+                `${prefix}${line}`
+              ) : (
+                dash(line)
+              )}
+            </p>
+          ) : null,
+        )}
+        {editable && (
+          <p className="report-add">
+            {prefix ?? "+ "}
+            <Editable
+              key={`add:${list.length}`}
+              value=""
+              editable
+              placeholder={addLabel}
+              onCommit={(value) =>
+                value && set({ [key]: [...list, value] } as Partial<ReportDoc>)
+              }
+            />
+          </p>
+        )}
+      </>
     );
   }
 
   function text(
     key: "purpose" | "background" | "conclusion",
+    addLabel: string,
     multiline = true,
   ) {
-    return d[key].trim() ? (
+    if (!d[key].trim())
+      return editable ? (
+        <p key={key} className="report-add">
+          <Editable
+            value=""
+            editable
+            multiline={multiline}
+            placeholder={addLabel}
+            onCommit={(value) => set({ [key]: value } as Partial<ReportDoc>)}
+          />
+        </p>
+      ) : null;
+    return (
       <p key={key}>
         {editable ? (
           <>
@@ -251,7 +430,33 @@ export default function ReportPreview({
           dash(d[key])
         )}
       </p>
-    ) : null;
+    );
+  }
+
+  /** A report section that takes a picture dragged from the picture list or from another section. */
+  function dropZone(section: string) {
+    const accepts = (e: DragEvent) =>
+      editable && e.dataTransfer.types.includes(pictureDragType);
+    return {
+      className: `report-section ${dropSection === section ? "drop-over" : ""}`,
+      onDragOver: (e: DragEvent<HTMLElement>) => {
+        if (!accepts(e)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        setDropSection(section);
+      },
+      onDragLeave: (e: DragEvent<HTMLElement>) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null))
+          setDropSection("");
+      },
+      onDrop: (e: DragEvent<HTMLElement>) => {
+        setDropSection("");
+        const no = Number(e.dataTransfer.getData(pictureDragType));
+        if (!accepts(e) || !no) return;
+        e.preventDefault();
+        onMove(no, section);
+      },
+    };
   }
 
   function setPlacement(no: number, change: Partial<Placement>) {
@@ -282,6 +487,15 @@ export default function ReportPreview({
                     <img
                       src={`data:${image.mediaType};base64,${image.data}`}
                       alt={`IMG ${image.no}: ${placement.caption}`}
+                      draggable={editable}
+                      title={editable ? "Drag to another section" : undefined}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData(
+                          pictureDragType,
+                          String(image.no),
+                        );
+                        e.dataTransfer.effectAllowed = "move";
+                      }}
                     />
                     {group.length < 3 && (
                       <figcaption>
@@ -332,10 +546,14 @@ export default function ReportPreview({
   return (
     <article className="report-document">
       {editable && (
-        <p className="muted small">
-          Click any text in the report to change it; clear a line to delete
-          it. Save to keep your changes.
-        </p>
+        <>
+          <p className="muted small">
+            Click any text or table cell in the report to change it; clear a
+            line to delete it. Drag a picture from the left into a section to
+            place it. Save to keep your changes.
+          </p>
+          <ReplaceBar doc={d} onChange={onChange} />
+        </>
       )}
       <h2>
         <Editable
@@ -384,187 +602,199 @@ export default function ReportPreview({
           )}
         </tbody>
       </table>
-      <h3>I. Purpose.</h3>
-      {text("purpose")}
-      {text("background")}
-      {pictures("purpose")}
-      <h3>II. Content.</h3>
-      {lines("content")}
-      {d.changedFactors.map((factor, i) =>
-        factor.name.trim() ? (
-          <p key={i}>
-            -{" "}
-            <Editable
-              value={factor.name}
-              editable={editable}
-              onCommit={(name) =>
-                set({
-                  changedFactors: name
-                    ? d.changedFactors.map((f, j) =>
-                        j === i ? { ...f, name } : f,
-                      )
-                    : d.changedFactors.filter((_, j) => j !== i),
-                })
-              }
-            />
-            :{" "}
-            <Editable
-              value={factor.baseline}
-              editable={editable}
-              onCommit={(baseline) =>
-                set({
-                  changedFactors: d.changedFactors.map((f, j) =>
-                    j === i ? { ...f, baseline } : f,
-                  ),
-                })
-              }
-            />{" "}
-            →{" "}
-            <Editable
-              value={factor.changed}
-              editable={editable}
-              onCommit={(changed) =>
-                set({
-                  changedFactors: d.changedFactors.map((f, j) =>
-                    j === i ? { ...f, changed } : f,
-                  ),
-                })
-              }
-            />
-          </p>
-        ) : null,
-      )}
-      {d.conditions.map((condition, i) =>
-        condition.details.trim() ? (
-          <p key={i}>
-            -{" "}
-            <Editable
-              value={condition.label}
-              editable={editable}
-              onCommit={(label) =>
-                set({
-                  conditions: d.conditions.map((c, j) =>
-                    j === i ? { ...c, label } : c,
-                  ),
-                })
-              }
-            />
-            :{" "}
-            <Editable
-              value={condition.details}
-              editable={editable}
-              onCommit={(details) =>
-                set({
-                  conditions: d.conditions.map((c, j) =>
-                    j === i ? { ...c, details } : c,
-                  ),
-                })
-              }
-            />
-          </p>
-        ) : null,
-      )}
-      {pictures("conditions")}
-      <h3>III. Result</h3>
-      {tables.map((table, i) => (
-        <ResultGrid
-          table={{ ...table, title: `${i + 1}. ${table.title}` }}
-          key={i}
-        />
-      ))}
-      {d.resultTables.map((table, i) => {
-        const setTable = (change: Partial<typeof table>) =>
-          set({
-            resultTables: d.resultTables.map((t, j) =>
-              j === i ? { ...t, ...change } : t,
-            ),
-          });
-        return (
-          <div className="scroll-x" key={i}>
-            <h4>
-              {tables.length + i + 1}.{" "}
+      <section {...dropZone("purpose")}>
+        <h3>I. Purpose.</h3>
+        {text("purpose", "Click to add the purpose")}
+        {text("background", "Click to add the background")}
+        {pictures("purpose")}
+      </section>
+      <section {...dropZone("conditions")}>
+        <h3>II. Content.</h3>
+        {lines("content", "Add a content line")}
+        {d.changedFactors.map((factor, i) =>
+          factor.name.trim() ? (
+            <p key={i}>
+              -{" "}
               <Editable
-                value={table.caption || "Result"}
+                value={factor.name}
                 editable={editable}
-                onCommit={(caption) => setTable({ caption })}
+                onCommit={(name) =>
+                  set({
+                    changedFactors: name
+                      ? d.changedFactors.map((f, j) =>
+                          j === i ? { ...f, name } : f,
+                        )
+                      : d.changedFactors.filter((_, j) => j !== i),
+                  })
+                }
               />
-            </h4>
-            <table className="grid report-result-grid">
-              <thead>
-                <tr>
-                  {table.columns.map((column, j) => (
-                    <th key={j}>
-                      <Editable
-                        value={column}
-                        editable={editable}
-                        onCommit={(value) =>
-                          setTable({
-                            columns: table.columns.map((c, k) =>
-                              k === j ? value : c,
-                            ),
-                          })
-                        }
-                      />
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {table.rows.map((row, j) => (
-                  <tr key={j}>
-                    {Array.from(
-                      { length: Math.max(row.length, table.columns.length) },
-                      (_, k) => (
-                        <td key={k}>
-                          <Editable
-                            value={row[k] ?? ""}
-                            editable={editable}
-                            onCommit={(value) =>
-                              setTable({
-                                rows: table.rows.map((r, rj) =>
-                                  rj === j
-                                    ? Array.from(
-                                        { length: Math.max(r.length, k + 1) },
-                                        (_, rk) =>
-                                          rk === k ? value : (r[rk] ?? ""),
-                                      )
-                                    : r,
-                                ),
-                              })
-                            }
-                          />
-                        </td>
-                      ),
-                    )}
+              :{" "}
+              <Editable
+                value={factor.baseline}
+                editable={editable}
+                onCommit={(baseline) =>
+                  set({
+                    changedFactors: d.changedFactors.map((f, j) =>
+                      j === i ? { ...f, baseline } : f,
+                    ),
+                  })
+                }
+              />{" "}
+              →{" "}
+              <Editable
+                value={factor.changed}
+                editable={editable}
+                onCommit={(changed) =>
+                  set({
+                    changedFactors: d.changedFactors.map((f, j) =>
+                      j === i ? { ...f, changed } : f,
+                    ),
+                  })
+                }
+              />
+            </p>
+          ) : null,
+        )}
+        {d.conditions.map((condition, i) =>
+          condition.details.trim() ? (
+            <p key={i}>
+              -{" "}
+              <Editable
+                value={condition.label}
+                editable={editable}
+                onCommit={(label) =>
+                  set({
+                    conditions: d.conditions.map((c, j) =>
+                      j === i ? { ...c, label } : c,
+                    ),
+                  })
+                }
+              />
+              :{" "}
+              <Editable
+                value={condition.details}
+                editable={editable}
+                onCommit={(details) =>
+                  set({
+                    conditions: d.conditions.map((c, j) =>
+                      j === i ? { ...c, details } : c,
+                    ),
+                  })
+                }
+              />
+            </p>
+          ) : null,
+        )}
+        {pictures("conditions")}
+      </section>
+      <section {...dropZone("results")}>
+        <h3>III. Result</h3>
+        {tables.map((table, i) => (
+          <ResultGrid
+            table={table}
+            number={i + 1}
+            doc={d}
+            editable={editable}
+            onChange={onChange}
+            key={i}
+          />
+        ))}
+        {d.resultTables.map((table, i) => {
+          const setTable = (change: Partial<typeof table>) =>
+            set({
+              resultTables: d.resultTables.map((t, j) =>
+                j === i ? { ...t, ...change } : t,
+              ),
+            });
+          return (
+            <div className="scroll-x" key={i}>
+              <h4>
+                {tables.length + i + 1}.{" "}
+                <Editable
+                  value={table.caption || "Result"}
+                  editable={editable}
+                  onCommit={(caption) => setTable({ caption })}
+                />
+              </h4>
+              <table className="grid report-result-grid">
+                <thead>
+                  <tr>
+                    {table.columns.map((column, j) => (
+                      <th key={j}>
+                        <Editable
+                          value={column}
+                          editable={editable}
+                          onCommit={(value) =>
+                            setTable({
+                              columns: table.columns.map((c, k) =>
+                                k === j ? value : c,
+                              ),
+                            })
+                          }
+                        />
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        );
-      })}
-      {editable && tables.length > 0 && (
-        <p className="muted small">
-          The numbers in the calculated tables come from Metrics; change them
-          under Edit report details.
-        </p>
-      )}
-      {pictures("results")}
-      {lines("findings")}
-      <h3>IV. Conclusion</h3>
-      {text("conclusion")}
-      {lines("limitations")}
-      {lines("nextActions", "→ ")}
-      {pictures("conclusion")}
+                </thead>
+                <tbody>
+                  {table.rows.map((row, j) => (
+                    <tr key={j}>
+                      {Array.from(
+                        { length: Math.max(row.length, table.columns.length) },
+                        (_, k) => (
+                          <td key={k}>
+                            <Editable
+                              value={row[k] ?? ""}
+                              editable={editable}
+                              onCommit={(value) =>
+                                setTable({
+                                  rows: table.rows.map((r, rj) =>
+                                    rj === j
+                                      ? Array.from(
+                                          { length: Math.max(r.length, k + 1) },
+                                          (_, rk) =>
+                                            rk === k ? value : (r[rk] ?? ""),
+                                        )
+                                      : r,
+                                  ),
+                                })
+                              }
+                            />
+                          </td>
+                        ),
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        })}
+        {editable && tables.length > 0 && (
+          <p className="muted small">
+            NG rate (ppm) and an added Total NG are worked out from the counts
+            and the input; change those numbers and they follow.
+          </p>
+        )}
+        {pictures("results")}
+        {lines("findings", "Add a finding")}
+      </section>
+      <section {...dropZone("conclusion")}>
+        <h3>IV. Conclusion</h3>
+        {text("conclusion", "Click to add the conclusion")}
+        {lines("limitations", "Add a limitation")}
+        {lines("nextActions", "Add a next action", "→ ")}
+        {pictures("conclusion")}
+      </section>
       {d.images.some(
         (p) =>
           p.section === "appendix" &&
           report.images.some((image) => image.no === p.no),
       ) && (
-        <>
+        <section {...dropZone("appendix")}>
           <h3>Appendix</h3>
           {pictures("appendix")}
-        </>
+        </section>
       )}
     </article>
   );

@@ -200,8 +200,22 @@
   color: var(--ink);
 }
 .report-editable:empty::before {
-  content: "(empty)";
+  content: attr(data-placeholder);
   color: #9aa4b2;
+}
+.report-add {
+  color: #9aa4b2;
+}
+.report-replace {
+  margin: 4px 0 12px;
+}
+.report-replace .inp {
+  width: 160px;
+}
+.report-section.drop-over {
+  outline: 2px dashed #1f5fa8;
+  outline-offset: 4px;
+  background: #f3f7fd;
 }
 .report-tag {
   display: inline-flex;

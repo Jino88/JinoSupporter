@@ -126,8 +126,9 @@ public static class ToolPageEndpoints
         switch (action)
         {
             case "generate":
+                report.Language = ReviewReportService.ReportLanguage;
                 report.Doc = await service.GenerateAsync(report.InputText, report.Images,
-                    report.Language, report.ExtraInstruction, timeout.Token);
+                    report.ExtraInstruction, timeout.Token);
                 report.Revisions = [];
                 break;
             case "revise":
@@ -160,16 +161,28 @@ public static class ToolPageEndpoints
     private static IResult Preview(ReviewReport report)
     {
         if (report.Doc is null) return Results.Ok(Array.Empty<object>());
-        return Results.Ok(ReviewReportService.ResultTables(report.Doc).Select(table => new
+        var doc = report.Doc;
+        // The ids let the preview write an edited cell back to the condition or metric it came from;
+        // an added Total NG (not in the metrics) and the NG ppm are worked out, so they carry no id.
+        return Results.Ok(ReviewReportService.ResultTables(doc).Select(table => new
         {
             table.Title,
+            tableKey = table.Arms.FirstOrDefault()?.Table.Trim() ?? "",
             showDate = table.Arms.Any(a => !string.IsNullOrWhiteSpace(a.Date)),
             showModel = table.Arms.Any(a => !string.IsNullOrWhiteSpace(a.Model)),
             dateSpans = ReviewReportService.Spans(table.Arms.Select(a => a.Date.Trim()).ToList()),
             modelSpans = ReviewReportService.Spans(table.Arms.Select(a => a.Model.Trim()).ToList()),
-            columns = table.Columns.Select(c => new { c.Header, c.HasBelow, c.BelowHeader }),
+            columns = table.Columns.Select(c => new
+            {
+                c.Header,
+                c.HasBelow,
+                c.BelowHeader,
+                mainId = doc.Metrics.Contains(c.Main) ? c.Main.Id.Trim() : "",
+                rateId = !c.Ng && c.Rate is not null && doc.Metrics.Contains(c.Rate) ? c.Rate.Id.Trim() : ""
+            }),
             rows = table.Arms.Select(a => new
             {
+                armId = a.Id.Trim(),
                 a.Date,
                 a.Model,
                 a.Label,

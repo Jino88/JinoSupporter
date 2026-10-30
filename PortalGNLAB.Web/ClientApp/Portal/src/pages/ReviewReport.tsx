@@ -7,9 +7,14 @@ import {
   toolSend,
 } from "../toolsApi";
 import { useImagePaste } from "./translate/useImagePaste";
-import { filterReports, removePicture } from "./reviewReport/logic";
+import {
+  filterReports,
+  placePicture,
+  removePicture,
+} from "./reviewReport/logic";
 import {
   freshReport,
+  pictureDragType,
   type Report,
   type ReportDoc,
   type ReportIndex,
@@ -195,15 +200,8 @@ export default function ReviewReport() {
   }
   function movePicture(no: number, section: string) {
     if (!report.doc) return;
-    update({
-      doc: {
-        ...report.doc,
-        images: report.doc.images.map((p) =>
-          p.no === no ? { ...p, section } : p,
-        ),
-      },
-    });
-    setStatus("Picture moved. Save to keep it.");
+    update({ doc: placePicture(report.doc, no, section) });
+    setStatus(`IMG ${no} placed in ${section}. Save to keep it.`);
   }
   function editDoc(doc: ReportDoc) {
     update({ doc });
@@ -301,7 +299,12 @@ export default function ReviewReport() {
               {report.images.map((image) => (
                 <figure
                   key={image.no}
-                  title={`IMG ${image.no} · ${image.fileName} · ${Math.round((image.data.length * 0.75) / 1024)} KB`}
+                  title={`IMG ${image.no} · ${image.fileName} · ${Math.round((image.data.length * 0.75) / 1024)} KB${report.doc ? " · drag into the report" : ""}`}
+                  draggable={!!report.doc && !busy}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData(pictureDragType, String(image.no));
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
                 >
                   <img
                     src={`data:${image.mediaType};base64,${image.data}`}
@@ -318,18 +321,9 @@ export default function ReviewReport() {
                 </figure>
               ))}
             </div>
-            <label className="tool-field">
-              Report language
-              <select
-                className="inp"
-                value={report.language}
-                onChange={(e) => update({ language: e.target.value })}
-              >
-                {index.languages.map((language) => (
-                  <option key={language}>{language}</option>
-                ))}
-              </select>
-            </label>
+            <p className="muted small">
+              The report is always written in English.
+            </p>
             <label className="tool-field">
               Instruction to AI (optional)
               <input
