@@ -11,6 +11,7 @@ import { filterReports, removePicture } from "./reviewReport/logic";
 import {
   freshReport,
   type Report,
+  type ReportDoc,
   type ReportIndex,
 } from "./reviewReport/types";
 import ReportPreview from "./reviewReport/ReportPreview";
@@ -203,6 +204,14 @@ export default function ReviewReport() {
       },
     });
     setStatus("Picture moved. Save to keep it.");
+  }
+  function editDoc(doc: ReportDoc) {
+    update({ doc });
+    setStatus("Report edited. Save to keep your changes.");
+  }
+  function deletePicture(no: number) {
+    setReport((current) => removePicture(current, no));
+    setStatus(`IMG ${no} deleted. Save to keep it.`);
   }
 
   return (
@@ -417,7 +426,10 @@ export default function ReviewReport() {
           <fieldset className="tool-fieldset" disabled={busy}>
             <ReportPreview
               report={report}
+              editable={!busy}
+              onChange={editDoc}
               onMove={movePicture}
+              onRemovePicture={deletePicture}
               onError={setError}
             />
             {report.doc && (

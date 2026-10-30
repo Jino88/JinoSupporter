@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { dash, filterReports, groupPictures, removePicture } from "./logic";
+import {
+  addTag,
+  dash,
+  editLine,
+  filterReports,
+  groupPictures,
+  removePicture,
+  removeTag,
+} from "./logic";
 import { freshReport, type Placement, type ReportDoc } from "./types";
 describe("review report controls", () => {
   it("renumbers pictures and placements together without mutating the report", () => {
@@ -42,5 +50,17 @@ describe("review report controls", () => {
     ).toHaveLength(1);
     expect(dash(" test ")).toBe("- test");
     expect(dash("- test")).toBe("- test");
+  });
+  it("adds and removes person-set tags without duplicates", () => {
+    const doc = { tags: ["6.72"] } as ReportDoc;
+    expect(addTag(doc, " laser ").tags).toEqual(["6.72", "laser"]);
+    expect(addTag(doc, "6.72")).toBe(doc);
+    expect(addTag(doc, "   ")).toBe(doc);
+    expect(removeTag(addTag(doc, "laser"), 0).tags).toEqual(["laser"]);
+    expect(doc.tags).toEqual(["6.72"]);
+  });
+  it("edits a report line and drops it when cleared", () => {
+    expect(editLine(["a", "b"], 1, "B")).toEqual(["a", "B"]);
+    expect(editLine(["a", "b"], 0, "  ")).toEqual(["b"]);
   });
 });

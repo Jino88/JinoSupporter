@@ -1,4 +1,26 @@
-import type { Placement, Report, Summary } from "./types";
+import type { Placement, Report, ReportDoc, Summary } from "./types";
+
+/** Adds a tag typed by a person; blank or already present (any case) leaves the doc as is. */
+export function addTag(doc: ReportDoc, tag: string): ReportDoc {
+  const value = tag.trim();
+  if (
+    !value ||
+    doc.tags.some((t) => t.trim().toLowerCase() === value.toLowerCase())
+  )
+    return doc;
+  return { ...doc, tags: [...doc.tags, value] };
+}
+
+export function removeTag(doc: ReportDoc, index: number): ReportDoc {
+  return { ...doc, tags: doc.tags.filter((_, i) => i !== index) };
+}
+
+/** Replaces one line of a list; an emptied line is dropped so clearing text deletes it. */
+export function editLine(list: string[], index: number, value: string): string[] {
+  return value.trim()
+    ? list.map((line, i) => (i === index ? value : line))
+    : list.filter((_, i) => i !== index);
+}
 
 export function removePicture(report: Report, no: number): Report {
   const renumber = new Map<number, number>();

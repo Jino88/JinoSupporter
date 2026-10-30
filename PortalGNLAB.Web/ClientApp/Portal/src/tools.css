@@ -185,6 +185,47 @@
   text-align: center;
   font-weight: 700;
 }
+.report-editable {
+  white-space: pre-wrap;
+  border-radius: 2px;
+  outline: 1px dashed transparent;
+  cursor: text;
+}
+.report-editable:hover {
+  outline-color: #9aa4b2;
+}
+.report-editable:focus {
+  outline: 2px solid #1f5fa8;
+  background: #fff;
+  color: var(--ink);
+}
+.report-editable:empty::before {
+  content: "(empty)";
+  color: #9aa4b2;
+}
+.report-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.report-tag-remove {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0 2px;
+  font: inherit;
+  line-height: 1;
+}
+.report-tag-add {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.report-tag-add .inp {
+  width: 120px;
+}
 .report-editor {
   margin-top: 20px;
 }
