@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Production Input (X316B PV2) — draft mockup</title>
+<link rel="stylesheet" href="mockup.css" />
+<style>
+  .hdr { display: grid; grid-template-columns: repeat(5, minmax(0, auto)) 1fr; gap: 12px; align-items: end; padding: 14px 18px; margin-bottom: 14px; }
+  .hdr .inp { min-width: 130px; }
+  .hdr .right { justify-self: end; display: flex; gap: 8px; align-items: center; }
+  .st { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); border: 1px solid #fde68a; }
+  .kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0; padding: 0; overflow: hidden; margin-bottom: 14px; }
+  .kp { padding: 12px 16px; border-right: 1px solid var(--line); }
+  .kp:last-child { border-right: 0; }
+  .kp-k { font-size: 10.5px; font-weight: 700; letter-spacing: .05em; color: var(--muted); text-transform: uppercase; }
+  .kp-v { font-size: 21px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .kp-n { font-size: 11px; color: var(--faint); margin-top: 2px; }
+  .kp-v.bad { color: var(--bad); } .kp-v.good { color: var(--good); }
+
+  table.pe { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; font-variant-numeric: tabular-nums; }
+  table.pe th { background: #f8fafc; text-align: left; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; color: var(--ink-2); padding: 8px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  table.pe td { padding: 6px 8px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
+  table.pe td.n, table.pe th.n { text-align: right; }
+  table.pe tr.seg-row td { background: #f1f5f9; font-size: 11px; font-weight: 800; letter-spacing: .06em; color: var(--ink-2); padding: 7px 10px; }
+  table.pe tr.seg-row td .why { font-weight: 500; letter-spacing: 0; color: var(--muted); margin-left: 8px; text-transform: none; }
+  table.pe tr.seg-row td .bar { display: inline-block; width: 4px; height: 12px; border-radius: 2px; margin-right: 8px; vertical-align: -1px; }
+  .pno { color: var(--faint); width: 26px; }
+  .pname { font-weight: 600; white-space: nowrap; }
+  .pname small { display: block; font-weight: 500; color: var(--faint); font-size: 10.5px; }
+  .ni { width: 54px; height: 26px; border: 1px solid var(--line); border-radius: 6px; text-align: right; padding: 0 6px; font-variant-numeric: tabular-nums; background: #fff; }
+  .ni:focus { outline: 2px solid rgba(79,70,229,.25); border-color: var(--accent); }
+  .ni.err { border-color: var(--bad); background: var(--bad-soft); }
+  .ni.wide { width: 70px; }
+  .auto { display: inline-flex; align-items: center; gap: 6px; }
+  .auto b { font-weight: 700; min-width: 44px; text-align: right; }
+  .tag-a { font-size: 9.5px; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: var(--good-soft); color: var(--good); cursor: pointer; border: 0; }
+  .tag-o { font-size: 9.5px; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); cursor: pointer; border: 0; }
+  .defs { display: flex; gap: 10px; flex-wrap: wrap; }
+  .def { display: inline-flex; align-items: center; gap: 4px; padding: 3px 6px 3px 8px; border: 1px solid var(--line-soft); border-radius: 8px; background: #fbfcfe; }
+  .def span { font-size: 11px; color: var(--ink-2); font-weight: 600; margin-right: 2px; white-space: nowrap; }
+  .def .ni { width: 46px; height: 24px; }
+  .def .sl { color: var(--faint); }
+  .rate { font-weight: 700; }
+  .rate.hi { color: var(--bad); }
+  .rate.z { color: var(--faint); font-weight: 500; }
+  .legend-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; color: var(--muted); font-size: 11.5px; }
+  .legend-row .tag-a, .legend-row .tag-o { cursor: default; }
+
+  table.sm { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; font-variant-numeric: tabular-nums; }
+  table.sm th { background: #f8fafc; text-align: left; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; color: var(--ink-2); padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  table.sm td { padding: 7px 10px; border-bottom: 1px solid var(--line-soft); }
+  table.sm td.n, table.sm th.n { text-align: right; }
+  table.sm tr.tot td { font-weight: 700; background: #f8fafc; }
+  .diff-bad { color: var(--bad); font-weight: 700; }
+  .diff-ok { color: var(--good); font-weight: 700; }
+  .sel { height: 26px; border: 1px solid var(--line); border-radius: 6px; padding: 0 6px; background: #fff; font-size: 12px; }
+
+  table.plan { border-collapse: separate; border-spacing: 0; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  table.plan th, table.plan td { border-bottom: 1px solid var(--line-soft); border-right: 1px solid var(--line-soft); padding: 4px 6px; text-align: right; white-space: nowrap; }
+  table.plan th { background: #f8fafc; font-size: 10.5px; color: var(--ink-2); text-align: center; }
+  table.plan th.we, table.plan td.we { background: #fafafa; color: var(--faint); }
+  table.plan th.today { background: var(--accent-soft); color: var(--accent-ink); }
+  table.plan td.stage { text-align: left; font-weight: 700; position: sticky; left: 0; background: #fff; min-width: 190px; }
+  table.plan td.kind { text-align: left; color: var(--muted); position: sticky; left: 190px; background: #fff; min-width: 58px; }
+  table.plan td.tot { font-weight: 700; background: #f8fafc; }
+  table.plan .ni { width: 46px; height: 22px; font-size: 11.5px; }
+  table.plan tr.act td:not(.stage):not(.kind) { color: var(--ink-2); }
+  table.plan tr.gap td.neg { color: var(--bad); font-weight: 700; }
+  table.plan tr.gap td.pos { color: var(--good); font-weight: 700; }
+  table.plan tr.first td { border-top: 2px solid var(--line); }
+  table.plan td.ev { text-align: left; color: var(--accent-ink); font-size: 10.5px; }
+
+  table.xl { border-collapse: collapse; font-size: 11px; font-variant-numeric: tabular-nums; }
+  table.xl th, table.xl td { border: 1px solid #cbd5e1; padding: 3px 6px; text-align: center; white-space: nowrap; }
+  table.xl th { background: #e2e8f0; font-weight: 700; }
+  table.xl th.g1 { background: #c7d2fe; } table.xl th.g2 { background: #bae6fd; } table.xl th.g3 { background: #fde68a; }
+  table.xl td.l { text-align: left; }
+  table.xl tr.tot td { background: #fef9c3; font-weight: 700; }
+
+  .notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .notes ul { margin: 0; padding-left: 18px; line-height: 1.65; }
+  .notes li b { color: var(--ink); }
+  .notes code { font-family: Consolas, monospace; font-size: 11.5px; background: #f1f5f9; padding: 0 4px; border-radius: 3px; }
+  .badge { font-size: 10px; font-weight: 800; letter-spacing: .06em; padding: 2px 8px; border-radius: 999px; margin-right: 6px; }
+  .b-merge { background: var(--accent-soft); color: var(--accent-ink); }
+  .b-rem { background: var(--bad-soft); color: var(--bad); }
+  .b-add { background: var(--good-soft); color: var(--good); }
+  .b-fix { background: var(--warn-soft); color: var(--warn); }
+  .map td:first-child { font-weight: 700; white-space: nowrap; }
+  .hidden { display: none; }
+  .two { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 14px; align-items: start; }
+</style>
+</head>
+<body>
+<div class="shell"><aside class="rail" id="rail"></aside>
+<main class="main"><div class="page">
+  <header class="ph">
+    <div>
+      <div class="ph-crumb">Production <span class="faint">›</span> <b>Daily Input</b></div>
+      <h1>Production Daily Input</h1>
+      <div class="ph-sub">One entry screen replaces the 4 hand-filled workbooks (Stock / Daily NG Rate / Output daily / Sample Plan). Totals, NG rates, inputs and stock carry over automatically.</div>
+    </div>
+    <div class="ph-actions">
+      <button class="btn">Export Excel (original forms)</button>
+    </div>
+  </header>
+
+  <section class="card hdr">
+    <div class="field"><label>Model</label><select class="inp"><option>MSM-X316B</option><option>MSM-G778B</option></select></div>
+    <div class="field"><label>Build</label><select class="inp"><option>PV2</option><option>PV1</option><option>DV</option></select></div>
+    <div class="field"><label>Date</label><input class="inp" type="date" value="2026-10-29" /></div>
+    <div class="field"><label>Entered by</label><input class="inp" value="Nguyen Thi Lan" /></div>
+    <div class="field"><label>Status</label><div style="height:34px;display:flex;align-items:center"><span class="st" id="status">Draft · not submitted</span></div></div>
+    <div class="right">
+      <button class="btn" onclick="flash('Draft saved')">Save draft</button>
+      <button class="btn primary" onclick="submitDay()">Submit day</button>
+    </div>
+  </section>
+
+  <section class="card kpis" id="kpis"></section>
+
+  <nav class="tabs" id="tabs">
+    <button data-t="proc" class="on">1. Process NG<span class="cnt">34</span></button>
+    <button data-t="stock">2. Stock &amp; WIP</button>
+    <button data-t="ship">3. Shipping &amp; Retest</button>
+    <button data-t="plan">4. Plan</button>
+    <button data-t="rep">5. Reports (Excel forms)</button>
+    <button data-t="notes">Draft notes</button>
+  </nav>
+
+  <!-- 1. PROCESS NG -->
+  <div id="t-proc">
+    <section class="card sec">
+      <div class="sec-h">
+        <h2>Process NG — enter only the NG counts <span class="cnt">Before rework / After rework</span></h2>
+        <div class="legend-row">
+          <span><button class="tag-a">AUTO</button> input carried from the previous process</span>
+          <span><button class="tag-o">SET</button> typed by hand (segment start)</span>
+          <span>Function slot
+            <span class="seg" id="slotSeg"><button data-s="day" class="on">Day total</button><button data-s="am">08–12h</button><button data-s="pm">12–17h</button></span>
+          </span>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table class="pe" id="procTbl"></table></div>
+    </section>
+  </div>
+
+  <!-- 2. STOCK -->
+  <div id="t-stock" class="hidden">
+    <div class="two">
+      <section class="card sec">
+        <div class="sec-h"><h2>Materials <span class="cnt">In / Out / Stock</span></h2><span class="muted small">Out is suggested from today's process input; overwrite when needed.</span></div>
+        <div class="tbl-wrap"><table class="sm" id="matTbl"></table></div>
+      </section>
+      <section class="card sec">
+        <div class="sec-h"><h2>Semi-finished (WIP)</h2><span class="muted small">System = from today's flow · Counted = floor count</span></div>
+        <div class="tbl-wrap"><table class="sm" id="wipTbl"></table></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- 3. SHIPPING -->
+  <div id="t-ship" class="hidden">
+    <div class="two">
+      <section class="card sec">
+        <div class="sec-h"><h2>Hearing retest by lot <span class="cnt">BAKO OK + BAKO NG in one list</span></h2><button class="btn" onclick="addLot()">+ Add lot</button></div>
+        <div class="tbl-wrap"><table class="sm" id="lotTbl"></table></div>
+      </section>
+      <section class="card sec">
+        <div class="sec-h"><h2>Shipping</h2></div>
+        <div class="tbl-wrap"><table class="sm" id="shipTbl"></table></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- 4. PLAN -->
+  <div id="t-plan" class="hidden">
+    <section class="card sec">
+      <div class="sec-h">
+        <h2>Production plan <span class="cnt">Output daily "Plan" + Sample Plan "제조" rows, merged</span></h2>
+        <div class="tools" style="gap:8px">
+          <span class="muted small">Lead time between stages</span>
+          <select class="sel"><option>1 day</option><option>0 day</option><option>2 days</option></select>
+          <button class="btn" onclick="chainPlan()">Fill next stages from SPK Assy</button>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table class="plan" id="planTbl"></table></div>
+    </section>
+  </div>
+
+  <!-- 5. REPORTS -->
+  <div id="t-rep" class="hidden">
+    <section class="card sec">
+      <div class="sec-h"><h2>Output daily — Plan vs Actual <span class="cnt">auto, original layout</span></h2><button class="btn">Download .xlsx</button></div>
+      <div class="card-b tbl-wrap"><table class="xl" id="repPlan"></table></div>
+    </section>
+    <section class="card sec">
+      <div class="sec-h"><h2>Daily NG Rate — original wide layout <span class="cnt">auto from tab 1 (first 12 processes shown)</span></h2><button class="btn">Download .xlsx</button></div>
+      <div class="card-b tbl-wrap"><table class="xl" id="repNg"></table></div>
+    </section>
+  </div>
+
+  <!-- NOTES -->
+  <div id="t-notes" class="hidden">
+    <div class="notes" id="notes"></div>
+  </div>
+</div></main></div>
+<div class="sample-note">Draft mockup · sample data = MSM-X316B PV2, 2026-10-29 from the current workbooks</div>
+<div class="sample-note hidden" id="toast" style="bottom:44px;color:var(--good);font-weight:700"></div>
+
+<script src="mockup.js"></script>
+<script>
+renderRail("wr");
+
+/* ---------- master data: process list (renumbered, one name per step) ---------- */
+// seg: A = before Sub Dry 12h, B = Main (SPK side), C = Lower/PT assy, D = after Main Dry 12h, E = Function, F = Packing
+const SEGS = {
+  A: { name: "SUB ASSY → SUB DRY 12h", color: "var(--t-sub)", start: "set", why: "Input = UPPER loaded today" },
+  B: { name: "MAIN — SPK SIDE", color: "var(--t-main)", start: "prev", why: "Input = yesterday's Sub Dry output (12h dry)" },
+  C: { name: "MAIN — LOWER / PT ASSY → MAIN DRY 12h", color: "var(--t-main)", start: "set", why: "Input = LOWER assy count" },
+  D: { name: "AFTER MAIN DRY 12h", color: "var(--t-final)", start: "prev", why: "Input = yesterday's Main Dry output (12h dry)" },
+  E: { name: "FUNCTION", color: "var(--t-func)", start: "chain", why: "Input carried from FPCB Bonding · can be split by time slot" },
+  F: { name: "PACKING / OQC", color: "var(--t-oqc)", start: "chain", why: "" },
+};
+const D3 = ["Glue overflow", "Glue shortage", "Misalign"];
+const P = [
+  // [no, name, vi, seg, defects, groupForTotal]   group: P = process NG, F = function NG
+  [1, "Bonding Enclosure", "Bôi keo tổ hợp spk", "A", ["NG"]],
+  [2, "AOI 1", "", "A", D3],
+  [3, "SPK Assy", "Tổ hợp spk", "A", ["NG"]],
+  [4, "Fix Bonding SPK 1 (UV)", "Bôi keo cố định spk 1", "A", ["NG"]],
+  [5, "AOI 2", "", "A", ["Glue overflow", "Glue shortage", "SPK reversed"]],
+  [6, "Fix Bonding 2 (233)", "Bôi keo cố định 2", "A", ["NG"]],
+  [7, "AOI 3", "", "A", D3],
+  [8, "Fix Bonding 3", "Bôi keo cố định 3", "B", ["NG"]],
+  [9, "AOI 4", "", "B", D3],
+  [10, "F-PCB Adhesion", "Dán F PCB", "B", ["NG"]],
+  [11, "Coating Cream Gluing", "Bôi keo trợ hàn", "B", ["NG"]],
+  [12, "Spot Welding", "Hàn", "B", ["NG"]],
+  [13, "Spot Vision", "", "B", ["Misalign", "Cold weld", "SUS peel"]],
+  [14, "Bonding Lower Assy", "Bôi keo tổ hợp LOWER", "C", D3],
+  [15, "AOI 5", "", "C", ["NG"]],
+  [16, "QR Marking", "", "C", ["QR NG"]],
+  [17, "Lower Assy", "Tổ hợp LOWER", "C", ["NG"]],
+  [18, "Bonding PT Assy", "Bôi keo tổ hợp PT", "C", D3],
+  [19, "AOI 6", "", "C", ["NG"]],
+  [20, "Plate Assy", "Tổ hợp PLATE", "C", ["NG"]],
+  [21, "Fix Bonding PT", "Keo cố định PT", "C", ["NG"]],
+  [22, "Vision Inspection", "Kiểm tra keo", "C", D3],
+  [23, "Glue Height Inspection", "High dimension — Bond", "D", ["NG"]],
+  [24, "VS Adhesion", "Dán VS", "D", ["NG"]],
+  [25, "VS Press", "Ấn VS", "D", ["NG"]],
+  [26, "CP Height Inspection", "High dimension — CP", "D", ["NG"]],
+  [27, "FPCB Bonding", "Bôi keo FPCB", "D", ["NG"]],
+  [28, "Air Leak", "", "E", ["NG"], "F"],
+  [29, "SPL Test VS", "Kiểm tra sóng VS", "E", ["Low wave", "High wave"], "F"],
+  [30, "BAKO", "", "E", ["RB+FFT", "RB", "FFT", "SPL", "F0"], "F"],
+  [31, "Hearing", "", "E", ["Noise", "Touch", "No sound"], "F"],
+  [32, "Gauss", "", "E", ["S", "N"]],
+  [33, "Visual", "", "E", ["Bond", "Particle", "Damage"]],
+  [34, "Packing", "", "F", ["QR NG"]],
+].map(([no, name, vi, seg, defs, grp]) => ({ no, name, vi, seg, defs, grp: grp || "P" }));
+
+/* ---------- sample day (2026-10-29 row of the NG Rate workbook) ---------- */
+// ng[procNo][defectIndex] = [before, after]
+const ng = {};
+P.forEach((p) => (ng[p.no] = p.defs.map(() => [0, 0])));
+const put = (no, i, b, a) => (ng[no][i] = [b, a]);
+put(13, 1, 2, 0); put(13, 2, 5, 5);
+put(23, 0, 1, 1); put(26, 0, 12, 12);
+// function tests split into two slots (By hour sheet) — day total = sum
+const slots = { am: {}, pm: {} };
+const fsplit = { 28: [[1, 1]], 29: [[2, 2], [0, 0]], 30: [[14, 14], [12, 12], [8, 8], [0, 0], [0, 0]], 31: [[1, 1], [4, 4], [0, 0]], 32: [[1, 1], [0, 0]], 33: [[1, 1], [1, 1], [5, 5]] };
+const fday = { 28: [[2, 2]], 29: [[4, 4], [0, 0]], 30: [[25, 25], [23, 23], [14, 14], [0, 0], [0, 0]], 31: [[2, 2], [7, 7], [0, 0]], 32: [[1, 1], [0, 0]], 33: [[2, 2], [2, 2], [7, 7]] };
+P.filter((p) => p.seg === "E").forEach((p) => {
+  slots.am[p.no] = p.defs.map((_, i) => [...(fsplit[p.no]?.[i] || [0, 0])]);
+  slots.pm[p.no] = p.defs.map((_, i) => {
+    const d = fday[p.no]?.[i] || [0, 0], a = slots.am[p.no][i];
+    return [Math.max(0, d[0] - a[0]), Math.max(0, d[1] - a[1])];
+  });
+});
+
+const startSet = { A: 1579, C: 1579 };            // typed today
+const prevOut = { B: 1494, D: 1433 };             // yesterday's segment output (from saved data)
+const amShare = { 28: 735 };                       // Air Leak input in 08–12h slot; 12–17h = rest
+const override = {};                               // procNo -> typed input
+let slot = "day";
+
+/* ---------- calculation ---------- */
+const sum = (a) => a.reduce((s, v) => s + v, 0);
+function dayNg(no) {
+  const p = P.find((x) => x.no === no);
+  if (p.seg !== "E") return ng[no];
+  return p.defs.map((_, i) => [slots.am[no][i][0] + slots.pm[no][i][0], slots.am[no][i][1] + slots.pm[no][i][1]]);
+}
+function viewNg(no) {
+  const p = P.find((x) => x.no === no);
+  if (p.seg !== "E" || slot === "day") return dayNg(no);
+  return slots[slot][no];
+}
+function calc() {
+  const rows = {};
+  let carry = 0, carryAm = 0, carryPm = 0;
+  for (const p of P) {
+    const s = SEGS[p.seg];
+    let input, mode;
+    const first = P.find((x) => x.seg === p.seg) === p;
+    if (override[p.no] != null) { input = override[p.no]; mode = "set"; }
+    else if (first && s.start === "set") { input = startSet[p.seg]; mode = "set"; }
+    else if (first && s.start === "prev") { input = prevOut[p.seg]; mode = "prev"; }
+    else { input = carry; mode = "auto"; }
+    const d = dayNg(p.no);
+    const B = sum(d.map((x) => x[0])), A = sum(d.map((x) => x[1]));
+    const out = input - A;
+    let am = null, pm = null;
+    if (p.seg === "E") {
+      const inAm = first ? (amShare[p.no] ?? Math.round(input / 2)) : carryAm;
+      const inPm = first ? input - inAm : carryPm;
+      const a1 = sum(slots.am[p.no].map((x) => x[1])), a2 = sum(slots.pm[p.no].map((x) => x[1]));
+      am = { input: inAm, B: sum(slots.am[p.no].map((x) => x[0])), A: a1, out: inAm - a1 };
+      pm = { input: inPm, B: sum(slots.pm[p.no].map((x) => x[0])), A: a2, out: inPm - a2 };
+      carryAm = am.out; carryPm = pm.out;
+    }
+    rows[p.no] = { input, mode, B, A, out, rB: input ? B / input : 0, rA: input ? A / input : 0, am, pm };
+    carry = out;
+  }
+  return rows;
+}
+const no = (name) => P.find((p) => p.name === name).no;
+const segOut = (rows, seg) => rows[P.filter((p) => p.seg === seg).at(-1).no].out;
+const pc = (v, d = 2) => (v * 100).toFixed(d) + "%";
+
+/* ---------- KPI strip ---------- */
+function renderKpis(rows) {
+  const pB = sum(P.filter((p) => p.grp === "P").map((p) => rows[p.no].rB));
+  const pA = sum(P.filter((p) => p.grp === "P").map((p) => rows[p.no].rA));
+  const fB = sum(P.filter((p) => p.grp === "F").map((p) => rows[p.no].rB));
+  const fA = sum(P.filter((p) => p.grp === "F").map((p) => rows[p.no].rA));
+  const k = (key, v, n, cls = "") => `<div class="kp"><div class="kp-k">${key}</div><div class="kp-v ${cls}">${v}</div><div class="kp-n">${n}</div></div>`;
+  document.getElementById("kpis").innerHTML =
+    k("Sub 12h actual", fmt(rows[1].input), "Plan 800 · into Sub Dry", "good") +
+    k("Main 12h actual", fmt(segOut(rows, "C")), "Plan 800 · into Main Dry", "good") +
+    k("Function OK", fmt(rows[no("Gauss")].input), "Plan 800 · Gauss input") +
+    k("Visual OK", fmt(rows[no("Packing")].input), "Plan 800 · Packing input") +
+    k("NG process", pc(pB) + " / " + pc(pA), "Before / After rework", pA > 0.03 ? "bad" : "") +
+    k("NG function", pc(fB) + " / " + pc(fA), "Air leak + SPL + BAKO + Hearing", fA > 0.04 ? "bad" : "");
+}
+
+/* ---------- tab 1: process table ---------- */
+function rateCell(v) { return `<span class="rate ${v === 0 ? "z" : v >= 0.02 ? "hi" : ""}">${v === 0 ? "0" : pc(v)}</span>`; }
+function renderProc() {
+  const rows = calc();
+  renderKpis(rows);
+  let h = `<tr><th>#</th><th>Process</th><th class="n">Input</th><th>NG by defect <span class="muted">(Before / After)</span></th><th class="n">NG % Before</th><th class="n">NG % After</th><th class="n">Output</th></tr>`;
+  let lastSeg = "";
+  for (const p of P) {
+    if (p.seg !== lastSeg) {
+      const s = SEGS[p.seg];
+      h += `<tr class="seg-row"><td colspan="7"><span class="bar" style="background:${s.color}"></span>${s.name}<span class="why">${s.why}</span></td></tr>`;
+      lastSeg = p.seg;
+    }
+    const r = rows[p.no];
+    const v = slot !== "day" && p.seg === "E" ? r[slot] : null;
+    const input = v ? v.input : r.input;
+    const editable = slot === "day" || p.seg === "E";
+    const d = viewNg(p.no);
+    const roNg = p.seg === "E" && slot === "day";
+    const defs = p.defs.map((name, i) => {
+      const [b, a] = d[i];
+      const dis = roNg ? "disabled" : "";
+      return `<label class="def"><span>${name}</span><input class="ni" ${dis} data-no="${p.no}" data-i="${i}" data-k="0" value="${b}"><span class="sl">/</span><input class="ni ${a > b ? "err" : ""}" ${dis} data-no="${p.no}" data-i="${i}" data-k="1" value="${a}" title="${a > b ? "After cannot be larger than Before" : ""}"></label>`;
+    }).join("");
+    let inCell;
+    const firstE = p.seg === "E" && P.find((x) => x.seg === "E") === p;
+    if (firstE && slot === "am") inCell = `<span class="auto"><input class="ni wide" data-in="${p.no}" value="${input}"><button class="tag-o" title="Input tested in 08–12h">SET</button></span>`;
+    else if (firstE && slot === "pm") inCell = `<span class="auto"><b>${fmt(input)}</b><button class="tag-a" title="Day input − 08–12h input">AUTO</button></span>`;
+    else if (r.mode === "set") inCell = `<span class="auto"><input class="ni wide" data-in="${p.no}" value="${input}"><button class="tag-o" title="Typed by hand. Click to go back to AUTO" data-reset="${p.no}">SET</button></span>`;
+    else if (r.mode === "prev") inCell = `<span class="auto"><b>${fmt(input)}</b><button class="tag-a" title="Yesterday's output of the previous segment. Click to type a different value" data-ovr="${p.no}">PREV</button></span>`;
+    else inCell = `<span class="auto"><b>${fmt(input)}</b><button class="tag-a" title="Previous process output. Click to type a different value" data-ovr="${p.no}">AUTO</button></span>`;
+    const B = v ? v.B : r.B, A = v ? v.A : r.A, out = v ? v.out : r.out;
+    h += `<tr><td class="pno">${p.no}</td><td class="pname">${p.name}${p.vi ? `<small>${p.vi}</small>` : ""}</td>
+      <td class="n">${inCell}</td><td><div class="defs">${defs}</div>${roNg ? `<div class="muted small" style="margin-top:3px">Sum of 08–12h + 12–17h — switch slot to edit</div>` : ""}</td>
+      <td class="n">${rateCell(input ? B / input : 0)}</td><td class="n">${rateCell(input ? A / input : 0)}</td><td class="n"><b>${fmt(out)}</b></td></tr>`;
+  }
+  // OQC line
+  h += `<tr><td class="pno">—</td><td class="pname">Send to OQC</td><td class="n"><span class="auto"><input class="ni wide" value="400"><button class="tag-o">SET</button></span></td><td class="muted">Moved quantity (was "OQC" column of NG Rate + "Send OQC" of By hour)</td><td></td><td></td><td></td></tr>`;
+  const t = document.getElementById("procTbl");
+  t.innerHTML = h;
+  t.querySelectorAll("input[data-no]").forEach((el) => el.addEventListener("change", (e) => {
+    const { no, i, k } = e.target.dataset, val = Math.max(0, parseInt(e.target.value, 10) || 0);
+    const p = P.find((x) => x.no === +no);
+    if (p.seg === "E") slots[slot][no][i][k] = val; else ng[no][i][k] = val;
+    renderAll();
+  }));
+  t.querySelectorAll("input[data-in]").forEach((el) => el.addEventListener("change", (e) => {
+    const no = +e.target.dataset.in, val = parseInt(e.target.value, 10) || 0;
+    const p = P.find((x) => x.no === no), first = P.find((x) => x.seg === p.seg) === p;
+    if (p.seg === "E" && slot === "am" && first) amShare[no] = val;
+    else if (first && SEGS[p.seg].start === "set" && override[no] == null) startSet[p.seg] = val;
+    else override[no] = val;
+    renderAll();
+  }));
+  t.querySelectorAll("[data-ovr]").forEach((el) => el.addEventListener("click", (e) => { const no = +e.target.dataset.ovr; override[no] = calc()[no].input; renderAll(); }));
+  t.querySelectorAll("[data-reset]").forEach((el) => el.addEventListener("click", (e) => { delete override[+e.target.dataset.reset]; renderAll(); }));
+}
+document.querySelectorAll("#slotSeg button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("#slotSeg button").forEach((x) => x.classList.toggle("on", x === b));
+  slot = b.dataset.s; renderProc();
+}));
+
+/* ---------- tab 2: stock ---------- */
+const MATS = [
+  // name, opening, in, source, uses (proc no whose input consumes it), counted
+  ["UPPER", 3145, 800, "GN receipt", 1, null],
+  ["LOWER", 6520, 700, "GN receipt", 14, null],
+  ["SPK 201507", 5668, 1038, "From PV1", 3, null],
+  ["S-PLATE", 9840, 0, "", 20, null],
+  ["S-F-PCB", 7672, 0, "", 10, null],
+  ["SCREEN-X516B-TOP-VS", 8000, 0, "", 24, null],
+  ["TRAY", 0, 0, "", null, null],
+];
+const matOut = {};
+function renderStock() {
+  const rows = calc();
+  let h = `<tr><th>Material</th><th class="n">Opening</th><th class="n">In</th><th>Source</th><th class="n">Out</th><th class="n">Closing</th><th class="n">Counted</th><th class="n">Diff</th></tr>`;
+  MATS.forEach(([name, open, inq, src, use, cnt], idx) => {
+    const sug = use ? rows[use].input : 0;
+    const out = matOut[idx] ?? sug;
+    const close = open + inq - out;
+    const diff = cnt == null ? null : cnt - close;
+    h += `<tr><td><b>${name}</b></td><td class="n">${fmt(open)}</td><td class="n"><input class="ni wide" value="${inq}"></td>
+      <td><select class="sel"><option ${!src ? "selected" : ""}>—</option><option ${src === "GN receipt" ? "selected" : ""}>GN receipt</option><option ${src === "From PV1" ? "selected" : ""}>From PV1</option><option>From DV</option><option>Return</option></select></td>
+      <td class="n"><span class="auto"><input class="ni wide" data-mo="${idx}" value="${out}">${use ? `<button class="${matOut[idx] == null ? "tag-a" : "tag-o"}" title="Suggested = input of process ${use}">${matOut[idx] == null ? "AUTO" : "SET"}</button>` : ""}</span></td>
+      <td class="n"><b>${fmt(close)}</b></td><td class="n"><input class="ni wide" value="${cnt ?? ""}"></td>
+      <td class="n ${diff == null ? "" : diff === 0 ? "diff-ok" : "diff-bad"}">${diff == null ? "—" : signed(diff)}</td></tr>`;
+  });
+  const mt = document.getElementById("matTbl");
+  mt.innerHTML = h;
+  mt.querySelectorAll("[data-mo]").forEach((el) => el.addEventListener("change", (e) => { matOut[e.target.dataset.mo] = parseInt(e.target.value, 10) || 0; renderStock(); }));
+
+  const W = [
+    ["Sub Dry 12h (UPPER+SPK)", segOut(rows, "A"), 1716, "Today's Sub-assy output, waits 12h"],
+    ["Main Dry 12h (UPPER+SPK+F-PCB+LOWER+PLATE)", segOut(rows, "C"), 1579, "Today's Lower/PT output, waits 12h"],
+    ["Waiting Lower assy", null, 1092, "Floor count only"],
+    ["Waiting PT assy", null, 140, "Floor count only"],
+    ["Waiting Function", 0, 0, "Main output − Function input"],
+    ["Waiting Visual", rows[no("Gauss")].out - rows[no("Visual")].input, 54, "Gauss output − Visual input"],
+    ["Final OK (not yet sent)", rows[no("Packing")].out - 400, 1039, "Packing output − sent to OQC"],
+  ];
+  let w = `<tr><th>Stage</th><th class="n">System</th><th class="n">Counted</th><th class="n">Diff</th></tr>`;
+  W.forEach(([n, sys, cnt, hint]) => {
+    const diff = sys == null ? null : cnt - sys;
+    w += `<tr><td><b>${n}</b><div class="muted small">${hint}</div></td><td class="n">${sys == null ? "—" : fmt(sys)}</td><td class="n"><input class="ni wide" value="${cnt}"></td><td class="n ${diff == null ? "" : diff === 0 ? "diff-ok" : "diff-bad"}">${diff == null ? "—" : signed(diff)}</td></tr>`;
+  });
+  document.getElementById("wipTbl").innerHTML = w;
+}
+
+/* ---------- tab 3: retest + shipping ---------- */
+const LOTS = [
+  ["2026-10-28", "BAKO OK", 1155, 7, 2],
+  ["2026-10-28", "BAKO NG", 42, 0, 40],
+  ["2026-10-29", "BAKO OK", 1197, 7, 2],
+  ["2026-10-29", "BAKO NG", 62, 0, 55],
+];
+function renderShip() {
+  let h = `<tr><th>Lot date</th><th>From</th><th class="n">Input</th><th class="n">Touch</th><th class="n">Noise / NG</th><th class="n">OK</th><th class="n">OK rate</th></tr>`;
+  let ti = 0, tt = 0, tn = 0;
+  LOTS.forEach(([d, src, inp, touch, noise]) => {
+    const ok = inp - touch - noise; ti += inp; tt += touch; tn += noise;
+    h += `<tr><td><input class="inp" type="date" value="${d}" style="height:26px"></td><td><select class="sel"><option ${src === "BAKO OK" ? "selected" : ""}>BAKO OK</option><option ${src === "BAKO NG" ? "selected" : ""}>BAKO NG</option></select></td>
+      <td class="n"><input class="ni wide" value="${inp}"></td><td class="n"><input class="ni" value="${touch}"></td><td class="n"><input class="ni" value="${noise}"></td>
+      <td class="n"><b>${fmt(ok)}</b></td><td class="n">${pc(inp ? ok / inp : 0, 1)}</td></tr>`;
+  });
+  h += `<tr class="tot"><td colspan="2">Total</td><td class="n">${fmt(ti)}</td><td class="n">${fmt(tt)}</td><td class="n">${fmt(tn)}</td><td class="n">${fmt(ti - tt - tn)}</td><td class="n">${pc((ti - tt - tn) / ti, 1)}</td></tr>`;
+  document.getElementById("lotTbl").innerHTML = h;
+  const S = [["Send to OQC", 400, "Same value as tab 1"], ["OQC → KR (S-code / SAP)", 900, ""], ["OQC → KR (Free)", 67, ""], ["AS arrival (KR)", "auto", "= Export of the previous working day"], ["Customer ship", 600, "Sample Plan '고객 발송'"]];
+  document.getElementById("shipTbl").innerHTML = `<tr><th>Item</th><th class="n">Qty</th><th>Note</th></tr>` +
+    S.map(([n, q, note]) => `<tr><td><b>${n}</b></td><td class="n">${q === "auto" ? `<span class="auto"><b>630</b><button class="tag-a">AUTO</button></span>` : `<input class="ni wide" value="${q}">`}</td><td class="muted small">${note}</td></tr>`).join("");
+}
+function addLot() { LOTS.push(["2026-10-29", "BAKO OK", 0, 0, 0]); renderShip(); }
+
+/* ---------- tab 4: plan ---------- */
+const DAYS = [];
+for (let d = new Date("2026-10-26"); d <= new Date("2026-11-08"); d.setDate(d.getDate() + 1)) DAYS.push(new Date(d));
+const iso = (d) => d.toISOString().slice(0, 10);
+const STAGES = [
+  ["SPK Assy (Sub 12h)", { "2026-10-26": 800, "2026-10-27": 800, "2026-10-28": 800, "2026-10-29": 800, "2026-10-30": 800, "2026-11-02": 800, "2026-11-03": 800, "2026-11-04": 800, "2026-11-05": 800, "2026-11-06": 800 }, { "2026-10-26": 1425, "2026-10-27": 1419, "2026-10-28": 1498, "2026-10-29": 1579 }],
+  ["Lower Assy (Main 12h)", { "2026-10-26": 800, "2026-10-27": 800, "2026-10-28": 800, "2026-10-29": 800, "2026-10-30": 800, "2026-11-02": 800, "2026-11-03": 800, "2026-11-04": 800, "2026-11-05": 800, "2026-11-06": 800 }, { "2026-10-26": 987, "2026-10-27": 1214, "2026-10-28": 1433, "2026-10-29": 1579 }],
+  ["Function OK", { "2026-10-27": 800, "2026-10-28": 800, "2026-10-29": 800, "2026-10-30": 800, "2026-11-02": 800, "2026-11-03": 800, "2026-11-04": 800, "2026-11-05": 800, "2026-11-06": 800 }, { "2026-10-27": 904, "2026-10-28": 1140, "2026-10-29": 1343 }],
+  ["Visual OK", { "2026-10-27": 800, "2026-10-28": 800, "2026-10-29": 800, "2026-10-30": 800, "2026-11-02": 800, "2026-11-03": 800, "2026-11-04": 800, "2026-11-05": 800, "2026-11-06": 800 }, { "2026-10-27": 827, "2026-10-28": 1151, "2026-10-29": 1331 }],
+  ["Send OQC", { "2026-10-27": 800, "2026-10-28": 800, "2026-10-29": 800, "2026-10-30": 800, "2026-11-02": 800, "2026-11-03": 800, "2026-11-04": 800, "2026-11-05": 800, "2026-11-06": 800 }, { "2026-10-27": 650, "2026-10-28": 1200, "2026-10-29": 400 }],
+  ["Export to KR (S-code)", { "2026-10-27": 630, "2026-10-28": 630, "2026-10-29": 660, "2026-10-30": 660, "2026-11-02": 660, "2026-11-03": 660, "2026-11-04": 640, "2026-11-05": 640, "2026-11-06": 640 }, { "2026-10-27": 630, "2026-10-28": 630, "2026-10-29": 900 }],
+  ["Export to KR (Free)", { "2026-11-04": 300 }, { "2026-10-29": 67 }],
+  ["Customer ship (SEVT)", { "2026-10-29": 500, "2026-10-30": 500, "2026-11-02": 500, "2026-11-03": 600, "2026-11-04": 600, "2026-11-05": 600, "2026-11-06": 600 }, {}],
+];
+const EVENTS = { "2026-10-28": "F-PCB 2K GN in", "2026-11-06": "LK resin 0.7K in" };
+function renderPlan() {
+  const today = "2026-10-29";
+  let h = `<tr><th style="position:sticky;left:0;background:#f8fafc">Stage</th><th style="position:sticky;left:190px;background:#f8fafc"></th><th>Total</th>` +
+    DAYS.map((d) => { const we = d.getDay() === 0 || d.getDay() === 6; return `<th class="${iso(d) === today ? "today" : we ? "we" : ""}">${iso(d).slice(5)}<br>${"SUN MON TUE WED THU FRI SAT".split(" ")[d.getDay()]}</th>`; }).join("") + `</tr>`;
+  h += `<tr><td class="stage">Material arrival</td><td class="kind">event</td><td class="tot"></td>` + DAYS.map((d) => `<td class="ev">${EVENTS[iso(d)] || ""}</td>`).join("") + `</tr>`;
+  STAGES.forEach(([name, plan, act]) => {
+    const tp = sum(Object.values(plan)), ta = sum(Object.values(act));
+    h += `<tr class="first"><td class="stage" rowspan="3">${name}</td><td class="kind">Plan</td><td class="tot">${fmt(tp)}</td>` +
+      DAYS.map((d) => { const we = d.getDay() === 0 || d.getDay() === 6; return `<td class="${we ? "we" : ""}"><input class="ni" value="${plan[iso(d)] ?? ""}"></td>`; }).join("") + `</tr>`;
+    h += `<tr class="act"><td class="kind">Actual</td><td class="tot">${fmt(ta)}</td>` + DAYS.map((d) => `<td>${act[iso(d)] != null ? fmt(act[iso(d)]) : ""}</td>`).join("") + `</tr>`;
+    h += `<tr class="gap"><td class="kind">Gap</td><td class="tot">${signed(ta - sum(Object.entries(plan).filter(([k]) => k <= today).map(([, v]) => v)))}</td>` +
+      DAYS.map((d) => { const k = iso(d); if (act[k] == null || k > today) return `<td></td>`; const g = act[k] - (plan[k] || 0); return `<td class="${g < 0 ? "neg" : "pos"}">${signed(g)}</td>`; }).join("") + `</tr>`;
+  });
+  document.getElementById("planTbl").innerHTML = h;
+}
+function chainPlan() {
+  const keys = DAYS.map(iso);
+  for (let s = 1; s < 5; s++) {
+    const prev = STAGES[s - 1][1], cur = STAGES[s][1];
+    keys.forEach((k, i) => { if (k > "2026-10-29" && i > 0 && prev[keys[i - 1]] != null) cur[k] = prev[keys[i - 1]]; });
+  }
+  renderPlan(); flash("Plan filled with 1-day lead time");
+}
+
+/* ---------- tab 5: report previews ---------- */
+function renderReports() {
+  const rows = calc();
+  let h = `<tr><th colspan="2">MSM-X316B</th><th>Total</th>` + DAYS.slice(0, 8).map((d) => `<th>${iso(d).slice(5)}</th>`).join("") + `</tr>`;
+  STAGES.slice(0, 6).forEach(([name, plan, act]) => {
+    h += `<tr><td class="l" rowspan="2"><b>${name}</b></td><td>Plan</td><td>${fmt(sum(Object.values(plan)))}</td>` + DAYS.slice(0, 8).map((d) => `<td>${plan[iso(d)] ?? ""}</td>`).join("") + `</tr>`;
+    h += `<tr><td>Actual</td><td>${fmt(sum(Object.values(act)))}</td>` + DAYS.slice(0, 8).map((d) => `<td>${act[iso(d)] ?? ""}</td>`).join("") + `</tr>`;
+  });
+  document.getElementById("repPlan").innerHTML = h;
+
+  const shown = P.slice(0, 12);
+  let g1 = `<tr><th rowspan="3">Date</th><th rowspan="3">Model</th><th colspan="2" rowspan="2">NG Total</th>` + shown.map((p) => `<th class="${p.seg === "A" ? "g1" : "g2"}" colspan="${1 + p.defs.length * 2 + 2}">${p.no}. ${p.name.toUpperCase()}</th>`).join("") + `</tr>`;
+  let g2 = `<tr>` + shown.map((p) => `<th rowspan="2">Input</th>` + p.defs.map((d) => `<th colspan="2">${d}</th>`).join("") + `<th colspan="2">NG rate</th>`).join("") + `</tr>`;
+  let g3 = `<tr><th>Before</th><th>After</th>` + shown.map((p) => p.defs.map(() => `<th>B</th><th>A</th>`).join("") + `<th>B</th><th>A</th>`).join("") + `</tr>`;
+  const tB = sum(P.map((p) => rows[p.no].rB)), tA = sum(P.map((p) => rows[p.no].rA));
+  const line = `<tr><td>2026-10-29</td><td>MSM-X316B</td><td>${pc(tB)}</td><td>${pc(tA)}</td>` + shown.map((p) => { const r = rows[p.no]; return `<td>${r.input}</td>` + dayNg(p.no).map(([b, a]) => `<td>${b}</td><td>${a}</td>`).join("") + `<td>${pc(r.rB)}</td><td>${pc(r.rA)}</td>`; }).join("") + `</tr>`;
+  document.getElementById("repNg").innerHTML = g1 + g2 + g3 + line;
+}
+
+/* ---------- notes ---------- */
+document.getElementById("notes").innerHTML = `
+<section class="card"><div class="card-h"><h2>What the 4 workbooks are</h2></div><div class="card-b">
+  <table class="sm map">
+    <tr><th>Workbook</th><th>Content</th><th>Who / how often</th></tr>
+    <tr><td>01 Stock</td><td>Daily In / Out / Stock of 7 materials (UPPER, LOWER, SPK, S-PLATE, S-F-PCB, SCREEN-VS, TRAY) + 8 WIP stages (Sub Dry, Main Dry, waiting Lower / PT / Function / Visual, Final OK). 3 columns per day, opening stock from DV / PV1.</td><td>Line leader, daily, hand arithmetic (<code>=5290+1507-1425</code>)</td></tr>
+    <tr><td>02 Daily NG Rate</td><td>One row per day, 238 columns: 35 processes × (Input + each defect Before/After + NG rate). Input chains process to process; groups SUB DRY 12h / MAIN / FUNCTION; NG Total = Process + Function.</td><td>QC, daily</td></tr>
+    <tr><td>03 Output daily</td><td><b>Plan</b>: Plan vs Actual for Sub 12h, Main 12h, Function OK, Visual OK, Send OQC, OQC→KR (SAP / Free). <b>By hour</b>: the function tests (High dimension bond / CP, Air leak, Bako, Hearing, Gauss, Visual) per time slot 8–12h / 12–6h. <b>NG nghe</b>: Hearing retest per lot after BAKO OK / BAKO NG.</td><td>Production, daily + per slot</td></tr>
+    <tr><td>★ Sample Plan</td><td>Build plan for G778B & X316B PV2→LPR: material arrival (GN 입고, S-code / Free qty) and the stage plan SPK Assy → Lower Assy → Function → OQC → Export → AS arrival → customer ship, each a day later.</td><td>Planner (Korean), when the plan changes</td></tr>
+  </table>
+</div></section>
+
+<section class="card"><div class="card-h"><h2>Same number typed in several places (→ merged)</h2></div><div class="card-b">
+  <ul>
+    <li><span class="badge b-merge">MERGE</span>Main Dry actual <b>1,579</b> on 10-29 is typed 3 times: NG Rate <code>EM13</code>, Output Plan <code>L8</code>, Stock <code>BO15</code>.</li>
+    <li><span class="badge b-merge">MERGE</span>Function OK 1,343 = NG Rate Gauss input <code>HI13</code>; Visual OK 1,331 = Packing input <code>HY13</code>; Send OQC 400 = <code>ID13</code> = By hour row 53.</li>
+    <li><span class="badge b-merge">MERGE</span>By hour "High dimension bond / CP" = NG Rate process 23 / 26 (10-29: 1 and 12 NG, inputs 1,433 / 1,432) → one row each.</li>
+    <li><span class="badge b-merge">MERGE</span>By hour function NG (Air leak, BAKO RB/FFT, Hearing Noise/Touch, Gauss, Visual) = the FUNCTION block of NG Rate → entered once per slot, day total is the sum.</li>
+    <li><span class="badge b-merge">MERGE</span>Output Plan rows and Sample Plan 제조 rows are the same stages → one Plan tab (Sub 12h = SPK Assy, Main 12h = Lower Assy, Send OQC = OQC, OQC→KR = Export).</li>
+    <li><span class="badge b-merge">MERGE</span>NG nghe has two side-by-side tables (BAKO OK / BAKO NG) → one lot list with a "From" column.</li>
+  </ul>
+</div></section>
+
+<section class="card"><div class="card-h"><h2>Removed from input</h2></div><div class="card-b">
+  <ul>
+    <li><span class="badge b-rem">REMOVE</span>All Input columns except segment starts (Sub Assy, Lower Assy) — carried from the previous process; Main and After-Main-Dry start from yesterday's output.</li>
+    <li><span class="badge b-rem">REMOVE</span>All NG rate %, NG Total, Process / Function totals, Output, Total NG rows (calculated).</li>
+    <li><span class="badge b-rem">REMOVE</span>Stock "Tồn" (closing) and the Material "Out" when it equals the process input.</li>
+    <li><span class="badge b-rem">REMOVE</span>NG Rate columns FU–GD "26. / 27. HEIGHT INSPECTION 1 / 2": never filled (always 0), duplicate of process 23 / 26.</li>
+    <li><span class="badge b-rem">REMOVE</span>Actual rows of the Plan sheet, "AS 도착" (= export + 1 day), By hour "Plan 80/350" per slot (from the Plan tab).</li>
+  </ul>
+</div></section>
+
+<section class="card"><div class="card-h"><h2>Added</h2></div><div class="card-b">
+  <ul>
+    <li><span class="badge b-add">ADD</span>Header: Model / Build / Date / Entered by / Submit status (one record per day; later days lock after submit).</li>
+    <li><span class="badge b-add">ADD</span>Function tests can be entered per time slot (08–12h / 12–17h, from By hour); the day row is the sum.</li>
+    <li><span class="badge b-add">ADD</span>BAKO defects SPL and F0 (By hour has them, NG Rate does not).</li>
+    <li><span class="badge b-add">ADD</span>Stock: Source (GN receipt / From PV1 / From DV / Return) and Counted → difference shown automatically.</li>
+    <li><span class="badge b-add">ADD</span>Checks: After &gt; Before is red; Input override marked SET.</li>
+  </ul>
+</div></section>
+
+<section class="card"><div class="card-h"><h2>Errors found in the current workbooks</h2></div><div class="card-b">
+  <ul>
+    <li><span class="badge b-fix">FIX</span>NG Rate: process numbers repeat (two "5.", four "24.") and 19, 20, 32, 34 are missing → renumbered 1–34.</li>
+    <li><span class="badge b-fix">FIX</span>NG Rate: Air leak input <code>GE = FP−FR</code> skips the empty HEIGHT 1/2 columns — works only because they stay 0; gone with the removal.</li>
+    <li><span class="badge b-fix">FIX</span>NG Rate Total row: SPL rate hard-coded <code>0</code> (<code>GO7/GP7</code>); stray <code>HJ3 = 2190−1783</code>.</li>
+    <li><span class="badge b-fix">FIX</span>NG nghe: Touch / Noise % refer to <code>#REF!</code>.</li>
+    <li><span class="badge b-fix">FIX</span>Output Plan: 10-23 appears twice (E3, F3); Sub 12h actual 1,644 on 10-29 vs NG Rate input 1,579.</li>
+    <li><span class="badge b-fix">FIX</span>Stock: TOTAL column (<code>D</code>) adds only some "In" columns and skips 10-28 (<code>BJ</code>).</li>
+  </ul>
+</div></section>
+
+<section class="card" style="grid-column:1/-1"><div class="card-h"><h2>Open questions</h2></div><div class="card-b">
+  <ul>
+    <li>Is Main start really "yesterday's Sub Dry output"? (10-29: Fix Bonding 3 input 1,494 = 10-28 AOI 3 output — matches.)</li>
+    <li>Lower Assy start input (Bonding Lower Assy) — typed by the line; keep as SET or pull from LOWER material Out?</li>
+    <li>NG Total = sum of the stage NG rates (current Excel definition), not total NG / input. Keep it?</li>
+    <li>UI language: English only (portal rule). Vietnamese process names are kept as a small second line — OK, or remove?</li>
+  </ul>
+</div></section>`;
+
+/* ---------- shell ---------- */
+function renderAll() { renderProc(); renderStock(); renderShip(); renderReports(); }
+document.querySelectorAll("#tabs button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("#tabs button").forEach((x) => x.classList.toggle("on", x === b));
+  ["proc", "stock", "ship", "plan", "rep", "notes"].forEach((t) => document.getElementById("t-" + t).classList.toggle("hidden", t !== b.dataset.t));
+}));
+function flash(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.classList.remove("hidden"); setTimeout(() => t.classList.add("hidden"), 1600); }
+function submitDay() {
+  const bad = document.querySelectorAll("#procTbl .ni.err").length;
+  if (bad) { flash(bad + " cell(s): After > Before"); return; }
+  const s = document.getElementById("status"); s.textContent = "Submitted 17:05"; s.style.background = "var(--good-soft)"; s.style.color = "var(--good)"; s.style.borderColor = "#a7f3d0";
+}
+renderAll(); renderPlan();
+if (location.hash) document.querySelector(`#tabs button[data-t="${location.hash.slice(1)}"]`)?.click();
+</script>
+</body>
+</html>
