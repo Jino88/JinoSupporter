@@ -69,7 +69,9 @@ public static class QrTestTables
         "QR AIRLEAK DATA",
         "[dbo].[ALTD]",
         "dbo.ALTD",
-        ["TestTime"],
+        // The tester PC's clock has been wrong (G778 units stamped a month early), so the
+        // date a row reached the database is the one dates and retests are judged by.
+        ["ImportedAt", "TestTime"],
         ["OK", "PASS"],
         // "AL" is what the air leak tester writes for a leaking unit.
         ["AL", "NG", "FAIL", "N/G"])
@@ -78,6 +80,7 @@ public static class QrTestTables
         [
             "id",
             TestDateToken,
+            "ImportedAt",
             "TestTime",
             "ST_Information",
             "ProductID",
@@ -97,8 +100,9 @@ public static class QrTestTables
         "QR GAUSS DATA",
         "[dbo].[GSTD]",
         "dbo.GSTD",
-        // GSTD has no TestTime column; its timestamp lives in OTIME.
-        ["OTIME", "TestTime"],
+        // ImportedAt first, as for ALTD; GSTD does not have that column yet, so today this
+        // falls through to OTIME (it has no TestTime either) and switches by itself once added.
+        ["ImportedAt", "OTIME", "TestTime"],
         // The gauss tester stores its verdict as a flag: 1 = pass, 0 = fail.
         ["1", "OK", "PASS"],
         ["0", "NG", "FAIL", "N/G"])

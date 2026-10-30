@@ -87,7 +87,7 @@
                         <strong>Test dates</strong>
                         <span>@_selectedDates.Count.ToString("N0") selected</span>
                     </div>
-                    <small>TestTime · multi-select</small>
+                    <small>@DateColumnLabel · multi-select</small>
                 </div>
 
                 <div class="qr-date-list">
@@ -1890,10 +1890,13 @@
             : "Duplicate ProductID excluded";
 
     private string NgCountNote => IsFiltered
-        ? "Current filter · latest TestTime"
+        ? $"Current filter · latest {DateColumnLabel}"
         : _result?.HitMaxRows == true
-            ? "Shown range · latest TestTime"
-            : "Latest TestTime result";
+            ? $"Shown range · latest {DateColumnLabel}"
+            : $"Latest {DateColumnLabel} result";
+
+    /// <summary>The column dates and retests are judged by (ImportedAt for AIRLEAK, TestTime for BAKO).</summary>
+    private string DateColumnLabel => string.IsNullOrWhiteSpace(_result?.SortColumnName) ? "TestTime" : _result!.SortColumnName;
 
     /// <summary>
     /// The model dropdown matches the code inside the QR; each column box matches only its own
