@@ -34,7 +34,7 @@ public sealed class BmesFCostReportCalculationService(
             throw new ArgumentException("F-COST report start date must be before or equal to end date.", nameof(request));
 
         DateTime forceFrom = end.AddDays(-2);
-        progress?.Report($"Preparing RAW cache. Cached through {forceFrom.AddDays(-1):yyyy-MM-dd}; refreshing {forceFrom:yyyy-MM-dd} - {end:yyyy-MM-dd}.");
+        progress?.Report($"Preparing RAW cache. Days before {HistoryCachePolicy.LastHistoryDay(end).AddDays(1):yyyy-MM-dd} come from the cache; the last {HistoryCachePolicy.LiveWindowDays} days (through {end:yyyy-MM-dd}) are live from BMES.");
         FCostRawBackfillResult backfill = await fcost.BackfillRawAsync(
             start,
             end,

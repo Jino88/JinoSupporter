@@ -71,18 +71,8 @@ public sealed class FCostCorePartsService(
             int ordinal = dateIndex + 1;
             result.AttemptedDays++;
 
-            bool isRefreshWindow =
-                forceFromDate is { } refreshFrom &&
-                day >= refreshFrom.Date;
-            bool cachedPullIsUsable = !force && PullSucceeded(
-                dbPath,
-                day,
-                isRefreshWindow ? forceRefreshTtl : null);
-            bool forceDay =
-                force ||
-                (isRefreshWindow &&
-                 (forceRefreshTtl is null || !cachedPullIsUsable));
-            if (!forceDay && cachedPullIsUsable)
+            // forceFromDate/forceRefreshTtl are kept for callers; HistoryCachePolicy decides reuse.
+            if (!force && PullSucceeded(dbPath, day, DateTime.Now))
             {
                 result.SkippedDays++;
                 Report(progress, $"[{ordinal}/{totalDays}] {day:yyyy-MM-dd}: skip (already OK)");
@@ -680,10 +670,10 @@ public sealed class FCostCorePartsService(
         return Convert.ToInt64(command.ExecuteScalar() ?? 0L) > 0;
     }
 
-    private static bool PullSucceeded(
+    internal static bool PullSucceeded(
         string dbPath,
         DateTime queryDate,
-        TimeSpan? maxAge = null)
+        DateTime now)
     {
         if (!File.Exists(dbPath))
             return false;
@@ -705,16 +695,13 @@ public sealed class FCostCorePartsService(
             string status = reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
             if (!string.Equals(status, "OK", StringComparison.OrdinalIgnoreCase))
                 return false;
-            if (maxAge is not TimeSpan ttl)
-                return true;
-
             string fetchedText = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
             return DateTimeOffset.TryParse(
                        fetchedText,
                        CultureInfo.InvariantCulture,
                        DateTimeStyles.RoundtripKind,
                        out DateTimeOffset fetchedAt) &&
-                   DateTimeOffset.Now - fetchedAt <= ttl;
+                   HistoryCachePolicy.CanReuse(queryDate, fetchedAt.LocalDateTime, now);
         }
         catch
         {

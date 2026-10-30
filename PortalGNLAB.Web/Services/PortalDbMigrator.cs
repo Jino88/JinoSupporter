@@ -153,6 +153,55 @@ public static class PortalDbMigrator
         return res;
     }
 
+    // ── History cache reset ────────────────────────────────────────────────────
+
+    public const string HistoryCacheResetKey = "HistoryCacheReset.v1";
+
+    /// <summary>BMES copies kept for NG Rate and F-COST. Most rows came over from the old DB
+    /// files and were never re-checked, so they are dropped once and refilled under
+    /// <see cref="HistoryCachePolicy"/>. Schemas stay; only rows go.</summary>
+    internal static readonly string[] HistoryCacheTables =
+    [
+        NgRateCacheSchema.RowsTable, NgRateCacheSchema.DatesTable,
+        "FCostRawPulls", "FCostRawRows", "FCostRawColumns", "FCostRawBreakdownCache",
+        "MES072410Pulls", "MES072410Rows", "MES072410Columns",
+    ];
+
+    /// <summary>Empties <see cref="HistoryCacheTables"/> once per database; later calls only
+    /// check the marker. Returns the number of rows removed.</summary>
+    public static long EnsureHistoryCacheReset(string targetPath, Action<string>? log = null)
+    {
+        log ??= _ => { };
+        using var conn = PortalDb.Open(targetPath);
+        Exec(conn,
+            "CREATE TABLE IF NOT EXISTS PortalDbMigrations (" +
+            "Name TEXT PRIMARY KEY NOT NULL, CompletedAt TEXT NOT NULL, Detail TEXT NOT NULL DEFAULT '')");
+        if (IsDone(conn, HistoryCacheResetKey))
+            return 0;
+
+        long total = 0;
+        var detail = new List<string>();
+        using var tx = conn.BeginTransaction();
+        foreach (string table in HistoryCacheTables)
+        {
+            if (!TableExists(conn, tx, table)) continue;
+            long rows = Scalar(conn, $"SELECT COUNT(*) FROM [{table}]", tx);
+            Exec(conn, $"DELETE FROM [{table}]", tx);
+            total += rows;
+            detail.Add($"{table}:{rows}");
+            log($"Cleared {table}: {rows:N0} row(s)");
+        }
+        Exec(conn,
+            "INSERT OR REPLACE INTO PortalDbMigrations (Name, CompletedAt, Detail) VALUES (@n, @t, @d)", tx,
+            ("@n", HistoryCacheResetKey),
+            ("@t", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)),
+            ("@d", string.Join("; ", detail)));
+        tx.Commit();
+
+        log($"History cache reset complete: {total:N0} row(s) removed.");
+        return total;
+    }
+
     // ── Target creation ────────────────────────────────────────────────────────
 
     private static bool CreateTargetFromMain(string targetPath, string? mainDb, Action<string> log)

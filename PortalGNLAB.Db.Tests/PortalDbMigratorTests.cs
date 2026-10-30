@@ -243,4 +243,31 @@ public sealed class PortalDbMigratorTests : IDisposable
         Assert.Equal("1", Scalar(target,
             "SELECT COUNT(*) FROM pragma_table_info('ReviewReports') WHERE name='revisions_json'"));
     }
+
+    [Fact]
+    public void History_cache_reset_empties_the_bmes_copies_once_and_keeps_everything_else()
+    {
+        string target = P("reset", "PortalGNLAB.db");
+        Run(target,
+            $"CREATE TABLE NgRateCache ({NgColumns})",
+            "INSERT INTO NgRateCache ([PRODUCT_DATE]) VALUES ('2025-01-01'), ('2025-01-02')",
+            "CREATE TABLE NgRateCachedDates (PRODUCT_DATE TEXT PRIMARY KEY, RowCount INTEGER, CachedAt TEXT)",
+            "INSERT INTO NgRateCachedDates VALUES ('2025-01-01', 1, '2025-01-01 08:00:00')",
+            "CREATE TABLE FCostRawPulls (QueryDate TEXT PRIMARY KEY, Status TEXT)",
+            "INSERT INTO FCostRawPulls VALUES ('2025-01-01', 'OK')",
+            "CREATE TABLE Users (Id INTEGER PRIMARY KEY, Name TEXT)",
+            "INSERT INTO Users VALUES (1, 'jino')");
+
+        Assert.Equal(4, PortalDbMigrator.EnsureHistoryCacheReset(target));
+
+        Assert.Equal(0, Count(target, "NgRateCache"));
+        Assert.Equal(0, Count(target, "NgRateCachedDates"));
+        Assert.Equal(0, Count(target, "FCostRawPulls"));
+        Assert.Equal(1, Count(target, "Users"));
+
+        // Rows cached after the reset survive later starts.
+        Run(target, "INSERT INTO FCostRawPulls VALUES ('2025-02-01', 'OK')");
+        Assert.Equal(0, PortalDbMigrator.EnsureHistoryCacheReset(target));
+        Assert.Equal(1, Count(target, "FCostRawPulls"));
+    }
 }

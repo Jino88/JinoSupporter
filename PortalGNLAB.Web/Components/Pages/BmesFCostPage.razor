@@ -3773,7 +3773,7 @@
 
             DateTime forceFrom = end.AddDays(-2);
             _reportStatusMessage =
-                $"Preparing RAW cache. Cached through {forceFrom.AddDays(-1):yyyy-MM-dd}; refreshing {forceFrom:yyyy-MM-dd} - {end:yyyy-MM-dd}.";
+                $"Preparing RAW cache. Days before {HistoryCachePolicy.LastHistoryDay(end).AddDays(1):yyyy-MM-dd} come from the cache; the last {HistoryCachePolicy.LiveWindowDays} days (through {end:yyyy-MM-dd}) are live from BMES.";
 
             IProgress<string> progress = new Progress<string>(msg =>
             {
