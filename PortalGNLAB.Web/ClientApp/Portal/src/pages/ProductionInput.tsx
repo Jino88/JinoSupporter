@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatPublished } from "../format";
 import { downloadBlob } from "../toolsApi";
 import { productionApi } from "./productionInput/api";
-import DailyTab from "./productionInput/DailyTab";
+import DailyTab, { type DayView } from "./productionInput/DailyTab";
 import {
   actuals,
   addDays,
@@ -69,6 +69,7 @@ export default function ProductionInput() {
   const [windowDays, setWindowDays] = useState<Day[]>([]);
   const [tab, setTab] = useState<Tab>("proc");
   const [slot, setSlot] = useState<Slot>("day");
+  const [dayView, setDayView] = useState<DayView>("date");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -147,19 +148,29 @@ export default function ProductionInput() {
     return stage ? plan.values[stage.id]?.[date] ?? null : null;
   };
 
-  const sheets = useMemo(() => {
-    const name = model ? `${model.name} ${model.build}` : "";
-    const entries: DayEntry[] = windowDays
+  // entered days of the window; the day on screen counts with its unsaved input
+  const entries = useMemo(() => {
+    const list: DayEntry[] = windowDays
       .filter((d) => d.date !== date)
       .map((d) => ({ date: d.date, data: normalizeDay(d.data), summary: d.summary }));
-    if ((day || dayDirty) && dates.includes(date)) entries.push({ date, data, summary });
-    entries.sort((a, b) => a.date.localeCompare(b.date));
+    if ((day || dayDirty) && dates.includes(date)) list.push({ date, data, summary });
+    return list.sort((a, b) => a.date.localeCompare(b.date));
+  }, [windowDays, date, day, dayDirty, data, summary, dates]);
+  const statusOf = useMemo(() => {
+    const map: Record<string, DayStatus> = {};
+    for (const d of windowDays) map[d.date] = d.status;
+    if (day) map[date] = day.status;
+    return map;
+  }, [windowDays, day, date]);
+
+  const sheets = useMemo(() => {
+    const name = model ? `${model.name} ${model.build}` : "";
     return {
       plan: planSheet(name, setup.stages, plan, dates, (st) => stageActuals(st, plan, summaries, { date, actuals: live })),
       ng: ngSheet(name, setup, entries),
       ngDays: entries.length,
     };
-  }, [model, windowDays, date, day, dayDirty, data, summary, setup, plan, dates, summaries, live]);
+  }, [model, entries, date, setup, plan, dates, summaries, live]);
 
   function editSetup(next: ModelSetup) { setSetup(next); setModelDirty(true); }
   function editData(next: DayData) { setData(next); setDayDirty(true); }
@@ -254,6 +265,12 @@ export default function ProductionInput() {
     if (!next || next === date || !confirmDiscard()) return;
     setDate(next);
     setWindowStart(weekStart(next));
+    setDayView("date");
+  };
+  // a date picked in the Daily NG list keeps the window where it is
+  const pickDate = (next: string) => {
+    setDayView("date");
+    if (next !== date && confirmDiscard()) setDate(next);
   };
   const shiftWindow = (n: number) => {
     if (!dayDirty || window.confirm("Discard the unsaved daily input?")) setWindowStart(addDays(windowStart, n));
@@ -342,7 +359,11 @@ export default function ProductionInput() {
                 onModel={(change) => { setModel({ ...model, ...change }); setModelDirty(true); }}
                 onDelete={removeModel} onError={setError} />
             )}
-            {tab === "proc" && <DailyTab setup={setup} data={data} rows={rows} slot={slot} onSlot={setSlot} onData={editData} />}
+            {tab === "proc" && (
+              <DailyTab setup={setup} data={data} rows={rows} slot={slot} onSlot={setSlot} onData={editData}
+                view={dayView} date={date} dates={dates} entries={entries} statusOf={statusOf} unsaved={dayDirty}
+                onPick={pickDate} onTotal={() => setDayView("total")} onShift={shiftWindow} />
+            )}
             {tab === "stock" && (
               <StockPlanTab setup={setup} data={data} materials={mats} wip={wip} onData={editData}
                 plan={plan} onPlan={editPlan} dates={dates} today={date} actualOf={actualOf} onShift={shiftWindow} />

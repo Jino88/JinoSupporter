@@ -20,6 +20,7 @@ import {
   setPair,
   stageActuals,
   summarize,
+  totalRows,
   updateProcess,
   updateProcessMaterial,
   weekStart,
@@ -247,5 +248,34 @@ describe("NG rate per NG item", () => {
 
   it("is 0 when nothing went into the process", () => {
     expect(ngRate(5, 0)).toBe(0);
+  });
+});
+
+describe("Total of several days", () => {
+  it("sums inputs and every NG item, and takes the rate over the summed input", () => {
+    const { setup, data, at } = sample();
+    const summary = { prevOut: { B: 1494, D: 1433 } } as DaySummary;
+    const other = setPair({ ...data, startSet: { ...data.startSet, A: 1000 } }, at(2), "day", at(2).ngItems[0].id, 0, 10);
+    const t = totalRows(setup, [{ date: "2026-10-28", data: other, summary }, { date: "2026-10-29", data, summary }]);
+    expect(t[at(2).id]).toMatchObject({ input: 2579, before: 10, after: 0, out: 2579 });
+    expect(t[at(2).id].pairs[0]).toEqual([10, 0]);
+    expect(t[at(2).id].rateBefore).toBeCloseTo(10 / 2579, 12);
+    expect(t[at(13).id].pairs).toEqual([[0, 0], [4, 0], [10, 10]]);
+    expect(t[at(13).id].input).toBe(1494 * 2);
+    expect(t[at(30).id].pairs[0]).toEqual([50, 50]);
+  });
+
+  it("gives the day rates back when every day is the same", () => {
+    const { setup, data } = sample();
+    const summary = { prevOut: { B: 1494, D: 1433 } } as DaySummary;
+    const one = ngTotals(setup, calc(setup, data, summary.prevOut));
+    const two = ngTotals(setup, totalRows(setup, [{ date: "2026-10-28", data, summary }, { date: "2026-10-29", data, summary }]));
+    expect(two.processBefore).toBeCloseTo(one.processBefore, 12);
+    expect(two.functionAfter).toBeCloseTo(one.functionAfter, 12);
+  });
+
+  it("is all zero without an entered day", () => {
+    const { setup, at } = sample();
+    expect(totalRows(setup, [])[at(2).id]).toMatchObject({ input: 0, rateBefore: 0, pairs: [[0, 0], [0, 0], [0, 0]] });
   });
 });
