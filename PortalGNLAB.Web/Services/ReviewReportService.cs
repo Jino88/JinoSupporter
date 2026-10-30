@@ -24,7 +24,9 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
     private const int MaxImages = 12;
     private const long ImageBudgetBytes = 1_500_000;
 
-    public static readonly string[] Languages = ["Same as input", "English", "Korean", "Vietnamese"];
+    /// <summary>Reports are always written in English, whatever language the notes are in.</summary>
+    public const string ReportLanguage = "English";
+    public static readonly string[] Languages = [ReportLanguage];
     public static readonly string[] Sections = ["purpose", "conditions", "results", "conclusion", "appendix"];
 
     private static readonly JsonSerializerOptions Json = new()
@@ -121,7 +123,6 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
     public async Task<ReviewReportDoc> GenerateAsync(
         string inputText,
         IReadOnlyList<ReviewReportImage> images,
-        string language,
         string extraInstruction,
         CancellationToken ct = default)
     {
@@ -130,7 +131,7 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
 
         var content = new JsonArray();
         var head = new StringBuilder();
-        head.AppendLine($"Report language: {language}");
+        head.AppendLine($"Report language: {ReportLanguage}");
         if (!string.IsNullOrWhiteSpace(extraInstruction))
             head.AppendLine($"Extra instruction from the author: {extraInstruction.Trim()}");
         head.AppendLine($"Pictures attached: {Math.Min(images.Count, MaxImages)} (numbered IMG 1..{Math.Min(images.Count, MaxImages)} in the order below)");
@@ -152,7 +153,7 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
         if (string.IsNullOrWhiteSpace(request)) throw new InvalidOperationException("Enter what to change.");
 
         var head = new StringBuilder();
-        head.AppendLine($"Report language: {report.Language}");
+        head.AppendLine($"Report language: {ReportLanguage}");
         head.AppendLine($"Pictures attached: {Math.Min(report.Images.Count, MaxImages)} (numbered IMG 1..{Math.Min(report.Images.Count, MaxImages)} in the order below)");
         head.AppendLine();
         head.AppendLine("=== CURRENT REPORT (JSON) ===");
@@ -180,7 +181,9 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
         keys. Change only what the request asks for (and what must change with it); keep every other
         field, number, condition id, metric id and picture placement exactly as it is. The rules above
         still hold: numbers come from the original content or pictures, never invented. Earlier
-        change requests are already applied; do not undo them.
+        change requests are already applied; do not undo them. Any text in the current report that
+        is not in English (e.g. Vietnamese or Korean left from an earlier version) is translated into
+        English as part of this change.
         """;
 
     private async Task<ReviewReportDoc> CallAsync(string instructions, JsonArray content, IReadOnlyList<ReviewReportImage> images, CancellationToken ct)
@@ -247,7 +250,8 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
         each with one value per condition (arm). Do NOT build a table yourself.
         - One metric per measured item, in the source order: Input, OK, each defect type, total NG,
           total NG rate, measurements (mm, mW/cm², s ...).
-        - id: short snake_case ("input", "ng_vp_offset", "ng_vp_offset_rate"); name: as the author wrote it;
+        - id: short snake_case ("input", "ng_vp_offset", "ng_vp_offset_rate"); name: the author's name
+          for it, in English;
           unit: pcs, %, mm ... ("" when none); kind: "input" (input quantity), "ok", "ng" (the count of
           one defect type), "total_ng", "rate" or "value" (a measurement).
         - Do not compute rates or ppm: the app shows each NG count with its NG rate in ppm.
@@ -275,8 +279,11 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
         - caption: a short label for that one picture (e.g. "Old Jig", "New Jig", "Offset sample 1").
 
         Tags: model codes, process names, defect types, jig/test names (short, 3-10 items).
-        Write all prose in the requested report language ("Same as input" = the main language of the
-        content). Keep codes, units and the author's terms as written.
+        Write EVERY text in English, whatever language the notes are in (they are often Vietnamese or
+        Korean, or mixed): title, purpose, content lines, condition labels, table names and details,
+        metric names, findings, conclusion, captions, groups and tags. Translate; never leave a
+        Vietnamese or Korean word. Keep codes, part numbers, model names, numbers and units exactly as
+        written (e.g. "Test lò sấy IR to 650C" -> "Test IR oven to 650C").
 
         Answer with ONE JSON object only, no markdown fence, with exactly these keys:
         {

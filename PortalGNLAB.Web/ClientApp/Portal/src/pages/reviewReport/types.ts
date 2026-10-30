@@ -84,12 +84,23 @@ export interface ReportIndex {
 }
 export interface PreviewTable {
   title: string;
+  /** The conditions' "table" value; blank means the title comes from resultTitle. */
+  tableKey: string;
   showDate: boolean;
   showModel: boolean;
   dateSpans: number[];
   modelSpans: number[];
-  columns: { header: string; hasBelow: boolean; belowHeader: string }[];
+  columns: {
+    header: string;
+    hasBelow: boolean;
+    belowHeader: string;
+    /** Metric behind the number; blank for a worked-out column (added Total NG). */
+    mainId: string;
+    /** Rate metric shown underneath as written; blank when it is a worked-out NG ppm. */
+    rateId: string;
+  }[];
   rows: {
+    armId: string;
     date: string;
     model: string;
     label: string;
@@ -97,6 +108,8 @@ export interface PreviewTable {
     cells: { main: string; below: string; hasBelow: boolean; rate: boolean }[];
   }[];
 }
+/** Drag data type for a picture number dragged from the picture list into the report. */
+export const pictureDragType = "application/x-review-report-picture";
 export const sections = [
   "purpose",
   "conditions",
@@ -111,7 +124,7 @@ export function freshReport(): Report {
     createdBy: "",
     createdAt: "",
     updatedAt: "",
-    language: "Same as input",
+    language: "English",
     inputText: "",
     extraInstruction: "",
     images: [],

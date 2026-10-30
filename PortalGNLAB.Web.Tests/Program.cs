@@ -186,6 +186,40 @@ Check(summarySql.Contains("a.[ImportedAt] >= @From", StringComparison.Ordinal)
       && !summarySql.Contains("a.[TestTime]", StringComparison.Ordinal)
       && summarySql.Contains("b.[TestTime] >= @From", StringComparison.Ordinal), "QR SUMMARY dates AIRLEAK by ImportedAt, BAKO by TestTime");
 
+// Review Report: always English, whatever language the notes are in.
+string reportInstructions = (string)typeof(ReviewReportService).GetField("Instructions",
+    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!.GetValue(null)!;
+string revisionInstructions = (string)typeof(ReviewReportService).GetField("RevisionInstructions",
+    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!.GetValue(null)!;
+Check(ReviewReportService.Languages.SequenceEqual(["English"])
+      && reportInstructions.Contains("Write EVERY text in English", StringComparison.Ordinal)
+      && !reportInstructions.Contains("Same as input", StringComparison.Ordinal)
+      && revisionInstructions.Contains("translated into", StringComparison.Ordinal), "review report is always written in English");
+
+// Review Report preview: each result cell names the condition / metric it came from, so it can be edited in place.
+var previewDoc = new ReviewReportDoc
+{
+    Conditions = [new() { Id = "C1", Label = "Film M-20", Model = "M-20", Table = "Film M-20", Role = "test" }],
+    Metrics =
+    [
+        new() { Id = "input", Name = "Input", Unit = "pcs", Kind = "input", Values = [new() { ArmId = "C1", Value = "930" }] },
+        new() { Id = "ng_spl", Name = "NG SPL", Unit = "pcs", Kind = "ng", Values = [new() { ArmId = "C1", Value = "4" }] },
+        new() { Id = "ng_rb", Name = "NG RB", Unit = "pcs", Kind = "ng", Values = [new() { ArmId = "C1", Value = "51" }] },
+    ],
+};
+var previewResult = typeof(PortalGNLAB.Web.Endpoints.ToolPageEndpoints).GetMethod("Preview",
+    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!.Invoke(null, [new ReviewReport { Doc = previewDoc }])!;
+object previewValue = previewResult.GetType().GetProperty("Value")!.GetValue(previewResult)!;
+using var previewJson = JsonDocument.Parse(JsonSerializer.Serialize(previewValue, webJson));
+JsonElement previewTable = previewJson.RootElement[0];
+static string? Prop(JsonElement e, string name) => e.TryGetProperty(name, out JsonElement v) ? v.GetString() : null;
+string?[] mainIds = previewTable.GetProperty("columns").EnumerateArray().Select(c => Prop(c, "mainId")).ToArray();
+Check(Prop(previewTable, "tableKey") == "Film M-20"
+      && Prop(previewTable.GetProperty("rows")[0], "armId") == "C1"
+      && mainIds.SequenceEqual(["input", "ng_spl", "ng_rb", ""])
+      && previewTable.GetProperty("columns").EnumerateArray().All(c => Prop(c, "rateId") == ""),
+    "review report preview names the condition and metric behind each cell (worked-out Total NG has none)");
+
 if (failures.Count > 0)
     throw new InvalidOperationException($"Host-cutover checks failed: {string.Join(", ", failures)}");
 

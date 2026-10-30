@@ -64,14 +64,7 @@ else
             </label>
         </div>
 
-        <div class="rr-row">
-            <div style="flex:1;">
-                <label class="rr-lbl" for="rr-lang">Report language</label>
-                <select id="rr-lang" class="rr-in" @bind="_report.Language">
-                    @foreach (string l in ReviewReportService.Languages) { <option value="@l">@l</option> }
-                </select>
-            </div>
-        </div>
+        <p class="rr-muted rr-xs">The report is always written in English.</p>
         <label class="rr-lbl" for="rr-extra">Instruction to AI <span class="rr-muted rr-xs">(optional)</span></label>
         <input id="rr-extra" class="rr-in" @bind="_report.ExtraInstruction" @bind:event="oninput"
                placeholder="e.g. Compare the 3 lots as separate conditions; keep the defect photo in Results" />
@@ -529,7 +522,7 @@ else
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
-            ReviewReportDoc doc = await Reports.GenerateAsync(_report.InputText, _report.Images, _report.Language, _report.ExtraInstruction, cts.Token);
+            ReviewReportDoc doc = await Reports.GenerateAsync(_report.InputText, _report.Images, _report.ExtraInstruction, cts.Token);
             _report.Doc = doc;
             _report.Revisions = [];   // a fresh write starts over from the content
             _report.Model = $"{ReviewReportService.Model} · {ReviewReportService.Effort}";
