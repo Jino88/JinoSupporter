@@ -1304,7 +1304,9 @@ public sealed class ReviewReport
     public string Id { get; set; } = "";
     public string Title { get; set; } = "";
     public string CreatedBy { get; set; } = "";
+    [JsonConverter(typeof(BlankDateTimeConverter))]
     public DateTime CreatedAt { get; set; }
+    [JsonConverter(typeof(BlankDateTimeConverter))]
     public DateTime UpdatedAt { get; set; }
     public string Language { get; set; } = ReviewReportService.Languages[0];
     public string InputText { get; set; } = "";
@@ -1314,6 +1316,21 @@ public sealed class ReviewReport
     public List<ReviewReportImage> Images { get; set; } = [];
     /// <summary>Change requests applied to the report after it was written, oldest first.</summary>
     public List<ReviewReportRevision> Revisions { get; set; } = [];
+}
+
+/// <summary>
+/// A report made with "+ New" has not been saved yet, so the page sends its dates as "".
+/// Read that as "no date yet" (Save fills both) instead of failing the request with HTTP 400.
+/// </summary>
+public sealed class BlankDateTimeConverter : JsonConverter<DateTime>
+{
+    public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType == JsonTokenType.Null || (reader.TokenType == JsonTokenType.String && reader.ValueSpan.Length == 0)
+            ? default
+            : reader.GetDateTime();
+
+    public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options) =>
+        writer.WriteStringValue(value);
 }
 
 public sealed class ReviewReportRevision

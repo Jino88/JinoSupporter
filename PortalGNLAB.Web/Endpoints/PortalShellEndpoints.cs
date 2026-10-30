@@ -74,6 +74,15 @@ public static class PortalShellEndpoints
         return new PortalDownload(release.Version, release.Notes, release.PublishedAt, Asset(release.Setup), Asset(release.Package));
     }
 
+    /// <summary>
+    /// index.html names the hashed bundle of the current build, so the browser must ask again on
+    /// every load; without this it may keep an old index.html and show the screen from before a restart.
+    /// </summary>
+    public static readonly StaticFileOptions ShellFileOptions = new()
+    {
+        OnPrepareResponse = file => file.Context.Response.Headers.CacheControl = "no-cache, no-store, must-revalidate",
+    };
+
     public static IEndpointRouteBuilder MapPortalShell(this IEndpointRouteBuilder app)
     {
         var api = app.MapGroup("/api/portal").RequireAuthorization();
@@ -95,7 +104,7 @@ public static class PortalShellEndpoints
         app.MapTeamMemo();
 
         // Every /app route is the React app; it asks /api/portal/me and sends signed-out users to /login.
-        app.MapFallbackToFile("/app/{*path:nonfile}", "app/index.html");
+        app.MapFallbackToFile("/app/{*path:nonfile}", "app/index.html", ShellFileOptions);
 
         return app;
     }
