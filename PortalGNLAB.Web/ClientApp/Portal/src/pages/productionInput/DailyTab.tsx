@@ -1,13 +1,179 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useMemo, type ReactNode } from "react";
 import { NumInput } from "./fields";
-import { SEGMENTS, clearOverride, firstOf, fmt, ngRate, pct, setInput, setPair, viewPairs, type Rows } from "./logic";
-import type { DayData, ModelSetup, Slot } from "./types";
+import {
+  SEGMENTS,
+  WEEKDAYS,
+  clearOverride,
+  entryRows,
+  firstOf,
+  fmt,
+  isWeekend,
+  ngRate,
+  ngTotals,
+  pct,
+  setInput,
+  setPair,
+  totalRows,
+  viewPairs,
+  weekday,
+  type DayEntry,
+  type Rows,
+  type TotalRow,
+} from "./logic";
+import type { DayData, DayStatus, ModelSetup, Slot } from "./types";
 
 const rateCell = (v: number) => (
   <span className={"pi-rate " + (v === 0 ? "z" : v >= 0.02 ? "hi" : "")}>{v === 0 ? "0" : pct(v)}</span>
 );
 
+export type DayView = "date" | "total";
+
+/** Left: the dates of the window and their Total. Right: the chosen day's input, or the read-only Total. */
 export default function DailyTab(props: {
+  setup: ModelSetup;
+  data: DayData;
+  rows: Rows;
+  slot: Slot;
+  onSlot: (slot: Slot) => void;
+  onData: (data: DayData) => void;
+  view: DayView;
+  date: string;
+  dates: string[];
+  /** Entered days of the window; the day on screen carries its unsaved input. */
+  entries: DayEntry[];
+  statusOf: Record<string, DayStatus>;
+  unsaved: boolean;
+  onPick: (date: string) => void;
+  onTotal: () => void;
+  onShift: (days: number) => void;
+}) {
+  const { setup, dates, entries, view } = props;
+  const dayRates = useMemo(() => {
+    const map: Record<string, ReturnType<typeof ngTotals>> = {};
+    for (const e of entries) map[e.date] = ngTotals(setup, entryRows(setup, e));
+    return map;
+  }, [setup, entries]);
+  const total = useMemo(() => totalRows(setup, entries), [setup, entries]);
+  const totalRates = ngTotals(setup, total);
+  const rateLine = (t: ReturnType<typeof ngTotals>) => `P ${pct(t.processAfter)} · F ${pct(t.functionAfter)}`;
+
+  return (
+    <div className="pi-daily">
+      <aside className="card pi-days">
+        <div className="pi-days-h">
+          <button className="btn sm" title="Previous week" aria-label="Previous week" onClick={() => props.onShift(-7)}>←</button>
+          <span>{dates[0].slice(5)} – {dates.at(-1)?.slice(5)}</span>
+          <button className="btn sm" title="Next week" aria-label="Next week" onClick={() => props.onShift(7)}>→</button>
+        </div>
+        <button className={"pi-di total" + (view === "total" ? " on" : "")} onClick={props.onTotal}>
+          <b>Total</b>
+          <span className="muted small">{entries.length} entered day{entries.length === 1 ? "" : "s"}</span>
+          <span className="pi-di-r">{entries.length ? rateLine(totalRates) : "—"}</span>
+        </button>
+        {dates.map((d) => {
+          const st = props.statusOf[d];
+          const r = dayRates[d];
+          const here = d === props.date;
+          return (
+            <button key={d} className={"pi-di" + (view === "date" && here ? " on" : "") + (isWeekend(d) ? " we" : "")}
+              onClick={() => props.onPick(d)}>
+              <b>{d.slice(5)} <span>{WEEKDAYS[weekday(d)]}</span></b>
+              <span className={"pi-di-st " + (st === "Submitted" ? "ok" : st ? "draft" : "none")}>
+                {here && props.unsaved ? "Unsaved" : st === "Submitted" ? "Submitted" : st ? "Draft" : "Not entered"}
+              </span>
+              <span className="pi-di-r">{r ? rateLine(r) : ""}</span>
+            </button>
+          );
+        })}
+        <div className="pi-hint">P / F = process / function NG rate after rework.</div>
+      </aside>
+      {view === "total"
+        ? <TotalTable setup={setup} total={total} days={entries.length} from={dates[0]} to={dates.at(-1) ?? ""} />
+        : <DayTable {...props} />}
+    </div>
+  );
+}
+
+function TotalTable(props: { setup: ModelSetup; total: Record<string, TotalRow>; days: number; from: string; to: string }) {
+  const { setup, total } = props;
+  let lastSeg = "";
+  return (
+    <section className="card pi-sec">
+      <div className="pi-sec-h">
+        <h2>Total {props.from} – {props.to} <span className="cnt">{props.days} entered day{props.days === 1 ? "" : "s"}</span></h2>
+        <span className="muted small">Σ of the entered days · NG % = Σ NG / Σ input · read only — pick a date on the left to edit.</span>
+      </div>
+      <div className="pi-wrap">
+        <table className="pi-pe">
+          <thead>
+            <tr><th>#</th><th>Process</th><th>NG item</th><th className="n">Input</th><th className="n">Before</th><th className="n">After</th>
+              <th className="n">NG % Before</th><th className="n">NG % After</th><th className="n">Output</th></tr>
+          </thead>
+          <tbody>
+            {setup.processes.map((p, idx) => {
+              const segHead = p.segment !== lastSeg;
+              lastSeg = p.segment;
+              const t = total[p.id];
+              const withTotal = p.ngItems.length > 1;
+              const n = Math.max(1, p.ngItems.length) + (withTotal ? 1 : 0);
+              const rates = (b: number, a: number) => (
+                <>
+                  <td className="n">{rateCell(ngRate(b, t.input))}</td>
+                  <td className="n">{rateCell(ngRate(a, t.input))}</td>
+                </>
+              );
+              const head = (
+                <>
+                  <td className="pi-pno rs" rowSpan={n}>{idx + 1}</td>
+                  <td className="pi-pname rs" rowSpan={n}>{p.name}{p.localName && <small>{p.localName}</small>}</td>
+                </>
+              );
+              const inputTd = <td className="n rs" rowSpan={n}><b>{fmt(t.input)}</b></td>;
+              const outTd = <td className="n rs" rowSpan={n}><b>{fmt(t.out)}</b></td>;
+              const items = p.ngItems.length ? p.ngItems : [{ id: "", name: "—" }];
+              return (
+                <Fragment key={p.id}>
+                  {segHead && (
+                    <tr className="seg-row">
+                      <td colSpan={9}>
+                        <span className="bar" style={{ background: SEGMENTS[p.segment].color }} />
+                        {SEGMENTS[p.segment].name}
+                      </td>
+                    </tr>
+                  )}
+                  {items.map((item, i) => {
+                    const [b, a] = t.pairs[i] ?? [t.before, t.after];
+                    return (
+                      <tr key={item.id || "none"} className={i === n - 1 ? "plast" : "sub"} data-pid={p.id}>
+                        {i === 0 && head}
+                        <td className="dn">{item.name}</td>
+                        {i === 0 && inputTd}
+                        <td className="n">{fmt(b)}</td>
+                        <td className="n">{fmt(a)}</td>
+                        {rates(b, a)}
+                        {i === 0 && outTd}
+                      </tr>
+                    );
+                  })}
+                  {withTotal && (
+                    <tr className="plast pi-total" data-pid={p.id}>
+                      <td className="dn">Total</td>
+                      <td className="n">{fmt(t.before)}</td>
+                      <td className="n">{fmt(t.after)}</td>
+                      {rates(t.before, t.after)}
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function DayTable(props: {
   setup: ModelSetup;
   data: DayData;
   rows: Rows;

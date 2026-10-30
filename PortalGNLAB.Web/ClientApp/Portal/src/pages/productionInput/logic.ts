@@ -169,7 +169,7 @@ export function actuals(setup: ModelSetup, rows: Rows, data: DayData): Actuals {
 }
 
 /** Sum of the stage NG rates of each NG group (the workbook's NG Total definition). */
-export function ngTotals(setup: ModelSetup, rows: Rows) {
+export function ngTotals(setup: ModelSetup, rows: Record<string, { rateBefore: number; rateAfter: number }>) {
   const g = (grp: string, k: "rateBefore" | "rateAfter") =>
     sum(setup.processes.filter((p) => p.group === grp).map((p) => rows[p.id][k]));
   return { processBefore: g("P", "rateBefore"), processAfter: g("P", "rateAfter"), functionBefore: g("F", "rateBefore"), functionAfter: g("F", "rateAfter") };
@@ -480,6 +480,41 @@ export interface DayEntry {
   date: string;
   data: DayData;
   summary: DaySummary;
+}
+
+export interface TotalRow {
+  input: number;
+  before: number;
+  after: number;
+  out: number;
+  /** Σ before / Σ input, so a busy day weighs more than a quiet one. */
+  rateBefore: number;
+  rateAfter: number;
+  /** Σ per NG item, in the order of the process NG items. */
+  pairs: Pair[];
+}
+
+/** Daily rows of an entered day (each day starts from its own saved previous-day outputs). */
+export const entryRows = (setup: ModelSetup, e: DayEntry): Rows => calc(setup, e.data, e.summary?.prevOut ?? {});
+
+/** Σ of the entered days per process: inputs, outputs and every NG item; rates over the summed input. */
+export function totalRows(setup: ModelSetup, entries: DayEntry[]): Record<string, TotalRow> {
+  const result: Record<string, TotalRow> = {};
+  for (const p of setup.processes)
+    result[p.id] = { input: 0, before: 0, after: 0, out: 0, rateBefore: 0, rateAfter: 0, pairs: p.ngItems.map((): Pair => [0, 0]) };
+  for (const e of entries) {
+    const rows = entryRows(setup, e);
+    for (const p of setup.processes) {
+      const r = rows[p.id], t = result[p.id];
+      t.input += r.input; t.before += r.before; t.after += r.after; t.out += r.out;
+      dayPairs(p, e.data).forEach(([b, a], i) => { t.pairs[i] = [t.pairs[i][0] + b, t.pairs[i][1] + a]; });
+    }
+  }
+  for (const t of Object.values(result)) {
+    t.rateBefore = ngRate(t.before, t.input);
+    t.rateAfter = ngRate(t.after, t.input);
+  }
+  return result;
 }
 
 /** Daily NG Rate in the workbook's wide layout: one row per day, per process Input + NG item B/A + NG rate. */
