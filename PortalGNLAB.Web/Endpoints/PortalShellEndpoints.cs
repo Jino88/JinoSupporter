@@ -117,6 +117,7 @@ public static class PortalShellEndpoints
         app.MapBmesTables();
         app.MapQr();
         app.MapSetting();
+        app.MapBmesReports();
 
         // Every /app route is the React app; it asks /api/portal/me and sends signed-out users to /login.
         app.MapFallbackToFile("/app/{*path:nonfile}", "app/index.html", ShellFileOptions);

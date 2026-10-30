@@ -24,6 +24,10 @@ import BmesReasonTable from "./pages/BmesReasonTable";
 import BmesWorkerStatus from "./pages/BmesWorkerStatus";
 import BmesMakeModelGroup from "./pages/BmesMakeModelGroup";
 import Setting from "./pages/Setting";
+import BmesDailyReport from "./pages/BmesDailyReport";
+import BmesReport from "./pages/BmesReport";
+import BmesTest5 from "./pages/BmesTest5";
+import BmesFCost from "./pages/BmesFCost";
 
 /** React pages by their path inside /app. A page added here also needs its menu id in
  *  PortalShellEndpoints.ReactRoutes so the menus (React and Blazor) link to it. */
@@ -52,6 +56,10 @@ const pages: Record<string, { title: string; render: (menu: MenuItem[]) => React
   "/bmes/worker-status": { title: "Worker Status", render: () => <BmesWorkerStatus /> },
   "/bmes/make-model-group": { title: "Model Group", render: () => <BmesMakeModelGroup /> },
   "/setting": { title: "Setting", render: () => <Setting /> },
+  "/bmes/daily-report": { title: "DAILY REPORT", render: () => <BmesDailyReport /> },
+  "/report/bmes": { title: "Report", render: () => <BmesReport /> },
+  "/bmes/test5": { title: "BOM & Drawing", render: () => <BmesTest5 /> },
+  "/bmes/f-cost": { title: "F-Cost", render: () => <BmesFCost /> },
 };
 
 export default function App() {
