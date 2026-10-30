@@ -119,45 +119,128 @@
   padding-bottom: 12px;
   margin-bottom: 12px;
 }
-.report-document p {
+.report-document {
+  font-family: "Times New Roman", Times, serif;
+  color: #000;
+}
+.report-meta {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.report-sheet {
+  border: 2px solid #000;
+  background: #fff;
+  color: #000;
+  font-family: "Times New Roman", Times, serif;
+  padding-bottom: 12px;
+}
+.report-sheet p {
   white-space: pre-wrap;
-  line-height: 1.65;
+  line-height: 1.6;
+  margin: 2px 12px;
+}
+.report-bold {
+  font-weight: 700;
+}
+.report-head {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) 240px;
+  border-bottom: 1px solid #000;
+  min-height: 84px;
+}
+.report-head-label {
+  background: #bfbfbf;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.report-head > .report-head-label {
+  border-right: 1px solid #000;
+}
+.report-head-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 6px 12px;
+}
+.report-head-info {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  border-left: 1px solid #000;
+}
+.report-head-info > div {
+  border-bottom: 1px solid #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  min-height: 28px;
+}
+.report-head-info > div:nth-child(odd) {
+  border-right: 1px solid #000;
+}
+.report-head-info > div:nth-last-child(-n + 2) {
+  border-bottom: 0;
 }
 .report-document h3 {
-  border: 1px solid #7f7f7f;
   background: #bfbfbf;
-  padding: 8px;
-  margin: 20px 0 8px;
+  border-top: 1px solid #000;
+  border-bottom: 1px solid #000;
+  padding: 3px 12px;
+  margin: 14px 0 6px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.report-document h4 {
+  margin: 8px 12px 4px;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+}
+.report-table-block {
+  padding: 0 12px 6px 28px;
+}
+.report-document .report-result-grid {
+  border-collapse: collapse;
+  background: #fff;
 }
 .report-document .report-result-grid th,
 .report-document .report-result-grid td {
-  border: 1px solid #595959;
+  border: 1px solid #000;
   text-align: center;
+  vertical-align: middle;
   white-space: nowrap;
+  padding: 2px 8px;
+  color: #000;
 }
 .report-document .report-result-grid th {
   background: #c5d9f1;
-  color: var(--ink);
+  font-weight: 700;
+  height: 44px;
 }
-.report-test {
+.report-document .report-result-grid .report-test {
   background: #ffff00;
 }
-.report-rate {
-  color: #c00000;
-}
-.report-below {
-  border-top: 1px solid #595959;
-  margin-top: 4px;
-  padding-top: 4px;
+.report-document .report-result-grid .report-rate {
+  color: #ff0000;
 }
 .report-pictures {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 14px;
-  margin: 12px 0;
+  margin: 12px;
 }
 .report-picture-row {
   display: flex;
+  justify-content: center;
   gap: 4px;
   align-items: flex-start;
   flex-wrap: wrap;

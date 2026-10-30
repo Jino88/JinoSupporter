@@ -42,6 +42,10 @@ export interface ReportDoc {
   title: string;
   productModel: string;
   reportDate: string;
+  /** Department shown in the header block. */
+  dept: string;
+  /** Who made the report, shown as Marker; blank falls back to the author. */
+  maker: string;
   purpose: string;
   background: string;
   content: string[];
@@ -94,6 +98,10 @@ export interface PreviewTable {
   modelSpans: number[];
   columns: {
     header: string;
+    /** Worked out by the server (OK / Total NG / Total NG rate): read-only here. */
+    computed: boolean;
+    /** The Total NG rate column: red and one cell for both lines of an arm. */
+    rateColumn: boolean;
     hasBelow: boolean;
     belowHeader: string;
     /** Metric behind the number; blank for a worked-out column (added Total NG). */
@@ -104,6 +112,8 @@ export interface PreviewTable {
   rows: {
     armId: string;
     date: string;
+    /** The date as shown (d-MMM); edits go to date. */
+    dateLabel: string;
     model: string;
     label: string;
     test: boolean;
