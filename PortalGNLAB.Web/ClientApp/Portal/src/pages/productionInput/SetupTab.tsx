@@ -1,6 +1,7 @@
 import { Fragment, useState } from "react";
 import { NumInput, TextInput } from "./fields";
 import {
+  PROCESS_TYPES,
   SEGMENTS,
   SEGMENT_KEYS,
   addMaterial,
@@ -19,7 +20,7 @@ import {
   updateProcessMaterial,
   updateStage,
 } from "./logic";
-import type { ModelSetup, NgGroup, StageSource } from "./types";
+import type { ModelSetup, ProcessType, StageSource } from "./types";
 
 const DRAG_TYPE = "text/x-pi-material";
 
@@ -110,10 +111,10 @@ export default function SetupTab(props: {
                         }}>
                         <td className="pi-pno rs">{idx + 1}</td>
                         <td className="rs">
-                          <select className="pi-sel" value={p.group} aria-label="Process type"
-                            onChange={(e) => onSetup(updateProcess(setup, p.id, { group: e.target.value as NgGroup }))}>
-                            <option value="P">Process</option>
-                            <option value="F">Function</option>
+                          <select className="pi-sel" value={p.type} aria-label="Process type"
+                            title="FUNCTION counts in the function NG rate, the others in the process NG rate"
+                            onChange={(e) => onSetup(updateProcess(setup, p.id, { type: e.target.value as ProcessType }))}>
+                            {PROCESS_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                           </select>
                         </td>
                         <td className="rs">

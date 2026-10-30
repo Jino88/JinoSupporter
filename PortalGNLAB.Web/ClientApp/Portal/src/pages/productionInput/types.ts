@@ -3,8 +3,9 @@
 
 /** Fixed flow blocks of the line; see SEGMENTS in logic.ts for their start rules. */
 export type Segment = "A" | "B" | "C" | "D" | "E" | "F";
-/** P = process NG, F = function NG (the two NG rate totals). */
+/** P = process NG, F = function NG (the two NG rate totals). FUNCTION processes count as F, the rest as P. */
 export type NgGroup = "P" | "F";
+export type ProcessType = "SUB" | "MAIN" | "FUNCTION" | "VISUAL";
 /** Today's value of a plan stage that comes from the daily input. */
 export type StageSource = "sub" | "main" | "func" | "vis" | "oqc";
 export type Slot = "day" | "am" | "pm";
@@ -25,7 +26,9 @@ export interface Process {
   name: string;
   localName: string;
   segment: Segment;
-  group: NgGroup;
+  type: ProcessType;
+  /** Setups saved before Process Type held P / F here; read once by normalizeProcess. */
+  group?: NgGroup;
   ngItems: NgItem[];
   materials: ProcessMaterial[];
 }

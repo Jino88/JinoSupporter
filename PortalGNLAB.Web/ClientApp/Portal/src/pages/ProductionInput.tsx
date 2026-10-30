@@ -14,6 +14,7 @@ import {
   materialRows,
   ngSheet,
   ngTotals,
+  normalizeProcess,
   pct,
   planSheet,
   prevOutFrom,
@@ -50,7 +51,7 @@ const TEMPLATE = "template:x316b";
 const normalizeDay = (data: Partial<DayData> | null | undefined): DayData => ({ ...emptyDayData(), ...(data ?? {}) });
 const normalizePlan = (data: Partial<PlanData> | null | undefined): PlanData => ({ ...emptyPlanData(), ...(data ?? {}) });
 const normalizeSetup = (s: Partial<ModelSetup> | null | undefined): ModelSetup =>
-  ({ processes: s?.processes ?? [], materials: s?.materials ?? [], stages: s?.stages ?? [] });
+  ({ processes: (s?.processes ?? []).map(normalizeProcess), materials: s?.materials ?? [], stages: s?.stages ?? [] });
 
 export default function ProductionInput() {
   const [models, setModels] = useState<ModelSummary[]>([]);

@@ -4,11 +4,13 @@ import type {
   DaySummary,
   ModelSetup,
   NgCounts,
+  NgGroup,
   NgItem,
   Pair,
   PlanData,
   PlanStage,
   Process,
+  ProcessType,
   Segment,
   Sheet,
   SheetMerge,
@@ -34,6 +36,20 @@ export const SEGMENTS: Record<Segment, SegmentInfo> = {
   F: { name: "PACKING / OQC", short: "Packing / OQC", color: "#10b981", start: "chain", why: "" },
 };
 export const SEGMENT_KEYS = Object.keys(SEGMENTS) as Segment[];
+
+export const PROCESS_TYPES: ProcessType[] = ["SUB", "MAIN", "FUNCTION", "VISUAL"];
+export const ngGroup = (p: Pick<Process, "type">): NgGroup => (p.type === "FUNCTION" ? "F" : "P");
+const SEGMENT_TYPE: Record<Segment, ProcessType> = { A: "SUB", B: "MAIN", C: "MAIN", D: "MAIN", E: "FUNCTION", F: "VISUAL" };
+export const defaultType = (segment: Segment): ProcessType => SEGMENT_TYPE[segment];
+
+/** Gives setups saved with the old P / F group a Process Type that keeps their NG totals. */
+export function normalizeProcess(p: Process): Process {
+  if (PROCESS_TYPES.includes(p.type)) return p;
+  const { group, ...rest } = p;
+  // A P process in the function block (Gauss, Visual) is a visual check.
+  const type: ProcessType = group === "F" ? "FUNCTION" : group === "P" && p.segment === "E" ? "VISUAL" : defaultType(p.segment);
+  return { ...rest, type };
+}
 
 export const sum = (values: number[]) => values.reduce((s, v) => s + v, 0);
 const ZERO: Pair = [0, 0];
@@ -157,7 +173,7 @@ export interface Actuals {
 
 /** Day actuals of the plan stages: Sub Dry in, Main Dry in, last function test out, Packing in, sent to OQC. */
 export function actuals(setup: ModelSetup, rows: Rows, data: DayData): Actuals {
-  const fn = setup.processes.filter((p) => p.group === "F").at(-1);
+  const fn = setup.processes.filter((p) => ngGroup(p) === "F").at(-1);
   const pk = firstOf(setup, "F");
   return {
     sub: segOut(setup, rows, "A"),
@@ -171,7 +187,7 @@ export function actuals(setup: ModelSetup, rows: Rows, data: DayData): Actuals {
 /** Sum of the stage NG rates of each NG group (the workbook's NG Total definition). */
 export function ngTotals(setup: ModelSetup, rows: Record<string, { rateBefore: number; rateAfter: number }>) {
   const g = (grp: string, k: "rateBefore" | "rateAfter") =>
-    sum(setup.processes.filter((p) => p.group === grp).map((p) => rows[p.id][k]));
+    sum(setup.processes.filter((p) => ngGroup(p) === grp).map((p) => rows[p.id][k]));
   return { processBefore: g("P", "rateBefore"), processAfter: g("P", "rateAfter"), functionBefore: g("F", "rateBefore"), functionAfter: g("F", "rateAfter") };
 }
 
@@ -311,7 +327,7 @@ const sortBySegment = (procs: Process[]) =>
     .map((x) => x.p);
 
 export function newProcess(segment: Segment, name = "New process"): Process {
-  return { id: newId(), name, localName: "", segment, group: segment === "E" ? "F" : "P", ngItems: [{ id: newId(), name: "NG" }], materials: [] };
+  return { id: newId(), name, localName: "", segment, type: defaultType(segment), ngItems: [{ id: newId(), name: "NG" }], materials: [] };
 }
 
 export function addProcess(setup: ModelSetup, segment: Segment): ModelSetup {
