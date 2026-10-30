@@ -47,6 +47,20 @@ public static class PortalShellEndpoints
         [AppMenus.Translate] = "/app/tools/translate",
         [AppMenus.ReviewReport] = "/app/tools/review-report",
         [AppMenus.ProductionInput] = "/app/production/input",
+        [AppMenus.BmesSetting] = "/app/setting",
+        [AppMenus.BmesRoutingTable] = "/app/bmes/routing-table",
+        [AppMenus.BmesReasonTable] = "/app/bmes/reason-table",
+        [AppMenus.BmesWorkerStatus] = "/app/bmes/worker-status",
+        [AppMenus.BmesMakeModelGroup] = "/app/bmes/make-model-group",
+        [AppMenus.QrSummary] = "/app/qr/summary",
+        [AppMenus.QrBakoData] = "/app/qr/bako-data",
+        [AppMenus.QrAirleakData] = "/app/qr/airleak-data",
+        [AppMenus.QrGaussData] = "/app/qr/gauss-data",
+        [AppMenus.NgRate] = "/app/ng-rate",
+        [AppMenus.BmesDailyReport] = "/app/bmes/daily-report",
+        [AppMenus.Report] = "/app/report/bmes",
+        [AppMenus.BmesTest5] = "/app/bmes/test5",
+        [AppMenus.BmesFCost] = "/app/bmes/f-cost",
     };
 
     public sealed record PortalUser(string Name, string Role);
@@ -105,6 +119,11 @@ public static class PortalShellEndpoints
         app.MapToolPages();
         app.MapTeamMemo();
         app.MapProductionInput();
+        app.MapBmesTables();
+        app.MapQr();
+        app.MapSetting();
+        app.MapBmesReports();
+        app.MapNgRate();
 
         // Every /app route is the React app; it asks /api/portal/me and sends signed-out users to /login.
         app.MapFallbackToFile("/app/{*path:nonfile}", "app/index.html", ShellFileOptions);

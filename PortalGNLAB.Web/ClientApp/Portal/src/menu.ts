@@ -26,6 +26,13 @@ export function appPath(pathname: string, base = "/app"): string {
   return pathname;
 }
 
+/** A page opened in its own window carries chrome=off and shows no rail (Services/ShellChrome.cs). */
+export const CHROME_HIDDEN_QUERY = "&chrome=off";
+
+export function isChromeHidden(search: string): boolean {
+  return new URLSearchParams(search).getAll("chrome").some((v) => v.toLowerCase() === "off");
+}
+
 /** True when the menu item points at the page currently shown. */
 export function isActive(item: MenuItem, pathname: string): boolean {
   return item.react && appPath(item.href) === appPath(pathname);

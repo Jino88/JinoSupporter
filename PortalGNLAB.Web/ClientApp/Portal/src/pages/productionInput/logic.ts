@@ -46,6 +46,8 @@ export function newId(): string {
 export const fmt = (v: number | null | undefined) => (v == null ? "—" : v.toLocaleString("en-US"));
 export const signed = (v: number) => (v > 0 ? "+" : "") + v.toLocaleString("en-US");
 export const pct = (v: number, digits = 2) => (v * 100).toFixed(digits) + "%";
+/** NG count over the process input; 0 when nothing went in. */
+export const ngRate = (ng: number, input: number) => (input ? ng / input : 0);
 /** Rate as a percent number with 2 decimals, for the Excel forms. */
 const pctNumber = (v: number) => Math.round(v * 10000) / 100;
 

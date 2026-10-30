@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { api, type MenuItem, type PortalUser } from "./api";
-import { appPath, buildRail } from "./menu";
+import { appPath, buildRail, isChromeHidden } from "./menu";
 import Rail from "./Rail";
 import Home from "./pages/Home";
 import PcDownloadPage from "./pages/PcDownload";
@@ -12,8 +12,25 @@ import Translate from "./pages/Translate";
 import ReviewReport from "./pages/ReviewReport";
 import GraphMaker from "./pages/GraphMaker";
 import ProductionInput from "./pages/ProductionInput";
+import QrSummary from "./pages/QrSummary";
+import QrBakoData from "./pages/QrBakoData";
+import QrAirleakData from "./pages/QrAirleakData";
+import QrGaussData from "./pages/QrGaussData";
+import QrGaussScatter from "./pages/QrGaussScatter";
 import TeamMemo from "./pages/TeamMemo";
 import TeamMemoBoard from "./pages/TeamMemoBoard";
+import BmesRoutingTable from "./pages/BmesRoutingTable";
+import BmesReasonTable from "./pages/BmesReasonTable";
+import BmesWorkerStatus from "./pages/BmesWorkerStatus";
+import BmesMakeModelGroup from "./pages/BmesMakeModelGroup";
+import Setting from "./pages/Setting";
+import BmesDailyReport from "./pages/BmesDailyReport";
+import BmesReport from "./pages/BmesReport";
+import BmesTest5 from "./pages/BmesTest5";
+import BmesFCost from "./pages/BmesFCost";
+import NgRate from "./pages/NgRate";
+import NgRateAll from "./pages/NgRateAll";
+import NgRateByGroup from "./pages/NgRateByGroup";
 
 /** React pages by their path inside /app. A page added here also needs its menu id in
  *  PortalShellEndpoints.ReactRoutes so the menus (React and Blazor) link to it. */
@@ -28,10 +45,27 @@ const pages: Record<string, { title: string; render: (menu: MenuItem[]) => React
   "/tools/review-report": { title: "Review Report", render: () => <ReviewReport /> },
   "/tools/graph-maker": { title: "Graph Maker", render: () => <GraphMaker /> },
   "/production/input": { title: "Production Input", render: () => <ProductionInput /> },
+  "/qr/summary": { title: "QR SUMMARY", render: () => <QrSummary /> },
+  "/qr/bako-data": { title: "QR BAKO DATA", render: () => <QrBakoData /> },
+  "/qr/airleak-data": { title: "QR AIRLEAK DATA", render: () => <QrAirleakData /> },
+  "/qr/gauss-data": { title: "QR GAUSS DATA", render: () => <QrGaussData /> },
+  "/qr/gauss-scatter": { title: "GAUSS SCATTER", render: () => <QrGaussScatter /> },
   "/memo": { title: "Work Memo", render: () => <TeamMemo /> },
   "/memo/board": { title: "Memo Board", render: () => <TeamMemoBoard /> },
   "/memo/plan": { title: "Plan", render: () => <TeamMemo /> },
   "/memo/meetings": { title: "Plan", render: () => <TeamMemo /> },
+  "/bmes/routing-table": { title: "Routing Table", render: () => <BmesRoutingTable /> },
+  "/bmes/reason-table": { title: "Reason Table", render: () => <BmesReasonTable /> },
+  "/bmes/worker-status": { title: "Worker Status", render: () => <BmesWorkerStatus /> },
+  "/bmes/make-model-group": { title: "Model Group", render: () => <BmesMakeModelGroup /> },
+  "/setting": { title: "Setting", render: () => <Setting /> },
+  "/bmes/daily-report": { title: "DAILY REPORT", render: () => <BmesDailyReport /> },
+  "/report/bmes": { title: "Report", render: () => <BmesReport /> },
+  "/bmes/test5": { title: "BOM & Drawing", render: () => <BmesTest5 /> },
+  "/bmes/f-cost": { title: "F-Cost", render: () => <BmesFCost /> },
+  "/ng-rate": { title: "NG Rate", render: () => <NgRate /> },
+  "/ng-rate-all": { title: "NG Rate", render: () => <NgRateAll /> },
+  "/ng-rate-by-group": { title: "NG Rate - By Group", render: () => <NgRateByGroup /> },
 };
 
 export default function App() {
@@ -65,7 +99,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <Rail entries={buildRail(menu)} pathname={pathname} user={user} />
+      {!isChromeHidden(window.location.search) && <Rail entries={buildRail(menu)} pathname={pathname} user={user} />}
       <main className="main">
         {page ? page.render(menu) : (
           <section className="card">

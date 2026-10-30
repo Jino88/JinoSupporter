@@ -1,4 +1,4 @@
-import { appPath, buildRail, groupActive, groupMenu, ICON_PATHS, isActive, railTile } from "./menu";
+import { appPath, buildRail, groupActive, groupMenu, ICON_PATHS, isActive, isChromeHidden, railTile } from "./menu";
 import type { MenuItem } from "./api";
 
 const item = (id: string, group: string, href: string, react = false): MenuItem => ({ id, label: id, group, href, react });
@@ -106,5 +106,14 @@ describe("buildRail", () => {
     const rail = buildRail([item("ng-rate", "BMES", "/app/ng-rate", true), item("translate", "T", "/app/tools/translate", true)]);
     expect(groupActive(rail[0], "/app/ng-rate")).toBe(true);
     expect(groupActive(rail[0], "/app/tools/translate")).toBe(false);
+  });
+});
+
+describe("isChromeHidden", () => {
+  it("is true only for chrome=off (any case)", () => {
+    expect(isChromeHidden("?qr=Q&chrome=off")).toBe(true);
+    expect(isChromeHidden("?chrome=OFF")).toBe(true);
+    expect(isChromeHidden("?chrome=on")).toBe(false);
+    expect(isChromeHidden("")).toBe(false);
   });
 });
