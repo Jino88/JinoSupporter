@@ -47,6 +47,7 @@ public static class PortalShellEndpoints
         [AppMenus.Translate] = "/app/tools/translate",
         [AppMenus.ReviewReport] = "/app/tools/review-report",
         [AppMenus.ProductionInput] = "/app/production/input",
+        [AppMenus.BmesSetting] = "/app/setting",
         [AppMenus.BmesRoutingTable] = "/app/bmes/routing-table",
         [AppMenus.BmesReasonTable] = "/app/bmes/reason-table",
         [AppMenus.BmesWorkerStatus] = "/app/bmes/worker-status",

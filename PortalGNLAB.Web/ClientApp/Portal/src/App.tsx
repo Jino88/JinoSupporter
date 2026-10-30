@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { api, type MenuItem, type PortalUser } from "./api";
-import { appPath, buildRail } from "./menu";
+import { appPath, buildRail, isChromeHidden } from "./menu";
 import Rail from "./Rail";
 import Home from "./pages/Home";
 import PcDownloadPage from "./pages/PcDownload";
@@ -85,7 +85,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <Rail entries={buildRail(menu)} pathname={pathname} user={user} />
+      {!isChromeHidden(window.location.search) && <Rail entries={buildRail(menu)} pathname={pathname} user={user} />}
       <main className="main">
         {page ? page.render(menu) : (
           <section className="card">

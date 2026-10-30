@@ -115,8 +115,8 @@ suite("QR SUMMARY", () => {
   });
 
   it("builds the station deep link with QR and test date", () => {
-    expect(stationDetailUrl("J69 X", cell("BAKO", "pass"))).toBe("/app/qr/bako-data?qr=J69%20X&date=2026-10-01");
-    expect(stationDetailUrl("Q", cell("GAUSS", "pass", null))).toBe("/app/qr/gauss-data?qr=Q");
+    expect(stationDetailUrl("J69 X", cell("BAKO", "pass"))).toBe("/app/qr/bako-data?qr=J69%20X&date=2026-10-01&chrome=off");
+    expect(stationDetailUrl("Q", cell("GAUSS", "pass", null))).toBe("/app/qr/gauss-data?qr=Q&chrome=off");
     expect(stationDetailUrl("", cell("GAUSS", "pass"))).toBe("");
     expect(stationDetailUrl("Q", cell("OTHER", "pass"))).toBe("");
   });

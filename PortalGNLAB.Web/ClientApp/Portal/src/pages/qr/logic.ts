@@ -1,4 +1,5 @@
 import type { GaussPoint, QrCell, QrData, QrDataRow, QrSummaryRow } from "../../qrApi";
+import { CHROME_HIDDEN_QUERY } from "../../menu";
 
 // Pure logic of the QR pages, ported from QrSummaryPage.razor, QrTestDataBrowser.razor and
 // QrGaussScatterPage.razor. Nothing here touches the DOM or the network.
@@ -165,11 +166,11 @@ export function stationDetailUrl(productId: string, cell: QrCell): string {
   if (route === "" || productId.trim() === "") return "";
   let url = `${route}?qr=${encodeURIComponent(productId)}`;
   if (cell.time) url += `&date=${cell.time.slice(0, 10)}`;
-  return url;
+  return url + CHROME_HIDDEN_QUERY;
 }
 
 export function scatterUrl(from: string, to: string, max: number): string {
-  return `/app/qr/gauss-scatter?from=${from}&to=${to}&max=${max}`;
+  return `/app/qr/gauss-scatter?from=${from}&to=${to}&max=${max}${CHROME_HIDDEN_QUERY}`;
 }
 
 export function addDays(date: string, days: number): string {
