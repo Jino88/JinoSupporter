@@ -20,6 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="PortalGNLAB.Db.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="..\AI_PROMPTS\**\*">
       <Link>AI_PROMPTS\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -131,18 +131,8 @@ public sealed class FCostService(NgRateSettingsService settings, AppActivityLogg
             scanOrdinal++;
             result.AttemptedDays++;
 
-            bool isRefreshWindow =
-                forceFromDate is DateTime refreshFrom &&
-                day >= refreshFrom.Date;
-            bool cachedPullIsUsable = !force && RawPullSucceeded(
-                dbPath,
-                day,
-                isRefreshWindow ? forceRefreshTtl : null);
-            bool mustRefetch =
-                force ||
-                (isRefreshWindow &&
-                 (forceRefreshTtl is null || !cachedPullIsUsable));
-            if (!mustRefetch && cachedPullIsUsable)
+            // forceFromDate/forceRefreshTtl are kept for callers; HistoryCachePolicy decides reuse.
+            if (ShouldSkipRaw(force, RawPullSucceeded(dbPath, day, DateTime.Now)))
             {
                 result.SkippedDays++;
                 continue;
@@ -241,10 +231,12 @@ public sealed class FCostService(NgRateSettingsService settings, AppActivityLogg
 
     // ── SQLite ───────────────────────────────────────────────────────────────────
 
-    private static bool RawPullSucceeded(
+    internal static bool ShouldSkipRaw(bool force, bool cachedUsable) => !force && cachedUsable;
+
+    internal static bool RawPullSucceeded(
         string dbPath,
         DateTime queryDate,
-        TimeSpan? maxAge = null)
+        DateTime now)
     {
         try
         {
@@ -261,16 +253,13 @@ public sealed class FCostService(NgRateSettingsService settings, AppActivityLogg
             if (!string.Equals(status, "OK", StringComparison.OrdinalIgnoreCase) || rowCount <= 0)
                 return false;
 
-            if (maxAge is not TimeSpan ttl)
-                return true;
-
             string fetchedText = r.IsDBNull(2) ? string.Empty : r.GetString(2);
             return DateTimeOffset.TryParse(
                        fetchedText,
                        CultureInfo.InvariantCulture,
                        DateTimeStyles.RoundtripKind,
                        out DateTimeOffset fetchedAt) &&
-                   DateTimeOffset.Now - fetchedAt <= ttl;
+                   HistoryCachePolicy.CanReuse(queryDate, fetchedAt.LocalDateTime, now);
         }
         catch
         {
