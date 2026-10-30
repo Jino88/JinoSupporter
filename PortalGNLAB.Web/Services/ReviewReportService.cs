@@ -15,11 +15,18 @@ namespace PortalGNLAB.Web.Services;
 /// and places each picture under the section it belongs to. The report is kept in its own SQLite
 /// file and exported as .xlsx, the format WorkHub registers and normalizes.
 /// </summary>
-public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewReportService> log)
+public sealed class ReviewReportService(CodexApiService codex, WebRepository repo, ILogger<ReviewReportService> log)
 {
-    public const string Model = CodexApiService.LunaModel;
+    public const string DefaultModel = CodexApiService.LunaModel;
     // Copying numbers into a fixed JSON shape needs little reasoning; low keeps the call short.
-    public const string Effort = "low";
+    public const string DefaultEffort = "low";
+    public const string ModelSetting = "OpenAI:ReviewReportModel";
+    public const string EffortSetting = "OpenAI:ReviewReportEffort";
+
+    /// <summary>The Codex API model that writes and revises reports, chosen in Setting.</summary>
+    public string Model => repo.GetSetting(ModelSetting) is { } m && !string.IsNullOrWhiteSpace(m) ? m.Trim() : DefaultModel;
+    public string Effort => repo.GetSetting(EffortSetting) is { } e && !string.IsNullOrWhiteSpace(e) ? e.Trim() : DefaultEffort;
+    public string ModelLabel => $"{Model} · {Effort}";
 
     private const int MaxImages = 12;
     private const long ImageBudgetBytes = 1_500_000;
@@ -254,7 +261,8 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
           for it, in English;
           unit: pcs, %, mm ... ("" when none); kind: "input" (input quantity), "ok", "ng" (the count of
           one defect type), "total_ng", "rate" or "value" (a measurement).
-        - Do not compute rates or ppm: the app shows each NG count with its NG rate in ppm.
+        - Do not compute OK, total NG or rates: the app works out OK, Total NG and each NG rate (%)
+          from the counts and the input. Only copy the ones the source itself shows.
         - A rate stacked under a count in the source (count on top, rate below in the same cell area)
           is its own metric with kind "rate" and rate_of = the id of that count metric.
         - values: an object from condition id to value, e.g. { "C1": "38", "C2": "0" }. Copy the value
@@ -262,7 +270,10 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
           "unit"), no "≈", no words. Skip conditions without a value.
 
         Report layout (the author's Excel report form): I. Purpose, II. Content (what was done, the
-        setup pictures), III. Result (one result table per comparison + defect pictures), IV. Conclusion.
+        setup pictures), III. Result (one result table per comparison + defect pictures), IV. Decision
+        (the conclusion).
+        - dept: the department written on the report (e.g. "ME"); maker: the person who made it. Leave
+          them "" when the content does not say.
         - content: short "- ..." lines saying what was done (e.g. "Test New JIG and check NG rate").
         - result_title: the heading above the result table when there is one review (e.g. "Result
           check New Jig"); with several reviews each table is headed by its condition "table" name.
@@ -290,6 +301,8 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
           "title": "",
           "product_model": "",
           "report_date": "",
+          "dept": "",
+          "maker": "",
           "purpose": "",
           "background": "",
           "content": [ "" ],
@@ -582,12 +595,17 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
 
     // ── Excel export (the file WorkHub registers) ───────────────────────────
 
-    // The author's Excel report form: grey "I. Purpose" bars, the result table in light blue with
-    // the rate in red under its count, the test row in yellow, a yellow label bar under pictures.
-    private const int LastCol = 13;
-    private const double ColPx = 82.0;      // a column of width 11
-    private const double PxPerRow = 20.0;
-    private const string FormFont = "Malgun Gothic";
+    // The author's Excel report form, cell for cell: a TITLE | title | Dept/Date/Marker header box,
+    // grey "I. Purpose." bars, Times New Roman 16, the result table from column C in light blue with
+    // each NG rate (%) in red under its count, test rows yellow from Type on, yellow label bars under
+    // pictures, "IV. Decision" lines starting "=>", and a medium border round the whole page.
+    private const int FirstCol = 2;          // B: section bars and text
+    private const int TableCol = 3;          // C: result tables
+    private const int FormLastCol = 13;      // M
+    private const double LineHeight = 36;    // points, one 16 pt text row
+    private const string FormFont = "Times New Roman";
+    private const double FormFontSize = 16;
+    private static readonly double[] FormWidths = [7.71, 19.14, 13, 13, 22.71, 19.14, 13, 20.71, 13, 19.14, 13, 13, 13];
     private static readonly XLColor SectionGrey = XLColor.FromHtml("#BFBFBF");
     private static readonly XLColor HeaderBlue = XLColor.FromHtml("#C5D9F1");
     private static readonly XLColor TestYellow = XLColor.FromHtml("#FFFF00");
@@ -596,88 +614,117 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
     public static byte[] ExportXlsx(ReviewReport report)
     {
         ReviewReportDoc doc = report.Doc ?? new ReviewReportDoc();
-        using var wb = new XLWorkbook();
-        var ws = wb.Worksheets.Add("Report");
-        ws.ShowGridLines = false;
-        ws.Column(1).Width = 2;
-        for (int c = 2; c <= LastCol; c++) ws.Column(c).Width = 11;
-        ws.Style.Font.FontName = FormFont;
-        ws.Style.Font.FontSize = 11;
-        ws.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        List<ReviewReportResultTable> tables = ResultTables(doc);
+        int widest = tables.Select(t => TableDesc(t).Count + t.Columns.Count)
+            .Concat(doc.ResultTables.Select(t => Math.Max(t.Columns.Count, t.Rows.Count == 0 ? 0 : t.Rows.Max(r => r.Count))))
+            .DefaultIfEmpty(0).Max();
+        // The box is B:M as in the form; a wider table widens it, keeping one free column on the right.
+        int last = Math.Max(FormLastCol, TableCol + widest);
 
-        int row = 1;
-        var titleRange = ws.Range(row, 1, row, LastCol).Merge();
-        titleRange.Value = FirstNonBlank(doc.Title, report.Title);
-        titleRange.Style.Font.Bold = true;
-        titleRange.Style.Font.FontSize = 16;
-        titleRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-        ws.Row(row).Height = 30;
-        row++;
-        string info = string.Join("    ", new[]
+        using var wb = new XLWorkbook();
+        var ws = wb.Worksheets.Add("Test");
+        ws.ShowGridLines = false;
+        ws.Style.Font.FontName = FormFont;
+        ws.Style.Font.FontSize = FormFontSize;
+        ws.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        for (int c = 1; c <= last + 1; c++)
+            ws.Column(c).Width = c <= FormWidths.Length ? FormWidths[c - 1] : 13;
+        ws.Row(1).Height = 37.5;
+
+        // Header box: TITLE | title | Dept / Date / Marker.
+        int row = 2;
+        var titleLabel = ws.Range(row, FirstCol, row + 2, FirstCol + 1).Merge();
+        titleLabel.Value = "TITLE";
+        titleLabel.Style.Font.Bold = true;
+        titleLabel.Style.Fill.BackgroundColor = SectionGrey;
+        titleLabel.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        var title = ws.Range(row, FirstCol + 2, row + 2, last - 2).Merge();
+        title.Value = FirstNonBlank(doc.Title, report.Title);
+        title.Style.Font.Bold = true;
+        title.Style.Font.FontSize = 24;
+        title.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        title.Style.Alignment.WrapText = true;
+        (string Key, string Value)[] info = [("Dept", doc.Dept), ("Date", doc.ReportDate), ("Marker", FirstNonBlank(doc.Maker, report.CreatedBy))];
+        for (int i = 0; i < info.Length; i++)
         {
-            Label("Model", doc.ProductModel), Label("Date", doc.ReportDate), Label("Author", report.CreatedBy),
-        }.Where(x => x.Length > 0));
-        if (info.Length > 0)
-        {
-            var infoRange = ws.Range(row, 1, row, LastCol).Merge();
-            infoRange.Value = info;
-            infoRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
-            infoRange.Style.Font.FontSize = 10;
-            row++;
+            var key = ws.Cell(row + i, last - 1);
+            key.Value = info[i].Key;
+            key.Style.Fill.BackgroundColor = SectionGrey;
+            var value = ws.Cell(row + i, last);
+            if (info[i].Key == "Date" && TryDate(info[i].Value, out DateTime date))
+            {
+                value.Value = date;
+                value.Style.NumberFormat.Format = "d-mmm";
+            }
+            else
+            {
+                value.Value = (info[i].Value ?? "").Trim();
+            }
+            var pair = ws.Range(row + i, last - 1, row + i, last);
+            pair.Style.Font.Bold = true;
+            pair.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            ws.Row(row + i).Height = 40.5;
         }
-        row++;
+        var header = ws.Range(row, FirstCol, row + 2, last);
+        header.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+        header.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+        row += 3;
 
         var picsBySection = doc.Images.GroupBy(p => p.Section).ToDictionary(g => g.Key, g => g.ToList());
         var imageByNo = report.Images.ToDictionary(i => i.No);
 
-        row = Section(ws, row, "I. Purpose.");
-        row = Paragraph(ws, row, Dash(doc.Purpose));
-        row = Paragraph(ws, row, Dash(doc.Background));
-        row = Pictures(ws, row + 1, picsBySection.GetValueOrDefault("purpose"), imageByNo);
-        row++;
+        row = Section(ws, row, last, "I. Purpose.");
+        row = Line(ws, row, last, Dash(doc.Purpose));
+        row = Line(ws, row, last, Dash(doc.Background));
+        row = Pictures(ws, row, last, picsBySection.GetValueOrDefault("purpose"), imageByNo);
 
-        row = Section(ws, row, "II. Content.");
+        row = Section(ws, row, last, "II. Content.");
         foreach (string line in doc.Content.Where(l => !string.IsNullOrWhiteSpace(l)))
-            row = Paragraph(ws, row, Dash(line));
+            row = Line(ws, row, last, Dash(line));
         foreach (ReviewReportFactor f in doc.ChangedFactors.Where(f => !string.IsNullOrWhiteSpace(f.Name)))
-            row = Paragraph(ws, row, $"- {f.Name}: {f.Baseline} → {f.Changed}");
+            row = Line(ws, row, last, $"- {f.Name}: {f.Baseline} → {f.Changed}");
         foreach (ReviewReportCondition c in doc.Conditions.Where(c => !string.IsNullOrWhiteSpace(c.Details)))
-            row = Paragraph(ws, row, $"- {c.Label}: {c.Details}");
-        row = Pictures(ws, row + 1, picsBySection.GetValueOrDefault("conditions"), imageByNo);
-        row++;
+            row = Line(ws, row, last, $"- {c.Label}: {c.Details}");
+        row = Pictures(ws, row, last, picsBySection.GetValueOrDefault("conditions"), imageByNo);
 
-        row = Section(ws, row, "III. Result");
+        row = Section(ws, row, last, "III. Result");
         int no = 1;
-        foreach (ReviewReportResultTable table in ResultTables(doc))
+        foreach (ReviewReportResultTable table in tables)
         {
-            row = SubTitle(ws, row + 1, $"{no++}. {table.Title}");
-            row = ResultSheet(ws, row + 1, table) + 1;
+            row = Line(ws, row, last, $"{no++}. {table.Title}", bold: true);
+            row = ResultSheet(ws, row, table) + 1;
         }
         foreach (ReviewReportTable t in doc.ResultTables)
         {
-            row = SubTitle(ws, row + 1, $"{no++}. {FirstNonBlank(t.Caption, "Result")}");
-            row = Table(ws, row, null, t.Columns, t.Rows) + 1;
+            row = Line(ws, row, last, $"{no++}. {FirstNonBlank(t.Caption, "Result")}", bold: true);
+            row = Table(ws, row, t.Columns, t.Rows) + 1;
         }
-        row = Pictures(ws, row, picsBySection.GetValueOrDefault("results"), imageByNo);
+        row = Pictures(ws, row, last, picsBySection.GetValueOrDefault("results"), imageByNo);
         foreach (string f in doc.Findings.Where(f => !string.IsNullOrWhiteSpace(f)))
-            row = Paragraph(ws, row, Dash(f));
-        row++;
+            row = Line(ws, row, last, Dash(f));
 
-        row = Section(ws, row, "IV. Conclusion");
-        row = Paragraph(ws, row, Dash(doc.Conclusion));
-        foreach (string l in doc.Limitations.Where(l => !string.IsNullOrWhiteSpace(l)))
-            row = Paragraph(ws, row, Dash(l));
+        row = Section(ws, row + 1, last, "IV. Decision");
+        if (!string.IsNullOrWhiteSpace(doc.Conclusion)) row = Line(ws, row, last, Decision(doc.Conclusion), bold: true);
         foreach (string n in doc.NextActions.Where(n => !string.IsNullOrWhiteSpace(n)))
-            row = Paragraph(ws, row, "→ " + n.Trim());
-        row = Pictures(ws, row + 1, picsBySection.GetValueOrDefault("conclusion"), imageByNo);
+            row = Line(ws, row, last, Decision(n), bold: true);
+        foreach (string l in doc.Limitations.Where(l => !string.IsNullOrWhiteSpace(l)))
+            row = Line(ws, row, last, Dash(l));
+        row = Pictures(ws, row, last, picsBySection.GetValueOrDefault("conclusion"), imageByNo);
 
         if (picsBySection.TryGetValue("appendix", out var appendix) && appendix.Count > 0)
         {
-            row = Section(ws, row + 1, "Appendix");
-            row = Pictures(ws, row + 1, appendix, imageByNo);
+            row = Section(ws, row + 1, last, "Appendix");
+            row = Pictures(ws, row, last, appendix, imageByNo);
         }
-        ws.PageSetup.PageOrientation = XLPageOrientation.Landscape;
+        ws.Row(row).Height = LineHeight;
+        int bottom = row;
+        ws.Range(2, FirstCol, bottom, last).Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
+
+        ws.PageSetup.PageOrientation = XLPageOrientation.Portrait;
+        ws.PageSetup.PaperSize = XLPaperSize.A4Paper;
         ws.PageSetup.FitToPages(1, 0);
+        ws.PageSetup.CenterHorizontally = true;
+        ws.PageSetup.PrintAreas.Add(1, 1, bottom + 1, last + 1);
 
         // Second sheet: every result value as one row, so each number stays next to its metric and condition.
         var data = wb.Worksheets.Add("Data");
@@ -725,22 +772,34 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
         return ms.ToArray();
     }
 
-    private static int Section(IXLWorksheet ws, int row, string title)
+    /// <summary>A grey section bar across the box, as "I. Purpose." in the form.</summary>
+    private static int Section(IXLWorksheet ws, int row, int last, string title)
     {
-        var range = ws.Range(row, 1, row, LastCol).Merge();
+        var range = ws.Range(row, FirstCol, row, last).Merge();
         range.Value = title;
         range.Style.Font.Bold = true;
-        range.Style.Font.FontSize = 12;
         range.Style.Fill.BackgroundColor = SectionGrey;
-        range.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-        ws.Row(row).Height = 28;
+        range.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+        range.Style.Border.TopBorder = XLBorderStyleValues.Thin;
+        range.Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+        ws.Row(row).Height = 40.5;
         return row + 1;
     }
 
-    private static int SubTitle(IXLWorksheet ws, int row, string text)
+    /// <summary>One text line across the box; a long line wraps and its row grows.</summary>
+    private static int Line(IXLWorksheet ws, int row, int last, string? text, bool bold = false)
     {
-        ws.Cell(row, 1).Value = text;
-        ws.Cell(row, 1).Style.Font.Bold = true;
+        if (string.IsNullOrWhiteSpace(text)) return row;
+        var range = ws.Range(row, FirstCol, row, last).Merge();
+        range.Value = text.TrimEnd();
+        range.Style.Font.Bold = bold;
+        range.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+        range.Style.Alignment.WrapText = true;
+        // About 150 characters of 16 pt Times New Roman fit across B:M.
+        double chars = 150.0 * Enumerable.Range(FirstCol, last - FirstCol + 1).Sum(c => ws.Column(c).Width)
+                       / FormWidths.Skip(FirstCol - 1).Sum();
+        int lines = text.Trim().Split('\n').Sum(l => Math.Max(1, (int)Math.Ceiling(l.Length / chars)));
+        ws.Row(row).Height = Math.Min(400, Math.Max(40.5, lines * 21 + 15));
         return row + 1;
     }
 
@@ -754,64 +813,56 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
         return t.Length == 0 || t.StartsWith('-') || t.StartsWith('•') ? t : "- " + t;
     }
 
-    private static int KeyValue(IXLWorksheet ws, int row, string key, string? value)
+    /// <summary>Decision lines in the form start with "=> ".</summary>
+    private static string Decision(string? text)
     {
-        ws.Cell(row, 1).Value = key;
-        ws.Cell(row, 1).Style.Font.Bold = true;
-        if (!string.IsNullOrEmpty(value))
-        {
-            var range = ws.Range(row, 2, row, LastCol).Merge();
-            range.Value = value;
-            range.Style.Alignment.WrapText = true;
-        }
-        return row + 1;
+        string t = (text ?? "").Trim();
+        if (t.StartsWith("=>")) return t;
+        t = t.TrimStart('-', '•', '→', ' ');
+        return t.Length == 0 ? "" : "=> " + t;
     }
 
-    private static int Paragraph(IXLWorksheet ws, int row, string? text)
-    {
-        if (string.IsNullOrWhiteSpace(text)) return row;
-        var range = ws.Range(row, 1, row, LastCol).Merge();
-        range.Value = text.Trim();
-        range.Style.Alignment.WrapText = true;
-        int lines = text.Trim().Split('\n').Sum(l => Math.Max(1, (int)Math.Ceiling(l.Length / 110.0)));
-        ws.Row(row).Height = Math.Min(400, 15 * lines);
-        return row + 1;
-    }
+    private static readonly string[] DateFormats =
+        ["yyyy-MM-dd", "yyyy.MM.dd", "yyyy/MM/dd", "yyyy-M-d", "yyyy.M.d", "yyyy/M/d", "d-MMM-yyyy", "d MMM yyyy", "MMM d, yyyy", "yyyyMMdd"];
 
-    private static int Table(IXLWorksheet ws, int row, string? caption, List<string> columns, List<List<string>> rows)
+    /// <summary>A full date written in a common form; a bare "28-Aug" or "2026" is not a date.</summary>
+    public static bool TryDate(string? text, out DateTime date) =>
+        DateTime.TryParseExact((text ?? "").Trim(), DateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
+
+    /// <summary>The form shows dates as "28-Aug"; anything else stays as written.</summary>
+    public static string ShortDate(string? text) =>
+        TryDate(text, out DateTime d) ? d.ToString("d-MMM", CultureInfo.InvariantCulture) : (text ?? "").Trim();
+
+    /// <summary>An old free-form result table, drawn from column C like the result tables.</summary>
+    private static int Table(IXLWorksheet ws, int row, List<string> columns, List<List<string>> rows)
     {
         if (columns.Count == 0 && rows.Count == 0) return row;
-        if (!string.IsNullOrWhiteSpace(caption))
-        {
-            ws.Cell(row, 1).Value = caption;
-            ws.Cell(row, 1).Style.Font.Bold = true;
-            ws.Cell(row, 1).Style.Font.Italic = true;
-            row++;
-        }
         int width = Math.Max(columns.Count, rows.Count == 0 ? 0 : rows.Max(r => r.Count));
-        width = Math.Min(width, LastCol);
         int top = row;
         for (int c = 0; c < width; c++)
         {
-            var cell = ws.Cell(row, c + 1);
+            var cell = ws.Cell(row, TableCol + c);
             cell.Value = c < columns.Count ? columns[c] : "";
             cell.Style.Font.Bold = true;
-            cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#F1F5F9");
+            cell.Style.Fill.BackgroundColor = HeaderBlue;
         }
+        ws.Row(row).Height = LineHeight;
         row++;
         foreach (List<string> cells in rows)
         {
             for (int c = 0; c < width; c++)
             {
-                var cell = ws.Cell(row, c + 1);
+                var cell = ws.Cell(row, TableCol + c);
                 SetCell(cell, c < cells.Count ? cells[c] : "");
                 cell.Style.Alignment.WrapText = true;
             }
+            ws.Row(row).Height = LineHeight;
             row++;
         }
         if (width > 0)
         {
-            var box = ws.Range(top, 1, row - 1, width);
+            var box = ws.Range(top, TableCol, row - 1, TableCol + width - 1);
+            box.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             box.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
             box.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
         }
@@ -846,47 +897,48 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
         cell.Value = v;
     }
 
-    private static void Box(IXLRange range, string? fill = null)
+    private static void SetRate(IXLCell cell, double? fraction)
     {
-        range.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-        range.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
-        if (fill is not null) range.Style.Fill.BackgroundColor = XLColor.FromHtml(fill);
+        if (fraction is not double f) return;
+        cell.Value = f;
+        cell.Style.NumberFormat.Format = "0.0%";
+    }
+
+    /// <summary>The columns left of the metrics: No | Date | (Model) | Type.</summary>
+    private static List<(string Head, Func<ReviewReportCondition, int, string> Get, bool Merge)> TableDesc(ReviewReportResultTable t)
+    {
+        var desc = new List<(string Head, Func<ReviewReportCondition, int, string> Get, bool Merge)>
+        {
+            ("No", (_, i) => (i + 1).ToString(CultureInfo.InvariantCulture), false),
+        };
+        if (t.Arms.Any(a => !string.IsNullOrWhiteSpace(a.Date))) desc.Add(("Date", (a, _) => a.Date, true));
+        if (t.Arms.Any(a => !string.IsNullOrWhiteSpace(a.Model))) desc.Add(("Model", (a, _) => a.Model, true));
+        desc.Add(("Type", (a, _) => a.Label, false));
+        return desc;
     }
 
     /// <summary>
-    /// One result table in the form: No | Date | (Model) | Type | metrics. An NG count has its NG rate
-    /// in ppm (red) on the row under it, another count its paired rate; other cells span both rows.
+    /// One result table in the form, from column C: No | Date | (Model) | Type | Input | OK | NG items
+    /// | Total NG | Total NG rate. Each condition takes two rows: an NG count with its rate (%) in red
+    /// under it, every other cell spanning both rows.
     /// </summary>
     private static int ResultSheet(IXLWorksheet ws, int row, ReviewReportResultTable t)
     {
         var arms = t.Arms;
         var cols = t.Columns;
+        var desc = TableDesc(t);
         int per = t.TwoRows ? 2 : 1;
-        const int left = 2;
+        const int left = TableCol;
+        int right = left + desc.Count + cols.Count - 1;
 
-        var desc = new List<(string Head, Func<ReviewReportCondition, int, string> Get, bool Merge)>
-        {
-            ("No", (_, i) => (i + 1).ToString(CultureInfo.InvariantCulture), false),
-        };
-        if (arms.Any(a => !string.IsNullOrWhiteSpace(a.Date))) desc.Add(("Date", (a, _) => a.Date, true));
-        if (arms.Any(a => !string.IsNullOrWhiteSpace(a.Model))) desc.Add(("Model", (a, _) => a.Model, true));
-        desc.Add(("Type", (a, _) => a.Label, false));
-
-        int width = desc.Count + cols.Count;
-        int right = left + width - 1;
         int headRow = row;
         for (int c = 0; c < desc.Count; c++) ws.Cell(row, left + c).Value = desc[c].Head;
-        for (int c = 0; c < cols.Count; c++)
-            ws.Cell(row, left + desc.Count + c).Value = cols[c].HasBelow ? $"{cols[c].Header}\n/ {cols[c].BelowHeader}" : cols[c].Header;
+        for (int c = 0; c < cols.Count; c++) ws.Cell(row, left + desc.Count + c).Value = cols[c].Header;
         var head = ws.Range(row, left, row, right);
         head.Style.Font.Bold = true;
         head.Style.Alignment.WrapText = true;
         head.Style.Fill.BackgroundColor = HeaderBlue;
-        // Tall enough for the longest wrapped header (about 10 characters per line at width 11).
-        int lines = Enumerable.Range(left, width)
-            .Select(c => ws.Cell(row, c).GetString().Split('\n').Sum(l => Math.Max(1, (int)Math.Ceiling(l.Length / 10.0))))
-            .DefaultIfEmpty(1).Max();
-        ws.Row(row).Height = Math.Max(30, lines * 15 + 6);
+        ws.Row(row).Height = 78;   // the form's two-row header
         row++;
 
         int top = row;
@@ -902,22 +954,24 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
             {
                 int col = left + desc.Count + c;
                 ReviewReportColumn column = cols[c];
-                SetCell(ws.Cell(r, col), column.Main.ValueOf(id));
-                if (column.Main.Kind == "rate") ws.Cell(r, col).Style.Font.FontColor = RateRed;
+                IXLCell cell = ws.Cell(r, col);
+                if (column.RateColumn)
+                {
+                    SetRate(cell, column.Fraction(id));
+                    cell.Style.Font.FontColor = RateRed;
+                }
+                else
+                {
+                    SetCell(cell, column.Main.ValueOf(id));
+                    if (column.Main.Kind == "rate") cell.Style.Font.FontColor = RateRed;
+                    else if (!cell.Value.IsText) cell.Style.NumberFormat.Format = "0";
+                }
                 if (per == 2 && column.HasBelow)
                 {
                     var below = ws.Cell(r + 1, col);
-                    if (column.Ng && column.Ppm(id) is double ppm)
-                    {
-                        below.Value = ppm;
-                        below.Style.NumberFormat.Format = "#,##0";
-                    }
-                    else
-                    {
-                        SetCell(below, column.Below(id));
-                    }
+                    if (column.Ng) SetRate(below, column.Fraction(id));
+                    else SetCell(below, column.Below(id));
                     below.Style.Font.FontColor = RateRed;
-                    ws.Cell(r, col).Style.Border.BottomBorder = XLBorderStyleValues.Thin;
                 }
                 else if (per == 2)
                 {
@@ -934,19 +988,28 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
                 if (spans[i] == 0) continue;
                 var range = ws.Range(top + i * per, left + d, top + (i + spans[i]) * per - 1, left + d);
                 if (range.RowCount() > 1) range.Merge();
-                range.FirstCell().Value = values[i];
+                IXLCell first = range.FirstCell();
+                if (desc[d].Head == "Date" && TryDate(values[i], out DateTime date))
+                {
+                    first.Value = date;
+                    first.Style.NumberFormat.Format = "d-mmm";
+                }
+                else if (desc[d].Head == "No")
+                {
+                    first.Value = i + 1;
+                }
+                else
+                {
+                    first.Value = values[i];
+                }
                 range.Style.Alignment.WrapText = true;
             }
         }
         var table = ws.Range(headRow, left, bottom, right);
         table.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         table.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-        for (int c = left; c <= right; c++)
-            ws.Range(headRow, c, bottom, c).Style.Border.LeftBorder = XLBorderStyleValues.Thin;
-        ws.Range(headRow, left, headRow, right).Style.Border.BottomBorder = XLBorderStyleValues.Thin;
-        for (int i = 1; i <= arms.Count; i++)
-            ws.Range(top + i * per - 1, left, top + i * per - 1, right).Style.Border.BottomBorder = XLBorderStyleValues.Thin;
-        for (int r = top; r <= bottom; r++) ws.Row(r).Height = 26;
+        table.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+        for (int r = top; r <= bottom; r++) ws.Row(r).Height = LineHeight;
         return bottom + 1;
     }
 
@@ -980,14 +1043,32 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
             }
         }
         data.Columns(1, head.Length).AdjustToContents(5, 60);
+        foreach (var column in data.Columns(1, head.Length).Where(c => c.Width < 10)) column.Width = 10;
+    }
+
+    private static double ColumnPx(IXLWorksheet ws, int col) => ws.Column(col).Width * 7 + 5;
+
+    /// <summary>Width / height of a picture; 4:3 when it cannot be read.</summary>
+    private static double AspectOf(byte[] data)
+    {
+        try
+        {
+            using var probe = new XLWorkbook();
+            var pic = probe.AddWorksheet().AddPicture(new MemoryStream(data));
+            return pic.OriginalWidth / (double)Math.Max(1, pic.OriginalHeight);
+        }
+        catch
+        {
+            return 4.0 / 3;
+        }
     }
 
     /// <summary>
-    /// Places the pictures of one section left to right from column B, each snapped to whole columns
+    /// Places the pictures of one section side by side from column C, each snapped to whole columns
     /// with a yellow label bar under it; a group of three or more gets one bar with the group name.
     /// Wraps to a new line when the row is full.
     /// </summary>
-    private static int Pictures(IXLWorksheet ws, int row, List<ReviewReportImagePlacement>? placements,
+    private static int Pictures(IXLWorksheet ws, int row, int last, List<ReviewReportImagePlacement>? placements,
         Dictionary<int, ReviewReportImage> images)
     {
         if (placements is null) return row;
@@ -995,59 +1076,86 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
             .Where(g => g.Count > 0).ToList();
         if (groups.Count == 0) return row;
 
-        int height = groups.Sum(g => g.Count) == 1 ? 300 : 220;
-        int picRows = (int)Math.Ceiling(height / PxPerRow);
-        int lineTop = row, col = 2;
+        const double rowPx = LineHeight * 96 / 72;
+        int firstCol = TableCol, lastCol = last - 1;
+        int height = groups.Sum(g => g.Count) == 1 ? 320 : 260;
+        // Like the form, a section's pictures sit on one line when they can: shrink them (not below
+        // 180 px high) until they fit between C and the last column.
+        double linePx = Enumerable.Range(firstCol, lastCol - firstCol + 1).Sum(c => ColumnPx(ws, c));
+        double widthAtHeight = groups.SelectMany(g => g).Sum(p => AspectOf(images[p.No].Data) * height);
+        // Snapping each picture to whole columns loses up to a column per picture, so aim at 70%.
+        if (widthAtHeight > linePx * 0.7)
+            height = Math.Max(180, (int)(height * linePx * 0.7 / widthAtHeight));
+        int picRows = (int)Math.Ceiling(height / rowPx);
+        int lineTop = row + 1, col = firstCol;
         bool lineUsed = false;
+
+        // How many whole columns from `start` a picture `width` px wide needs.
+        int SpanFrom(int start, double width)
+        {
+            int c = start;
+            double px = 0;
+            while (c <= lastCol && px + 1 < width) px += ColumnPx(ws, c++);
+            return Math.Max(1, c - start);
+        }
+
         foreach (List<ReviewReportImagePlacement> group in groups)
         {
-            var spans = new List<(ReviewReportImagePlacement P, int Span, ClosedXML.Excel.Drawings.IXLPicture? Pic)>();
+            var pics = new List<(ReviewReportImagePlacement P, double Width, ClosedXML.Excel.Drawings.IXLPicture? Pic)>();
             foreach (ReviewReportImagePlacement p in group)
             {
                 try
                 {
                     var pic = ws.AddPicture(new MemoryStream(images[p.No].Data));
-                    double w = pic.OriginalWidth * ((double)height / Math.Max(1, pic.OriginalHeight));
-                    spans.Add((p, Math.Clamp((int)Math.Round(w / ColPx), 2, LastCol - 1), pic));
+                    pics.Add((p, pic.OriginalWidth * ((double)height / Math.Max(1, pic.OriginalHeight)), pic));
                 }
                 catch
                 {
-                    spans.Add((p, 3, null));
+                    pics.Add((p, 3 * ColumnPx(ws, firstCol), null));
                 }
             }
-            int groupSpan = spans.Sum(x => x.Span);
-            if (lineUsed && col + groupSpan - 1 > LastCol)
+            double groupPx = pics.Sum(x => x.Width);
+            double rowLeftPx = Enumerable.Range(col, Math.Max(0, lastCol - col + 1)).Sum(c => ColumnPx(ws, c));
+            if (lineUsed && groupPx > rowLeftPx)
             {
                 lineTop += picRows + 2;
-                col = 2;
+                col = firstCol;
             }
             int groupStart = col;
-            foreach (var (p, span, pic) in spans)
+            // One bar under a whole group, as "NG VP cutting offset" under its two photos in the form,
+            // when it has three or more pictures or its pictures carry no caption of their own.
+            bool oneBar = group.Count >= 3 || (group.Count > 1 && group.All(p => string.IsNullOrWhiteSpace(p.Caption)));
+            foreach (var (p, width, pic) in pics)
             {
-                if (col + span - 1 > LastCol && col > 2)
+                int span = SpanFrom(col, width);
+                if (col + span - 1 > lastCol && col > firstCol)
                 {
                     lineTop += picRows + 2;
-                    col = groupStart = 2;
+                    col = groupStart = firstCol;
+                    span = SpanFrom(col, width);
                 }
-                double w = span * ColPx - 6;
+                double spanPx = Enumerable.Range(col, span).Sum(c => ColumnPx(ws, c)) - 6;
                 if (pic is not null)
                 {
+                    double w = Math.Min(width, spanPx);
                     double h = Math.Min(height, pic.OriginalHeight * (w / Math.Max(1, pic.OriginalWidth)));
-                    pic.MoveTo(ws.Cell(lineTop, col), 3, (int)((height - h) / 2)).WithSize((int)w, (int)h);
+                    pic.MoveTo(ws.Cell(lineTop, col), 3 + (int)((spanPx - w) / 2), (int)((height - h) / 2)).WithSize((int)w, (int)h);
                 }
                 else
                 {
                     ws.Cell(lineTop, col).Value = $"(IMG {p.No} could not be embedded)";
                 }
-                if (group.Count < 3)
+                if (!oneBar)
                     LabelBar(ws.Range(lineTop + picRows, col, lineTop + picRows, col + span - 1), FirstNonBlank(p.Caption, p.Group, $"IMG {p.No}"));
                 col += span;
             }
-            if (group.Count >= 3)
+            if (oneBar)
                 LabelBar(ws.Range(lineTop + picRows, groupStart, lineTop + picRows, col - 1), FirstNonBlank(group[0].Group, group[0].Caption));
             lineUsed = true;
         }
-        return lineTop + picRows + 2;
+        int end = lineTop + picRows + 1;
+        for (int r = row; r <= end; r++) ws.Row(r).Height = LineHeight;
+        return end + 1;
     }
 
     private static void LabelBar(IXLRange range, string text)
@@ -1055,7 +1163,8 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
         range.Merge();
         range.Value = text;
         range.Style.Font.Bold = true;
-        range.Style.Font.FontName = FormFont;
+        range.Style.Font.FontName = "Calibri";
+        range.Style.Font.FontSize = 14;
         range.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         range.Style.Fill.BackgroundColor = TestYellow;
         range.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
@@ -1100,7 +1209,8 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
     /// Splits the results into the tables a person reads. Each review (condition "table") gets its own
     /// table; inside a review, conditions measured on the same items share one table (one row per
     /// condition), and conditions measured on different items get a table of their own. Every NG
-    /// count carries its NG rate in ppm underneath; with two or more NG items a Total NG column is added.
+    /// count carries its NG rate (%) underneath; with two or more NG items a Total NG column is added,
+    /// Total NG is followed by a Total NG rate column, and OK (input - NG) is added when the source has none.
     /// </summary>
     public static List<ReviewReportResultTable> ResultTables(ReviewReportDoc doc)
     {
@@ -1153,12 +1263,13 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
                 bool Has(ReviewReportMetric m) => partArms.Any(a => m.ValueOf(a.Id.Trim()).Trim().Length > 0);
                 ReviewReportMetric? InputFor(ReviewReportMetric m) => inputOf[m] is { } i && Has(i) ? i : null;
                 var cols = shown.Where(Has)
-                    .Select(m => new ReviewReportColumn(m, rateOf.GetValueOrDefault(m), InputFor(m), IsNg(m) || IsTotal(m)))
+                    .Select(m => new ReviewReportColumn(m, rateOf.GetValueOrDefault(m), InputFor(m), IsNg(m) || IsTotal(m)) { Total = IsTotal(m) })
                     .ToList();
 
                 var ngCols = cols.Where(c => IsNg(c.Main)).ToList();
+                ReviewReportColumn? totalCol = cols.FirstOrDefault(c => c.Total);
                 // Total NG only when every NG item counts against the same input.
-                if (ngCols.Count >= 2 && !cols.Any(c => IsTotal(c.Main)) && ngCols.Select(c => c.Input).Distinct().Count() == 1)
+                if (ngCols.Count >= 2 && totalCol is null && ngCols.Select(c => c.Input).Distinct().Count() == 1)
                 {
                     var total = new ReviewReportMetric { Id = "total_ng", Name = "Total NG", Unit = ngCols[0].Main.Unit, Kind = "total_ng" };
                     foreach (ReviewReportCondition a in partArms)
@@ -1170,7 +1281,28 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
                     // A source "Total NG rate" column now sits under the added Total NG.
                     ReviewReportColumn? totalRate = cols.FirstOrDefault(c => IsRate(c.Main) && IsTotalName(c.Main.Name));
                     if (totalRate is not null) cols.Remove(totalRate);
-                    cols.Add(new ReviewReportColumn(total, totalRate?.Main, ngCols[0].Input, true));
+                    totalCol = new ReviewReportColumn(total, totalRate?.Main, ngCols[0].Input, true) { Total = true, Computed = true };
+                    cols.Add(totalCol);
+                }
+                // The form follows Total NG with its own "Total NG rate" column.
+                if (totalCol is not null && (totalCol.Input is not null || totalCol.Rate is not null))
+                    cols.Insert(cols.IndexOf(totalCol) + 1, totalCol with { RateColumn = true, Computed = true, HeaderText = "Total NG rate" });
+                // ... and puts OK (input - NG) right after Input when the source has none.
+                ReviewReportColumn? inputCol = cols.FirstOrDefault(c => IsInput(c.Main));
+                List<ReviewReportColumn> lost = totalCol is not null ? [totalCol] : ngCols;
+                if (inputCol is not null && !cols.Any(c => IsOk(c.Main)) && lost.Count > 0
+                    && lost.All(c => ReferenceEquals(c.Input, inputCol.Main)))
+                {
+                    var ok = new ReviewReportMetric { Id = "ok", Name = "OK", Unit = inputCol.Main.Unit, Kind = "ok" };
+                    foreach (ReviewReportCondition a in partArms)
+                    {
+                        double? input = ParseNumber(inputCol.Main.ValueOf(a.Id.Trim()));
+                        var counts = lost.Select(c => ParseNumber(c.Main.ValueOf(a.Id.Trim()))).ToList();
+                        if (input is not null && counts.All(n => n is not null))
+                            ok.Values.Add(new ReviewReportValue { ArmId = a.Id.Trim(), Value = (input.Value - counts.Sum(n => n!.Value)).ToString("0.##", CultureInfo.InvariantCulture) });
+                    }
+                    if (ok.Values.Count > 0)
+                        cols.Insert(cols.IndexOf(inputCol) + 1, new ReviewReportColumn(ok, null, null, false) { Computed = true });
                 }
                 string title = FirstNonBlank(review.Key, doc.ResultTitle, "Result");
                 tables.Add(new ReviewReportResultTable(title, partArms, cols));
@@ -1254,7 +1386,7 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
                 cells.Add(a.Label);
                 foreach (var c in table.Columns)
                 {
-                    string main = c.Main.ValueOf(a.Id.Trim());
+                    string main = c.MainText(a.Id.Trim());
                     string below = c.Below(a.Id.Trim());
                     cells.Add(below.Length > 0 ? $"{main} / {below}" : main);
                 }
@@ -1269,9 +1401,10 @@ public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewRep
         AppendPics(sb, d, "results");
         foreach (string f in d.Findings.Where(f => !string.IsNullOrWhiteSpace(f))) sb.AppendLine(Dash(f));
 
-        sb.AppendLine().AppendLine("## IV. Conclusion").AppendLine(Dash(d.Conclusion));
+        sb.AppendLine().AppendLine("## IV. Decision");
+        if (!string.IsNullOrWhiteSpace(d.Conclusion)) sb.AppendLine(Decision(d.Conclusion));
+        foreach (string n in d.NextActions.Where(n => !string.IsNullOrWhiteSpace(n))) sb.AppendLine(Decision(n));
         foreach (string l in d.Limitations.Where(l => !string.IsNullOrWhiteSpace(l))) sb.AppendLine(Dash(l));
-        foreach (string n in d.NextActions.Where(n => !string.IsNullOrWhiteSpace(n))) sb.AppendLine($"→ {n.Trim()}");
         AppendPics(sb, d, "conclusion");
         AppendPics(sb, d, "appendix");
         return sb.ToString();
@@ -1352,6 +1485,10 @@ public sealed class ReviewReportDoc
     public string Title { get; set; } = "";
     public string ProductModel { get; set; } = "";
     public string ReportDate { get; set; } = "";
+    /// <summary>"Dept" in the form's header box (e.g. "ME").</summary>
+    public string Dept { get; set; } = "";
+    /// <summary>"Marker" (maker) in the form's header box; blank shows the report's author.</summary>
+    public string Maker { get; set; } = "";
     public string Purpose { get; set; } = "";
     public string Background { get; set; } = "";
     /// <summary>"II. Content" lines: what was done.</summary>
@@ -1420,31 +1557,56 @@ public sealed class ReviewReportValue
 }
 
 /// <summary>
-/// A result column for people. An NG column shows the count with its NG rate in ppm (no decimals)
-/// underneath, from count / input; without an input it converts the source rate. Another count
-/// with a rate shows that rate underneath as written.
+/// A result column as in the author's form. An NG count shows its NG rate (count / input, "5.0%")
+/// in red underneath; without an input it shows the source rate. Another count with a rate shows that
+/// rate underneath as written. Total NG has no rate under it: a "Total NG rate" column follows it.
 /// </summary>
 public sealed record ReviewReportColumn(ReviewReportMetric Main, ReviewReportMetric? Rate, ReviewReportMetric? Input, bool Ng)
 {
-    public string Header => string.IsNullOrWhiteSpace(Main.Unit) ? Main.Name : $"{Main.Name} ({Main.Unit})";
-    public bool HasBelow => Ng || Rate is not null;
-    public string BelowHeader => Ng ? "NG rate (ppm)" : Rate?.Name ?? "";
+    /// <summary>Worked out here (OK, an added Total NG, Total NG rate), not a metric of the report.</summary>
+    public bool Computed { get; init; }
+    /// <summary>The whole column is <see cref="Main"/> against <see cref="Input"/> as a rate (Total NG rate).</summary>
+    public bool RateColumn { get; init; }
+    /// <summary>A total NG count: it gets its own rate column instead of a rate underneath.</summary>
+    public bool Total { get; init; }
+    public string? HeaderText { get; init; }
 
-    public double? Ppm(string armId)
+    private static readonly string[] CountUnits = ["", "pcs", "pc", "ea", "ea.", "개", "qty", "cái", "chiếc"];
+
+    /// <summary>The name; a unit only when it is not a plain count (the form writes "Input", not "Input (pcs)").</summary>
+    public string Header => HeaderText ?? (CountUnits.Contains(Main.Unit.Trim().ToLowerInvariant()) || Main.Kind == "rate"
+        ? Main.Name
+        : $"{Main.Name} ({Main.Unit})");
+    public bool HasBelow => !RateColumn && !Total && (Ng || Rate is not null);
+    public string BelowHeader => Ng ? "NG rate (%)" : Rate?.Name ?? "";
+
+    /// <summary>Count / input as a fraction (0.05 = 5.0%); without an input, the source rate.</summary>
+    public double? Fraction(string armId)
     {
         double? count = ReviewReportService.ParseNumber(Main.ValueOf(armId));
         double? input = Input is null ? null : ReviewReportService.ParseNumber(Input.ValueOf(armId));
-        if (count is not null && input is > 0) return Math.Round(count.Value / input.Value * 1_000_000);
-        double? rate = Rate is null ? null : ReviewReportService.ParseNumber(Rate.ValueOf(armId));
-        if (rate is not null && Rate!.ValueOf(armId).Contains('%')) return Math.Round(rate.Value * 1_000_000);
-        return null;
+        if (count is not null && input is > 0) return count.Value / input.Value;
+        string source = Rate?.ValueOf(armId) ?? "";
+        double? rate = ReviewReportService.ParseNumber(source);
+        if (rate is null) return null;
+        // "5.0%" already parses to 0.05; a bare number from a "%" metric is a percent too.
+        if (source.Contains('%')) return rate;
+        return Rate!.Unit.Contains('%') ? rate / 100.0 : rate;
     }
 
-    /// <summary>The text under the count: ppm for NG, else the paired rate as written.</summary>
+    public static string Percent(double fraction) =>
+        (fraction * 100).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + "%";
+
+    /// <summary>The cell text: the rate for a rate column, else the value as written.</summary>
+    public string MainText(string armId) =>
+        RateColumn ? (Fraction(armId) is double f ? Percent(f) : "") : Main.ValueOf(armId);
+
+    /// <summary>The text under the count: the NG rate for NG, else the paired rate as written.</summary>
     public string Below(string armId)
     {
+        if (!HasBelow) return "";
         if (!Ng) return Rate?.ValueOf(armId) ?? "";
-        return Ppm(armId) is double ppm ? ppm.ToString("#,##0", System.Globalization.CultureInfo.InvariantCulture) : "";
+        return Fraction(armId) is double f ? Percent(f) : "";
     }
 }
 

@@ -54,7 +54,7 @@
                             <label class="form-label small fw-semibold mb-1">Translate Model</label>
                             <div class="input-group input-group-sm">
                                 <select class="form-select form-select-sm font-monospace" @bind="_codexTranslateModel">
-                                    @foreach (string model in TranslateModelOptions)
+                                    @foreach (string model in ModelOptions(_codexTranslateModel))
                                     {
                                         <option value="@model">@model</option>
                                     }
@@ -87,6 +87,25 @@
                                 }
                             </select>
                             <div class="form-text small">Codex Luna (@CodexApiService.LunaModel) at low is the default.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold mb-1">Write (Review Report) Model</label>
+                            <select class="form-select form-select-sm font-monospace" @bind="_reportModel">
+                                @foreach (string model in ModelOptions(_reportModel))
+                                {
+                                    <option value="@model">@model</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold mb-1">Write (Review Report) Reasoning Effort</label>
+                            <select class="form-select form-select-sm" @bind="_reportEffort">
+                                @foreach (string effort in CodexApiService.ReasoningEfforts)
+                                {
+                                    <option value="@effort">@effort</option>
+                                }
+                            </select>
+                            <div class="form-text small">Used by Write, Rewrite and Apply change. @ReviewReportService.DefaultModel at @ReviewReportService.DefaultEffort is the default.</div>
                         </div>
                         <button class="btn btn-primary btn-sm" @onclick="SaveCodexAsync" disabled="@_codexSaving">
                             @(_codexSaving ? "Saving..." : "Save")
@@ -518,10 +537,13 @@
 
     /// <summary>The models the API key can use, plus the saved one so a model that dropped out
     /// of the list stays selected instead of silently switching on the next Save.</summary>
-    private IEnumerable<string> TranslateModelOptions =>
-        _codexModels.Contains(_codexTranslateModel, StringComparer.OrdinalIgnoreCase)
+    private IEnumerable<string> ModelOptions(string saved) =>
+        _codexModels.Contains(saved, StringComparer.OrdinalIgnoreCase)
             ? _codexModels
-            : _codexModels.Prepend(_codexTranslateModel);
+            : _codexModels.Prepend(saved);
+
+    private string _reportModel  = ReviewReportService.DefaultModel;
+    private string _reportEffort = ReviewReportService.DefaultEffort;
 
     private AiProviderSettingsSnapshot _aiProviders = new();
     private bool   _aiProviderSaving;
@@ -586,6 +608,12 @@
         _codexTranslateEffort = Repo.GetSetting("OpenAI:TranslateEffort") is { Length: > 0 } savedEffort
             ? savedEffort
             : CodexApiService.DefaultReasoningEffort;
+        _reportModel = Repo.GetSetting(ReviewReportService.ModelSetting) is { Length: > 0 } savedReportModel
+            ? savedReportModel
+            : ReviewReportService.DefaultModel;
+        _reportEffort = Repo.GetSetting(ReviewReportService.EffortSetting) is { Length: > 0 } savedReportEffort
+            ? savedReportEffort
+            : ReviewReportService.DefaultEffort;
         _aiProviders = AiProviders.GetSnapshot();
         _qrModelCodes = QrModelCodes.Codes.ToList();
         _snap        = NgRateSettings.GetSnapshot();
@@ -652,6 +680,12 @@
             Repo.SetSetting("OpenAI:ApiKey", _codexApiKey.Trim());
             Repo.SetSetting("OpenAI:TranslateModel", model);
             Repo.SetSetting("OpenAI:TranslateEffort", _codexTranslateEffort);
+            string reportModel = string.IsNullOrWhiteSpace(_reportModel)
+                ? ReviewReportService.DefaultModel
+                : _reportModel.Trim();
+            Repo.SetSetting(ReviewReportService.ModelSetting, reportModel);
+            Repo.SetSetting(ReviewReportService.EffortSetting, _reportEffort);
+            _reportModel = reportModel;
             if (!string.IsNullOrWhiteSpace(_codexApiKey))
             {
                 _aiProviders.CodexApiEnabled = true;

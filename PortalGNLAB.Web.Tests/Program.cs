@@ -216,9 +216,94 @@ static string? Prop(JsonElement e, string name) => e.TryGetProperty(name, out Js
 string?[] mainIds = previewTable.GetProperty("columns").EnumerateArray().Select(c => Prop(c, "mainId")).ToArray();
 Check(Prop(previewTable, "tableKey") == "Film M-20"
       && Prop(previewTable.GetProperty("rows")[0], "armId") == "C1"
-      && mainIds.SequenceEqual(["input", "ng_spl", "ng_rb", ""])
+      && mainIds.SequenceEqual(["input", "", "ng_spl", "ng_rb", "", ""])
       && previewTable.GetProperty("columns").EnumerateArray().All(c => Prop(c, "rateId") == ""),
-    "review report preview names the condition and metric behind each cell (worked-out Total NG has none)");
+    "review report preview names the condition and metric behind each cell (worked-out OK / Total NG / Total NG rate have none)");
+
+// Review Report follows the author's form (130. TIU L5S3-01): Input | OK | NG items with the rate (%) under
+// each | Total NG | Total NG rate, and the Excel sheet keeps the form's header box, sections and fonts.
+var formDoc = new ReviewReportDoc
+{
+    Title = "TIU L5S3-01 [R] REPORT TEST NEW VP CARRIER SUPPORT JIG",
+    ReportDate = "2026-08-28",
+    Dept = "ME",
+    Purpose = "Old JIG happen NG VP cutting offset => Test New JIG can improve or not",
+    Content = ["Test New JIG and check NG rate"],
+    ResultTitle = "Result check New Jig",
+    Conclusion = "Check Jig after improve result NG cutting offset reduce. Need check more Q'ty.",
+    Conditions =
+    [
+        new() { Id = "C1", Label = "Old Jig", Role = "control", Date = "2026-08-28" },
+        new() { Id = "C2", Label = "New Jig (jig 1-17)", Role = "test", Date = "2026-08-28" },
+        new() { Id = "C3", Label = "New Jig (jig 18-25)", Role = "test", Date = "2026-09-03" },
+    ],
+    Metrics =
+    [
+        new() { Id = "input", Name = "Input", Unit = "pcs", Kind = "input", Values = [new() { ArmId = "C1", Value = "160" }, new() { ArmId = "C2", Value = "2720" }, new() { ArmId = "C3", Value = "640" }] },
+        new() { Id = "ng_vp", Name = "NG VP cutting offset", Unit = "pcs", Kind = "ng", Values = [new() { ArmId = "C1", Value = "8" }, new() { ArmId = "C2", Value = "3" }, new() { ArmId = "C3", Value = "1" }] },
+        new() { Id = "ng_cut", Name = "No cutting", Unit = "pcs", Kind = "ng", Values = [new() { ArmId = "C1", Value = "0" }, new() { ArmId = "C2", Value = "1" }, new() { ArmId = "C3", Value = "0" }] },
+    ],
+};
+ReviewReportResultTable formTable = ReviewReportService.ResultTables(formDoc).Single();
+string[] armIds = ["C1", "C2", "C3"];
+Check(formTable.Columns.Select(c => c.Header).SequenceEqual(["Input", "OK", "NG VP cutting offset", "No cutting", "Total NG", "Total NG rate"])
+      && armIds.Select(formTable.Columns[1].MainText).SequenceEqual(["152", "2716", "639"])
+      && armIds.Select(formTable.Columns[2].Below).SequenceEqual(["5.0%", "0.1%", "0.2%"])
+      && armIds.Select(formTable.Columns[3].Below).SequenceEqual(["0.0%", "0.0%", "0.0%"])
+      && armIds.Select(formTable.Columns[4].MainText).SequenceEqual(["8", "4", "1"]) && !formTable.Columns[4].HasBelow
+      && armIds.Select(formTable.Columns[5].MainText).SequenceEqual(["5.0%", "0.1%", "0.2%"])
+      && formTable.Columns.Select(c => c.Computed).SequenceEqual([false, true, false, false, true, true]),
+    "review report result table follows the form: Input | OK | NG with rate (%) under | Total NG | Total NG rate");
+
+using (var formBook = new ClosedXML.Excel.XLWorkbook(new MemoryStream(ReviewReportService.ExportXlsx(new ReviewReport { Title = "x", Doc = formDoc }))))
+{
+    var sheet = formBook.Worksheet(1);
+    string[] sectionsInB = sheet.Column(2).CellsUsed().Select(c => c.GetString()).ToArray();
+    var head = sheet.Search("No").FirstOrDefault(c => c.Address.ColumnNumber == 3);
+    int headRow = head?.Address.RowNumber ?? 1;
+    int dataRow = headRow + 1;
+    Check(head is not null && sheet.Name == "Test"
+          && sheet.Cell("B2").GetString() == "TITLE" && sheet.Cell("D2").GetString() == formDoc.Title && sheet.Cell("D2").Style.Font.FontSize == 24
+          && sheet.Cell("L2").GetString() == "Dept" && sheet.Cell("M2").GetString() == "ME"
+          && sheet.Cell("L3").GetString() == "Date" && sheet.Cell("M3").Style.NumberFormat.Format == "d-mmm"
+          && sheet.Cell("L4").GetString() == "Marker"
+          && new[] { "I. Purpose.", "II. Content.", "III. Result", "1. Result check New Jig", "IV. Decision" }.All(sectionsInB.Contains)
+          && sectionsInB.Contains("=> " + formDoc.Conclusion)
+          && sheet.Cell("B5").Style.Font.FontName == "Times New Roman" && sheet.Cell("B5").Style.Font.FontSize == 16
+          && sheet.Range(headRow, 3, headRow, 11).Cells().Select(c => c.GetString())
+                .SequenceEqual(["No", "Date", "Type", "Input", "OK", "NG VP cutting offset", "No cutting", "Total NG", "Total NG rate"])
+          && sheet.Cell(dataRow, 4).Style.NumberFormat.Format == "d-mmm" && sheet.Cell(dataRow, 4).IsMerged()
+          && sheet.Cell(dataRow + 1, 8).GetDouble() == 0.05 && sheet.Cell(dataRow + 1, 8).Style.NumberFormat.Format == "0.0%"
+          && sheet.Cell(dataRow, 11).Style.NumberFormat.Format == "0.0%" && sheet.Cell(dataRow, 11).IsMerged()
+          && sheet.Cell(dataRow + 2, 5).Style.Fill.BackgroundColor == ClosedXML.Excel.XLColor.FromHtml("#FFFF00")
+          && sheet.Cell(dataRow + 2, 3).Style.Fill.BackgroundColor != ClosedXML.Excel.XLColor.FromHtml("#FFFF00"),
+        "review report Excel keeps the form's header box, sections, font and result table");
+}
+
+// Review Report: the Codex API model and effort come from Setting, Codex Luna at low until one is saved.
+string settingDb = Path.Combine(Path.GetTempPath(), $"host-check-{Guid.NewGuid():N}.db");
+try
+{
+    var settingRepo = new WebRepository(Microsoft.Extensions.Configuration.MemoryConfigurationBuilderExtensions.AddInMemoryCollection(
+        new Microsoft.Extensions.Configuration.ConfigurationBuilder(),
+        new Dictionary<string, string?> { ["Database:Path"] = settingDb }).Build());
+    var writer = new ReviewReportService(null!, settingRepo, NullLogger<ReviewReportService>.Instance);
+    string before = writer.ModelLabel;
+    settingRepo.SetSetting(ReviewReportService.ModelSetting, " gpt-5.6-terra ");
+    settingRepo.SetSetting(ReviewReportService.EffortSetting, "medium");
+    string settingPage = File.ReadAllText(Path.Combine(webProject, "Components", "Pages", "BmesSettingPage.razor"));
+    Check(before == $"{CodexApiService.LunaModel} · low"
+          && writer.Model == "gpt-5.6-terra" && writer.Effort == "medium"
+          && settingPage.Contains("Repo.SetSetting(ReviewReportService.ModelSetting", StringComparison.Ordinal)
+          && settingPage.Contains("Repo.SetSetting(ReviewReportService.EffortSetting", StringComparison.Ordinal),
+        "review report model and effort are chosen in Setting");
+}
+finally
+{
+    Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+    foreach (string f in new[] { settingDb, settingDb + "-wal", settingDb + "-shm" })
+        if (File.Exists(f)) File.Delete(f);
+}
 
 if (failures.Count > 0)
     throw new InvalidOperationException($"Host-cutover checks failed: {string.Join(", ", failures)}");

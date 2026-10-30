@@ -71,7 +71,7 @@ else
 
         <div class="rr-actions">
             <button class="rr-btn rr-btn-ai" disabled="@(_busy || !Reports.IsConfigured || !HasInput)" @onclick="GenerateAsync"
-                    title="@(Reports.IsConfigured ? $"Write the report with {ReviewReportService.Model} ({ReviewReportService.Effort})" : "Set the Codex API key in Setting first")">
+                    title="@(Reports.IsConfigured ? $"Write the report with {Reports.Model} ({Reports.Effort})" : "Set the Codex API key in Setting first")">
                 @if (_busy && !_revising) { <span class="rr-spin"></span><span>Writing… @_elapsed s</span> }
                 else { <span>✨ @(_report.Doc is null ? "Write report" : "Rewrite")</span> }
             </button>
@@ -171,7 +171,7 @@ else
                 @Pictures(d, "results")
                 @foreach (string f in d.Findings.Where(f => !string.IsNullOrWhiteSpace(f))) { <p class="rr-p">@Dash(f)</p> }
 
-                <div class="rr-sec">IV. Conclusion</div>
+                <div class="rr-sec">IV. Decision</div>
                 @if (!string.IsNullOrWhiteSpace(d.Conclusion)) { <p class="rr-p">@Dash(d.Conclusion)</p> }
                 @foreach (string l in d.Limitations.Where(l => !string.IsNullOrWhiteSpace(l))) { <p class="rr-p">@Dash(l)</p> }
                 @foreach (string n in d.NextActions.Where(n => !string.IsNullOrWhiteSpace(n))) { <p class="rr-p">→ @n</p> }
@@ -468,7 +468,7 @@ else
                             <td class="type @test">@a.Label</td>
                             @foreach (ReviewReportColumn c in t.Columns)
                             {
-                                string main = c.Main.ValueOf(id);
+                                string main = c.MainText(id);
                                 if (c.HasBelow)
                                 {
                                     <td class="split @test"><div>@main</div><div class="rate">@c.Below(id)</div></td>
@@ -525,7 +525,7 @@ else
             ReviewReportDoc doc = await Reports.GenerateAsync(_report.InputText, _report.Images, _report.ExtraInstruction, cts.Token);
             _report.Doc = doc;
             _report.Revisions = [];   // a fresh write starts over from the content
-            _report.Model = $"{ReviewReportService.Model} · {ReviewReportService.Effort}";
+            _report.Model = Reports.ModelLabel;
             if (string.IsNullOrEmpty(_report.CreatedBy)) _report.CreatedBy = _user;
             // Saved right away so a paid-for report is not lost when the tab closes.
             Reports.Save(_report);
@@ -558,7 +558,7 @@ else
             ReviewReportDoc doc = await Reports.ReviseAsync(_report, request, cts.Token);
             _report.Doc = doc;
             _report.Revisions.Add(new ReviewReportRevision { At = DateTime.Now, By = _user, Request = request });
-            _report.Model = $"{ReviewReportService.Model} · {ReviewReportService.Effort}";
+            _report.Model = Reports.ModelLabel;
             Reports.Save(_report);
             LoadList();
             _reviseText = "";

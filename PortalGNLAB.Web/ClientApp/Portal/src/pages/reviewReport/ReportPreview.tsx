@@ -4,6 +4,7 @@ import {
   addTag,
   dash,
   editLine,
+  formatDay,
   groupPictures,
   removeTag,
   renameMetric,
@@ -115,13 +116,20 @@ function ResultGrid({
     ) : (
       value
     );
+  const cellClass = (row: PreviewTable["rows"][number], j: number) =>
+    [
+      row.test ? "report-test" : "",
+      table.columns[j]?.rateColumn ? "report-rate" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
   return (
-    <div className="scroll-x">
+    <div className="scroll-x report-table-block">
       <h4>
         {number}.{" "}
         {cell(table.title, (title) => renameTable(doc, table.tableKey, title))}
       </h4>
-      <table className="grid report-result-grid">
+      <table className="report-result-grid">
         <thead>
           <tr>
             <th>No</th>
@@ -132,77 +140,75 @@ function ResultGrid({
               <th key={i}>
                 {cell(
                   column.header,
-                  column.mainId
+                  column.mainId && !column.computed
                     ? (header) => renameMetric(doc, column.mainId, header)
                     : null,
-                )}
-                {column.hasBelow && (
-                  <div className="report-rate">
-                    {cell(
-                      column.belowHeader,
-                      column.rateId
-                        ? (name) =>
-                            renameMetric(doc, column.rateId, name, false)
-                        : null,
-                    )}
-                  </div>
                 )}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, i) => (
-            <tr key={i}>
-              <td>{i + 1}</td>
+          {rows.flatMap((row, i) => [
+            <tr key={`${i}a`}>
+              <td rowSpan={2}>{i + 1}</td>
               {table.showDate && table.dateSpans[i] > 0 && (
-                <td rowSpan={table.dateSpans[i]}>
-                  {cell(row.date, (date) =>
+                <td rowSpan={table.dateSpans[i] * 2}>
+                  {cell(row.dateLabel || row.date, (date) =>
                     setArms(doc, spanned(table.dateSpans, i), { date }),
                   )}
                 </td>
               )}
               {table.showModel && table.modelSpans[i] > 0 && (
-                <td rowSpan={table.modelSpans[i]}>
+                <td rowSpan={table.modelSpans[i] * 2}>
                   {cell(row.model, (model) =>
                     setArms(doc, spanned(table.modelSpans, i), { model }),
                   )}
                 </td>
               )}
-              <td className={row.test ? "report-test" : ""}>
+              <td rowSpan={2} className={row.test ? "report-test" : ""}>
                 {cell(row.label, (label) =>
                   setArms(doc, [row.armId], { label }),
                 )}
               </td>
               {row.cells.map((value, j) => {
                 const column = table.columns[j];
+                const split = value.hasBelow && !column?.rateColumn;
                 return (
-                  <td key={j} className={row.test ? "report-test" : ""}>
-                    <div className={value.rate ? "report-rate" : ""}>
-                      {cell(
-                        value.main,
-                        column?.mainId
-                          ? (v) =>
-                              setMetricValue(doc, column.mainId, row.armId, v)
-                          : null,
-                      )}
-                    </div>
-                    {value.hasBelow && (
-                      <div className="report-rate report-below">
-                        {cell(
-                          value.below,
-                          column?.rateId
-                            ? (v) =>
-                                setMetricValue(doc, column.rateId, row.armId, v)
-                            : null,
-                        )}
-                      </div>
+                  <td
+                    key={j}
+                    rowSpan={split ? 1 : 2}
+                    className={cellClass(row, j)}
+                  >
+                    {cell(
+                      value.main,
+                      column?.mainId && !column.computed
+                        ? (v) =>
+                            setMetricValue(doc, column.mainId, row.armId, v)
+                        : null,
                     )}
                   </td>
                 );
               })}
-            </tr>
-          ))}
+            </tr>,
+            <tr key={`${i}b`} className="report-below-row">
+              {row.cells.map((value, j) => {
+                const column = table.columns[j];
+                if (!value.hasBelow || column?.rateColumn) return null;
+                return (
+                  <td key={j} className={`report-rate ${cellClass(row, j)}`}>
+                    {cell(
+                      value.below,
+                      column?.rateId
+                        ? (v) =>
+                            setMetricValue(doc, column.rateId, row.armId, v)
+                        : null,
+                    )}
+                  </td>
+                );
+              })}
+            </tr>,
+          ])}
         </tbody>
       </table>
     </div>
@@ -351,13 +357,17 @@ export default function ReportPreview({
     key: "content" | "findings" | "limitations" | "nextActions",
     addLabel: string,
     prefix?: string,
+    bold = false,
   ) {
     const list = d[key];
     return (
       <>
         {list.map((line, i) =>
           line.trim() ? (
-            <p key={`${i}:${line}`}>
+            <p
+              key={`${i}:${line}`}
+              className={bold ? "report-bold" : undefined}
+            >
               {editable ? (
                 <>
                   {prefix ?? (/^[-•]/.test(line.trim()) ? "" : "- ")}
@@ -401,10 +411,15 @@ export default function ReportPreview({
     key: "purpose" | "background" | "conclusion",
     addLabel: string,
     multiline = true,
+    arrow = false,
   ) {
+    const lead = arrow ? "=> " : "- ";
+    const led = arrow ? /^(=>|→)/ : /^[-•]/;
+    const className = arrow ? "report-bold" : undefined;
     if (!d[key].trim())
       return editable ? (
         <p key={key} className="report-add">
+          {arrow && lead}
           <Editable
             value=""
             editable
@@ -415,10 +430,10 @@ export default function ReportPreview({
         </p>
       ) : null;
     return (
-      <p key={key}>
+      <p key={key} className={className}>
         {editable ? (
           <>
-            {/^[-•]/.test(d[key].trim()) ? "" : "- "}
+            {led.test(d[key].trim()) ? "" : lead}
             <Editable
               value={d[key]}
               editable
@@ -426,6 +441,12 @@ export default function ReportPreview({
               onCommit={(value) => set({ [key]: value } as Partial<ReportDoc>)}
             />
           </>
+        ) : arrow ? (
+          led.test(d[key].trim()) ? (
+            d[key].trim()
+          ) : (
+            `${lead}${d[key].trim()}`
+          )
         ) : (
           dash(d[key])
         )}
@@ -475,76 +496,95 @@ export default function ReportPreview({
       <div
         className={`report-pictures ${placements.length === 1 ? "single" : ""}`}
       >
-        {groupPictures(placements).map((group, i) => (
-          <div key={i} className="report-picture-group">
-            <div className="report-picture-row">
-              {group.map((placement: Placement) => {
-                const image = report.images.find(
-                  (image) => image.no === placement.no,
-                )!;
-                return (
-                  <figure key={placement.no}>
-                    <img
-                      src={`data:${image.mediaType};base64,${image.data}`}
-                      alt={`IMG ${image.no}: ${placement.caption}`}
-                      draggable={editable}
-                      title={editable ? "Drag to another section" : undefined}
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData(
-                          pictureDragType,
-                          String(image.no),
-                        );
-                        e.dataTransfer.effectAllowed = "move";
-                      }}
-                    />
-                    {group.length < 3 && (
-                      <figcaption>
-                        <Editable
-                          value={placement.caption || placement.group}
-                          editable={editable}
-                          onCommit={(caption) =>
-                            setPlacement(placement.no, { caption })
-                          }
-                        />
-                      </figcaption>
-                    )}
-                    <label className="form-row">
-                      IMG {image.no}
-                      <select
-                        className="inp sm"
-                        title="Move this picture to another section"
-                        value={placement.section}
-                        onChange={(e) => onMove(image.no, e.target.value)}
-                      >
-                        {sections.map((name) => (
-                          <option key={name}>{name}</option>
-                        ))}
-                      </select>
-                      <button
-                        className="btn sm danger"
-                        title="Delete this picture from the report"
-                        onClick={() => onRemovePicture(image.no)}
-                      >
-                        Delete
-                      </button>
-                    </label>
-                  </figure>
-                );
-              })}
-            </div>
-            {group.length >= 3 && (
-              <div className="report-picture-caption">
-                {group[0].group || group[0].caption}
+        {groupPictures(placements).map((group, i) => {
+          // One bar under a whole group, as in the Excel form, when it has three or more
+          // pictures or none of them has a caption of its own.
+          const oneBar =
+            group.length >= 3 ||
+            (group.length > 1 && group.every((p) => !p.caption.trim()));
+          return (
+            <div key={i} className="report-picture-group">
+              <div className="report-picture-row">
+                {group.map((placement: Placement) => {
+                  const image = report.images.find(
+                    (image) => image.no === placement.no,
+                  )!;
+                  return (
+                    <figure key={placement.no}>
+                      <img
+                        src={`data:${image.mediaType};base64,${image.data}`}
+                        alt={`IMG ${image.no}: ${placement.caption}`}
+                        draggable={editable}
+                        title={editable ? "Drag to another section" : undefined}
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData(
+                            pictureDragType,
+                            String(image.no),
+                          );
+                          e.dataTransfer.effectAllowed = "move";
+                        }}
+                      />
+                      {!oneBar && (
+                        <figcaption>
+                          <Editable
+                            value={placement.caption || placement.group}
+                            editable={editable}
+                            onCommit={(caption) =>
+                              setPlacement(placement.no, { caption })
+                            }
+                          />
+                        </figcaption>
+                      )}
+                      <label className="form-row">
+                        IMG {image.no}
+                        <select
+                          className="inp sm"
+                          title="Move this picture to another section"
+                          value={placement.section}
+                          onChange={(e) => onMove(image.no, e.target.value)}
+                        >
+                          {sections.map((name) => (
+                            <option key={name}>{name}</option>
+                          ))}
+                        </select>
+                        <button
+                          className="btn sm danger"
+                          title="Delete this picture from the report"
+                          onClick={() => onRemovePicture(image.no)}
+                        >
+                          Delete
+                        </button>
+                      </label>
+                    </figure>
+                  );
+                })}
               </div>
-            )}
-          </div>
-        ))}
+              {oneBar && (
+                <div className="report-picture-caption">
+                  <Editable
+                    value={group[0].group || group[0].caption}
+                    editable={editable}
+                    onCommit={(name) =>
+                      set({
+                        images: d.images.map((p) =>
+                          group.some((g) => g.no === p.no)
+                            ? { ...p, group: name }
+                            : p,
+                        ),
+                      })
+                    }
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   }
 
   return (
-    <article className="report-document">
+    <div className="report-document">
       {editable && (
         <>
           <p className="muted small">
@@ -555,247 +595,266 @@ export default function ReportPreview({
           <ReplaceBar doc={d} onChange={onChange} />
         </>
       )}
-      <h2>
-        <Editable
-          value={d.title}
-          editable={editable}
-          onCommit={(title) => set({ title })}
-        />
-      </h2>
-      <table className="grid">
-        <tbody>
+      {(d.productModel || d.tags.length > 0 || editable) && (
+        <div className="report-meta small">
           {(d.productModel || editable) && (
-            <tr>
-              <th>Product model</th>
-              <td>
-                <Editable
-                  value={d.productModel}
-                  editable={editable}
-                  onCommit={(productModel) => set({ productModel })}
-                />
-              </td>
-            </tr>
+            <span>
+              Product model:{" "}
+              <Editable
+                value={d.productModel}
+                editable={editable}
+                onCommit={(productModel) => set({ productModel })}
+              />
+            </span>
           )}
-          {(d.reportDate || editable) && (
-            <tr>
-              <th>Report date</th>
-              <td>
+          <span>
+            Tags: <TagEditor doc={d} editable={editable} onChange={onChange} />
+          </span>
+        </div>
+      )}
+      <article className="report-sheet">
+        <div className="report-head">
+          <div className="report-head-label">TITLE</div>
+          <h2 className="report-head-title">
+            <Editable
+              value={d.title}
+              editable={editable}
+              onCommit={(title) => set({ title })}
+            />
+          </h2>
+          <div className="report-head-info">
+            <div className="report-head-label">Dept</div>
+            <div>
+              <Editable
+                value={d.dept ?? ""}
+                editable={editable}
+                placeholder="-"
+                onCommit={(dept) => set({ dept })}
+              />
+            </div>
+            <div className="report-head-label">Date</div>
+            <div>
+              {editable ? (
                 <Editable
-                  value={d.reportDate}
-                  editable={editable}
+                  value={formatDay(d.reportDate)}
+                  editable
+                  placeholder="-"
                   onCommit={(reportDate) => set({ reportDate })}
                 />
-              </td>
-            </tr>
-          )}
-          <tr>
-            <th>Author</th>
-            <td>{report.createdBy}</td>
-          </tr>
-          {(d.tags.length > 0 || editable) && (
-            <tr>
-              <th>Tags</th>
-              <td>
-                <TagEditor doc={d} editable={editable} onChange={onChange} />
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-      <section {...dropZone("purpose")}>
-        <h3>I. Purpose.</h3>
-        {text("purpose", "Click to add the purpose")}
-        {text("background", "Click to add the background")}
-        {pictures("purpose")}
-      </section>
-      <section {...dropZone("conditions")}>
-        <h3>II. Content.</h3>
-        {lines("content", "Add a content line")}
-        {d.changedFactors.map((factor, i) =>
-          factor.name.trim() ? (
-            <p key={i}>
-              -{" "}
-              <Editable
-                value={factor.name}
-                editable={editable}
-                onCommit={(name) =>
-                  set({
-                    changedFactors: name
-                      ? d.changedFactors.map((f, j) =>
-                          j === i ? { ...f, name } : f,
-                        )
-                      : d.changedFactors.filter((_, j) => j !== i),
-                  })
-                }
-              />
-              :{" "}
-              <Editable
-                value={factor.baseline}
-                editable={editable}
-                onCommit={(baseline) =>
-                  set({
-                    changedFactors: d.changedFactors.map((f, j) =>
-                      j === i ? { ...f, baseline } : f,
-                    ),
-                  })
-                }
-              />{" "}
-              →{" "}
-              <Editable
-                value={factor.changed}
-                editable={editable}
-                onCommit={(changed) =>
-                  set({
-                    changedFactors: d.changedFactors.map((f, j) =>
-                      j === i ? { ...f, changed } : f,
-                    ),
-                  })
-                }
-              />
-            </p>
-          ) : null,
-        )}
-        {d.conditions.map((condition, i) =>
-          condition.details.trim() ? (
-            <p key={i}>
-              -{" "}
-              <Editable
-                value={condition.label}
-                editable={editable}
-                onCommit={(label) =>
-                  set({
-                    conditions: d.conditions.map((c, j) =>
-                      j === i ? { ...c, label } : c,
-                    ),
-                  })
-                }
-              />
-              :{" "}
-              <Editable
-                value={condition.details}
-                editable={editable}
-                onCommit={(details) =>
-                  set({
-                    conditions: d.conditions.map((c, j) =>
-                      j === i ? { ...c, details } : c,
-                    ),
-                  })
-                }
-              />
-            </p>
-          ) : null,
-        )}
-        {pictures("conditions")}
-      </section>
-      <section {...dropZone("results")}>
-        <h3>III. Result</h3>
-        {tables.map((table, i) => (
-          <ResultGrid
-            table={table}
-            number={i + 1}
-            doc={d}
-            editable={editable}
-            onChange={onChange}
-            key={i}
-          />
-        ))}
-        {d.resultTables.map((table, i) => {
-          const setTable = (change: Partial<typeof table>) =>
-            set({
-              resultTables: d.resultTables.map((t, j) =>
-                j === i ? { ...t, ...change } : t,
-              ),
-            });
-          return (
-            <div className="scroll-x" key={i}>
-              <h4>
-                {tables.length + i + 1}.{" "}
-                <Editable
-                  value={table.caption || "Result"}
-                  editable={editable}
-                  onCommit={(caption) => setTable({ caption })}
-                />
-              </h4>
-              <table className="grid report-result-grid">
-                <thead>
-                  <tr>
-                    {table.columns.map((column, j) => (
-                      <th key={j}>
-                        <Editable
-                          value={column}
-                          editable={editable}
-                          onCommit={(value) =>
-                            setTable({
-                              columns: table.columns.map((c, k) =>
-                                k === j ? value : c,
-                              ),
-                            })
-                          }
-                        />
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {table.rows.map((row, j) => (
-                    <tr key={j}>
-                      {Array.from(
-                        { length: Math.max(row.length, table.columns.length) },
-                        (_, k) => (
-                          <td key={k}>
-                            <Editable
-                              value={row[k] ?? ""}
-                              editable={editable}
-                              onCommit={(value) =>
-                                setTable({
-                                  rows: table.rows.map((r, rj) =>
-                                    rj === j
-                                      ? Array.from(
-                                          { length: Math.max(r.length, k + 1) },
-                                          (_, rk) =>
-                                            rk === k ? value : (r[rk] ?? ""),
-                                        )
-                                      : r,
-                                  ),
-                                })
-                              }
-                            />
-                          </td>
-                        ),
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              ) : (
+                formatDay(d.reportDate)
+              )}
             </div>
-          );
-        })}
-        {editable && tables.length > 0 && (
-          <p className="muted small">
-            NG rate (ppm) and an added Total NG are worked out from the counts
-            and the input; change those numbers and they follow.
-          </p>
-        )}
-        {pictures("results")}
-        {lines("findings", "Add a finding")}
-      </section>
-      <section {...dropZone("conclusion")}>
-        <h3>IV. Conclusion</h3>
-        {text("conclusion", "Click to add the conclusion")}
-        {lines("limitations", "Add a limitation")}
-        {lines("nextActions", "Add a next action", "→ ")}
-        {pictures("conclusion")}
-      </section>
-      {d.images.some(
-        (p) =>
-          p.section === "appendix" &&
-          report.images.some((image) => image.no === p.no),
-      ) && (
-        <section {...dropZone("appendix")}>
-          <h3>Appendix</h3>
-          {pictures("appendix")}
+            <div className="report-head-label">Marker</div>
+            <div>
+              <Editable
+                value={d.maker || report.createdBy}
+                editable={editable}
+                placeholder="-"
+                onCommit={(maker) => set({ maker })}
+              />
+            </div>
+          </div>
+        </div>
+        <section {...dropZone("purpose")}>
+          <h3>I. Purpose.</h3>
+          {text("purpose", "Click to add the purpose")}
+          {text("background", "Click to add the background")}
+          {pictures("purpose")}
         </section>
-      )}
-    </article>
+        <section {...dropZone("conditions")}>
+          <h3>II. Content.</h3>
+          {lines("content", "Add a content line")}
+          {d.changedFactors.map((factor, i) =>
+            factor.name.trim() ? (
+              <p key={i}>
+                -{" "}
+                <Editable
+                  value={factor.name}
+                  editable={editable}
+                  onCommit={(name) =>
+                    set({
+                      changedFactors: name
+                        ? d.changedFactors.map((f, j) =>
+                            j === i ? { ...f, name } : f,
+                          )
+                        : d.changedFactors.filter((_, j) => j !== i),
+                    })
+                  }
+                />
+                :{" "}
+                <Editable
+                  value={factor.baseline}
+                  editable={editable}
+                  onCommit={(baseline) =>
+                    set({
+                      changedFactors: d.changedFactors.map((f, j) =>
+                        j === i ? { ...f, baseline } : f,
+                      ),
+                    })
+                  }
+                />{" "}
+                →{" "}
+                <Editable
+                  value={factor.changed}
+                  editable={editable}
+                  onCommit={(changed) =>
+                    set({
+                      changedFactors: d.changedFactors.map((f, j) =>
+                        j === i ? { ...f, changed } : f,
+                      ),
+                    })
+                  }
+                />
+              </p>
+            ) : null,
+          )}
+          {d.conditions.map((condition, i) =>
+            condition.details.trim() ? (
+              <p key={i}>
+                -{" "}
+                <Editable
+                  value={condition.label}
+                  editable={editable}
+                  onCommit={(label) =>
+                    set({
+                      conditions: d.conditions.map((c, j) =>
+                        j === i ? { ...c, label } : c,
+                      ),
+                    })
+                  }
+                />
+                :{" "}
+                <Editable
+                  value={condition.details}
+                  editable={editable}
+                  onCommit={(details) =>
+                    set({
+                      conditions: d.conditions.map((c, j) =>
+                        j === i ? { ...c, details } : c,
+                      ),
+                    })
+                  }
+                />
+              </p>
+            ) : null,
+          )}
+          {pictures("conditions")}
+        </section>
+        <section {...dropZone("results")}>
+          <h3>III. Result</h3>
+          {tables.map((table, i) => (
+            <ResultGrid
+              table={table}
+              number={i + 1}
+              doc={d}
+              editable={editable}
+              onChange={onChange}
+              key={i}
+            />
+          ))}
+          {d.resultTables.map((table, i) => {
+            const setTable = (change: Partial<typeof table>) =>
+              set({
+                resultTables: d.resultTables.map((t, j) =>
+                  j === i ? { ...t, ...change } : t,
+                ),
+              });
+            return (
+              <div className="scroll-x" key={i}>
+                <h4>
+                  {tables.length + i + 1}.{" "}
+                  <Editable
+                    value={table.caption || "Result"}
+                    editable={editable}
+                    onCommit={(caption) => setTable({ caption })}
+                  />
+                </h4>
+                <table className="grid report-result-grid">
+                  <thead>
+                    <tr>
+                      {table.columns.map((column, j) => (
+                        <th key={j}>
+                          <Editable
+                            value={column}
+                            editable={editable}
+                            onCommit={(value) =>
+                              setTable({
+                                columns: table.columns.map((c, k) =>
+                                  k === j ? value : c,
+                                ),
+                              })
+                            }
+                          />
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {table.rows.map((row, j) => (
+                      <tr key={j}>
+                        {Array.from(
+                          {
+                            length: Math.max(row.length, table.columns.length),
+                          },
+                          (_, k) => (
+                            <td key={k}>
+                              <Editable
+                                value={row[k] ?? ""}
+                                editable={editable}
+                                onCommit={(value) =>
+                                  setTable({
+                                    rows: table.rows.map((r, rj) =>
+                                      rj === j
+                                        ? Array.from(
+                                            {
+                                              length: Math.max(r.length, k + 1),
+                                            },
+                                            (_, rk) =>
+                                              rk === k ? value : (r[rk] ?? ""),
+                                          )
+                                        : r,
+                                    ),
+                                  })
+                                }
+                              />
+                            </td>
+                          ),
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
+          {editable && tables.length > 0 && (
+            <p className="muted small">
+              Rates (%) and OK / Total NG / Total NG rate are worked out from
+              the counts and the input.
+            </p>
+          )}
+          {pictures("results")}
+          {lines("findings", "Add a finding")}
+        </section>
+        <section {...dropZone("conclusion")}>
+          <h3>IV. Decision</h3>
+          {text("conclusion", "Click to add the conclusion", true, true)}
+          {lines("limitations", "Add a limitation")}
+          {lines("nextActions", "Add a next action", "=> ", true)}
+          {pictures("conclusion")}
+        </section>
+        {d.images.some(
+          (p) =>
+            p.section === "appendix" &&
+            report.images.some((image) => image.no === p.no),
+        ) && (
+          <section {...dropZone("appendix")}>
+            <h3>Appendix</h3>
+            {pictures("appendix")}
+          </section>
+        )}
+      </article>
+    </div>
   );
 }

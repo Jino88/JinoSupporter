@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   addTag,
   dash,
+  formatDay,
   editLine,
   filterReports,
   groupPictures,
@@ -155,5 +156,12 @@ describe("review report controls", () => {
       group: "",
       section: "conditions",
     });
+  });
+  it("shows a date as d-MMM and leaves other text alone", () => {
+    expect(formatDay("2026-08-28")).toBe("28-Aug");
+    expect(formatDay("2026.08.05")).toBe("5-Aug");
+    expect(formatDay("28-Aug")).toBe("28-Aug");
+    expect(formatDay("Week 3")).toBe("Week 3");
+    expect(formatDay("")).toBe("");
   });
 });

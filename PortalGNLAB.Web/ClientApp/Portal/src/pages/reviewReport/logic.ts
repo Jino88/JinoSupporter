@@ -220,3 +220,40 @@ export function dash(text: string): string {
   const value = text.trim();
   return !value || /^[-•]/.test(value) ? value : `- ${value}`;
 }
+
+const monthNames = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+/** A date as the template shows it, "28-Aug"; text that is not a date comes back as written. */
+export function formatDay(text: string): string {
+  const value = text.trim();
+  const numeric = /^(\d{4})[-./](\d{1,2})[-./](\d{1,2})(?:\D.*)?$/.exec(value);
+  if (numeric) {
+    const month = Number(numeric[2]);
+    const day = Number(numeric[3]);
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31)
+      return `${day}-${monthNames[month - 1]}`;
+  }
+  const named = /^(\d{1,2})[-\s]([A-Za-z]{3})[a-z]*(?:[-\s,]+\d{2,4})?$/.exec(
+    value,
+  );
+  if (named) {
+    const month = monthNames.findIndex(
+      (m) => m.toLowerCase() === named[2].toLowerCase(),
+    );
+    if (month >= 0) return `${Number(named[1])}-${monthNames[month]}`;
+  }
+  return value;
+}
