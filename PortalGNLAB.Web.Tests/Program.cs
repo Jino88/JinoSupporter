@@ -220,6 +220,31 @@ Check(Prop(previewTable, "tableKey") == "Film M-20"
       && previewTable.GetProperty("columns").EnumerateArray().All(c => Prop(c, "rateId") == ""),
     "review report preview names the condition and metric behind each cell (worked-out Total NG has none)");
 
+// Review Report: the Codex API model and effort come from Setting, Codex Luna at low until one is saved.
+string settingDb = Path.Combine(Path.GetTempPath(), $"host-check-{Guid.NewGuid():N}.db");
+try
+{
+    var settingRepo = new WebRepository(Microsoft.Extensions.Configuration.MemoryConfigurationBuilderExtensions.AddInMemoryCollection(
+        new Microsoft.Extensions.Configuration.ConfigurationBuilder(),
+        new Dictionary<string, string?> { ["Database:Path"] = settingDb }).Build());
+    var writer = new ReviewReportService(null!, settingRepo, NullLogger<ReviewReportService>.Instance);
+    string before = writer.ModelLabel;
+    settingRepo.SetSetting(ReviewReportService.ModelSetting, " gpt-5.6-terra ");
+    settingRepo.SetSetting(ReviewReportService.EffortSetting, "medium");
+    string settingPage = File.ReadAllText(Path.Combine(webProject, "Components", "Pages", "BmesSettingPage.razor"));
+    Check(before == $"{CodexApiService.LunaModel} · low"
+          && writer.Model == "gpt-5.6-terra" && writer.Effort == "medium"
+          && settingPage.Contains("Repo.SetSetting(ReviewReportService.ModelSetting", StringComparison.Ordinal)
+          && settingPage.Contains("Repo.SetSetting(ReviewReportService.EffortSetting", StringComparison.Ordinal),
+        "review report model and effort are chosen in Setting");
+}
+finally
+{
+    Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+    foreach (string f in new[] { settingDb, settingDb + "-wal", settingDb + "-shm" })
+        if (File.Exists(f)) File.Delete(f);
+}
+
 if (failures.Count > 0)
     throw new InvalidOperationException($"Host-cutover checks failed: {string.Join(", ", failures)}");
 

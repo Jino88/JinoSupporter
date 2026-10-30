@@ -28,6 +28,7 @@ public static class ToolPageEndpoints
         reports.MapGet("", (ReviewReportService service) => Results.Ok(new
         {
             configured = service.IsConfigured,
+            model = service.ModelLabel,
             languages = ReviewReportService.Languages,
             reports = service.List()
         }));
@@ -153,7 +154,7 @@ public static class ToolPageEndpoints
                 return Results.NotFound();
         }
         if (action != "save")
-            report.Model = $"{ReviewReportService.Model} · {ReviewReportService.Effort}";
+            report.Model = service.ModelLabel;
         service.Save(report);
         return Results.Ok(report);
     }

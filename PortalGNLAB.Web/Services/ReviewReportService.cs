@@ -15,11 +15,18 @@ namespace PortalGNLAB.Web.Services;
 /// and places each picture under the section it belongs to. The report is kept in its own SQLite
 /// file and exported as .xlsx, the format WorkHub registers and normalizes.
 /// </summary>
-public sealed class ReviewReportService(CodexApiService codex, ILogger<ReviewReportService> log)
+public sealed class ReviewReportService(CodexApiService codex, WebRepository repo, ILogger<ReviewReportService> log)
 {
-    public const string Model = CodexApiService.LunaModel;
+    public const string DefaultModel = CodexApiService.LunaModel;
     // Copying numbers into a fixed JSON shape needs little reasoning; low keeps the call short.
-    public const string Effort = "low";
+    public const string DefaultEffort = "low";
+    public const string ModelSetting = "OpenAI:ReviewReportModel";
+    public const string EffortSetting = "OpenAI:ReviewReportEffort";
+
+    /// <summary>The Codex API model that writes and revises reports, chosen in Setting.</summary>
+    public string Model => repo.GetSetting(ModelSetting) is { } m && !string.IsNullOrWhiteSpace(m) ? m.Trim() : DefaultModel;
+    public string Effort => repo.GetSetting(EffortSetting) is { } e && !string.IsNullOrWhiteSpace(e) ? e.Trim() : DefaultEffort;
+    public string ModelLabel => $"{Model} · {Effort}";
 
     private const int MaxImages = 12;
     private const long ImageBudgetBytes = 1_500_000;

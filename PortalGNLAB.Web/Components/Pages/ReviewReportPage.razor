@@ -71,7 +71,7 @@ else
 
         <div class="rr-actions">
             <button class="rr-btn rr-btn-ai" disabled="@(_busy || !Reports.IsConfigured || !HasInput)" @onclick="GenerateAsync"
-                    title="@(Reports.IsConfigured ? $"Write the report with {ReviewReportService.Model} ({ReviewReportService.Effort})" : "Set the Codex API key in Setting first")">
+                    title="@(Reports.IsConfigured ? $"Write the report with {Reports.Model} ({Reports.Effort})" : "Set the Codex API key in Setting first")">
                 @if (_busy && !_revising) { <span class="rr-spin"></span><span>Writing… @_elapsed s</span> }
                 else { <span>✨ @(_report.Doc is null ? "Write report" : "Rewrite")</span> }
             </button>
@@ -525,7 +525,7 @@ else
             ReviewReportDoc doc = await Reports.GenerateAsync(_report.InputText, _report.Images, _report.ExtraInstruction, cts.Token);
             _report.Doc = doc;
             _report.Revisions = [];   // a fresh write starts over from the content
-            _report.Model = $"{ReviewReportService.Model} · {ReviewReportService.Effort}";
+            _report.Model = Reports.ModelLabel;
             if (string.IsNullOrEmpty(_report.CreatedBy)) _report.CreatedBy = _user;
             // Saved right away so a paid-for report is not lost when the tab closes.
             Reports.Save(_report);
@@ -558,7 +558,7 @@ else
             ReviewReportDoc doc = await Reports.ReviseAsync(_report, request, cts.Token);
             _report.Doc = doc;
             _report.Revisions.Add(new ReviewReportRevision { At = DateTime.Now, By = _user, Request = request });
-            _report.Model = $"{ReviewReportService.Model} · {ReviewReportService.Effort}";
+            _report.Model = Reports.ModelLabel;
             Reports.Save(_report);
             LoadList();
             _reviseText = "";

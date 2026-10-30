@@ -81,6 +81,8 @@ export interface ReportIndex {
   reports: Summary[];
   languages: string[];
   configured: boolean;
+  /** The Codex API model and effort chosen in Setting, e.g. "gpt-5.6-luna · low". */
+  model: string;
 }
 export interface PreviewTable {
   title: string;

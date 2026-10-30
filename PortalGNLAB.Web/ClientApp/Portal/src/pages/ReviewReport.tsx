@@ -29,6 +29,7 @@ export default function ReviewReport() {
     reports: [],
     languages: [],
     configured: false,
+    model: "",
   });
   const [filter, setFilter] = useState("");
   const [request, setRequest] = useState("");
@@ -341,6 +342,7 @@ export default function ReviewReport() {
               <button
                 className="btn sm primary"
                 disabled={!hasInput || !index.configured}
+                title={index.model && `Codex API: ${index.model} (change it in Setting)`}
                 onClick={() => void saveOrGenerate("generate")}
               >
                 {report.doc ? "Rewrite" : "Write report"}
