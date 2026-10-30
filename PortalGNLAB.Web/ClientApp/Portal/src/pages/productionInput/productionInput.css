@@ -66,6 +66,8 @@ table.pi-pe td.dn { color: var(--ink-2); font-weight: 600; font-size: 11.5px; wh
 .pi-ni { width: 54px; height: 24px; border: 1px solid var(--line); border-radius: 6px; text-align: right; padding: 0 6px; font: inherit; font-size: 12px; font-variant-numeric: tabular-nums; background: #fff; }
 .pi-ni:disabled { background: #f8fafc; color: var(--muted); }
 .pi-ni.wide { width: 70px; }
+.pi-ni.typed { border-color: #fcd34d; background: var(--warn-soft); }
+.pi-taken { font-size: 10.5px; font-weight: 700; color: var(--warn); white-space: nowrap; }
 .pi-ni.err { border-color: var(--bad); background: var(--bad-soft); }
 .pi-ni:focus, .pi-ti:focus { outline: 2px solid rgba(79,70,229,.25); border-color: var(--accent); }
 .pi-ti { height: 26px; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; font: inherit; font-size: 12px; background: #fff; }
@@ -129,3 +131,19 @@ table.pi-xl { border-collapse: collapse; font-size: 11px; font-variant-numeric: 
 table.pi-xl th, table.pi-xl td { border: 1px solid #cbd5e1; padding: 3px 6px; text-align: center; white-space: nowrap; }
 table.pi-xl th { background: #e2e8f0; font-weight: 700; }
 .pi-empty { padding: 40px; text-align: center; color: var(--muted); }
+
+/* setup: processes left, material panel right (drag source) */
+.pi-setup { display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: 14px; align-items: start; }
+.pi-matpanel { position: sticky; top: 0; }
+.pi-matlist { display: flex; flex-direction: column; gap: 6px; }
+.pi-matitem { display: flex; align-items: center; gap: 6px; padding: 6px 6px 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fbfcfe; cursor: grab; font-size: 12px; }
+.pi-matitem:active { cursor: grabbing; }
+.pi-matitem b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pi-matitem small { color: var(--faint); white-space: nowrap; }
+.pi-grip { color: var(--faint); letter-spacing: -2px; }
+.pi-matadd { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line-soft); }
+.pi-matadd .pi-ti { width: 100%; }
+table.pi-pe tr.pi-drop td { background: var(--accent-soft); }
+.pi-setup td > .pi-sel { width: 92px; }
+.pi-setup .pi-vl .r .pi-sel { max-width: 170px; }
+.pi-setup .pi-vl .r .muted.small { white-space: nowrap; }
