@@ -11,6 +11,7 @@ import TestExcelConverter from "./pages/TestExcelConverter";
 import Translate from "./pages/Translate";
 import ReviewReport from "./pages/ReviewReport";
 import GraphMaker from "./pages/GraphMaker";
+import ProductionInput from "./pages/ProductionInput";
 import TeamMemo from "./pages/TeamMemo";
 import TeamMemoBoard from "./pages/TeamMemoBoard";
 
@@ -26,6 +27,7 @@ const pages: Record<string, { title: string; render: (menu: MenuItem[]) => React
   "/tools/translate": { title: "Translate", render: () => <Translate /> },
   "/tools/review-report": { title: "Review Report", render: () => <ReviewReport /> },
   "/tools/graph-maker": { title: "Graph Maker", render: () => <GraphMaker /> },
+  "/production/input": { title: "Production Input", render: () => <ProductionInput /> },
   "/memo": { title: "Work Memo", render: () => <TeamMemo /> },
   "/memo/board": { title: "Memo Board", render: () => <TeamMemoBoard /> },
   "/memo/plan": { title: "Plan", render: () => <TeamMemo /> },
