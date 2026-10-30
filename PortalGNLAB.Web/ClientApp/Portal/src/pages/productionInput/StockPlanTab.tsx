@@ -44,7 +44,7 @@ export default function StockPlanTab(props: {
       <section className="card pi-sec">
         <div className="pi-sec-h">
           <h2>Materials <span className="cnt">In / Out / Stock</span></h2>
-          <span className="muted small">Opening = previous day's closing · Out = Σ process input × qty per unit (from Setup); overwrite when needed.</span>
+          <span className="muted small">Opening = previous day's stock (counted, else closing) · Out = Σ process input × qty per unit (from Setup); overwrite when needed.</span>
         </div>
         <div className="pi-wrap">
           <table className="pi-sm">
@@ -62,7 +62,7 @@ export default function StockPlanTab(props: {
                       <NumInput className="wide" value={m.opening} label={`${m.name} opening`}
                         onCommit={(v) => setMat(m, { opening: v ?? 0 })} />
                       <button className={m.openingTyped ? "pi-tag-o" : "pi-tag-a"} disabled={!m.openingTyped}
-                        title={m.openingTyped ? "Typed. Click to go back to the previous day's closing" : "Previous day's closing"}
+                        title={m.openingTyped ? "Typed. Click to go back to the previous day's stock" : "Previous day's stock (counted, else closing)"}
                         onClick={() => setMat(m, { opening: null })}>{m.openingTyped ? "SET" : "AUTO"}</button>
                     </span>
                   </td>

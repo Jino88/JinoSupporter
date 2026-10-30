@@ -75,6 +75,8 @@ export interface SlotRow {
 
 export interface Row {
   input: number;
+  /** Input the process would get without a typed override (carried, previous day or start count). */
+  autoInput: number;
   mode: "set" | "prev" | "auto";
   before: number;
   after: number;
@@ -103,18 +105,20 @@ export function calc(setup: ModelSetup, data: DayData, prevOut: Partial<Record<S
   let carry = 0, carryAm = 0, carryPm = 0;
   for (const p of setup.processes) {
     const s = SEGMENTS[p.segment], first = firstOf(setup, p.segment) === p;
-    let input: number, mode: Row["mode"];
+    let autoInput: number, mode: Row["mode"];
+    if (first && s.start === "set") { autoInput = data.startSet[p.segment] ?? 0; mode = "set"; }
+    else if (first && s.start === "prev") { autoInput = prevOut[p.segment] ?? 0; mode = "prev"; }
+    else { autoInput = carry; mode = "auto"; }
+    let input = autoInput;
     if (data.override[p.id] != null) { input = data.override[p.id]; mode = "set"; }
-    else if (first && s.start === "set") { input = data.startSet[p.segment] ?? 0; mode = "set"; }
-    else if (first && s.start === "prev") { input = prevOut[p.segment] ?? 0; mode = "prev"; }
-    else { input = carry; mode = "auto"; }
     const d = dayPairs(p, data);
     const before = sum(d.map((x) => x[0])), after = sum(d.map((x) => x[1]));
     const out = input - after;
     let am: SlotRow | null = null, pm: SlotRow | null = null;
     if (p.segment === "E") {
       const inAm = first ? (data.amShare[p.id] ?? Math.round(input / 2)) : carryAm;
-      const inPm = first ? input - inAm : carryPm;
+      // a typed day input of a later function process keeps the 08–12h carry and moves the difference to 12–17h
+      const inPm = first || data.override[p.id] != null ? input - inAm : carryPm;
       const slot = (counts: NgCounts, slotInput: number): SlotRow => {
         const pairs = p.ngItems.map((i) => pairOf(counts, p, i));
         const a = sum(pairs.map((x) => x[1]));
@@ -126,7 +130,7 @@ export function calc(setup: ModelSetup, data: DayData, prevOut: Partial<Record<S
       carryPm = pm.out;
     }
     rows[p.id] = {
-      input, mode, before, after, out,
+      input, autoInput, mode, before, after, out,
       rateBefore: input ? before / input : 0,
       rateAfter: input ? after / input : 0,
       am, pm,
@@ -149,12 +153,12 @@ export interface Actuals {
   oqc: number | null;
 }
 
-/** Day actuals of the plan stages: Sub start, Main Dry in, last function test out, Packing in, sent to OQC. */
+/** Day actuals of the plan stages: Sub Dry in, Main Dry in, last function test out, Packing in, sent to OQC. */
 export function actuals(setup: ModelSetup, rows: Rows, data: DayData): Actuals {
   const fn = setup.processes.filter((p) => p.group === "F").at(-1);
-  const pk = firstOf(setup, "F"), a = firstOf(setup, "A");
+  const pk = firstOf(setup, "F");
   return {
-    sub: a ? rows[a.id].input : null,
+    sub: segOut(setup, rows, "A"),
     main: segOut(setup, rows, "C"),
     func: fn ? rows[fn.id].out : null,
     vis: pk ? rows[pk.id].input : null,
@@ -209,13 +213,13 @@ export interface MaterialRow {
   uses: MaterialUse[];
 }
 
-/** Stock of each material: opening (previous closing unless typed) + in − out. */
+/** Stock of each material: opening (previous day's stock unless typed) + in − out. */
 export function materialRows(setup: ModelSetup, rows: Rows, data: DayData, previous: DaySummary | null | undefined): MaterialRow[] {
   return setup.materials.map((name) => {
     const m = data.materials[name];
     const uses = materialUses(setup, rows, name);
     const suggested = Math.round(sum(uses.map((u) => u.used)));
-    const opening = m?.opening ?? previous?.closing?.[name] ?? 0;
+    const opening = m?.opening ?? previous?.stock?.[name] ?? previous?.closing?.[name] ?? 0;
     const inQty = m?.in ?? 0;
     const out = m?.out ?? suggested;
     const closing = opening + inQty - out;
@@ -264,6 +268,7 @@ export function summarize(setup: ModelSetup, data: DayData, rows: Rows, prevOut:
     segOut: segs,
     prevOut,
     closing: Object.fromEntries(materials.map((m) => [m.name, m.closing])),
+    stock: Object.fromEntries(materials.map((m) => [m.name, m.counted ?? m.closing])),
   };
 }
 
@@ -277,12 +282,16 @@ export function setPair(data: DayData, p: Process, slot: Slot, itemId: string, k
   return { ...data, [key]: { ...counts, [p.id]: { ...counts[p.id], [itemId]: pair } } };
 }
 
-/** Typed input: 08–12h share of the first function process, a segment start count, or an override. */
-export function setInput(setup: ModelSetup, data: DayData, p: Process, slot: Slot, value: number): DayData {
+/**
+ * Typed input: 08–12h share of the first function process, a segment start count, or an override
+ * (units taken out between processes, e.g. for review). Typing the automatic value back clears the override.
+ */
+export function setInput(setup: ModelSetup, data: DayData, p: Process, slot: Slot, value: number, autoInput?: number): DayData {
   const first = firstOf(setup, p.segment) === p;
   if (p.segment === "E" && slot === "am" && first) return { ...data, amShare: { ...data.amShare, [p.id]: value } };
   if (first && SEGMENTS[p.segment].start === "set" && data.override[p.id] == null)
     return { ...data, startSet: { ...data.startSet, [p.segment]: value } };
+  if (autoInput != null && value === autoInput) return clearOverride(data, p.id);
   return { ...data, override: { ...data.override, [p.id]: value } };
 }
 
@@ -314,11 +323,17 @@ export function deleteProcess(setup: ModelSetup, id: string): ModelSetup {
   return { ...setup, processes: setup.processes.filter((p) => p.id !== id) };
 }
 
-/** Moves a process inside its segment. */
+/** Moves a process inside its segment; at the edge of a segment it joins the neighbouring segment instead. */
 export function moveProcess(setup: ModelSetup, id: string, dir: -1 | 1): ModelSetup {
   const procs = [...setup.processes];
   const k = procs.findIndex((p) => p.id === id), j = k + dir;
-  if (k < 0 || !procs[j] || procs[j].segment !== procs[k].segment) return setup;
+  if (k < 0) return setup;
+  if (!procs[j] || procs[j].segment !== procs[k].segment) {
+    const next = SEGMENT_KEYS[SEGMENT_KEYS.indexOf(procs[k].segment) + dir];
+    if (!next) return setup;
+    procs[k] = { ...procs[k], segment: next };
+    return { ...setup, processes: procs };
+  }
   [procs[k], procs[j]] = [procs[j], procs[k]];
   return { ...setup, processes: procs };
 }
@@ -342,8 +357,9 @@ export const renameNgItem = (setup: ModelSetup, id: string, itemId: string, name
   mapProcess(setup, id, (p) => ({ ...p, ngItems: p.ngItems.map((i) => (i.id === itemId ? { ...i, name: name.trim() || "NG" } : i)) }));
 export const deleteNgItem = (setup: ModelSetup, id: string, itemId: string) =>
   mapProcess(setup, id, (p) => ({ ...p, ngItems: p.ngItems.filter((i) => i.id !== itemId) }));
-export const addProcessMaterial = (setup: ModelSetup, id: string) =>
-  setup.materials.length ? mapProcess(setup, id, (p) => ({ ...p, materials: [...p.materials, { material: setup.materials[0], qtyPerUnit: 1 }] })) : setup;
+/** Links a material to a process (1 per unit); a material already linked stays as it is. */
+export const linkMaterial = (setup: ModelSetup, id: string, material: string) =>
+  mapProcess(setup, id, (p) => (p.materials.some((m) => m.material === material) ? p : { ...p, materials: [...p.materials, { material, qtyPerUnit: 1 }] }));
 export const updateProcessMaterial = (setup: ModelSetup, id: string, index: number, change: { material?: string; qtyPerUnit?: number }) =>
   mapProcess(setup, id, (p) => ({ ...p, materials: p.materials.map((m, i) => (i === index ? { ...m, ...change } : m)) }));
 export const deleteProcessMaterial = (setup: ModelSetup, id: string, index: number) =>

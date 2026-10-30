@@ -108,8 +108,10 @@ export interface DaySummary {
   segOut: Partial<Record<Segment, number | null>>;
   /** Start inputs of the "prev" segments used that day. */
   prevOut: Partial<Record<Segment, number>>;
-  /** Material closing stock. */
+  /** Material closing stock (opening + in − out). */
   closing: Record<string, number>;
+  /** Stock carried to the next day: the counted stock when entered, otherwise the closing. */
+  stock?: Record<string, number>;
 }
 
 export type DayStatus = "Draft" | "Submitted";

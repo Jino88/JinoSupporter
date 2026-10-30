@@ -7,6 +7,7 @@ import {
   calc,
   chainPlan,
   deleteMaterial,
+  linkMaterial,
   materialRows,
   moveProcess,
   ngSheet,
@@ -58,6 +59,13 @@ describe("production input calculation", () => {
     expect(pct(t.functionAfter)).toBe("5.47%");
   });
 
+  it("counts Sub actual at Sub Dry in (segment A output)", () => {
+    const { setup, data, previous, at } = sample();
+    const ng = setPair(data, at(7), "day", at(7).ngItems[0].id, 1, 4);
+    const ngB = setPair(ng, at(7), "day", at(7).ngItems[0].id, 0, 4);
+    expect(actuals(setup, calc(setup, ngB, prevOutFrom(previous)), ngB).sub).toBe(1575);
+  });
+
   it("starts B and D from the previous day and carries NG to the next process", () => {
     const { setup, data, previous, at } = sample();
     const rows = calc(setup, data, prevOutFrom(previous));
@@ -72,6 +80,24 @@ describe("production input calculation", () => {
     expect(setInput(setup, data, at(1), "day", 1600).startSet.A).toBe(1600);
     expect(setInput(setup, data, at(3), "day", 10).override[at(3).id]).toBe(10);
     expect(setInput(setup, data, at(28), "am", 700).amShare[at(28).id]).toBe(700);
+  });
+
+  it("takes a typed input for units taken out mid-line and carries it on", () => {
+    const { setup, data, previous, at } = sample();
+    const rows = calc(setup, data, prevOutFrom(previous));
+    const taken = setInput(setup, data, at(5), "day", rows[at(5).id].input - 3, rows[at(5).id].autoInput);
+    const after = calc(setup, taken, prevOutFrom(previous));
+    expect(after[at(5).id]).toMatchObject({ input: 1576, autoInput: 1579, mode: "set" });
+    expect(after[at(6).id].input).toBe(1576);
+    const back = setInput(setup, taken, at(5), "day", 1579, after[at(5).id].autoInput);
+    expect(back.override[at(5).id]).toBeUndefined();
+  });
+
+  it("keeps the function slots consistent with a typed day input", () => {
+    const { setup, data, previous, at } = sample();
+    const typed = { ...data, override: { ...data.override, [at(30).id]: 1400 } };
+    const r = calc(setup, typed, prevOutFrom(previous))[at(30).id];
+    expect(r.am!.input + r.pm!.input).toBe(1400);
   });
 
   it("flags After larger than Before", () => {
@@ -94,12 +120,16 @@ describe("production input calculation", () => {
   it("opens with the previous day's closing and saves it in the summary", () => {
     const { setup, previous } = sample();
     const data = emptyDayData();
-    const prev = { ...previous, closing: { LOWER: 500 } };
+    const prev = { ...previous, closing: { LOWER: 500, UPPER: 10 }, stock: { UPPER: 7 } };
     const rows = calc(setup, data, prevOutFrom(prev));
     const mats = materialRows(setup, rows, data, prev);
     expect(mats.find((m) => m.name === "LOWER")).toMatchObject({ opening: 500, openingTyped: false, closing: 500 });
+    expect(mats.find((m) => m.name === "UPPER")!.opening).toBe(7);
     const s = summarize(setup, data, rows, prevOutFrom(prev), mats);
     expect(s.closing.LOWER).toBe(500);
+    const counted = { ...data, materials: { LOWER: { opening: null, in: 0, source: "", out: null, counted: 480 } } };
+    const s2 = summarize(setup, counted, rows, prevOutFrom(prev), materialRows(setup, rows, counted, prev));
+    expect(s2.stock).toMatchObject({ LOWER: 480 });
     expect(s.prevOut).toEqual({ B: 1494, D: 1433 });
   });
 
@@ -123,10 +153,22 @@ describe("setup edits", () => {
     expect(moved.processes.filter((p) => p.segment === "C").at(-1)!.name).toBe("Bonding Enclosure");
   });
 
-  it("moves a process only inside its segment", () => {
+  it("moves a process inside its segment and into the next segment at the edge", () => {
     const setup = x316bSetup();
-    expect(moveProcess(setup, setup.processes[6].id, 1)).toBe(setup);
     expect(moveProcess(setup, setup.processes[1].id, -1).processes[0].name).toBe("AOI 1");
+    const down = moveProcess(setup, setup.processes[6].id, 1);
+    expect(down.processes[6]).toMatchObject({ name: "AOI 3", segment: "B" });
+    const up = moveProcess(setup, setup.processes[7].id, -1);
+    expect(up.processes[7]).toMatchObject({ name: "Fix Bonding 3", segment: "A" });
+    expect(moveProcess(setup, setup.processes[0].id, -1)).toBe(setup);
+  });
+
+  it("links a dragged material once with 1 per unit", () => {
+    const setup = x316bSetup();
+    const id = setup.processes[1].id;
+    const linked = linkMaterial(setup, id, "TRAY");
+    expect(linked.processes[1].materials).toEqual([{ material: "TRAY", qtyPerUnit: 1 }]);
+    expect(linkMaterial(linked, id, "TRAY").processes[1].materials).toHaveLength(1);
   });
 
   it("rejects duplicate materials and unlinks deleted ones", () => {
