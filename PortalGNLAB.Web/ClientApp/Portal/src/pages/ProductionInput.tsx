@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { formatPublished } from "../format";
 import { downloadBlob } from "../toolsApi";
 import { productionApi } from "./productionInput/api";
 import DailyTab from "./productionInput/DailyTab";
@@ -259,7 +260,7 @@ export default function ProductionInput() {
   };
 
   const status = !day ? <span className="pi-st none">Not entered</span>
-    : day.status === "Submitted" ? <span className="pi-st ok">Submitted {day.updatedAt.slice(0, 16).replace("T", " ")}</span>
+    : day.status === "Submitted" ? <span className="pi-st ok">Submitted {formatPublished(day.updatedAt)}</span>
     : <span className="pi-st">Draft · not submitted</span>;
   const kp = (key: string, v: string, n: string, cls = "") => (
     <div className="pi-kp"><div className="pi-kp-k">{key}</div><div className={"pi-kp-v " + cls}>{v}</div><div className="pi-kp-n">{n}</div></div>
