@@ -47,6 +47,10 @@ public static class PortalShellEndpoints
         [AppMenus.Translate] = "/app/tools/translate",
         [AppMenus.ReviewReport] = "/app/tools/review-report",
         [AppMenus.ProductionInput] = "/app/production/input",
+        [AppMenus.BmesRoutingTable] = "/app/bmes/routing-table",
+        [AppMenus.BmesReasonTable] = "/app/bmes/reason-table",
+        [AppMenus.BmesWorkerStatus] = "/app/bmes/worker-status",
+        [AppMenus.BmesMakeModelGroup] = "/app/bmes/make-model-group",
         [AppMenus.QrSummary] = "/app/qr/summary",
         [AppMenus.QrBakoData] = "/app/qr/bako-data",
         [AppMenus.QrAirleakData] = "/app/qr/airleak-data",
@@ -109,6 +113,7 @@ public static class PortalShellEndpoints
         app.MapToolPages();
         app.MapTeamMemo();
         app.MapProductionInput();
+        app.MapBmesTables();
         app.MapQr();
         app.MapSetting();
 

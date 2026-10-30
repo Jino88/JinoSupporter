@@ -19,6 +19,10 @@ import QrGaussData from "./pages/QrGaussData";
 import QrGaussScatter from "./pages/QrGaussScatter";
 import TeamMemo from "./pages/TeamMemo";
 import TeamMemoBoard from "./pages/TeamMemoBoard";
+import BmesRoutingTable from "./pages/BmesRoutingTable";
+import BmesReasonTable from "./pages/BmesReasonTable";
+import BmesWorkerStatus from "./pages/BmesWorkerStatus";
+import BmesMakeModelGroup from "./pages/BmesMakeModelGroup";
 import Setting from "./pages/Setting";
 
 /** React pages by their path inside /app. A page added here also needs its menu id in
@@ -43,6 +47,10 @@ const pages: Record<string, { title: string; render: (menu: MenuItem[]) => React
   "/memo/board": { title: "Memo Board", render: () => <TeamMemoBoard /> },
   "/memo/plan": { title: "Plan", render: () => <TeamMemo /> },
   "/memo/meetings": { title: "Plan", render: () => <TeamMemo /> },
+  "/bmes/routing-table": { title: "Routing Table", render: () => <BmesRoutingTable /> },
+  "/bmes/reason-table": { title: "Reason Table", render: () => <BmesReasonTable /> },
+  "/bmes/worker-status": { title: "Worker Status", render: () => <BmesWorkerStatus /> },
+  "/bmes/make-model-group": { title: "Model Group", render: () => <BmesMakeModelGroup /> },
   "/setting": { title: "Setting", render: () => <Setting /> },
 };
 
