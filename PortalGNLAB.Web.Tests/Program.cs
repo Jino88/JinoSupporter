@@ -171,6 +171,21 @@ PortalGNLAB.Web.Endpoints.PortalShellEndpoints.ShellFileOptions.OnPrepareRespons
     new Microsoft.AspNetCore.StaticFiles.StaticFileResponseContext(shellContext, new NotFoundFileInfo("index.html")));
 Check(shellContext.Response.Headers.CacheControl.ToString().Contains("no-cache", StringComparison.Ordinal), "React index.html is served no-cache");
 
+// AIRLEAK (and GAUSS once the column exists) are dated by ImportedAt; the tester clock is not trusted. BAKO stays on TestTime.
+var resolveTime = typeof(QrTestDataService).GetMethod("ResolveTestTimeColumn",
+    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+string? TimeColumn(QrTestTableDef table, params string[] columns) => (string?)resolveTime.Invoke(null, [table, columns]);
+Check(TimeColumn(QrTestTables.Airleak, "id", "TestTime", "ProductID", "ImportedAt") == "ImportedAt", "AIRLEAK dates by ImportedAt");
+Check(TimeColumn(QrTestTables.Gauss, "OTIME", "ProductID") == "OTIME"
+      && TimeColumn(QrTestTables.Gauss, "OTIME", "ProductID", "ImportedAt") == "ImportedAt", "GAUSS dates by ImportedAt when present, else OTIME");
+Check(TimeColumn(QrTestTables.Bako, "Id", "TestTime", "ProductID", "ImportedAt") == "TestTime", "BAKO keeps TestTime");
+string summarySql = (string)typeof(QrSummaryService).GetField("SummarySql",
+    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!.GetValue(null)!;
+Check(summarySql.Contains("a.[ImportedAt] >= @From", StringComparison.Ordinal)
+      && summarySql.Contains("a.[ImportedAt]                                  AS [TestTime]", StringComparison.Ordinal)
+      && !summarySql.Contains("a.[TestTime]", StringComparison.Ordinal)
+      && summarySql.Contains("b.[TestTime] >= @From", StringComparison.Ordinal), "QR SUMMARY dates AIRLEAK by ImportedAt, BAKO by TestTime");
+
 if (failures.Count > 0)
     throw new InvalidOperationException($"Host-cutover checks failed: {string.Join(", ", failures)}");
 

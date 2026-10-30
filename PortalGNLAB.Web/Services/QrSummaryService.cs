@@ -172,7 +172,7 @@ public sealed class QrSummaryService(QrTestDataService qrData, AppActivityLogger
     {
         await using SqlCommand cmd = conn.CreateCommand();
         cmd.CommandText = """
-            SELECT (SELECT MAX([TestTime]) FROM [dbo].[ALTD] WITH (NOLOCK)) AS [AirleakMax],
+            SELECT (SELECT MAX([ImportedAt]) FROM [dbo].[ALTD] WITH (NOLOCK)) AS [AirleakMax],
                    (SELECT MAX([TestTime]) FROM [dbo].[BKTD] WITH (NOLOCK)) AS [BakoMax],
                    (SELECT MAX([OTIME])    FROM [dbo].[GSTD] WITH (NOLOCK)) AS [GaussMax];
             """;
@@ -206,7 +206,8 @@ public sealed class QrSummaryService(QrTestDataService qrData, AppActivityLogger
         (
             SELECT CONVERT(tinyint, 1)                             AS [Station],
                    LTRIM(RTRIM(a.[ProductID]))                     AS [ProductID],
-                   a.[TestTime]                                    AS [TestTime],
+                   -- ALTD is dated by ImportedAt (see QrTestTables.Airleak): the tester's clock is not trusted.
+                   a.[ImportedAt]                                  AS [TestTime],
                    CONVERT(bigint, a.[id])                         AS [Tie],
                    CONVERT(nvarchar(80), a.[TestResult])           AS [Result],
                    -- ALTD often leaves the numeric pressure null and puts the reading in description ("1.2 Pa/s").
@@ -224,8 +225,8 @@ public sealed class QrSummaryService(QrTestDataService qrData, AppActivityLogger
                    CONVERT(nvarchar(80), NULL)                     AS [V5],
                    CONVERT(nvarchar(80), NULL)                     AS [R5]
             FROM [dbo].[ALTD] AS a WITH (NOLOCK)
-            WHERE a.[TestTime] >= @From
-              AND a.[TestTime] <  @ToExclusive
+            WHERE a.[ImportedAt] >= @From
+              AND a.[ImportedAt] <  @ToExclusive
               AND LEN(LTRIM(RTRIM(a.[ProductID]))) = @QrLength
 
             UNION ALL
