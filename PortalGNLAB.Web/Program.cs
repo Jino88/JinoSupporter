@@ -30,6 +30,8 @@ PortalDbMigrationResult dbMigration = PortalDbMigrator.EnsureMigrated(
     message => Console.WriteLine($"[PortalDb] {message}"));
 if (dbMigration.AlreadyMigrated)
     Console.WriteLine($"[PortalDb] Using {PortalDb.FilePath}");
+// One-time: drop the NG Rate / F-COST copies taken under the old rules (see HistoryCachePolicy).
+PortalDbMigrator.EnsureHistoryCacheReset(PortalDb.FilePath, message => Console.WriteLine($"[PortalDb] {message}"));
 appPaths.MainDbPath = PortalDb.FilePath;
 builder.Configuration["Database:Path"] = PortalDb.FilePath;
 builder.Services.AddSingleton(appPathsService);
@@ -127,6 +129,8 @@ builder.Services.AddScoped<FCostService>();
 builder.Services.AddScoped<FCostReportService>();
 builder.Services.AddScoped<FCostCorePartsService>();
 builder.Services.AddScoped<IpgDefectService>();
+// One-shot NG Rate / F-COST history cache fill started from Setting; outlives the page.
+builder.Services.AddSingleton<HistoryCacheJobService>();
 builder.Services.AddScoped<BmesDailyReportCalculationService>();
 builder.Services.AddScoped<BmesCauseMonthlyCalculationService>();
 builder.Services.AddScoped<BmesWeeklyReportCalculationService>();

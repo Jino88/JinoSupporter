@@ -12,6 +12,8 @@
 @inject CodexApiService          CodexApi
 @inject QrTestDataService        QrBakoData
 @inject QrModelCodeService       QrModelCodes
+@inject HistoryCacheJobService   HistoryJob
+@implements IDisposable
 
 <PageTitle>Setting</PageTitle>
 
@@ -405,6 +407,48 @@
         </div>
     </div>
 
+    <!-- ══ NG Rate / F-COST history cache ═════════════════════════════════════ -->
+    <div class="col-12">
+<div class="card setting-card">
+    <div class="card-header d-flex align-items-center gap-2">
+                <span class="fw-semibold small">History Cache <span class="text-muted fw-normal">(NG Rate / F-COST)</span></span>
+                @if (HistoryJob.IsRunning)
+                { <span class="badge bg-primary" style="font-size:10px;">Running</span> }
+                else if (!string.IsNullOrEmpty(HistoryJob.Status))
+                { <span class="badge bg-secondary" style="font-size:10px;">@HistoryJob.Status</span> }
+            </div>
+            <div class="card-body">
+                <div class="small text-muted mb-2">
+                    Fetches every day from the start date to
+                    <strong>@HistoryCachePolicy.LastHistoryDay(DateTime.Today).ToString("yyyy-MM-dd")</strong>
+                    from the BMES API in one run and keeps it. The last @HistoryCachePolicy.LiveWindowDays days are
+                    never kept: NG Rate and F-COST always fetch them live. Days already cached are skipped, so a
+                    stopped run continues where it left off. It keeps running if you leave this page.
+                </div>
+                <div class="d-flex flex-wrap align-items-end gap-2">
+                    <div>
+                        <label class="form-label small mb-1">From</label>
+                        <input type="date" class="form-control form-control-sm" style="width:160px;"
+                               @bind="_historyFrom" disabled="@HistoryJob.IsRunning" />
+                    </div>
+                    @if (HistoryJob.IsRunning)
+                    {
+                        <button class="btn btn-outline-danger btn-sm" @onclick="HistoryJob.Cancel">Stop</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-primary btn-sm" @onclick="StartHistoryCache">▶ Build history cache</button>
+                    }
+                </div>
+                @{ var historyLog = HistoryJob.Log; }
+                @if (historyLog.Count > 0)
+                {
+                    <pre class="small mt-2 mb-0 setting-fetch-log">@string.Join("\n", historyLog.TakeLast(60))</pre>
+                }
+            </div>
+        </div>
+    </div>
+
     <!-- ══ BMES Material Fetch (test) ═════════════════════════════════════════ -->
     <div class="col-12">
 <div class="card setting-card">
@@ -555,9 +599,27 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
+        HistoryJob.Changed += OnHistoryJobChanged;
         await LoadCodexModelsAsync();
         StateHasChanged();
     }
+
+    // ── History cache ──────────────────────────────────────────────────────────
+
+    private DateTime _historyFrom = new(DateTime.Today.Year - 2, 1, 1);
+
+    private void StartHistoryCache()
+    {
+        if (!HistoryJob.Start(_historyFrom))
+        {
+            _statusMsg = "A history cache run is already in progress.";
+            _statusError = true;
+        }
+    }
+
+    private void OnHistoryJobChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => HistoryJob.Changed -= OnHistoryJobChanged;
 
     private async Task LoadCodexModelsAsync()
     {

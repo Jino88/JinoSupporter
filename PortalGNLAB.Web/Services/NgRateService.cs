@@ -22,11 +22,6 @@ public sealed class NgRateService(
     private static readonly object ReusableDbLock = new();
     private static ReusableDb? _lastReusableDb;
     private static readonly TimeSpan RecentRangeReuseTtl = TimeSpan.FromMinutes(15);
-    private static readonly TimeSpan RecentSourceCacheTtl = TimeSpan.FromMinutes(15);
-    // Dates within this many days of today may still change on BMES, so their cache
-    // is only trusted for RecentSourceCacheTtl. A snapshot taken while a date was
-    // still inside this window is never treated as final, even after the date ages out.
-    private const int RecentWindowDays = 2;
 
     private sealed record ReusableDb(
         DateTime StartDate,
@@ -54,8 +49,8 @@ public sealed class NgRateService(
 
     /// <summary>
     /// Full flow: BMES data fetch → merged in-memory data set.
-    /// - Dates 3+ days ago : use monthly DB cache (fetch + cache if missing)
-    /// - Dates 0–2 days ago: always fetch from server (data may still change)
+    /// - History (older than the last 7 days): NgRateCache, fetched + cached once if missing
+    /// - Live (last 7 days): always fetched from the server; see <see cref="HistoryCachePolicy"/>
     /// - Returns the <see cref="NgRateDataSet.Handle"/> of the merged rows in
     ///   <see cref="NgRateDataStore"/>; nothing is written to disk besides the NgRateCache.
     /// </summary>
@@ -104,10 +99,7 @@ public sealed class NgRateService(
         progress?.Report($"[start] Save dir = {saveDir}  ({swStart.ElapsedMilliseconds} ms elapsed)");
 
         // ── 1. Classify dates ────────────────────────────────────────────────
-        // · Recent three days   → reuse monthly cache for a short TTL
-        // · Otherwise           → use monthly DB cache if present, else fetch
-        // Recent three days use monthly cache markers for a short TTL.
-        var recentCutoff = DateTime.Today.AddDays(-RecentWindowDays);
+        // HistoryCachePolicy: settled history comes from NgRateCache, everything else from BMES.
         var allDates = Enumerable
             .Range(0, (int)(endDate.Date - startDate.Date).TotalDays + 1)
             .Select(i => startDate.Date.AddDays(i))
@@ -116,7 +108,7 @@ public sealed class NgRateService(
         var toFetch = new List<DateTime>(); // needs BMES server fetch
         var toCache = new List<DateTime>(); // load from monthly DB cache
 
-        var monthlyCachedDates = GetMonthlyReusableCachedDateSet(allDates, recentCutoff);
+        var monthlyCachedDates = GetMonthlyReusableCachedDateSet(allDates);
 
         foreach (var date in allDates)
         {
@@ -166,6 +158,7 @@ public sealed class NgRateService(
             // The server fetch dominates the run and its size is known up front, so
             // report it as counted work — consumers can draw a real progress bar.
             int fetched = 0;
+            var uncachedDates = new HashSet<DateTime>();
             progress.ReportSteps(0, ranges.Count, "Server fetch");
 
             foreach (var (start, end) in ranges)
@@ -181,6 +174,9 @@ public sealed class NgRateService(
                 var rows3220 = await fetch3220;
                 if (rows3200 != null) serverRows.AddRange(rows3200);
                 if (rows3220 != null) serverRows.AddRange(rows3220);
+                // A plant that failed would leave the day half-filled; show it but never cache it.
+                if (rows3200 is null || rows3220 is null)
+                    for (DateTime d = start; d <= end; d = d.AddDays(1)) uncachedDates.Add(d);
                 Log(progress, $"  API {s} ~ {e}: 3200 {Rows(rows3200)}, 3220 {Rows(rows3220)}");
 
                 progress.ReportSteps(++fetched, ranges.Count, "Server fetch");
@@ -192,9 +188,10 @@ public sealed class NgRateService(
             serverRows = await Task.Run(() => RemoveDuplicates(serverRows));
             Log(progress, $"{serverRows.Count:N0} rows after deduplication.");
 
-            // Cache every fetched date. Recent markers are reused only for a short TTL.
+            // Cache every fully fetched date. Live dates are reused only for a short TTL.
             foreach (var date in toFetch)
             {
+                if (uncachedDates.Contains(date)) continue;
                 string dateStr = date.ToString("yyyy-MM-dd");
                 var    dayRows = serverRows
                     .Where(r => GetCol(r, "PRODUCT_DATE") == dateStr)
@@ -254,6 +251,100 @@ public sealed class NgRateService(
         return data.Handle;
     }
 
+    /// <summary>
+    /// One-shot history fill: every day from <paramref name="from"/> to
+    /// <see cref="HistoryCachePolicy.LastHistoryDay"/> without a settled copy in NgRateCache is
+    /// fetched from PLATFORM_API a month at a time and cached. Live days are never touched here.
+    /// </summary>
+    public async Task<HistoryCacheResult> BuildHistoryCacheAsync(
+        DateTime from,
+        IProgress<string>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        var result = new HistoryCacheResult();
+        DateTime to = HistoryCachePolicy.LastHistoryDay(DateTime.Today);
+        if (from.Date > to)
+        {
+            Log(progress, $"NG Rate history: nothing to cache before {to.AddDays(1):yyyy-MM-dd}.");
+            return result;
+        }
+
+        var days = Enumerable.Range(0, (to - from.Date).Days + 1).Select(i => from.Date.AddDays(i)).ToList();
+        HashSet<string> settled = GetMonthlyReusableCachedDateSet(days);
+        var missing = days
+            .Where(d => !settled.Contains(d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)))
+            .ToList();
+        result.SkippedDays = days.Count - missing.Count;
+        Log(progress, $"NG Rate history {from:yyyy-MM-dd} – {to:yyyy-MM-dd}: " +
+                      $"{result.SkippedDays:N0} day(s) already cached, {missing.Count:N0} to fetch.");
+        if (missing.Count == 0)
+            return result;
+
+        BmesLoginOutcome login = await BmesWebSession.OpenAsync(_settings.LoginId, _settings.Password, progress: progress);
+        if (!login.Succeeded)
+        {
+            result.Failures.Add("BMES API login not configured.");
+            Log(progress, "[ERROR] BMES API login not configured. Ask admin to set it in Setting.");
+            return result;
+        }
+        using BmesWebSession session = login.Session!;
+
+        // One request pair per month, spanning its first to last missing day. Only the missing
+        // days are written, so a settled day inside the span keeps its copy.
+        var months = missing.GroupBy(d => new DateTime(d.Year, d.Month, 1)).ToList();
+        int done = 0;
+        progress.ReportSteps(0, months.Count, "NG Rate history");
+        foreach (var month in months)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            string s = month.Min().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            string e = month.Max().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            var fetch3200 = BmesGateway.FetchNgRecordsAsync(session, "3200", s, e, null);
+            var fetch3220 = BmesGateway.FetchNgRecordsAsync(session, "3220", s, e, null);
+            await Task.WhenAll(fetch3200, fetch3220);
+            List<Dictionary<string, string>>? rows3200 = await fetch3200;
+            List<Dictionary<string, string>>? rows3220 = await fetch3220;
+
+            if (rows3200 is null || rows3220 is null)
+            {
+                result.FailedDays += month.Count();
+                result.Failures.Add($"NG Rate {s} ~ {e}: API fetch failed");
+                Log(progress, $"[WARN] NG Rate {month.Key:yyyy-MM}: API fetch failed " +
+                              $"(3200 {Rows(rows3200)}, 3220 {Rows(rows3220)}); not cached.");
+            }
+            else
+            {
+                var rows = await Task.Run(() => RemoveDuplicates([.. rows3200, .. rows3220]), cancellationToken);
+                var byDate = rows
+                    .GroupBy(r => GetCol(r, "PRODUCT_DATE"))
+                    .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.Ordinal);
+                int saved = 0;
+                foreach (DateTime day in month)
+                {
+                    List<Dictionary<string, string>> dayRows =
+                        byDate.TryGetValue(day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), out var list) ? list : [];
+                    if (await Task.Run(() => SaveMonthlyDateDb(day, dayRows, null), cancellationToken))
+                    {
+                        saved++;
+                        result.TotalRows += dayRows.Count;
+                    }
+                    else
+                    {
+                        result.FailedDays++;
+                        result.Failures.Add($"NG Rate {day:yyyy-MM-dd}: could not write the cache");
+                    }
+                }
+                result.FetchedDays += saved;
+                Log(progress, $"  NG Rate {month.Key:yyyy-MM}: {rows.Count:N0} rows, {saved:N0} day(s) cached");
+            }
+            progress.ReportSteps(++done, months.Count, "NG Rate history");
+        }
+
+        Log(progress, $"NG Rate history done: fetched={result.FetchedDays:N0}, " +
+                      $"skipped={result.SkippedDays:N0}, failed={result.FailedDays:N0}");
+        return result;
+    }
+
     private bool TryGetReusableDb(
         DateTime startDate,
         DateTime endDate,
@@ -266,7 +357,7 @@ public sealed class NgRateService(
                 && cached.StartDate == startDate.Date
                 && cached.EndDate == endDate.Date
                 && string.Equals(cached.LineShiftFilterKey, lineShiftFilterKey, StringComparison.Ordinal)
-                && (endDate.Date < DateTime.Today.AddDays(-RecentWindowDays) ||
+                && (!HistoryCachePolicy.IsLive(endDate, DateTime.Today) ||
                     DateTimeOffset.Now - cached.CachedAt <= RecentRangeReuseTtl)
                 && NgRateDataStore.Contains(cached.Handle))
             {
@@ -335,7 +426,7 @@ public sealed class NgRateService(
 
     // ── Monthly DB helpers ───────────────────────────────────────────────────
 
-    private void SaveMonthlyDateDb(
+    private static bool SaveMonthlyDateDb(
         DateTime date, List<Dictionary<string, string>> rows, IProgress<string>? progress)
     {
         try
@@ -349,16 +440,16 @@ public sealed class NgRateService(
             progress?.Report(rows.Count == 0
                 ? $"  Cached {date:MM/dd}: no data → {NgRateCacheSchema.RowsTable}"
                 : $"  Cached {date:MM/dd}: {rows.Count:N0} rows → {NgRateCacheSchema.RowsTable}");
+            return true;
         }
         catch (Exception ex)
         {
             progress?.Report($"[WARN] Failed to cache {date:MM/dd}: {ex.Message}");
+            return false;
         }
     }
 
-    private HashSet<string> GetMonthlyReusableCachedDateSet(
-        IReadOnlyList<DateTime> dates,
-        DateTime recentCutoff)
+    private static HashSet<string> GetMonthlyReusableCachedDateSet(IReadOnlyList<DateTime> dates)
     {
         var result = new HashSet<string>(StringComparer.Ordinal);
         if (dates.Count == 0)
@@ -408,22 +499,8 @@ public sealed class NgRateService(
                     continue;
                 }
 
-                // Final only when the snapshot was taken after the date left the
-                // recent window. A marker written on the date itself (e.g. a morning
-                // run before quantities were entered) or written ahead of the date
-                // (a range that reached into the future) must be fetched once more
-                // the first time the date is requested as settled history.
-                bool settledSnapshot = cachedAt.Date > date.Date.AddDays(RecentWindowDays);
-                if (date.Date < recentCutoff.Date && settledSnapshot)
-                {
+                if (HistoryCachePolicy.CanReuse(date, cachedAt, DateTime.Now))
                     result.Add(dateText);
-                    continue;
-                }
-
-                if (DateTime.Now - cachedAt <= RecentSourceCacheTtl)
-                {
-                    result.Add(dateText);
-                }
             }
         }
         catch
@@ -757,4 +834,14 @@ public sealed class NgRateService(
         }
         return rows;
     }
+}
+
+/// <summary>Outcome of a one-shot history cache fill (NG Rate or F-COST).</summary>
+public sealed class HistoryCacheResult
+{
+    public int FetchedDays { get; set; }
+    public int SkippedDays { get; set; }
+    public int FailedDays { get; set; }
+    public long TotalRows { get; set; }
+    public List<string> Failures { get; } = [];
 }
