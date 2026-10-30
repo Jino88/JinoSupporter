@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 import { NumInput } from "./fields";
-import { SEGMENTS, clearOverride, firstOf, fmt, pct, setInput, setPair, viewPairs, type Rows } from "./logic";
+import { SEGMENTS, clearOverride, firstOf, fmt, ngRate, pct, setInput, setPair, viewPairs, type Rows } from "./logic";
 import type { DayData, ModelSetup, Slot } from "./types";
 
 const rateCell = (v: number) => (
@@ -84,7 +84,10 @@ export default function DailyTab(props: {
                   </span>
                 );
               }
-              const n = Math.max(1, p.ngItems.length);
+              // Each NG item shows its own rate over the process input; a process with several items
+              // adds a total row with the summed counts and the process NG rate.
+              const withTotal = p.ngItems.length > 1;
+              const n = Math.max(1, p.ngItems.length) + (withTotal ? 1 : 0);
               const head = (
                 <>
                   <td className="pi-pno rs" rowSpan={n}>{idx + 1}</td>
@@ -96,11 +99,11 @@ export default function DailyTab(props: {
                 </>
               );
               const inputTd = <td className="n rs" rowSpan={n}>{inCell}</td>;
-              const tail = (
+              const outTd = <td className="n rs" rowSpan={n}><b>{fmt(out)}</b></td>;
+              const rates = (b: number, a: number) => (
                 <>
-                  <td className="n rs" rowSpan={n}>{rateCell(input ? before / input : 0)}</td>
-                  <td className="n rs" rowSpan={n}>{rateCell(input ? after / input : 0)}</td>
-                  <td className="n rs" rowSpan={n}><b>{fmt(out)}</b></td>
+                  <td className="n">{rateCell(ngRate(b, input))}</td>
+                  <td className="n">{rateCell(ngRate(a, input))}</td>
                 </>
               );
               return (
@@ -115,7 +118,7 @@ export default function DailyTab(props: {
                   )}
                   {p.ngItems.length === 0 ? (
                     <tr className="plast" data-pid={p.id}>
-                      {head}<td className="muted small">No NG item — add one in Setup</td>{inputTd}<td colSpan={2}></td>{tail}
+                      {head}<td className="muted small">No NG item — add one in Setup</td>{inputTd}<td colSpan={2}></td>{rates(before, after)}{outTd}
                     </tr>
                   ) : p.ngItems.map((item, i) => {
                     const [b, a] = pairs[i];
@@ -133,10 +136,19 @@ export default function DailyTab(props: {
                             title={a > b ? "After cannot be larger than Before" : undefined}
                             onCommit={(val) => onData(setPair(data, p, slot, item.id, 1, val ?? 0))} />
                         </td>
-                        {i === 0 && tail}
+                        {rates(b, a)}
+                        {i === 0 && outTd}
                       </tr>
                     );
                   })}
+                  {withTotal && (
+                    <tr className="plast pi-total" data-pid={p.id}>
+                      <td className="dn">Total</td>
+                      <td className="n">{fmt(before)}</td>
+                      <td className="n">{fmt(after)}</td>
+                      {rates(before, after)}
+                    </tr>
+                  )}
                 </Fragment>
               );
             })}

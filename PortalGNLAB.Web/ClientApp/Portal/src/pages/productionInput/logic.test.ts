@@ -10,6 +10,7 @@ import {
   linkMaterial,
   materialRows,
   moveProcess,
+  ngRate,
   ngSheet,
   ngTotals,
   pct,
@@ -233,5 +234,18 @@ describe("plan and sheets", () => {
   it("starts the week on Monday", () => {
     expect(weekStart("2026-10-29")).toBe("2026-10-26");
     expect(weekStart("2026-11-01")).toBe("2026-10-26");
+  });
+});
+
+describe("NG rate per NG item", () => {
+  it("divides each item by the process input and the items add up to the process rate", () => {
+    const items = [11, 22, 33].map((n) => ngRate(n, 1523));
+    expect(items.map((r) => pct(r))).toEqual(["0.72%", "1.44%", "2.17%"]);
+    expect(pct(ngRate(66, 1523))).toBe("4.33%");
+    expect(items.reduce((a, b) => a + b, 0)).toBeCloseTo(ngRate(66, 1523), 12);
+  });
+
+  it("is 0 when nothing went into the process", () => {
+    expect(ngRate(5, 0)).toBe(0);
   });
 });
