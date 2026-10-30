@@ -47,6 +47,10 @@ public static class PortalShellEndpoints
         [AppMenus.Translate] = "/app/tools/translate",
         [AppMenus.ReviewReport] = "/app/tools/review-report",
         [AppMenus.ProductionInput] = "/app/production/input",
+        [AppMenus.QrSummary] = "/app/qr/summary",
+        [AppMenus.QrBakoData] = "/app/qr/bako-data",
+        [AppMenus.QrAirleakData] = "/app/qr/airleak-data",
+        [AppMenus.QrGaussData] = "/app/qr/gauss-data",
     };
 
     public sealed record PortalUser(string Name, string Role);
@@ -105,6 +109,7 @@ public static class PortalShellEndpoints
         app.MapToolPages();
         app.MapTeamMemo();
         app.MapProductionInput();
+        app.MapQr();
         app.MapSetting();
 
         // Every /app route is the React app; it asks /api/portal/me and sends signed-out users to /login.

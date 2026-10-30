@@ -12,6 +12,11 @@ import Translate from "./pages/Translate";
 import ReviewReport from "./pages/ReviewReport";
 import GraphMaker from "./pages/GraphMaker";
 import ProductionInput from "./pages/ProductionInput";
+import QrSummary from "./pages/QrSummary";
+import QrBakoData from "./pages/QrBakoData";
+import QrAirleakData from "./pages/QrAirleakData";
+import QrGaussData from "./pages/QrGaussData";
+import QrGaussScatter from "./pages/QrGaussScatter";
 import TeamMemo from "./pages/TeamMemo";
 import TeamMemoBoard from "./pages/TeamMemoBoard";
 import Setting from "./pages/Setting";
@@ -29,6 +34,11 @@ const pages: Record<string, { title: string; render: (menu: MenuItem[]) => React
   "/tools/review-report": { title: "Review Report", render: () => <ReviewReport /> },
   "/tools/graph-maker": { title: "Graph Maker", render: () => <GraphMaker /> },
   "/production/input": { title: "Production Input", render: () => <ProductionInput /> },
+  "/qr/summary": { title: "QR SUMMARY", render: () => <QrSummary /> },
+  "/qr/bako-data": { title: "QR BAKO DATA", render: () => <QrBakoData /> },
+  "/qr/airleak-data": { title: "QR AIRLEAK DATA", render: () => <QrAirleakData /> },
+  "/qr/gauss-data": { title: "QR GAUSS DATA", render: () => <QrGaussData /> },
+  "/qr/gauss-scatter": { title: "GAUSS SCATTER", render: () => <QrGaussScatter /> },
   "/memo": { title: "Work Memo", render: () => <TeamMemo /> },
   "/memo/board": { title: "Memo Board", render: () => <TeamMemoBoard /> },
   "/memo/plan": { title: "Plan", render: () => <TeamMemo /> },
