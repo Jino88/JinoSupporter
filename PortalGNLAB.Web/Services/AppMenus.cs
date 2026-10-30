@@ -58,6 +58,8 @@ public static class AppMenus
     public const string TeamMemo           = "team-memo";
     /// <summary>AI review report writer: notes + pictures in, a WorkHub-ready .xlsx out.</summary>
     public const string ReviewReport       = "review-report";
+    /// <summary>Daily production input per model (process / NG / material setup, stock and plan) with Excel export.</summary>
+    public const string ProductionInput    = "production-input";
 
     /// <summary>
     /// Menus shown in the nav and the permission editor. Retired 2026-10-29 (ids stay for DB rows):
@@ -87,6 +89,7 @@ public static class AppMenus
         new(AdminDbQuery,       "DB Query",                 "Admin"),
         new(NewVer,             "New Ver",                  "Preview"),
         new(ReviewReport,       "Review Report",            "Tools"),
+        new(ProductionInput,    "Production Input",         "Production"),
     ];
 
     /// <summary>
@@ -99,22 +102,22 @@ public static class AppMenus
         [AppRoles.Manager] =
         [
             NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesSetting, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest5,
-            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, Report, Translate, ReviewReport
+            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, Report, Translate, ReviewReport, ProductionInput
         ],
         [AppRoles.ManagerAi] =
         [
             NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesSetting, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest5,
-            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, Report, Translate, ReviewReport
+            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, Report, Translate, ReviewReport, ProductionInput
         ],
         [AppRoles.Leader] =
         [
             NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest5,
-            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, Report, Translate, ReviewReport
+            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, Report, Translate, ReviewReport, ProductionInput
         ],
         [AppRoles.Editor] =
         [
             NgRate, BmesWorkerStatus, BmesMakeModelGroup, BmesRoutingTable, BmesReasonTable, BmesFCost, BmesTest5,
-            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, Report, Translate, ReviewReport
+            QrSummary, QrBakoData, QrAirleakData, QrGaussData, BmesDailyReport, Report, Translate, ReviewReport, ProductionInput
         ],
         [AppRoles.Viewer] =
         [

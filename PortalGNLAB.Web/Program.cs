@@ -160,6 +160,7 @@ builder.Services.AddSingleton<TeamMemoService>();
 builder.Services.AddScoped<TeamMemoAiSummaryService>();
 // Review report writer (Codex API): notes + pictures -> report laid out for WorkHub normalization.
 builder.Services.AddScoped<ReviewReportService>();
+builder.Services.AddSingleton(new ProductionInputService());
 // Team memo display translation (EN/KO/VI via Codex Luna, cached in the memo DB).
 builder.Services.AddScoped<TeamMemoTranslationService>();
 builder.Services.AddScoped<TeamMemoLanguageState>();

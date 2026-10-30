@@ -305,6 +305,153 @@ finally
         if (File.Exists(f)) File.Delete(f);
 }
 
+// Production Input: models, days, plan, cascade delete, Excel export and the menu entry.
+string prodDb = Path.Combine(Path.GetTempPath(), $"prod-input-{Guid.NewGuid():N}.db");
+try
+{
+    var prod = new ProductionInputService(prodDb);
+    JsonElement J(string json) => JsonDocument.Parse(json).RootElement.Clone();
+    ProductionModelSave ModelBody(string name, string build, string setup, int rev = 0) => new(name, build, J(setup), rev);
+    bool Conflicts(Action act)
+    {
+        try { act(); return false; }
+        catch (ProductionConflictException) { return true; }
+    }
+    bool BadRequest(Action act)
+    {
+        try { act(); return false; }
+        catch (ArgumentException) { return true; }
+    }
+
+    ProductionModel x316 = prod.CreateModel(ModelBody("  X316B ", "EVT", """{"processes":[{"n":"A"},{"n":"B"}],"materials":[{"n":"m"}],"extra":{"keep":1}}"""), "tester");
+    Check(x316.Id.Length == 32 && x316.Name == "X316B" && x316.Revision == 1 && x316.UpdatedBy == "tester"
+          && x316.Setup.GetProperty("extra").GetProperty("keep").GetInt32() == 1,
+        "production model create trims the name, starts at revision 1 and keeps setup verbatim");
+    Check(Conflicts(() => prod.CreateModel(ModelBody("x316b", "evt", "{}"), "tester")),
+        "production model with the same name and build is a conflict (case-insensitive)");
+    Check(BadRequest(() => prod.CreateModel(ModelBody("   ", "", "{}"), "t"))
+          && BadRequest(() => prod.CreateModel(ModelBody(new string('n', 81), "", "{}"), "t"))
+          && BadRequest(() => prod.CreateModel(ModelBody("n", new string('b', 41), "{}"), "t")),
+        "production model name is required and length limited");
+    ProductionModel a100 = prod.CreateModel(ModelBody("A100", "", "{}"), "tester");
+    List<ProductionModelSummary> listed = prod.ListModels();
+    Check(listed.Select(m => m.Name).SequenceEqual(["A100", "X316B"])
+          && listed[1].ProcessCount == 2 && listed[1].MaterialCount == 1 && listed[0].ProcessCount == 0,
+        "production model list is ordered by name and counts setup processes and materials");
+
+    ProductionModel? updated = prod.UpdateModel(x316.Id, ModelBody("X316B", "EVT", """{"processes":[]}""", 1), "editor");
+    Check(updated is { Revision: 2, UpdatedBy: "editor" }, "production model update bumps the revision");
+    Check(Conflicts(() => prod.UpdateModel(x316.Id, ModelBody("X316B", "EVT", "{}", 1), "editor")),
+        "production model update with a stale revision is a conflict");
+    Check(Conflicts(() => prod.UpdateModel(a100.Id, ModelBody("X316B", "EVT", "{}", 1), "editor")),
+        "production model rename onto an existing name and build is a conflict");
+    Check(prod.UpdateModel("missing", ModelBody("Z", "", "{}", 1), "e") is null && prod.GetModel("missing") is null,
+        "production model lookups of an unknown id return nothing");
+
+    ProductionDay? d1 = prod.SaveDay(x316.Id, "2026-10-01", new("Draft", J("""{"a":1}"""), J("""{"s":2}"""), 0), "alice");
+    ProductionDay? d3 = prod.SaveDay(x316.Id, "2026-10-03", new("Submitted", J("[1,2]"), J("{}"), 0), "bob");
+    Check(d1 is { Revision: 1, EnteredBy: "alice", Status: "Draft" } && d1.Data.GetProperty("a").GetInt32() == 1 && d3 is { Revision: 1 },
+        "production day create stores data verbatim and the signed-in user");
+    Check(Conflicts(() => prod.SaveDay(x316.Id, "2026-10-01", new("Draft", J("{}"), J("{}"), 0), "x")),
+        "production day create over an existing day is a conflict");
+    Check(Conflicts(() => prod.SaveDay(x316.Id, "2026-10-01", new("Draft", J("{}"), J("{}"), 5), "x")),
+        "production day update with a stale revision is a conflict");
+    ProductionDay? d1b = prod.SaveDay(x316.Id, "2026-10-01", new("Submitted", J("""{"a":9}"""), J("{}"), 1), "carol");
+    Check(d1b is { Revision: 2, Status: "Submitted", EnteredBy: "carol" }, "production day update bumps the revision");
+    Check(BadRequest(() => prod.SaveDay(x316.Id, "2026-10-01", new("Done", J("{}"), J("{}"), 2), "x"))
+          && BadRequest(() => prod.SaveDay(x316.Id, "10/01/2026", new("Draft", J("{}"), J("{}"), 0), "x"))
+          && prod.SaveDay("missing", "2026-10-01", new("Draft", J("{}"), J("{}"), 0), "x") is null,
+        "production day rejects a bad status or date and an unknown model");
+    ProductionDayPair pair = prod.GetDay(x316.Id, "2026-10-02");
+    ProductionDayPair pairOnDay = prod.GetDay(x316.Id, "2026-10-03");
+    Check(pair.Day is null && pair.Previous?.Date == "2026-10-01"
+          && pairOnDay.Day?.Date == "2026-10-03" && pairOnDay.Previous?.Date == "2026-10-01"
+          && prod.GetDay(x316.Id, "2026-09-30").Previous is null,
+        "production previous day is the latest stored day before the date");
+    Check(BadRequest(() => prod.GetDay(x316.Id, "2026-13-01")), "production day lookup rejects a bad date");
+    Check(prod.ListDays(x316.Id, "2026-10-01", "2026-10-03").Select(d => d.Date).SequenceEqual(["2026-10-01", "2026-10-03"])
+          && prod.ListDays(x316.Id, "2026-10-02", "2026-10-03").Count == 1
+          && prod.ListDays(x316.Id, "2026-10-03", "2026-10-03").Count == 1,
+        "production day range is ascending and inclusive");
+    Check(BadRequest(() => prod.ListDays(x316.Id, "2026-10-01", null))
+          && BadRequest(() => prod.ListDays(x316.Id, "2025-01-01", "2026-10-03"))
+          && prod.ListDays(x316.Id, "2025-08-30", "2026-10-03").Count == 2,
+        "production day range needs both ends and spans at most 400 days");
+
+    Check(prod.GetPlan(x316.Id) is { Data: null, Revision: 0 }, "production plan is empty with revision 0 before the first save");
+    ProductionPlan? plan1 = prod.SavePlan(x316.Id, new(J("""{"w1":100}"""), 0), "pm");
+    Check(plan1 is { Revision: 1, UpdatedBy: "pm" } && plan1.Data?.GetProperty("w1").GetInt32() == 100, "production plan create stores data verbatim");
+    Check(Conflicts(() => prod.SavePlan(x316.Id, new(J("{}"), 0), "pm")) && Conflicts(() => prod.SavePlan(x316.Id, new(J("{}"), 7), "pm")),
+        "production plan save with a wrong revision is a conflict");
+    Check(prod.SavePlan(x316.Id, new(J("""{"w1":200}"""), 1), "pm") is { Revision: 2 }, "production plan update bumps the revision");
+
+    prod.DeleteDay(x316.Id, "2026-10-03");
+    Check(prod.GetDay(x316.Id, "2026-10-03").Day is null, "production day delete removes the entry");
+    Check(prod.DeleteModel(x316.Id) && !prod.DeleteModel(x316.Id)
+          && prod.ListDays(x316.Id, "2026-10-01", "2026-10-31").Count == 0 && prod.GetPlan(x316.Id).Revision == 0
+          && prod.GetModel(a100.Id) is not null,
+        "production model delete also removes its days and plan");
+
+    byte[] xlsx = ProductionInputService.ExportXlsx(new ExportRequest("report", [
+        new ExportSheet("Sheet: A/B", [
+            [J("\"Head\""), J("\"\""), J("\"Total\"")],
+            [J("\"x\""), J("12.5"), J("null")],
+        ], [new ExportMerge(0, 0, 1, 2)], 1, [20, 10]),
+        new ExportSheet("Sheet: A/B", [[J("1")]], null, 0, null),
+    ]));
+    using (var book = new ClosedXML.Excel.XLWorkbook(new MemoryStream(xlsx)))
+    {
+        var ws = book.Worksheet(1);
+        Check(book.Worksheets.Count == 2 && ws.Name == "Sheet AB" && book.Worksheet(2).Name == "Sheet AB (2)"
+              && ws.MergedRanges.Single().RangeAddress.ToStringRelative() == "A1:B1"
+              && ws.Cell(2, 2).DataType == ClosedXML.Excel.XLDataType.Number && ws.Cell(2, 2).GetDouble() == 12.5
+              && ws.Cell(1, 1).Style.Font.Bold && ws.Cell(2, 1).Style.Font.Bold == false
+              && ws.SheetView.SplitRow == 1 && ws.Column(1).Width == 20
+              && ws.Cell(2, 1).Style.Border.TopBorder == ClosedXML.Excel.XLBorderStyleValues.Thin,
+            "production export keeps merges, numeric cells, header style, freeze, widths and unique sheet names");
+    }
+    Check(ProductionInputService.SafeFileName("..\\a:b/ report?.XLSX") == "report_.xlsx" && ProductionInputService.SafeFileName("  ") == "production-input.xlsx",
+        "production export file name is sanitized and ends with .xlsx");
+    Check(BadRequest(() => ProductionInputService.ExportXlsx(new ExportRequest("x", Enumerable.Range(0, 21).Select(i => new ExportSheet("s" + i, [[J("1")]], null, 0, null)).ToList())))
+          && BadRequest(() => ProductionInputService.ExportXlsx(new ExportRequest("x", [new ExportSheet("big", Enumerable.Range(0, 201).Select(_ => Enumerable.Range(0, 1000).Select(_ => J("1")).ToList()).ToList(), null, 0, null)]))),
+        "production export rejects more than 20 sheets or 200k cells");
+
+    var managerMenu = PortalGNLAB.Web.Endpoints.PortalShellEndpoints.MenuFor(AppRoles.Manager, (role, id) => AppMenus.DefaultsByRole[role].Contains(id));
+    var viewerMenu = PortalGNLAB.Web.Endpoints.PortalShellEndpoints.MenuFor(AppRoles.Viewer, (role, id) => AppMenus.DefaultsByRole[role].Contains(id));
+    Check(managerMenu.Any(m => m.Id == AppMenus.ProductionInput && m.React && m.Href == "/app/production/input" && m.Group == "Production" && m.Label == "Production Input")
+          && !viewerMenu.Any(m => m.Id == AppMenus.ProductionInput),
+        "production-input menu is offered to Manager with the React href and not to Viewer");
+
+    // Existing installs: roles already seeded get the menu once, and an admin removal sticks afterwards.
+    string grantDb = Path.Combine(Path.GetTempPath(), $"prod-grant-{Guid.NewGuid():N}.db");
+    try
+    {
+        var grantRepo = new WebRepository(Microsoft.Extensions.Configuration.MemoryConfigurationBuilderExtensions.AddInMemoryCollection(
+            new Microsoft.Extensions.Configuration.ConfigurationBuilder(),
+            new Dictionary<string, string?> { ["Database:Path"] = grantDb }).Build());
+        grantRepo.SetMenuPermission(AppRoles.Leader, AppMenus.NgRate, true);
+        var perms = new MenuPermissionService(grantRepo);
+        bool granted = perms.IsAllowed(AppRoles.Leader, AppMenus.ProductionInput);
+        grantRepo.SetMenuPermission(AppRoles.Leader, AppMenus.ProductionInput, false);
+        _ = new MenuPermissionService(grantRepo);
+        Check(granted && !perms.IsAllowed(AppRoles.Leader, AppMenus.ProductionInput)
+              && grantRepo.GetMenuPermissionsForRole(AppRoles.Viewer).Contains(AppMenus.ProductionInput) == false,
+            "production-input is granted once to roles seeded before it existed");
+    }
+    finally
+    {
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        foreach (string f in new[] { grantDb, grantDb + "-wal", grantDb + "-shm" })
+            if (File.Exists(f)) File.Delete(f);
+    }
+}
+finally
+{
+    Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+    foreach (string f in new[] { prodDb, prodDb + "-wal", prodDb + "-shm" })
+        if (File.Exists(f)) File.Delete(f);
+}
+
 if (failures.Count > 0)
     throw new InvalidOperationException($"Host-cutover checks failed: {string.Join(", ", failures)}");
 
