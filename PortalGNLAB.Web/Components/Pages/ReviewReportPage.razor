@@ -171,7 +171,7 @@ else
                 @Pictures(d, "results")
                 @foreach (string f in d.Findings.Where(f => !string.IsNullOrWhiteSpace(f))) { <p class="rr-p">@Dash(f)</p> }
 
-                <div class="rr-sec">IV. Conclusion</div>
+                <div class="rr-sec">IV. Decision</div>
                 @if (!string.IsNullOrWhiteSpace(d.Conclusion)) { <p class="rr-p">@Dash(d.Conclusion)</p> }
                 @foreach (string l in d.Limitations.Where(l => !string.IsNullOrWhiteSpace(l))) { <p class="rr-p">@Dash(l)</p> }
                 @foreach (string n in d.NextActions.Where(n => !string.IsNullOrWhiteSpace(n))) { <p class="rr-p">→ @n</p> }
@@ -468,7 +468,7 @@ else
                             <td class="type @test">@a.Label</td>
                             @foreach (ReviewReportColumn c in t.Columns)
                             {
-                                string main = c.Main.ValueOf(id);
+                                string main = c.MainText(id);
                                 if (c.HasBelow)
                                 {
                                     <td class="split @test"><div>@main</div><div class="rate">@c.Below(id)</div></td>

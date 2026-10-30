@@ -164,7 +164,7 @@ public static class ToolPageEndpoints
         if (report.Doc is null) return Results.Ok(Array.Empty<object>());
         var doc = report.Doc;
         // The ids let the preview write an edited cell back to the condition or metric it came from;
-        // an added Total NG (not in the metrics) and the NG ppm are worked out, so they carry no id.
+        // OK, an added Total NG, Total NG rate and the NG rates are worked out, so they carry no id.
         return Results.Ok(ReviewReportService.ResultTables(doc).Select(table => new
         {
             table.Title,
@@ -178,22 +178,25 @@ public static class ToolPageEndpoints
                 c.Header,
                 c.HasBelow,
                 c.BelowHeader,
-                mainId = doc.Metrics.Contains(c.Main) ? c.Main.Id.Trim() : "",
-                rateId = !c.Ng && c.Rate is not null && doc.Metrics.Contains(c.Rate) ? c.Rate.Id.Trim() : ""
+                mainId = !c.Computed && doc.Metrics.Contains(c.Main) ? c.Main.Id.Trim() : "",
+                rateId = !c.Computed && !c.Ng && c.Rate is not null && doc.Metrics.Contains(c.Rate) ? c.Rate.Id.Trim() : "",
+                c.Computed,
+                c.RateColumn
             }),
             rows = table.Arms.Select(a => new
             {
                 armId = a.Id.Trim(),
                 a.Date,
+                dateLabel = ReviewReportService.ShortDate(a.Date),
                 a.Model,
                 a.Label,
                 test = a.Role == "test",
                 cells = table.Columns.Select(c => new
                 {
-                    main = c.Main.ValueOf(a.Id.Trim()),
+                    main = c.MainText(a.Id.Trim()),
                     below = c.Below(a.Id.Trim()),
                     c.HasBelow,
-                    rate = c.Main.Kind == "rate"
+                    rate = c.Main.Kind == "rate" || c.RateColumn
                 })
             })
         }));
