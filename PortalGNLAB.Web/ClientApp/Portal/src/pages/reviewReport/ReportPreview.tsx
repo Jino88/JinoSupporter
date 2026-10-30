@@ -496,70 +496,89 @@ export default function ReportPreview({
       <div
         className={`report-pictures ${placements.length === 1 ? "single" : ""}`}
       >
-        {groupPictures(placements).map((group, i) => (
-          <div key={i} className="report-picture-group">
-            <div className="report-picture-row">
-              {group.map((placement: Placement) => {
-                const image = report.images.find(
-                  (image) => image.no === placement.no,
-                )!;
-                return (
-                  <figure key={placement.no}>
-                    <img
-                      src={`data:${image.mediaType};base64,${image.data}`}
-                      alt={`IMG ${image.no}: ${placement.caption}`}
-                      draggable={editable}
-                      title={editable ? "Drag to another section" : undefined}
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData(
-                          pictureDragType,
-                          String(image.no),
-                        );
-                        e.dataTransfer.effectAllowed = "move";
-                      }}
-                    />
-                    {group.length < 3 && (
-                      <figcaption>
-                        <Editable
-                          value={placement.caption || placement.group}
-                          editable={editable}
-                          onCommit={(caption) =>
-                            setPlacement(placement.no, { caption })
-                          }
-                        />
-                      </figcaption>
-                    )}
-                    <label className="form-row">
-                      IMG {image.no}
-                      <select
-                        className="inp sm"
-                        title="Move this picture to another section"
-                        value={placement.section}
-                        onChange={(e) => onMove(image.no, e.target.value)}
-                      >
-                        {sections.map((name) => (
-                          <option key={name}>{name}</option>
-                        ))}
-                      </select>
-                      <button
-                        className="btn sm danger"
-                        title="Delete this picture from the report"
-                        onClick={() => onRemovePicture(image.no)}
-                      >
-                        Delete
-                      </button>
-                    </label>
-                  </figure>
-                );
-              })}
-            </div>
-            {group.length >= 3 && (
-              <div className="report-picture-caption">
-                {group[0].group || group[0].caption}
+        {groupPictures(placements).map((group, i) => {
+          // One bar under a whole group, as in the Excel form, when it has three or more
+          // pictures or none of them has a caption of its own.
+          const oneBar =
+            group.length >= 3 ||
+            (group.length > 1 && group.every((p) => !p.caption.trim()));
+          return (
+            <div key={i} className="report-picture-group">
+              <div className="report-picture-row">
+                {group.map((placement: Placement) => {
+                  const image = report.images.find(
+                    (image) => image.no === placement.no,
+                  )!;
+                  return (
+                    <figure key={placement.no}>
+                      <img
+                        src={`data:${image.mediaType};base64,${image.data}`}
+                        alt={`IMG ${image.no}: ${placement.caption}`}
+                        draggable={editable}
+                        title={editable ? "Drag to another section" : undefined}
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData(
+                            pictureDragType,
+                            String(image.no),
+                          );
+                          e.dataTransfer.effectAllowed = "move";
+                        }}
+                      />
+                      {!oneBar && (
+                        <figcaption>
+                          <Editable
+                            value={placement.caption || placement.group}
+                            editable={editable}
+                            onCommit={(caption) =>
+                              setPlacement(placement.no, { caption })
+                            }
+                          />
+                        </figcaption>
+                      )}
+                      <label className="form-row">
+                        IMG {image.no}
+                        <select
+                          className="inp sm"
+                          title="Move this picture to another section"
+                          value={placement.section}
+                          onChange={(e) => onMove(image.no, e.target.value)}
+                        >
+                          {sections.map((name) => (
+                            <option key={name}>{name}</option>
+                          ))}
+                        </select>
+                        <button
+                          className="btn sm danger"
+                          title="Delete this picture from the report"
+                          onClick={() => onRemovePicture(image.no)}
+                        >
+                          Delete
+                        </button>
+                      </label>
+                    </figure>
+                  );
+                })}
               </div>
-            )}
-          </div>
-        ))}
+              {oneBar && (
+                <div className="report-picture-caption">
+                  <Editable
+                    value={group[0].group || group[0].caption}
+                    editable={editable}
+                    onCommit={(name) =>
+                      set({
+                        images: d.images.map((p) =>
+                          group.some((g) => g.no === p.no)
+                            ? { ...p, group: name }
+                            : p,
+                        ),
+                      })
+                    }
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   }
