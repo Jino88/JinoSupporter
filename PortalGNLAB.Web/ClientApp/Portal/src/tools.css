@@ -80,24 +80,43 @@
 .report-filter {
   padding: 0 12px;
 }
+.report-list-row {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  background: white;
+}
 .report-list-item {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   text-align: left;
   border: 0;
-  border-bottom: 1px solid var(--line);
-  background: white;
+  background: transparent;
   padding: 10px 12px;
   cursor: pointer;
+}
+.report-list-delete {
+  flex: none;
+  width: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
+}
+.report-list-delete:hover:not(:disabled),
+.report-list-delete:focus-visible {
+  color: var(--err);
+  background: #fbeaea;
 }
 .report-list-item strong {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.report-list-item.on {
+.report-list-row.on {
   background: #e8eefc;
   box-shadow: inset 3px 0 var(--brand);
 }
