@@ -38,7 +38,10 @@ export default function ReviewReport() {
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
   const busyRef = useRef(false);
   busyRef.current = busy;
   const paste = useImagePaste(addPastedImage, setError);
@@ -157,16 +160,19 @@ export default function ReviewReport() {
       controller.current = null;
     }
   }
+  /** Deletes the report picked in the list or the one open; an open report the delete removed is cleared. */
   async function deleteReport() {
+    if (!deleteTarget) return;
     setBusy(true);
+    setError("");
     try {
       await toolSend(
-        `review-report/${encodeURIComponent(report.id)}`,
+        `review-report/${encodeURIComponent(deleteTarget.id)}`,
         undefined,
         "DELETE",
       );
-      setDeleteOpen(false);
-      newReport();
+      setDeleteTarget(null);
+      if (deleteTarget.id === report.id) newReport();
       await refresh();
       setStatus("Deleted.");
     } catch (e) {
@@ -251,19 +257,32 @@ export default function ReviewReport() {
             />
           </label>
           {filterReports(index.reports, filter).map((item) => (
-            <button
-              className={`report-list-item ${item.id === report.id ? "on" : ""}`}
-              disabled={busy}
+            <div
+              className={`report-list-row ${item.id === report.id ? "on" : ""}`}
               key={item.id}
-              onClick={() => void openReport(item.id)}
-              title={item.title}
             >
-              <strong>{item.title}</strong>
-              <span className="muted small">
-                {item.createdBy} ·{" "}
-                {item.updatedAt.slice(0, 16).replace("T", " ")}
-              </span>
-            </button>
+              <button
+                className="report-list-item"
+                disabled={busy}
+                onClick={() => void openReport(item.id)}
+                title={item.title}
+              >
+                <strong>{item.title}</strong>
+                <span className="muted small">
+                  {item.createdBy} ·{" "}
+                  {item.updatedAt.slice(0, 16).replace("T", " ")}
+                </span>
+              </button>
+              <button
+                className="report-list-delete"
+                disabled={busy}
+                aria-label={`Delete ${item.title}`}
+                title="Delete report"
+                onClick={() => setDeleteTarget({ id: item.id, title: item.title })}
+              >
+                ×
+              </button>
+            </div>
           ))}
           {index.reports.length === 0 && (
             <p className="muted report-filter">No saved reports yet.</p>
@@ -357,7 +376,12 @@ export default function ReviewReport() {
               {report.id && (
                 <button
                   className="btn sm danger"
-                  onClick={() => setDeleteOpen(true)}
+                  onClick={() =>
+                    setDeleteTarget({
+                      id: report.id,
+                      title: report.doc?.title || report.title,
+                    })
+                  }
                 >
                   Delete
                 </button>
@@ -437,7 +461,7 @@ export default function ReviewReport() {
           </fieldset>
         </section>
       </div>
-      {deleteOpen && (
+      {deleteTarget && (
         <div className="modal-back">
           <section
             className="modal"
@@ -446,12 +470,12 @@ export default function ReviewReport() {
             aria-labelledby="delete-report-title"
           >
             <h2 id="delete-report-title">Delete report?</h2>
-            <p>{report.doc?.title || report.title || "This report"}</p>
+            <p>{deleteTarget.title || "This report"}</p>
             <div className="modal-actions">
               <button
                 className="btn sm"
                 disabled={busy}
-                onClick={() => setDeleteOpen(false)}
+                onClick={() => setDeleteTarget(null)}
               >
                 Cancel
               </button>
