@@ -29,6 +29,7 @@ public static class PortalShellEndpoints
         [AppMenus.Report]             = "/report/bmes",
         [AppMenus.Translate]          = "/translate",
         [AppMenus.ReviewReport]       = "/tools/review-report",
+        [AppMenus.ProductionInput]    = "/app/production/input",
         [AppMenus.BmesSetting]        = "/setting",
         [AppMenus.AdminUsers]         = "/admin/users",
         [AppMenus.AdminAiUsages]      = "/admin/ai-usages",
@@ -45,6 +46,7 @@ public static class PortalShellEndpoints
         [AppMenus.TestExcelConverter] = "/app/admin/test-excel-converter",
         [AppMenus.Translate] = "/app/tools/translate",
         [AppMenus.ReviewReport] = "/app/tools/review-report",
+        [AppMenus.ProductionInput] = "/app/production/input",
     };
 
     public sealed record PortalUser(string Name, string Role);
@@ -102,6 +104,7 @@ public static class PortalShellEndpoints
         app.MapAdminTools();
         app.MapToolPages();
         app.MapTeamMemo();
+        app.MapProductionInput();
 
         // Every /app route is the React app; it asks /api/portal/me and sends signed-out users to /login.
         app.MapFallbackToFile("/app/{*path:nonfile}", "app/index.html", ShellFileOptions);
