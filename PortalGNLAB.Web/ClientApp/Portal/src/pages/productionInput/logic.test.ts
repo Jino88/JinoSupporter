@@ -13,6 +13,7 @@ import {
   ngRate,
   ngSheet,
   ngTotals,
+  normalizeProcess,
   pct,
   planSheet,
   prevOutFrom,
@@ -27,7 +28,7 @@ import {
   wipRows,
 } from "./logic";
 import { copySetup, x316bSetup } from "./template";
-import { emptyDayData, emptyPlanData, type DayData, type DaySummary, type ModelSetup, type Pair } from "./types";
+import { emptyDayData, emptyPlanData, type DayData, type DaySummary, type ModelSetup, type NgGroup, type Pair, type Process } from "./types";
 
 /** MSM-X316B PV2 on 2026-10-29, as typed in the current workbooks. */
 function sample() {
@@ -277,5 +278,25 @@ describe("Total of several days", () => {
   it("is all zero without an entered day", () => {
     const { setup, at } = sample();
     expect(totalRows(setup, [])[at(2).id]).toMatchObject({ input: 0, rateBefore: 0, pairs: [[0, 0], [0, 0], [0, 0]] });
+  });
+});
+
+describe("Process Type", () => {
+  it("X316B template uses SUB / MAIN / FUNCTION / VISUAL", () => {
+    const type = (name: string) => x316bSetup().processes.find((p) => p.name === name)?.type;
+    expect([type("AOI 1"), type("Spot Vision"), type("FPCB Bonding"), type("BAKO"), type("Gauss"), type("Visual"), type("Packing")])
+      .toEqual(["SUB", "MAIN", "MAIN", "FUNCTION", "VISUAL", "VISUAL", "VISUAL"]);
+  });
+
+  it("setups saved with the old P / F group keep their NG totals", () => {
+    const { setup, data } = sample();
+    const legacy: ModelSetup = {
+      ...setup,
+      processes: setup.processes.map(({ type, ...p }) => ({ ...p, group: (type === "FUNCTION" ? "F" : "P") as NgGroup }) as unknown as Process),
+    };
+    const restored = { ...legacy, processes: legacy.processes.map(normalizeProcess) };
+    expect(restored.processes.map((p) => p.type)).toEqual(setup.processes.map((p) => p.type));
+    expect(restored.processes.every((p) => !("group" in p))).toBe(true);
+    expect(ngTotals(restored, calc(restored, data, {}))).toEqual(ngTotals(setup, calc(setup, data, {})));
   });
 });

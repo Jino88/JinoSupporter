@@ -70,7 +70,7 @@ export default function DailyTab(props: {
           <span className="muted small">{entries.length} entered day{entries.length === 1 ? "" : "s"}</span>
           <span className="pi-di-r">{entries.length ? rateLine(totalRates) : "—"}</span>
         </button>
-        {dates.map((d) => {
+        {[...dates].reverse().map((d) => {
           const st = props.statusOf[d];
           const r = dayRates[d];
           const here = d === props.date;
