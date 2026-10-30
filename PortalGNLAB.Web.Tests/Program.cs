@@ -154,6 +154,23 @@ string ngRateSource = File.ReadAllText(Path.Combine(webProject, "Components", "P
 Check(!ngRateSource.Contains("<span class=\"pt-badge\">", StringComparison.Ordinal)
       && ngRateSource.Contains("NgRateUi.ProcessTypeClass(", StringComparison.Ordinal), "NG Rate badges use the type colour");
 
+// Review Report: "+ New" posts blank dates; they must bind (not HTTP 400) and real dates must survive.
+var webJson = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+var blankInput = JsonSerializer.Deserialize<PortalGNLAB.Web.Endpoints.ToolPageEndpoints.ReportInput>(
+    """{"report":{"id":"","createdAt":"","updatedAt":"","images":[],"revisions":[],"doc":null},"request":""}""", webJson);
+Check(blankInput is not null && blankInput.Report.CreatedAt == default && blankInput.Report.UpdatedAt == default, "new review report with blank dates binds");
+var datedInput = JsonSerializer.Deserialize<PortalGNLAB.Web.Endpoints.ToolPageEndpoints.ReportInput>(
+    """{"report":{"createdAt":"2026-10-30T08:19:00","updatedAt":"2026-10-30T08:20:00"}}""", webJson);
+Check(datedInput?.Report.CreatedAt == new DateTime(2026, 10, 30, 8, 19, 0)
+      && JsonSerializer.Serialize(datedInput.Report, webJson).Contains("\"updatedAt\":\"2026-10-30T08:20:00\"", StringComparison.Ordinal),
+    "saved review report dates round-trip");
+
+// /app index.html names the current bundle, so the browser must not keep an old copy after a restart.
+var shellContext = new Microsoft.AspNetCore.Http.DefaultHttpContext();
+PortalGNLAB.Web.Endpoints.PortalShellEndpoints.ShellFileOptions.OnPrepareResponse(
+    new Microsoft.AspNetCore.StaticFiles.StaticFileResponseContext(shellContext, new NotFoundFileInfo("index.html")));
+Check(shellContext.Response.Headers.CacheControl.ToString().Contains("no-cache", StringComparison.Ordinal), "React index.html is served no-cache");
+
 if (failures.Count > 0)
     throw new InvalidOperationException($"Host-cutover checks failed: {string.Join(", ", failures)}");
 
