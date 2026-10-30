@@ -14,6 +14,7 @@ import GraphMaker from "./pages/GraphMaker";
 import ProductionInput from "./pages/ProductionInput";
 import TeamMemo from "./pages/TeamMemo";
 import TeamMemoBoard from "./pages/TeamMemoBoard";
+import Setting from "./pages/Setting";
 
 /** React pages by their path inside /app. A page added here also needs its menu id in
  *  PortalShellEndpoints.ReactRoutes so the menus (React and Blazor) link to it. */
@@ -32,6 +33,7 @@ const pages: Record<string, { title: string; render: (menu: MenuItem[]) => React
   "/memo/board": { title: "Memo Board", render: () => <TeamMemoBoard /> },
   "/memo/plan": { title: "Plan", render: () => <TeamMemo /> },
   "/memo/meetings": { title: "Plan", render: () => <TeamMemo /> },
+  "/setting": { title: "Setting", render: () => <Setting /> },
 };
 
 export default function App() {

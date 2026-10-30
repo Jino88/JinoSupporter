@@ -1,0 +1,34 @@
+/* Setting page (pages/Setting.tsx) */
+.set-page { max-width: 1200px; }
+.set-grid.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 0 14px; }
+.set-page .card h2 { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.set-sub { font-weight: 400; font-size: 12px; }
+.set-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; font-size: 12px; font-weight: 600; }
+.set-field > .inp, .set-field > select { width: 100%; }
+.set-secret { display: flex; gap: 6px; align-items: center; }
+.set-secret .inp { flex: 1; min-width: 0; }
+.set-hint { font-weight: 400; color: var(--muted); }
+.set-hint.err, .set-note.err, .set-line.err { color: var(--err); }
+.set-note.ok, .set-line.ok { color: #15803d; }
+.set-line.warn { color: #b45309; }
+.set-note, .set-line { font-size: 12px; font-weight: 600; }
+.set-line { margin-top: 8px; }
+.set-check { display: flex !important; flex-direction: row !important; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 8px; }
+.set-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.set-right { margin-left: auto; }
+.set-head { display: flex; align-items: center; gap: 8px; }
+.set-warn { background: #f59e0b; color: #111; }
+.set-grey { background: #64748b; }
+.set-status { display: flex; align-items: center; gap: 10px; border-radius: 6px; padding: 8px 12px; margin-bottom: 14px; font-size: 12px; }
+.set-status.ok { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+.set-status.err { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+.set-status span { flex: 1; }
+.set-paths { margin-top: 8px; line-height: 1.8; }
+.set-log { background: #f5f6f9; border: 1px solid var(--line); border-radius: 2px; padding: 8px; max-height: 160px; overflow: auto; font-size: 12px; margin: 10px 0 0; white-space: pre-wrap; }
+.set-table { border-collapse: collapse; max-width: 34rem; width: 100%; margin-bottom: 6px; }
+.set-table th { text-align: left; font-size: 12px; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+.set-table td { padding: 4px 6px; }
+.set-table .inp { width: 100%; }
+.set-material { line-height: 1.7; }
+.inp.mono { font-family: Consolas, monospace; }
+.inp.num { width: 90px; }
