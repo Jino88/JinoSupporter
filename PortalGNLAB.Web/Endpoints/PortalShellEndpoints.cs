@@ -56,6 +56,11 @@ public static class PortalShellEndpoints
         [AppMenus.QrBakoData] = "/app/qr/bako-data",
         [AppMenus.QrAirleakData] = "/app/qr/airleak-data",
         [AppMenus.QrGaussData] = "/app/qr/gauss-data",
+        [AppMenus.NgRate] = "/app/ng-rate",
+        [AppMenus.BmesDailyReport] = "/app/bmes/daily-report",
+        [AppMenus.Report] = "/app/report/bmes",
+        [AppMenus.BmesTest5] = "/app/bmes/test5",
+        [AppMenus.BmesFCost] = "/app/bmes/f-cost",
     };
 
     public sealed record PortalUser(string Name, string Role);

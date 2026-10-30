@@ -130,7 +130,7 @@ Check(!AppMenus.All.Any(m => retiredMenus.Contains(m.Id)), "retired menus left o
 Check(!AppMenus.DefaultsByRole.Values.Any(ids => ids.Any(retiredMenus.Contains)), "retired menus left out of role defaults");
 var adminMenu = PortalGNLAB.Web.Endpoints.PortalShellEndpoints.MenuFor(AppRoles.Admin, (_, _) => true);
 Check(!adminMenu.Any(m => retiredMenus.Contains(m.Id)), "React menu lists no retired menu");
-Check(adminMenu.Any(m => m.Id == AppMenus.Report && m.Group == "BMES" && m.Href == "/report/bmes"), "React menu keeps BMES Report");
+Check(adminMenu.Any(m => m.Id == AppMenus.Report && m.Group == "BMES" && m.React && m.Href == "/app/report/bmes"), "React menu keeps BMES Report (ported to /app)");
 string navMenuSource = File.ReadAllText(Path.Combine(webProject, "Components", "Layout", "NavMenu.razor"));
 string[] retiredLinks =
 [
