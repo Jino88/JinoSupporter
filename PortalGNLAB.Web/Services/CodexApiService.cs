@@ -140,6 +140,50 @@ public sealed class CodexApiService(
         return new CodexTextResult(output, model, ExtractUsage(raw));
     }
 
+    /// <summary>
+    /// The text models this API key can call for translation, newest first. GET /models also returns
+    /// image, audio, realtime, search and embedding models plus dated snapshots of every alias; those
+    /// are dropped, and so are gpt-3.5 / gpt-4, which cannot read the pasted images.
+    /// </summary>
+    public async Task<List<string>> ListModelsAsync(CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(ApiKey))
+            throw new InvalidOperationException("Set the API key first.");
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, "models");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", ApiKey);
+        using HttpResponseMessage response = await http.SendAsync(request, ct);
+        string raw = await response.Content.ReadAsStringAsync(ct);
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException($"Codex API error {(int)response.StatusCode}: {raw}");
+
+        using JsonDocument doc = JsonDocument.Parse(raw);
+        return doc.RootElement.GetProperty("data").EnumerateArray()
+            .Select(m => (Id: m.GetProperty("id").GetString() ?? "",
+                          Created: m.TryGetProperty("created", out JsonElement c) && c.TryGetInt64(out long t) ? t : 0))
+            .Where(m => IsTranslateModel(m.Id))
+            .OrderByDescending(m => m.Created)
+            .ThenBy(m => m.Id, StringComparer.Ordinal)
+            .Select(m => m.Id)
+            .ToList();
+    }
+
+    private static readonly string[] NonTextModelMarkers =
+        ["image", "realtime", "audio", "transcribe", "tts", "whisper", "search", "live", "deep-research", "instruct"];
+
+    private static readonly System.Text.RegularExpressions.Regex SnapshotSuffix =
+        new(@"-\d{4}(-\d{2}-\d{2})?$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    internal static bool IsTranslateModel(string id)
+    {
+        bool reasoning = id.Length > 1 && id[0] == 'o' && char.IsDigit(id[1]);
+        if (!reasoning && !id.StartsWith("gpt-", StringComparison.Ordinal)) return false;
+        if (id.StartsWith("gpt-3", StringComparison.Ordinal) || id == "gpt-4" || id.StartsWith("gpt-4-", StringComparison.Ordinal))
+            return false;
+        if (NonTextModelMarkers.Any(marker => id.Contains(marker, StringComparison.Ordinal))) return false;
+        return !SnapshotSuffix.IsMatch(id);
+    }
+
     /// <summary>Adds the call to the running Codex API token totals shown on the AI Usages page.</summary>
     public void RecordUsage(CodexTokenUsage? usage)
     {
