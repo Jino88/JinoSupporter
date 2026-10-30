@@ -28,6 +28,9 @@ import BmesDailyReport from "./pages/BmesDailyReport";
 import BmesReport from "./pages/BmesReport";
 import BmesTest5 from "./pages/BmesTest5";
 import BmesFCost from "./pages/BmesFCost";
+import NgRate from "./pages/NgRate";
+import NgRateAll from "./pages/NgRateAll";
+import NgRateByGroup from "./pages/NgRateByGroup";
 
 /** React pages by their path inside /app. A page added here also needs its menu id in
  *  PortalShellEndpoints.ReactRoutes so the menus (React and Blazor) link to it. */
@@ -60,6 +63,9 @@ const pages: Record<string, { title: string; render: (menu: MenuItem[]) => React
   "/report/bmes": { title: "Report", render: () => <BmesReport /> },
   "/bmes/test5": { title: "BOM & Drawing", render: () => <BmesTest5 /> },
   "/bmes/f-cost": { title: "F-Cost", render: () => <BmesFCost /> },
+  "/ng-rate": { title: "NG Rate", render: () => <NgRate /> },
+  "/ng-rate-all": { title: "NG Rate", render: () => <NgRateAll /> },
+  "/ng-rate-by-group": { title: "NG Rate - By Group", render: () => <NgRateByGroup /> },
 };
 
 export default function App() {
