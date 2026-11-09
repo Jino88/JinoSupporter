@@ -9,6 +9,8 @@ import {
 } from "./working/logic";
 import PlanView from "./working/PlanView";
 import SetupPlan from "./working/SetupPlan";
+import { hideModels, treeApi, withAdded, type TreeSettings } from "./working/tree";
+import TreeManager from "./working/TreeManager";
 import { phaseName, type Entry, type GroupsResponse, type WorkingModel } from "./working/types";
 import "./working/working.css";
 
@@ -35,6 +37,8 @@ function writeQuery(model: string | null, tab: Tab) {
 export default function Working() {
   const query = new URLSearchParams(window.location.search);
   const [groups, setGroups] = useState<GroupsResponse | null>(null);
+  const [treeSettings, setTreeSettings] = useState<TreeSettings>({ hidden: [], added: [] });
+  const [managing, setManaging] = useState(false);
   const [filter, setFilter] = useState("");
   const [closed, setClosed] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<string | null>(query.get("model"));
@@ -46,15 +50,20 @@ export default function Working() {
   const load = useRef(0);
   const today = localToday();
 
-  const tree = useMemo(() => buildTree(groups?.groups ?? []), [groups]);
+  // every model (Glossary + added here), then the ones not hidden in Manage
+  const fullTree = useMemo(() => buildTree(withAdded(groups?.groups ?? [], treeSettings.added)), [groups, treeSettings.added]);
+  const tree = useMemo(() => hideModels(fullTree, treeSettings.hidden), [fullTree, treeSettings.hidden]);
   const shown = useMemo(() => filterTree(tree, filter), [tree, filter]);
   const fail = (e: unknown) => setError((e as Error).message);
 
   useEffect(() => {
-    workingApi.groups()
-      .then((g) => {
+    // without the tree settings (older server, or a failure) every Glossary model is shown
+    const empty: TreeSettings = { hidden: [], added: [] };
+    Promise.all([workingApi.groups(), treeApi.get().catch(() => empty)])
+      .then(([g, t]) => {
         setGroups(g);
-        setSelected((cur) => cur ?? firstModel(buildTree(g.groups)));
+        setTreeSettings(t);
+        setSelected((cur) => cur ?? firstModel(hideModels(buildTree(withAdded(g.groups, t.added)), t.hidden)));
       })
       .catch(fail);
   }, []);
@@ -132,18 +141,30 @@ export default function Working() {
       <div className="wk-lay">
         <aside className="card wk-side">
           <div className="wk-side-h">
-            <h2>Model groups</h2>
+            <div className="wk-side-t">
+              <h2>Model groups</h2>
+              <button className="btn sm" disabled={!groups} onClick={() => setManaging(true)} title="Choose the models shown here and add models">Manage</button>
+            </div>
             <input className="inp sm" placeholder="Search model…" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Search model" />
           </div>
           <div className="wk-tree">
             {groups === null && <div className="muted small">Loading…</div>}
             {groups?.error && <div className="wk-warn">{groups.error}</div>}
-            {groups && !groups.error && !tree.length && <div className="muted small">No model group yet. Add groups in the Company Glossary.</div>}
+            {groups && !groups.error && !fullTree.length && <div className="muted small">No model group yet. Add groups in the Company Glossary, or add a model with Manage.</div>}
+            {fullTree.length > 0 && !tree.length && <div className="muted small">Every model is hidden. Choose the models to show with Manage.</div>}
             {shown.map((n) => renderNode(n, 0))}
             {filter && tree.length > 0 && !shown.length && <div className="muted small">No model matches “{filter}”.</div>}
           </div>
-          {groups?.source && <div className="wk-src" title={groups.source}>Source: Company Glossary</div>}
+          {groups?.source && (
+            <div className="wk-src" title={groups.source}>
+              Source: Company Glossary{treeSettings.added.length ? ` + ${treeSettings.added.length} added` : ""}
+              {treeSettings.hidden.length ? ` · ${treeSettings.hidden.length} hidden` : ""}
+            </div>
+          )}
         </aside>
+        {managing && (
+          <TreeManager tree={fullTree} settings={treeSettings} onChanged={setTreeSettings} onClose={() => setManaging(false)} onError={fail} />
+        )}
 
         <section className="wk-main">
           {!selected ? (

@@ -25,6 +25,15 @@ public static class WorkingEndpoints
         });
 
         api.MapGet("/groups", (WorkingService svc) => Results.Ok(svc.ListGroups()));
+        // what the tree hides / adds (kept in PortalGNLAB.db; the Glossary DB is never written)
+        api.MapGet("/tree", (WorkingService svc) => Results.Ok(svc.GetTree()));
+        api.MapPut("/tree/hidden", (WorkingHiddenSave body, WorkingService svc, ClaimsPrincipal user) =>
+            Results.Ok(svc.SetHidden(body.Hidden, User(user))));
+        api.MapPost("/tree/models", (WorkingTreeModelSave body, WorkingService svc, ClaimsPrincipal user) =>
+            Results.Ok(svc.AddTreeModel(body.Name, body.GroupId, User(user))));
+        api.MapDelete("/tree/models/{name}", (string name, WorkingService svc) =>
+            svc.DeleteTreeModel(name) ? Results.NoContent() : Results.NotFound());
+
         api.MapGet("/models/{name}", (string name, WorkingService svc) => Results.Ok(svc.GetModel(name)));
         api.MapPut("/models/{name}", (string name, WorkingModelSave body, WorkingService svc, ClaimsPrincipal user) =>
             Results.Ok(svc.SaveModel(name, body, User(user))));
@@ -116,6 +125,39 @@ public static class WorkingEndpoints
             }
         });
 
+        // does a BMES model of this name exist: catalog, model groups and (when connected) the BMES product master
+        api.MapGet("/bmes/check", async (string? name, BmesBomCacheService cache, WebRepository repo,
+            BmesFcostActualService fcostActual, AppPathsService paths) =>
+        {
+            string text = (name ?? "").Trim();
+            if (text.Length == 0) return Results.BadRequest(new { error = "name is required." });
+            var catalog = WorkingBmesService.CatalogCandidates(text, cache.LoadModelCatalog(WorkingBmesService.Plant).Models);
+            var group = WorkingBmesService.GroupCandidates(text, repo.GetModelGroups());
+            var bmes = new List<WorkingModelCandidate>();
+            bool checkedBmes = false;
+            string bmesError = "";
+            var connection = BmesReportEndpoints.BuildNetworkDbConnection(paths);
+            if (!string.IsNullOrWhiteSpace(connection.Server) && !string.IsNullOrWhiteSpace(connection.UserId))
+            {
+                try
+                {
+                    var found = await fcostActual.SearchBomModelsAsync(new BmesBomModelSearchQuery
+                    {
+                        Connection = connection,
+                        SearchText = text,
+                        Plant = WorkingBmesService.Plant,
+                        WorkDate = DateTime.Today,
+                        MaxRows = WorkingBmesService.MaxCandidates,
+                    });
+                    bmes.AddRange(found.Select(m => new WorkingModelCandidate(m.ProductName.Trim(), m.ProductCode.Trim(), "bmes")));
+                    checkedBmes = true;
+                }
+                catch (Exception ex) { bmesError = ex.Message; }
+            }
+            var (exact, candidates) = WorkingBmesService.MergeCandidates(text, bmes, catalog, group);
+            return Results.Ok(new { name = text, exact, candidates, bmesChecked = checkedBmes, bmesError });
+        });
+
         // PDM drawings for the BOM materials (same lookups as BOM & Drawing; the BMES side is read-only)
         api.MapPost("/bmes/pdm", (WorkingPdmRequest body, BmesPdmScrapeService pdm) =>
         {
@@ -141,6 +183,8 @@ public static class WorkingEndpoints
     }
 
     public sealed record WorkingBmesBomRequest(string? Product);
+    public sealed record WorkingHiddenSave(List<string?>? Hidden);
+    public sealed record WorkingTreeModelSave(string? Name, string? GroupId);
     public sealed record WorkingPdmRequest(List<string>? Names);
 
     /// <summary>
