@@ -12,7 +12,13 @@ public sealed record WorkingGroups(List<WorkingGroup> Groups, string Source, str
 
 public sealed record WorkingAddedModel(string Name, string GroupId, string CreatedBy, string CreatedAt);
 
-public sealed record WorkingTree(List<string> Hidden, List<WorkingAddedModel> Added);
+/// <summary>A sub-group made in Working's Manage, under a Glossary group or another sub-group.</summary>
+public sealed record WorkingUserGroup(string Id, string Name, string ParentId, int Sort);
+
+/// <summary>A Glossary model shown in another group than its own.</summary>
+public sealed record WorkingPlacedModel(string Name, string GroupId);
+
+public sealed record WorkingTree(List<string> Hidden, List<WorkingAddedModel> Added, List<WorkingUserGroup> Groups, List<WorkingPlacedModel> Placed);
 
 public sealed record WorkingModel(string Name, JsonElement Info, int Revision, string UpdatedAt, string UpdatedBy);
 
@@ -169,6 +175,16 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             GroupId TEXT NOT NULL DEFAULT '',
             Added INTEGER NOT NULL DEFAULT 0,
             Hidden INTEGER NOT NULL DEFAULT 0,
+            CreatedBy TEXT NOT NULL DEFAULT '',
+            CreatedAt TEXT NOT NULL DEFAULT '',
+            UpdatedBy TEXT NOT NULL DEFAULT '',
+            UpdatedAt TEXT NOT NULL DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS WorkingTreeGroups (
+            Id TEXT PRIMARY KEY,
+            Name TEXT NOT NULL,
+            ParentId TEXT NOT NULL,
+            Sort INTEGER NOT NULL DEFAULT 0,
             CreatedBy TEXT NOT NULL DEFAULT '',
             CreatedAt TEXT NOT NULL DEFAULT '',
             UpdatedBy TEXT NOT NULL DEFAULT '',
@@ -391,7 +407,15 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         using (SqliteCommand cmd = Cmd(conn, "SELECT Name, GroupId, CreatedBy, CreatedAt FROM WorkingTreeModels WHERE Added=1 ORDER BY CreatedAt, Name", tx))
         using (SqliteDataReader r = cmd.ExecuteReader())
             while (r.Read()) added.Add(new(r.GetString(0), r.GetString(1), r.GetString(2), r.GetString(3)));
-        return new(hidden, added);
+        var groups = new List<WorkingUserGroup>();
+        using (SqliteCommand cmd = Cmd(conn, "SELECT Id, Name, ParentId, Sort FROM WorkingTreeGroups ORDER BY ParentId, Sort, Name", tx))
+        using (SqliteDataReader r = cmd.ExecuteReader())
+            while (r.Read()) groups.Add(new(r.GetString(0), r.GetString(1), r.GetString(2), r.GetInt32(3)));
+        var placed = new List<WorkingPlacedModel>();
+        using (SqliteCommand cmd = Cmd(conn, "SELECT Name, GroupId FROM WorkingTreeModels WHERE Added=0 AND GroupId<>'' ORDER BY UpdatedAt, Name", tx))
+        using (SqliteDataReader r = cmd.ExecuteReader())
+            while (r.Read()) placed.Add(new(r.GetString(0), r.GetString(1)));
+        return new(hidden, added, groups, placed);
     }
 
     /// <summary>Replaces the whole hidden list; names are trimmed, blanks dropped, duplicates (any case) merged.</summary>
@@ -417,7 +441,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
                 "INSERT INTO WorkingTreeModels (Name, Hidden, CreatedBy, CreatedAt, UpdatedBy, UpdatedAt) VALUES (@n,1,@u,@t,@u,@t) " +
                 "ON CONFLICT(Name) DO UPDATE SET Hidden=1, UpdatedBy=@u, UpdatedAt=@t", tx, ("@n", n), ("@u", user), ("@t", now)))
                 set.ExecuteNonQuery();
-        using (SqliteCommand drop = Cmd(conn, "DELETE FROM WorkingTreeModels WHERE Added=0 AND Hidden=0", tx))
+        using (SqliteCommand drop = Cmd(conn, "DELETE FROM WorkingTreeModels WHERE Added=0 AND Hidden=0 AND GroupId=''", tx))
             drop.ExecuteNonQuery();
         WorkingTree tree = ReadTree(conn, tx);
         tx.Commit();
@@ -430,16 +454,16 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         string n = TreeName(name, "Model name");
         string gid = (groupId ?? "").Trim();
         WorkingGroups groups = ListGroups();
-        if (gid.Length > 0)
-        {
-            if (groups.Error is not null) throw new ArgumentException("Model groups could not be read, so the model can only be added without a group.");
-            if (!groups.Groups.Any(g => g.Id == gid)) throw new ArgumentException("The model group was not found.");
-        }
         if (groups.Groups.Any(g => g.Models.Any(m => string.Equals(m.Trim(), n, StringComparison.OrdinalIgnoreCase))))
             throw new WorkingConflictException("That model is already in a model group.");
         string now = Now();
         using SqliteConnection conn = Open();
         using SqliteTransaction tx = conn.BeginTransaction();
+        // a Glossary group (when it could be read) or a sub-group made here
+        if (gid.Length > 0 && !KnownTreeGroup(conn, tx, gid, groups))
+            throw new ArgumentException(groups.Error is not null && ReadTreeGroup(conn, tx, gid) is null
+                ? "Model groups could not be read, so the model can only be added without a group or to a sub-group made here."
+                : "The model group was not found.");
         using (SqliteCommand exists = Cmd(conn, "SELECT 1 FROM WorkingTreeModels WHERE Name=@n AND Added=1", tx, ("@n", n)))
             if (exists.ExecuteScalar() is not null) throw new WorkingConflictException("That model was already added.");
         // a name that was only hidden has a row already; it becomes an added model and keeps its hidden flag
@@ -460,6 +484,145 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         using SqliteConnection conn = Open();
         using SqliteCommand del = Cmd(conn, "DELETE FROM WorkingTreeModels WHERE Name=@n AND Added=1", null, ("@n", n));
         return del.ExecuteNonQuery() > 0;
+    }
+
+    // ── Sub-groups made in Manage, and Glossary models moved into another group ──
+
+    public const int MaxTreeGroupName = 60;
+
+    private static string TreeGroupName(string? name)
+    {
+        string n = (name ?? "").Trim();
+        if (n.Length == 0) throw new ArgumentException("Sub-group name is required.");
+        if (n.Length > MaxTreeGroupName) throw new ArgumentException($"Sub-group name must be {MaxTreeGroupName} characters or fewer.");
+        return n;
+    }
+
+    private static WorkingUserGroup? ReadTreeGroup(SqliteConnection conn, SqliteTransaction? tx, string id)
+    {
+        using SqliteCommand cmd = Cmd(conn, "SELECT Id, Name, ParentId, Sort FROM WorkingTreeGroups WHERE Id=@id", tx, ("@id", id));
+        using SqliteDataReader r = cmd.ExecuteReader();
+        return r.Read() ? new(r.GetString(0), r.GetString(1), r.GetString(2), r.GetInt32(3)) : null;
+    }
+
+    /// <summary>
+    /// Whether models and sub-groups can go under this group: a sub-group made here, or a Glossary group (only when the
+    /// Glossary could be read).
+    /// </summary>
+    private static bool KnownTreeGroup(SqliteConnection conn, SqliteTransaction? tx, string id, WorkingGroups glossary) =>
+        ReadTreeGroup(conn, tx, id) is not null || (glossary.Error is null && glossary.Groups.Any(g => g.Id == id));
+
+    private static void EnsureUniqueGroupName(SqliteConnection conn, SqliteTransaction tx, string parentId, string name, string? exceptId)
+    {
+        using SqliteCommand cmd = Cmd(conn,
+            "SELECT 1 FROM WorkingTreeGroups WHERE ParentId=@p AND Name=@n COLLATE NOCASE AND Id<>@x", tx,
+            ("@p", parentId), ("@n", name), ("@x", exceptId ?? ""));
+        if (cmd.ExecuteScalar() is not null) throw new WorkingConflictException("That group already has a sub-group of this name.");
+    }
+
+    /// <summary>Makes a sub-group under a Glossary group or under another sub-group; it goes after its siblings.</summary>
+    public WorkingUserGroup AddTreeGroup(string? name, string? parentId, string user)
+    {
+        string n = TreeGroupName(name);
+        string parent = (parentId ?? "").Trim();
+        if (parent.Length == 0) throw new ArgumentException("Choose the group the sub-group goes under.");
+        WorkingGroups glossary = ListGroups();
+        string now = Now();
+        using SqliteConnection conn = Open();
+        using SqliteTransaction tx = conn.BeginTransaction();
+        if (!KnownTreeGroup(conn, tx, parent, glossary)) throw new ArgumentException("The group to put the sub-group under was not found.");
+        EnsureUniqueGroupName(conn, tx, parent, n, null);
+        string id = "ug-" + Guid.NewGuid().ToString("N")[..12];
+        using (SqliteCommand ins = Cmd(conn,
+            "INSERT INTO WorkingTreeGroups (Id, Name, ParentId, Sort, CreatedBy, CreatedAt, UpdatedBy, UpdatedAt) " +
+            "VALUES (@id,@n,@p,(SELECT COALESCE(MAX(Sort)+1,0) FROM WorkingTreeGroups WHERE ParentId=@p),@u,@t,@u,@t)", tx,
+            ("@id", id), ("@n", n), ("@p", parent), ("@u", user), ("@t", now)))
+            ins.ExecuteNonQuery();
+        WorkingUserGroup added = ReadTreeGroup(conn, tx, id)!;
+        tx.Commit();
+        return added;
+    }
+
+    /// <summary>Renames a sub-group made here; null when there is no such sub-group.</summary>
+    public WorkingUserGroup? RenameTreeGroup(string id, string? name, string user)
+    {
+        string n = TreeGroupName(name);
+        using SqliteConnection conn = Open();
+        using SqliteTransaction tx = conn.BeginTransaction();
+        WorkingUserGroup? g = ReadTreeGroup(conn, tx, id);
+        if (g is null) return null;
+        EnsureUniqueGroupName(conn, tx, g.ParentId, n, id);
+        using (SqliteCommand upd = Cmd(conn, "UPDATE WorkingTreeGroups SET Name=@n, UpdatedBy=@u, UpdatedAt=@t WHERE Id=@id", tx,
+            ("@n", n), ("@u", user), ("@t", Now()), ("@id", id)))
+            upd.ExecuteNonQuery();
+        WorkingUserGroup renamed = ReadTreeGroup(conn, tx, id)!;
+        tx.Commit();
+        return renamed;
+    }
+
+    /// <summary>
+    /// Deletes a sub-group made here. What was in it moves up: Glossary models back to their own group, added models and
+    /// sub-groups to the group above. False when there is no such sub-group.
+    /// </summary>
+    public bool DeleteTreeGroup(string id)
+    {
+        using SqliteConnection conn = Open();
+        using SqliteTransaction tx = conn.BeginTransaction();
+        WorkingUserGroup? g = ReadTreeGroup(conn, tx, id);
+        if (g is null) return false;
+        string now = Now();
+        foreach (string sql in new[]
+        {
+            "UPDATE WorkingTreeModels SET GroupId='', UpdatedAt=@t WHERE Added=0 AND GroupId=@id",
+            "DELETE FROM WorkingTreeModels WHERE Added=0 AND Hidden=0 AND GroupId=''",
+            "UPDATE WorkingTreeModels SET GroupId=@p, UpdatedAt=@t WHERE Added=1 AND GroupId=@id",
+            "UPDATE WorkingTreeGroups SET ParentId=@p, UpdatedAt=@t WHERE ParentId=@id",
+            "DELETE FROM WorkingTreeGroups WHERE Id=@id",
+        })
+            using (SqliteCommand cmd = Cmd(conn, sql, tx, ("@id", id), ("@p", g.ParentId), ("@t", now)))
+                cmd.ExecuteNonQuery();
+        tx.Commit();
+        return true;
+    }
+
+    /// <summary>
+    /// Moves a model (from the Glossary or added here) into a group; "" puts it back where it came from (its Glossary
+    /// group, or the Added bundle). Its hidden flag stays. Null when the model is neither in the Glossary nor added.
+    /// </summary>
+    public WorkingTree? MoveTreeModel(string? name, string? groupId, string user)
+    {
+        string n = (name ?? "").Trim();
+        string gid = (groupId ?? "").Trim();
+        WorkingGroups glossary = ListGroups();
+        string now = Now();
+        using SqliteConnection conn = Open();
+        using SqliteTransaction tx = conn.BeginTransaction();
+        bool added;
+        using (SqliteCommand cmd = Cmd(conn, "SELECT 1 FROM WorkingTreeModels WHERE Name=@n AND Added=1", tx, ("@n", n)))
+            added = cmd.ExecuteScalar() is not null;
+        // a Glossary model keeps its Glossary spelling
+        string? glossaryName = glossary.Groups.SelectMany(g => g.Models).Select(m => m.Trim())
+            .FirstOrDefault(m => string.Equals(m, n, StringComparison.OrdinalIgnoreCase));
+        if (n.Length == 0 || (!added && glossaryName is null)) return null;
+        if (!added) n = glossaryName!;
+        if (gid.Length > 0 && !KnownTreeGroup(conn, tx, gid, glossary)) throw new ArgumentException("The group to move the model into was not found.");
+        if (added)
+            using (SqliteCommand upd = Cmd(conn, "UPDATE WorkingTreeModels SET GroupId=@g, UpdatedBy=@u, UpdatedAt=@t WHERE Name=@n", tx,
+                ("@g", gid), ("@u", user), ("@t", now), ("@n", n)))
+                upd.ExecuteNonQuery();
+        else
+        {
+            using (SqliteCommand up = Cmd(conn,
+                "INSERT INTO WorkingTreeModels (Name, GroupId, CreatedBy, CreatedAt, UpdatedBy, UpdatedAt) VALUES (@n,@g,@u,@t,@u,@t) " +
+                "ON CONFLICT(Name) DO UPDATE SET GroupId=@g, UpdatedBy=@u, UpdatedAt=@t", tx,
+                ("@n", n), ("@g", gid), ("@u", user), ("@t", now)))
+                up.ExecuteNonQuery();
+            using (SqliteCommand drop = Cmd(conn, "DELETE FROM WorkingTreeModels WHERE Name=@n AND Added=0 AND Hidden=0 AND GroupId=''", tx, ("@n", n)))
+                drop.ExecuteNonQuery();
+        }
+        WorkingTree tree = ReadTree(conn, tx);
+        tx.Commit();
+        return tree;
     }
 
     // ── Model info ──────────────────────────────────────────────────────────

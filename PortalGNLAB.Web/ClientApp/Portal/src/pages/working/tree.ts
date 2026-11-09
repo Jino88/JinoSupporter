@@ -1,20 +1,38 @@
 // Which models the Working tree shows (Endpoints/WorkingEndpoints.cs, /tree): the Company Glossary groups are read only,
-// so hidden models and models added here are kept in PortalGNLAB.db. /bmes/check tells whether a name is a BMES model.
+// so hidden models, models added here, sub-groups made here and models moved into them are kept in PortalGNLAB.db.
+// /bmes/check tells whether a name is a BMES model.
 import { getJson, toolPath, toolSend } from "../../toolsApi";
 import type { GroupNode } from "./logic";
 import type { ModelGroup } from "./types";
 
 export interface AddedModel {
   name: string;
-  /** Company Glossary group it is listed under, or "" for the Added group. */
+  /** Group it is listed under (a Company Glossary group or a sub-group made here), or "" for the Added group. */
   groupId: string;
   createdBy: string;
   createdAt: string;
 }
 
+/** A sub-group made in Manage, under a Company Glossary group or under another sub-group. */
+export interface UserGroup {
+  id: string;
+  name: string;
+  parentId: string;
+  sort: number;
+}
+
+/** A Company Glossary model moved into another group. */
+export interface PlacedModel {
+  name: string;
+  groupId: string;
+}
+
 export interface TreeSettings {
   hidden: string[];
   added: AddedModel[];
+  /** Missing from an older server. */
+  groups?: UserGroup[];
+  placed?: PlacedModel[];
 }
 
 export interface BmesCandidate {
@@ -39,26 +57,45 @@ export const treeApi = {
   add: (name: string, groupId: string) => toolSend<AddedModel>("working/tree/models", { name, groupId }),
   remove: (name: string) => toolSend<void>(`working/tree/models/${encodeURIComponent(name)}`, undefined, "DELETE"),
   check: (name: string) => getJson<BmesCheck>(toolPath(`working/bmes/check?name=${encodeURIComponent(name)}`)),
+  addGroup: (name: string, parentId: string) => toolSend<UserGroup>("working/tree/groups", { name, parentId }),
+  renameGroup: (id: string, name: string) => toolSend<UserGroup>(`working/tree/groups/${encodeURIComponent(id)}`, { name }, "PUT"),
+  removeGroup: (id: string) => toolSend<void>(`working/tree/groups/${encodeURIComponent(id)}`, undefined, "DELETE"),
+  /** groupId "" puts the model back where it came from. */
+  move: (name: string, groupId: string) => toolSend<TreeSettings>(`working/tree/models/${encodeURIComponent(name)}/group`, { groupId }, "PUT"),
 };
+
+const key = (s: string) => s.trim().toLowerCase();
 
 /** Id of the group the models added without a group are listed under. */
 export const ADDED_GROUP = "__added";
 
-/** The Glossary groups with the added models put in theirs; the ones without a (known) group go to an "Added" group. */
-export function withAdded(groups: ModelGroup[], added: AddedModel[]): ModelGroup[] {
-  const ids = new Set(groups.map((g) => g.id));
-  const extra = new Map<string, string[]>();
-  for (const a of added) {
-    const id = a.groupId && ids.has(a.groupId) ? a.groupId : ADDED_GROUP;
-    extra.set(id, [...(extra.get(id) ?? []), a.name]);
+/**
+ * The Glossary groups with what Manage changed: its sub-groups (after the Glossary groups beside them), the Glossary
+ * models moved into another group, and the added models in their group; an added model without a (known) group goes to
+ * an "Added" group at the end. A move to a group that is gone is ignored.
+ */
+export function withAdded(groups: ModelGroup[], added: AddedModel[], userGroups: UserGroup[] = [], placed: PlacedModel[] = []): ModelGroup[] {
+  const all: ModelGroup[] = [
+    ...groups.map((g) => ({ ...g, models: [...g.models] })),
+    ...userGroups.map((u) => ({ id: u.id, name: u.name, parentId: u.parentId || null, models: [] as string[], sort: 100_000 + u.sort, position: 0 })),
+  ];
+  const byId = new Map(all.map((g) => [g.id, g]));
+  for (const pm of placed) {
+    const to = byId.get(pm.groupId);
+    if (!to) continue;
+    const k = key(pm.name);
+    for (const g of all) g.models = g.models.filter((m) => key(m) !== k);
+    to.models.push(pm.name);
   }
-  const out = groups.map((g) => (extra.has(g.id) ? { ...g, models: [...g.models, ...extra.get(g.id)!] } : g));
-  if (extra.has(ADDED_GROUP))
-    out.push({ id: ADDED_GROUP, name: "Added", parentId: null, models: extra.get(ADDED_GROUP)!, sort: 1_000_000, position: 0 });
-  return out;
+  const loose: string[] = [];
+  for (const a of added) {
+    const to = a.groupId ? byId.get(a.groupId) : undefined;
+    if (to) to.models.push(a.name);
+    else loose.push(a.name);
+  }
+  if (loose.length) all.push({ id: ADDED_GROUP, name: "Added", parentId: null, models: loose, sort: 1_000_000, position: 0 });
+  return all;
 }
-
-const key = (s: string) => s.trim().toLowerCase();
 
 /** The tree without the hidden models (case ignored); groups left with no model drop out and the counts follow. */
 export function hideModels(nodes: GroupNode[], hidden: string[]): GroupNode[] {
