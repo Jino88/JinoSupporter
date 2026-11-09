@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { workingApi } from "./api";
 import BmesPanel from "./BmesPanel";
+import { readManual } from "./manual";
 import { PHASES, phaseName, type ModelInfo, type WorkingModel } from "./types";
 
 /** Model info with an old phase name (Proto, EVT …) shown as the current one; saving writes the new name. */
 const current = (info: ModelInfo | undefined): ModelInfo => (info?.phase ? { ...info, phase: phaseName(info.phase) } : info ?? {});
 
-const FIELDS: { key: keyof ModelInfo; label: string; placeholder?: string }[] = [
+const FIELDS: { key: "customer" | "build" | "owner" | "line" | "sopTarget"; label: string; placeholder?: string }[] = [
   { key: "customer", label: "Customer" },
   { key: "build", label: "Build", placeholder: "PV2" },
   { key: "owner", label: "PM owner" },
@@ -79,6 +80,7 @@ export default function InfoTab(props: {
             </div>
           </div>
           <BmesPanel modelName={model.name} saved={info.bmesMaterial ?? ""} onError={props.onError}
+            manual={readManual(info.manualGroup)} onManual={(g) => setInfo((cur) => ({ ...cur, manualGroup: g }))}
             onPick={(m) => setInfo(({ bmesMaterial: _old, ...rest }) => (m ? { ...rest, bmesMaterial: m } : rest))} />
         </div>
       </section>
