@@ -171,17 +171,12 @@ export function parseState(text: string): SetupState | null {
 const SHEET_COLUMNS = 11;
 
 /**
- * The cells of a pasted line. Excel separates them with tabs; text without a tab (copied through a viewer that turns
- * tabs into spaces) is split where two or more spaces stand. Extra cells are dropped from the end when empty, else
- * right after the process name, where a process name merged over two cells leaves an empty one.
+ * The cells of a pasted line without tabs (copied through a viewer that turns tabs into spaces): split where two or
+ * more spaces stand, empty cells past the 11 sheet columns dropped.
  */
 export function cellsOf(line: string): string[] {
   const c = (line.includes("\t") ? line.split("\t") : line.trim().split(/\s{2,}/)).map((v) => v.trim());
-  while (c.length > SHEET_COLUMNS) {
-    if (c[c.length - 1] === "") c.pop();
-    else if (c[4] === "") c.splice(4, 1);
-    else break;
-  }
+  while (c.length > SHEET_COLUMNS && c[c.length - 1] === "") c.pop();
   return c;
 }
 
@@ -216,30 +211,119 @@ export interface PastedSetup {
  * Setup Plan | Finish | Status | Note. Header lines are skipped, an empty LINE takes the one above, and the last Note
  * (the problem text) comes back per row.
  */
+/**
+ * Records of tab-separated text as Excel copies it: a cell with a line break, tab or quote comes in quotes ("No.
+ * Layout"), with "" for a quote inside.
+ */
+export function tsvRecords(text: string): string[][] {
+  const records: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch !== '"') cell += ch;
+      else if (text[i + 1] === '"') { cell += '"'; i++; }
+      else quoted = false;
+    } else if (ch === '"' && cell === "") quoted = true;
+    else if (ch === "\t") { row.push(cell); cell = ""; }
+    else if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && text[i + 1] === "\n") i++;
+      row.push(cell);
+      records.push(row);
+      row = [];
+      cell = "";
+    } else cell += ch;
+  }
+  if (cell || row.length) { row.push(cell); records.push(row); }
+  return records.map((r) => r.map((c) => c.trim()));
+}
+
+/** Where each field is in a pasted row: No, No. layout, LINE, process, machine plan / state / note, setup plan / finish / status, note. */
+export interface SheetColumns {
+  no: number; layout: number; line: number; process: number;
+  machinePlan: number; machineState: number; machineNote: number;
+  setupPlan: number; setupFinish: number; setupStatus: number; note: number;
+}
+
+const PLAIN_COLUMNS: SheetColumns = {
+  no: 0, layout: 1, line: 2, process: 3, machinePlan: 4, machineState: 5, machineNote: 6, setupPlan: 7, setupFinish: 8, setupStatus: 9, note: 10,
+};
+
+/**
+ * Columns read from the sheet's header row (No | No. Layout | LINE | Process Name | Machine Line | SETUP | Note), so cells
+ * merged over several columns (LINE over two, Process Name over four in the Setup Plan sheet) still line up; null when
+ * the row is not that header.
+ */
+export function headerColumns(header: string[]): SheetColumns | null {
+  const at = (re: RegExp, from = 0) => header.findIndex((c, i) => i >= from && re.test(c));
+  const process = at(/^process\s*name$/i);
+  const machine = at(/^machine/i);
+  const setup = at(/^setup$/i, machine + 1);
+  if (process < 0 || machine < 0 || setup < 0) return null;
+  const line = at(/^line$/i);
+  const layout = at(/layout/i);
+  const note = at(/^note$/i, setup + 3);
+  return {
+    no: Math.max(at(/^no\.?$/i), 0), layout: layout < 0 ? 1 : layout, line: line < 0 ? 2 : line, process,
+    machinePlan: machine, machineState: machine + 1, machineNote: machine + 2,
+    setupPlan: setup, setupFinish: setup + 1, setupStatus: setup + 2, note: note < 0 ? setup + 3 : note,
+  };
+}
+
+/**
+ * Without a header: rows wider than the 11 sheet columns lose the columns that are empty in every row, from the left
+ * after LINE (where merged LINE and Process Name cells leave them), until 11 are left.
+ */
+function withoutMergeGaps(rows: string[][]): string[][] {
+  const width = Math.max(0, ...rows.map((r) => r.length));
+  if (width <= SHEET_COLUMNS) return rows;
+  const drop = new Set<number>();
+  for (let k = 3; k < width && drop.size < width - SHEET_COLUMNS; k++)
+    if (rows.every((r) => !(r[k] ?? ""))) drop.add(k);
+  return rows.map((r) => r.filter((_, k) => !drop.has(k)));
+}
+
+/**
+ * Rows copied from the Setup Plan sheet: No | No. Layout | LINE | Process Name | Machine Plan | State | Note | Setup Plan |
+ * Finish | Status | Note. Header lines are skipped (and used to find the columns when copied with the rows), an empty
+ * LINE takes the one above, and the last Note (the problem text) comes back per row. Text without tabs is split at runs
+ * of two or more spaces.
+ */
 export function parseSetupPaste(text: string, today: string): PastedSetup {
+  let records = text.includes("\t") ? tsvRecords(text) : text.replace(/\r\n?/g, "\n").split("\n").map(cellsOf);
+  const headerAt = records.findIndex((r) => r.some((c) => /^process\s*name$/i.test(c)));
+  const fromHeader = headerAt >= 0 ? headerColumns(records[headerAt]) : null;
+  const col = fromHeader ?? PLAIN_COLUMNS;
+  if (!fromHeader && text.includes("\t")) {
+    const data = records.filter((r) => r.some(Boolean));
+    const fixed = withoutMergeGaps(data);
+    records = records.map((r) => (r.some(Boolean) ? fixed[data.indexOf(r)] : r));
+  }
   const rows: PastedSetup["rows"] = [];
   let line = "";
-  const lines = text.replace(/\r\n?/g, "\n").split("\n");
-  for (let i = 0; i < lines.length; i++) {
-    const c = cellsOf(lines[i]);
-    const process = c[3] ?? "";
+  for (let i = 0; i < records.length; i++) {
+    const c = records[i];
+    const get = (k: number) => c[k] ?? "";
+    const process = get(col.process);
     if (!process || /^process\s*name$/i.test(process)) continue;
     const at = `Line ${i + 1}`;
-    const no = /^\d+$/.test(c[0] ?? "") ? Number(c[0]) : 0;
-    if (c[2]) line = c[2];
-    const machineState = parseState(c[5] ?? "");
-    const setupStatus = parseState(c[9] ?? "");
-    if (machineState === null) return { rows: [], problem: `${at}: machine state "${c[5]}" is not O, X or Δ.` };
-    if (setupStatus === null) return { rows: [], problem: `${at}: setup status "${c[9]}" is not O, X or Δ.` };
+    const no = /^\d+$/.test(get(col.no)) ? Number(get(col.no)) : 0;
+    if (get(col.line)) line = get(col.line);
+    const machineState = parseState(get(col.machineState));
+    const setupStatus = parseState(get(col.setupStatus));
+    if (machineState === null) return { rows: [], problem: `${at}: machine state "${get(col.machineState)}" is not O, X or Δ.` };
+    if (setupStatus === null) return { rows: [], problem: `${at}: setup status "${get(col.setupStatus)}" is not O, X or Δ.` };
     const dates: string[] = [];
-    for (const [k, label] of [[4, "machine plan"], [7, "setup plan"], [8, "setup finish"]] as const) {
-      const d = parseSheetDate(c[k] ?? "", today);
-      if (d === null) return { rows: [], problem: `${at}: ${label} "${c[k]}" is not a date.` };
+    for (const [k, label] of [[col.machinePlan, "machine plan"], [col.setupPlan, "setup plan"], [col.setupFinish, "setup finish"]] as const) {
+      const d = parseSheetDate(get(k), today);
+      if (d === null) return { rows: [], problem: `${at}: ${label} "${get(k)}" is not a date.` };
       dates.push(d);
     }
     const row = {
-      no, layoutNo: c[1] ?? "", line, processName: process, machinePlan: dates[0], machineState, machineNote: c[6] ?? "",
-      setupPlan: dates[1], setupFinish: dates[2], setupStatus, note: (c[10] ?? "").replace(/^[-–•]\s*/, ""),
+      no, layoutNo: get(col.layout), line, processName: process, machinePlan: dates[0], machineState, machineNote: get(col.machineNote),
+      setupPlan: dates[1], setupFinish: dates[2], setupStatus, note: get(col.note).replace(/^[-–•]\s*/, ""),
     };
     const problem = setupProblem(row);
     if (problem) return { rows: [], problem: `${at}: ${problem}` };
@@ -247,6 +331,6 @@ export function parseSetupPaste(text: string, today: string): PastedSetup {
   }
   return {
     rows,
-    problem: rows.length ? "" : "No rows found. Copy the rows from No. to Note in Excel (the 11 columns, tab separated) and paste them here.",
+    problem: rows.length ? "" : "No rows found. Copy the rows from No. to Note in Excel (with the header rows if you like) and paste them here.",
   };
 }
