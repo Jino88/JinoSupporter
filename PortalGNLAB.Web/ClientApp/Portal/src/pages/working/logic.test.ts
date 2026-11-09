@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { matchingModels } from "./PlanView";
 import {
   blankEntry, blankLog, buildTree, byMonth, countByKind, entryProblem, filterTree, firstModel, isLate, isLogLate, isOpenIssue, issueFields,
-  issuesBySeq, logProblem, notesInOrder, pastedImages, pathOf, sortEntries, suggestions,
+  issuesBySeq, logProblem, mediaKind, notesInOrder, pastedImages, pathOf, sortEntries, suggestions,
 } from "./logic";
 import type { Entry, EntryLog, ModelGroup } from "./types";
 
@@ -137,5 +137,17 @@ describe("issue register", () => {
     expect(pastedImages([file("x.svg", "image/svg+xml")], 0).problem).toMatch(/not PNG/);
     expect(pastedImages([file("big.jpg", "image/jpeg", 10 * 1024 * 1024 + 1)], 0).problem).toMatch(/10 MB/);
     expect(pastedImages([file("c.png", "image/png")], 20).problem).toMatch(/at most 20/);
+  });
+
+  it("takes videos too, told by type or by extension, up to 500 MB each and 1 GB per save", () => {
+    const MB = 1024 * 1024;
+    const file = (name: string, type: string, size = 1000) => ({ name, type, size });
+    expect(["a.mp4|video/mp4", "b.MOV|", "c.mkv|application/octet-stream", "d.txt|", "e.png|image/png"]
+      .map((t) => t.split("|")).map(([n, ty]) => mediaKind(file(n, ty)))).toEqual(["video", "video", "video", null, "image"]);
+    expect(pastedImages([file("clip.mp4", "video/mp4", 300 * MB), file("a.mkv", "")], 0).files.map((f) => f.name)).toEqual(["clip.mp4", "a.mkv"]);
+    expect(pastedImages([file("big.mp4", "video/mp4", 500 * MB + 1)], 0).problem).toMatch(/500 MB/);
+    expect(pastedImages([file("a.wmv", "video/x-ms-wmv")], 0).problem).toMatch(/not an MP4/);
+    expect(pastedImages([file("b.mp4", "video/mp4", 400 * MB)], 1, 700 * MB).problem).toMatch(/1 GB/);
+    expect(pastedImages([file("c.mp4", "video/mp4", 20 * MB)], 0).problem).toBe("");
   });
 });

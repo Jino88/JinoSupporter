@@ -118,10 +118,20 @@ export interface Entry extends EntryFields {
   updatedAt: string;
 }
 
-/** Pictures the server stores (WorkingEndpoints images upload). */
+/** Pictures and videos the server stores as sent (WorkingEndpoints images upload); it tells the format by the bytes. */
 export const IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp"];
+export const VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/webm", "video/x-matroska", "video/x-msvideo"];
+/** Browsers leave the type of some videos empty; the extension tells them. */
+export const VIDEO_EXTENSIONS: Record<string, string> = {
+  mp4: "video/mp4", m4v: "video/mp4", mov: "video/quicktime", webm: "video/webm", mkv: "video/x-matroska", avi: "video/x-msvideo",
+};
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+export const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
+/** All files of one upload together. */
+export const MAX_UPLOAD_BYTES = 1024 * 1024 * 1024;
 export const MAX_IMAGES_PER_UPLOAD = 20;
+
+export const isVideo = (contentType: string) => contentType.startsWith("video/");
 
 export const KIND_LABEL: Record<EntryKind, string> = { dev: "Dev", issue: "Issue", review: "Review" };
 export const SEVERITIES = ["Critical", "Major", "Minor"];

@@ -7,20 +7,25 @@ const model = (name: string) => `${base}/models/${encodeURIComponent(name)}`;
 const entry = (name: string, entryId: string) => `${model(name)}/entries/${encodeURIComponent(entryId)}`;
 const logs = (name: string, entryId: string) => `${entry(name, entryId)}/logs`;
 
-/** Multipart POST (toolSend is JSON only). */
-async function upload<T>(path: string, form: FormData): Promise<T> {
-  const response = await fetch(toolPath(path), {
-    method: "POST",
-    credentials: "same-origin",
-    headers: { Accept: "application/json", "X-Requested-With": "PortalGNLAB" },
-    body: form,
+/** Multipart POST (toolSend is JSON only); XMLHttpRequest so a long video upload can show how far it is (0–1). */
+function upload<T>(path: string, form: FormData, onProgress?: (done: number) => void): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", toolPath(path));
+    xhr.withCredentials = true;
+    xhr.setRequestHeader("Accept", "application/json");
+    xhr.setRequestHeader("X-Requested-With", "PortalGNLAB");
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress?.(e.loaded / e.total); };
+    xhr.onload = () => {
+      if (xhr.status === 401) window.location.assign(loginUrl(location.pathname));
+      let body: { error?: string } | null = null;
+      try { body = JSON.parse(xhr.responseText); } catch { /* not JSON */ }
+      if (xhr.status >= 200 && xhr.status < 300) resolve(body as T);
+      else reject(new Error(body?.error ?? (xhr.status === 413 ? "The files are too large." : `Request failed (HTTP ${xhr.status})`)));
+    };
+    xhr.onerror = () => reject(new Error("The upload failed. Check the connection and try again."));
+    xhr.send(form);
   });
-  if (response.status === 401) window.location.assign(loginUrl(location.pathname));
-  if (!response.ok) {
-    const error = await response.json().catch(() => null);
-    throw new Error(error?.error ?? `Request failed (HTTP ${response.status})`);
-  }
-  return (await response.json()) as T;
 }
 
 export const workingApi = {
@@ -37,12 +42,12 @@ export const workingApi = {
     toolSend<EntryLog>(`${logs(name, entryId)}/${encodeURIComponent(log.id)}`, { ...fields, revision: log.revision }, "PUT"),
   deleteLog: (name: string, entryId: string, logId: string) =>
     toolSend<void>(`${logs(name, entryId)}/${encodeURIComponent(logId)}`, undefined, "DELETE"),
-  /** Pictures for the issue itself (logId "") or for one of its notes. */
-  addImages: async (name: string, entryId: string, logId: string, files: File[]) => {
+  /** Pictures and videos for the issue itself (logId "") or for one of its notes, sent as they are. */
+  addImages: async (name: string, entryId: string, logId: string, files: File[], onProgress?: (done: number) => void) => {
     const form = new FormData();
     if (logId) form.append("logId", logId);
     files.forEach((f, i) => form.append("files", f, f.name || `pasted-${i + 1}.png`));
-    return (await upload<{ images: WorkingImage[] }>(`${entry(name, entryId)}/images`, form)).images;
+    return (await upload<{ images: WorkingImage[] }>(`${entry(name, entryId)}/images`, form, onProgress)).images;
   },
   deleteImage: (name: string, entryId: string, imageId: string) =>
     toolSend<void>(`${entry(name, entryId)}/images/${encodeURIComponent(imageId)}`, undefined, "DELETE"),
