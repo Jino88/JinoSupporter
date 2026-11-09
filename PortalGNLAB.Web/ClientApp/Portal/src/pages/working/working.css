@@ -186,3 +186,23 @@ table.wk-bom-t tr.lv1 td { font-weight: 700; }
 .wk-subtabs { display: flex; flex-wrap: wrap; gap: 6px; margin: -4px 0 14px; }
 .wk-subtabs .cnt { font-size: 10px; font-weight: 700; margin-left: 5px; color: inherit; opacity: .75; }
 .pi-tabs .cnt.bad { color: var(--bad); background: #fef2f2; }
+/* Model tree manager (TreeManager.tsx). */
+.wk-side-t { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.wk-mgr { width: min(760px, 94vw); max-height: 88vh; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+.wk-mgr section { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.wk-mgr h2 { margin: 0; }
+.wk-mgr h3 { margin: 0; font-size: 13px; }
+.wk-mgr-h, .wk-mgr-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: space-between; }
+.wk-mgr-row .inp { width: auto; flex: 1; min-width: 160px; }
+.wk-mgr-add { padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.wk-mgr-check { font-size: 12px; padding: 8px 10px; border-radius: 6px; display: grid; gap: 6px; }
+.wk-mgr-check.ok { background: #f0fdf4; color: #166534; }
+.wk-mgr-check.no { background: #fef2f2; color: #991b1b; }
+.wk-mgr-cands { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.wk-mgr-list { overflow-y: auto; max-height: 46vh; border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
+.wk-mg { padding: 4px 0; }
+.wk-mg.d1 { padding-left: 14px; }
+.wk-mg.d2 { padding-left: 28px; }
+.wk-mg-h { display: flex; align-items: center; gap: 10px; font-size: 11.5px; margin: 4px 0; }
+.wk-mg-m { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 0 2px 14px; cursor: pointer; }
+.wk-mg-tag { font-size: 10px; font-weight: 700; color: var(--accent-ink); background: var(--accent-soft); border-radius: 999px; padding: 0 6px; }
