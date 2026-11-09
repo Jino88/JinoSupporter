@@ -608,10 +608,11 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
     }
 
     /// <summary>
-    /// Moves a model (from the Glossary or added here) into a group; "" puts it back where it came from (its Glossary
-    /// group, or the Added bundle). Its hidden flag stays. Null when the model is neither in the Glossary nor added.
+    /// Moves a model (from the Glossary, BMES Make Model Group or added here) into a group; "" puts it back where it came
+    /// from (its Glossary or BMES group, or the Added bundle). Its hidden flag stays. Null when the model is none of these.
+    /// <paramref name="otherModels"/> are the BMES Make Model Group models the tree also lists.
     /// </summary>
-    public WorkingTree? MoveTreeModel(string? name, string? groupId, string user)
+    public WorkingTree? MoveTreeModel(string? name, string? groupId, string user, IEnumerable<string>? otherModels = null)
     {
         string n = (name ?? "").Trim();
         string gid = (groupId ?? "").Trim();
@@ -623,7 +624,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         using (SqliteCommand cmd = Cmd(conn, "SELECT 1 FROM WorkingTreeModels WHERE Name=@n AND Added=1", tx, ("@n", n)))
             added = cmd.ExecuteScalar() is not null;
         // a Glossary model keeps its Glossary spelling
-        string? glossaryName = glossary.Groups.SelectMany(g => g.Models).Select(m => m.Trim())
+        string? glossaryName = glossary.Groups.SelectMany(g => g.Models).Concat(otherModels ?? []).Select(m => m.Trim())
             .FirstOrDefault(m => string.Equals(m, n, StringComparison.OrdinalIgnoreCase));
         if (n.Length == 0 || (!added && glossaryName is null)) return null;
         if (!added) n = glossaryName!;

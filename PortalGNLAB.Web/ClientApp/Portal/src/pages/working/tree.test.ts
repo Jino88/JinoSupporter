@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildTree } from "./logic";
-import { ADDED_GROUP, allModels, groupChoices, hideModels, withAdded } from "./tree";
+import { ADDED_GROUP, BMES_GROUP, allModels, groupChoices, hideModels, withAdded, withBmes } from "./tree";
 import type { ModelGroup } from "./types";
 
 const g = (id: string, name: string, parentId: string | null, models: string[], sort = 0): ModelGroup => ({ id, name, parentId, models, sort, position: 0 });
@@ -33,6 +33,27 @@ describe("model tree settings", () => {
       ["UNIT", ["TIU-C11-18-ZZ"], [["Old units", ["TIU-C11-08"]]]],
       ["Added", ["ODD-1"], []],
     ]);
+  });
+
+  it("puts the BMES Make Model Group models in as they are, into the group of the same name, without repeating a model", () => {
+    const gloss = [g("spk", "SPEAKER", null, []), g("msu", "MSU", "spk", ["MSU-L20S15-07-ZZ"]), g("tws", "TWS", null, ["TIM-338"], 1),
+      g("unit", "UNIT", null, ["TIU-C11-20-ZZ"], 2)];
+    const bmes = [
+      { group: "TWS", material: "ASSY 338 RA1" }, { group: "TWS", material: "ASSY REAR-TAPE-338" },
+      { group: "SPK", material: "MSU-L20S15-07" }, { group: "SPK", material: "BRS-NEW-01" },
+      { group: "UNIT", material: "tiu-c11-20" }, { group: "MODULE", material: "MSM-X526/X626B" }, { group: "MODULE", material: "MSM-NX14" },
+      { group: "ETC", material: "JIG-1" }, { group: "ETC", material: " " },
+    ];
+    const r = withBmes(gloss, bmes, [added("MSM-X526/X626B", "")]);
+    expect(r.bmesModels).toEqual(["ASSY 338 RA1", "ASSY REAR-TAPE-338", "BRS-NEW-01", "MSM-NX14", "JIG-1"]);
+    const tree = buildTree(r.groups);
+    expect(tree.map((n) => [n.name, n.models])).toEqual([
+      ["SPEAKER", ["BRS-NEW-01"]], ["TWS", ["TIM-338", "ASSY 338 RA1", "ASSY REAR-TAPE-338"]], ["UNIT", ["TIU-C11-20-ZZ"]],
+      ["MODULE", ["MSM-NX14"]], ["ETC", ["JIG-1"]],
+    ]);
+    expect(r.groups.find((x) => x.name === "MODULE")!.id).toBe(BMES_GROUP + "module");
+    // the Glossary groups themselves are not changed
+    expect(gloss[2].models).toEqual(["TIM-338"]);
   });
 
   it("hides the chosen models, drops groups left empty and recounts", () => {

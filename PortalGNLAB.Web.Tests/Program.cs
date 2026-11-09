@@ -860,6 +860,11 @@ try
         Check(tree.MoveTreeModel("nobody", ug1.Id, "a") is null && WBad(() => tree.MoveTreeModel("X400", "ug-none", "a"))
               && tree.MoveTreeModel("X400", "g2", "a") is { Placed.Count: 2 },
             "working tree: an unknown model is not found, an unknown group gives 400, a glossary group is allowed");
+        Check(tree.MoveTreeModel("assy 338 ra1", ug1.Id, "a", ["ASSY 338 RA1"]) is { } bmv
+              && bmv.Placed.Any(p => p.Name == "ASSY 338 RA1" && p.GroupId == ug1.Id)
+              && tree.MoveTreeModel("ASSY 338 RA1", ug1.Id, "a") is null
+              && tree.MoveTreeModel("ASSY 338 RA1", "", "a", ["ASSY 338 RA1"]) is { } bback && bback.Placed.All(p => p.Name != "ASSY 338 RA1"),
+            "working tree: a BMES Make Model Group model (kept in its BMES spelling) is moved into a sub-group and put back");
         tree.SetHidden(["X316B"], "a");
         tree.SetHidden([], "a");
         Check(tree.GetTree().Placed.Any(p => p.Name == "X316B"), "working tree: unhiding a moved model keeps it where it was moved");

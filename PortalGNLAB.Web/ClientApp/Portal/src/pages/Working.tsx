@@ -9,7 +9,8 @@ import {
 } from "./working/logic";
 import PlanView from "./working/PlanView";
 import SetupPlan from "./working/SetupPlan";
-import { hideModels, treeApi, withAdded, type TreeSettings } from "./working/tree";
+import { bmesApi, type BmesMaterial } from "./working/bmes";
+import { hideModels, treeApi, withAdded, withBmes, type TreeSettings } from "./working/tree";
 import TreeManager from "./working/TreeManager";
 import { phaseName, type Entry, type GroupsResponse, type WorkingModel } from "./working/types";
 import "./working/working.css";
@@ -38,6 +39,7 @@ export default function Working() {
   const query = new URLSearchParams(window.location.search);
   const [groups, setGroups] = useState<GroupsResponse | null>(null);
   const [treeSettings, setTreeSettings] = useState<TreeSettings>({ hidden: [], added: [] });
+  const [bmes, setBmes] = useState<BmesMaterial[]>([]);
   const [managing, setManaging] = useState(false);
   const [filter, setFilter] = useState("");
   const [closed, setClosed] = useState<Set<string>>(new Set());
@@ -50,9 +52,10 @@ export default function Working() {
   const load = useRef(0);
   const today = localToday();
 
-  // every model (Glossary + added here), then the ones not hidden in Manage
+  // every model (Glossary + BMES Make Model Group + added here), then the ones not hidden in Manage
+  const merged = useMemo(() => withBmes(groups?.groups ?? [], bmes, treeSettings.added), [groups, bmes, treeSettings.added]);
   const fullTree = useMemo(
-    () => buildTree(withAdded(groups?.groups ?? [], treeSettings.added, treeSettings.groups, treeSettings.placed)), [groups, treeSettings]);
+    () => buildTree(withAdded(merged.groups, treeSettings.added, treeSettings.groups, treeSettings.placed)), [merged, treeSettings]);
   const tree = useMemo(() => hideModels(fullTree, treeSettings.hidden), [fullTree, treeSettings.hidden]);
   const shown = useMemo(() => filterTree(tree, filter), [tree, filter]);
   const fail = (e: unknown) => setError((e as Error).message);
@@ -60,11 +63,13 @@ export default function Working() {
   useEffect(() => {
     // without the tree settings (older server, or a failure) every Glossary model is shown
     const empty: TreeSettings = { hidden: [], added: [] };
-    Promise.all([workingApi.groups(), treeApi.get().catch(() => empty)])
-      .then(([g, t]) => {
+    Promise.all([workingApi.groups(), treeApi.get().catch(() => empty), bmesApi.materials().catch(() => [] as BmesMaterial[])])
+      .then(([g, t, b]) => {
         setGroups(g);
         setTreeSettings(t);
-        setSelected((cur) => cur ?? firstModel(hideModels(buildTree(withAdded(g.groups, t.added, t.groups, t.placed)), t.hidden)));
+        setBmes(b);
+        const base = withBmes(g.groups, b, t.added).groups;
+        setSelected((cur) => cur ?? firstModel(hideModels(buildTree(withAdded(base, t.added, t.groups, t.placed)), t.hidden)));
       })
       .catch(fail);
   }, []);
@@ -158,13 +163,14 @@ export default function Working() {
           </div>
           {groups?.source && (
             <div className="wk-src" title={groups.source}>
-              Source: Company Glossary{treeSettings.added.length ? ` + ${treeSettings.added.length} added` : ""}
+              Source: Company Glossary{merged.bmesModels.length ? ` + ${merged.bmesModels.length} from BMES Model Group` : ""}
+              {treeSettings.added.length ? ` + ${treeSettings.added.length} added` : ""}
               {treeSettings.hidden.length ? ` · ${treeSettings.hidden.length} hidden` : ""}
             </div>
           )}
         </aside>
         {managing && (
-          <TreeManager tree={fullTree} settings={treeSettings} onChanged={setTreeSettings} onClose={() => setManaging(false)} onError={fail} />
+          <TreeManager tree={fullTree} bmesModels={merged.bmesModels} settings={treeSettings} onChanged={setTreeSettings} onClose={() => setManaging(false)} onError={fail} />
         )}
 
         <section className="wk-main">
