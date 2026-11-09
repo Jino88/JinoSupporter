@@ -1,4 +1,5 @@
-import type { Entry, EntryFields, EntryKind, ModelGroup } from "./types";
+import { IMAGE_TYPES, MAX_IMAGE_BYTES, MAX_IMAGES_PER_UPLOAD } from "./types";
+import type { Entry, EntryFields, EntryKind, EntryLog, LogFields, ModelGroup } from "./types";
 
 export interface GroupNode {
   id: string;
@@ -130,11 +131,41 @@ export function suggestions(used: string[], defaults: string[]): string[] {
   return out;
 }
 
-export function logProblem(date: string, text: string): string {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return "Date must be yyyy-MM-dd.";
-  if (!text.trim()) return "Write what was done.";
-  if (text.length > 5000) return "A note must be 5000 characters or fewer.";
+export const blankLog = (today: string): LogFields => ({ date: today, text: "", owner: "", due: "", doneDate: "" });
+
+export const logFieldsOf = (l: EntryLog): LogFields =>
+  ({ date: l.date, text: l.text, owner: l.owner ?? "", due: l.due ?? "", doneDate: l.doneDate ?? "" });
+
+/** Notes in date order, oldest first. */
+export const notesInOrder = (logs: EntryLog[]) =>
+  [...logs].sort((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt));
+
+/** A note that is not done and whose due date has passed. */
+export const isLogLate = (l: LogFields, today: string) => !l.doneDate && !!l.due && l.due < today;
+
+export function logProblem(f: LogFields): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date)) return "Date must be yyyy-MM-dd.";
+  if (!f.text.trim()) return "Write what was done.";
+  if (f.text.length > 5000) return "A note must be 5000 characters or fewer.";
+  if (f.owner.trim().length > 100) return "Owner must be 100 characters or fewer.";
+  if (f.due && !/^\d{4}-\d{2}-\d{2}$/.test(f.due)) return "Due must be yyyy-MM-dd.";
+  if (f.doneDate && !/^\d{4}-\d{2}-\d{2}$/.test(f.doneDate)) return "Done date must be yyyy-MM-dd.";
+  if (f.doneDate && f.doneDate < f.date) return "Done date cannot be before the note date.";
   return "";
+}
+
+/**
+ * Pictures among pasted / picked files. Other files are ignored so a normal text paste still works;
+ * a picture the server would refuse comes back as a problem instead.
+ */
+export function pastedImages<F extends { name: string; type: string; size: number }>(files: F[], have: number): { files: F[]; problem: string } {
+  const pictures = files.filter((f) => f.type.startsWith("image/"));
+  const refused = pictures.find((f) => !IMAGE_TYPES.includes(f.type));
+  if (refused) return { files: [], problem: `${refused.name || "This picture"} is not PNG, JPEG, GIF, WebP or BMP.` };
+  const large = pictures.find((f) => f.size > MAX_IMAGE_BYTES);
+  if (large) return { files: [], problem: `${large.name || "This picture"} is larger than 10 MB.` };
+  if (have + pictures.length > MAX_IMAGES_PER_UPLOAD) return { files: [], problem: `Paste at most ${MAX_IMAGES_PER_UPLOAD} pictures at a time.` };
+  return { files: pictures, problem: "" };
 }
 
 /** Message for a form that cannot be saved yet, or "" when it can. */
