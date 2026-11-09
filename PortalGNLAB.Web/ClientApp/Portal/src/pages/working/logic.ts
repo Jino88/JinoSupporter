@@ -1,4 +1,6 @@
-import { IMAGE_TYPES, MAX_IMAGE_BYTES, MAX_IMAGES_PER_UPLOAD } from "./types";
+import {
+  IMAGE_TYPES, MAX_IMAGE_BYTES, MAX_IMAGES_PER_UPLOAD, MAX_UPLOAD_BYTES, MAX_VIDEO_BYTES, VIDEO_EXTENSIONS, VIDEO_TYPES,
+} from "./types";
 import type { Entry, EntryFields, EntryKind, EntryLog, LogFields, ModelGroup } from "./types";
 
 export interface GroupNode {
@@ -154,18 +156,38 @@ export function logProblem(f: LogFields): string {
   return "";
 }
 
+type FileLike = { name: string; type: string; size: number };
+
+/** "image" / "video" for a picture or video (a video with no type is told by its extension), otherwise null. */
+export function mediaKind(f: FileLike): "image" | "video" | null {
+  if (f.type.startsWith("image/")) return "image";
+  if (f.type.startsWith("video/")) return "video";
+  const ext = f.name.split(".").pop()?.toLowerCase() ?? "";
+  return (!f.type || f.type === "application/octet-stream") && VIDEO_EXTENSIONS[ext] ? "video" : null;
+}
+
 /**
- * Pictures among pasted / picked files. Other files are ignored so a normal text paste still works;
- * a picture the server would refuse comes back as a problem instead.
+ * Pictures and videos among pasted, dropped or picked files. Other files are ignored so a normal text paste still works;
+ * a file the server would refuse comes back as a problem instead. <have> / <haveBytes> are the files already waiting.
  */
-export function pastedImages<F extends { name: string; type: string; size: number }>(files: F[], have: number): { files: F[]; problem: string } {
-  const pictures = files.filter((f) => f.type.startsWith("image/"));
-  const refused = pictures.find((f) => !IMAGE_TYPES.includes(f.type));
-  if (refused) return { files: [], problem: `${refused.name || "This picture"} is not PNG, JPEG, GIF, WebP or BMP.` };
-  const large = pictures.find((f) => f.size > MAX_IMAGE_BYTES);
-  if (large) return { files: [], problem: `${large.name || "This picture"} is larger than 10 MB.` };
-  if (have + pictures.length > MAX_IMAGES_PER_UPLOAD) return { files: [], problem: `Paste at most ${MAX_IMAGES_PER_UPLOAD} pictures at a time.` };
-  return { files: pictures, problem: "" };
+export function pastedImages<F extends FileLike>(files: F[], have: number, haveBytes = 0): { files: F[]; problem: string } {
+  const media = files.filter((f) => mediaKind(f));
+  const label = (f: F) => f.name || "This file";
+  for (const f of media) {
+    const ext = f.name.split(".").pop()?.toLowerCase() ?? "";
+    if (mediaKind(f) === "image") {
+      if (!IMAGE_TYPES.includes(f.type)) return { files: [], problem: `${label(f)} is not PNG, JPEG, GIF, WebP or BMP.` };
+      if (f.size > MAX_IMAGE_BYTES) return { files: [], problem: `${label(f)} is larger than 10 MB.` };
+    } else {
+      if (!VIDEO_TYPES.includes(f.type) && !VIDEO_EXTENSIONS[ext])
+        return { files: [], problem: `${label(f)} is not an MP4, MOV, WebM, MKV or AVI video.` };
+      if (f.size > MAX_VIDEO_BYTES) return { files: [], problem: `${label(f)} is larger than 500 MB.` };
+    }
+  }
+  if (have + media.length > MAX_IMAGES_PER_UPLOAD) return { files: [], problem: `Add at most ${MAX_IMAGES_PER_UPLOAD} files at a time.` };
+  if (haveBytes + media.reduce((n, f) => n + f.size, 0) > MAX_UPLOAD_BYTES)
+    return { files: [], problem: "The files of one save must be 1 GB or less in total." };
+  return { files: media, problem: "" };
 }
 
 /** Message for a form that cannot be saved yet, or "" when it can. */

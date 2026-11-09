@@ -1,32 +1,49 @@
-import { Fragment, useEffect, useState, type ClipboardEvent } from "react";
+import { Fragment, useEffect, useState, type ClipboardEvent, type DragEvent } from "react";
 import { workingApi } from "./api";
 import {
   blankEntry, blankLog, entryProblem, fieldsOf, isLate, isLogLate, isOpenIssue, issueFields, issuesBySeq, logFieldsOf, logProblem,
-  notesInOrder, pastedImages, suggestions,
+  mediaKind, notesInOrder, pastedImages, suggestions,
 } from "./logic";
-import { ISSUE_CAUSES, ISSUE_PROCESSES, ISSUE_TYPES, PHASES, type Entry, type EntryFields, type EntryLog, type LogFields, type WorkingImage } from "./types";
+import {
+  ISSUE_CAUSES, ISSUE_PROCESSES, ISSUE_TYPES, isVideo, PHASES, type Entry, type EntryFields, type EntryLog, type LogFields, type WorkingImage,
+} from "./types";
 
 type Filter = "open" | "closed" | "all";
 const COLS = 14;
 
 interface Lists { types: string[]; processes: string[]; causes: string[] }
 
-/** Pictures being edited: new pasted files and the ids of saved pictures to remove on save. */
+/** Pictures / videos being edited: new pasted, dropped or picked files and the ids of saved ones to remove on save. */
 interface Pics { files: File[]; removed: string[] }
+
+const PICK_ACCEPT = "image/png,image/jpeg,image/gif,image/webp,image/bmp,video/mp4,video/quicktime,video/webm,.mp4,.m4v,.mov,.webm,.mkv,.avi";
 
 function usePictures(saved: WorkingImage[]) {
   const [files, setFiles] = useState<File[]>([]);
   const [removed, setRemoved] = useState<string[]>([]);
   const [problem, setProblem] = useState("");
-  const onPaste = (ev: ClipboardEvent) => {
-    const r = pastedImages(Array.from(ev.clipboardData.files), files.length);
-    if (!r.files.length && !r.problem) return; // plain text paste
-    ev.preventDefault();
+  /** True when some of the files were pictures / videos (taken, or refused with a problem). */
+  const add = (list: File[]) => {
+    const r = pastedImages(list, files.length, files.reduce((n, f) => n + f.size, 0));
+    if (!r.files.length && !r.problem) return false;
     setProblem(r.problem);
     if (r.files.length) setFiles((cur) => [...cur, ...r.files]);
+    return true;
+  };
+  const onPaste = (ev: ClipboardEvent) => {
+    if (add(Array.from(ev.clipboardData.files))) ev.preventDefault(); // otherwise a plain text paste
+  };
+  const onDragOver = (ev: DragEvent) => {
+    if (Array.from(ev.dataTransfer.types).includes("Files")) ev.preventDefault();
+  };
+  const onFileDrop = (ev: DragEvent) => {
+    if (!ev.dataTransfer.files.length) return;
+    ev.preventDefault();
+    if (!add(Array.from(ev.dataTransfer.files))) setProblem("Only pictures and videos can be added.");
   };
   return {
-    files, removed, problem, onPaste,
+    files, removed, problem, onPaste, onDragOver, onFileDrop,
+    pick: (list: FileList | null) => { if (list?.length && !add(Array.from(list))) setProblem("Only pictures and videos can be added."); },
     kept: saved.filter((i) => !removed.includes(i.id)),
     drop: (index: number) => setFiles((cur) => cur.filter((_, j) => j !== index)),
     remove: (id: string) => setRemoved((cur) => [...cur, id]),
@@ -42,14 +59,24 @@ function PendingThumb(props: { file: File; onRemove: () => void }) {
     return () => URL.revokeObjectURL(u);
   }, [props.file]);
   return (
-    <span className="wk-thumb new" title="Saved with the row">
-      {url && <img src={url} alt={props.file.name} />}
-      <button className="wk-thumb-x" aria-label="Remove picture" onClick={props.onRemove}>×</button>
+    <span className={"wk-thumb new" + (mediaKind(props.file) === "video" ? " video" : "")} title={`${props.file.name} · saved with the row`}>
+      {url && (mediaKind(props.file) === "video" ? <video src={url} muted preload="metadata" /> : <img src={url} alt={props.file.name} />)}
+      <button className="wk-thumb-x" aria-label="Remove file" onClick={props.onRemove}>×</button>
     </span>
   );
 }
 
-/** Saved pictures (click to enlarge) and, while editing, the pasted ones not saved yet. */
+/** Opens the file picker for pictures and videos (pasting a video often does not work). */
+function PickFiles(props: { onPick: (list: FileList | null) => void }) {
+  return (
+    <label className="btn sm wk-pick" onClick={(ev) => ev.stopPropagation()}>
+      Add files
+      <input type="file" multiple hidden accept={PICK_ACCEPT} onChange={(e) => { props.onPick(e.target.files); e.target.value = ""; }} />
+    </label>
+  );
+}
+
+/** Saved pictures / videos (click to enlarge or play) and, while editing, the added ones not saved yet. */
 function Thumbs(props: {
   images: WorkingImage[]; onOpen: (i: WorkingImage) => void;
   onRemove?: (id: string) => void; pending?: File[]; onDrop?: (index: number) => void;
@@ -59,11 +86,13 @@ function Thumbs(props: {
   return (
     <div className="wk-thumbs" onClick={(ev) => ev.stopPropagation()}>
       {props.images.map((i) => (
-        <span key={i.id} className="wk-thumb">
+        <span key={i.id} className={"wk-thumb" + (isVideo(i.contentType) ? " video" : "")}>
           <button className="wk-thumb-img" title={i.fileName} onClick={() => props.onOpen(i)}>
-            <img loading="lazy" src={workingApi.imageUrl(i.id)} alt={i.fileName} />
+            {isVideo(i.contentType)
+              ? <video src={workingApi.imageUrl(i.id)} muted preload="metadata" />
+              : <img loading="lazy" src={workingApi.imageUrl(i.id)} alt={i.fileName} />}
           </button>
-          {props.onRemove && <button className="wk-thumb-x" aria-label="Remove picture" onClick={() => props.onRemove!(i.id)}>×</button>}
+          {props.onRemove && <button className="wk-thumb-x" aria-label="Remove file" onClick={() => props.onRemove!(i.id)}>×</button>}
         </span>
       ))}
       {pending.map((f, j) => <PendingThumb key={j} file={f} onRemove={() => props.onDrop?.(j)} />)}
@@ -101,9 +130,15 @@ function IssueForm(props: {
       {text("cause", "Cause group", "wk-l-cause")}
       <div className="wk-f wide"><label>Issue</label>
         <input className="inp" value={f.title} maxLength={200} autoFocus onChange={(e) => set("title", e.target.value)} /></div>
-      <div className="wk-f wide"><label>Pictures</label>
-        <div className="wk-paste" tabIndex={0}>
-          <span className="muted small">Click here and press Ctrl+V to paste a picture (PNG, JPEG, GIF, WebP, BMP · up to 10 MB).</span>
+      <div className="wk-f wide"><label>Pictures / videos</label>
+        <div className="wk-paste" tabIndex={0} onDragOver={pics.onDragOver} onDrop={pics.onFileDrop}>
+          <div className="wk-paste-h">
+            <span className="muted small">
+              Click here and press Ctrl+V, or drop files here. Pictures (PNG, JPEG, GIF, WebP, BMP) up to 10 MB, videos (MP4, MOV, WebM,
+              MKV, AVI) up to 500 MB; kept as they are.
+            </span>
+            <PickFiles onPick={pics.pick} />
+          </div>
           <Thumbs images={pics.kept} onOpen={props.onOpen} onRemove={pics.remove} pending={pics.files} onDrop={pics.drop} />
         </div>
         {pics.problem && <span className="pi-dirty">{pics.problem}</span>}
@@ -175,10 +210,13 @@ function LogEditRow(props: {
       <td className="tog">{props.isNew ? "+" : "↳"}</td>
       <td className="n sub">{props.no}</td>
       <td colSpan={4}></td>
-      <td className="l wk-it-title">
-        <textarea className="inp wk-ta" rows={2} value={f.text} onPaste={pics.onPaste} autoFocus={!props.isNew}
-          placeholder={props.isNew ? "Add today's progress… (Ctrl+V pastes a picture)" : "Ctrl+V pastes a picture"}
-          onChange={(e) => set("text", e.target.value)} />
+      <td className="l wk-it-title" onDragOver={pics.onDragOver} onDrop={pics.onFileDrop}>
+        <div className="wk-note-in">
+          <textarea className="inp wk-ta" rows={2} value={f.text} onPaste={pics.onPaste} autoFocus={!props.isNew}
+            placeholder={props.isNew ? "Add today's progress… (Ctrl+V or drop pictures / videos)" : "Ctrl+V or drop pictures / videos"}
+            onChange={(e) => set("text", e.target.value)} />
+          <PickFiles onPick={pics.pick} />
+        </div>
         <Thumbs images={pics.kept} onOpen={props.onOpen} onRemove={pics.remove} pending={pics.files} onDrop={pics.drop} />
         {(pics.problem || (f.text && problem)) && <div className="pi-dirty">{pics.problem || problem}</div>}
       </td>
@@ -213,6 +251,11 @@ export default function IssueTable(props: {
   today: string;
   onChanged: (list: Entry[]) => void;
   onError: (e: unknown) => void;
+  /** Problems of a Setup Plan row: entries are that row's issues and a new one is put on the row. */
+  setupRowId?: string;
+  heading?: string;
+  /** Prefilled fields of a new issue. */
+  newDefaults?: Partial<EntryFields>;
 }) {
   const { modelName, entries, today } = props;
   const [filter, setFilter] = useState<Filter>("open");
@@ -221,6 +264,7 @@ export default function IssueTable(props: {
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [viewer, setViewer] = useState<WorkingImage | null>(null);
+  const [uploading, setUploading] = useState<number | null>(null);
 
   const all = issuesBySeq(entries);
   const shown = all.filter((e) => filter === "all" || (filter === "open") === isOpenIssue(e));
@@ -241,10 +285,14 @@ export default function IssueTable(props: {
         await workingApi.deleteImage(modelName, entryId, id);
         kept = kept.filter((i) => i.id !== id);
       }
-      return pics.files.length ? [...kept, ...await workingApi.addImages(modelName, entryId, logId, pics.files)] : kept;
+      if (!pics.files.length) return kept;
+      setUploading(0);
+      return [...kept, ...await workingApi.addImages(modelName, entryId, logId, pics.files, (done) => setUploading(Math.round(done * 100)))];
     } catch (e) {
       props.onError(e);
       return kept;
+    } finally {
+      setUploading(null);
     }
   };
 
@@ -297,19 +345,24 @@ export default function IssueTable(props: {
   return (
     <section className="card pi-sec">
       <div className="pi-sec-h">
-        <h2>Issues <span className="cnt">{shown.length}</span></h2>
+        <h2>{props.heading ?? "Issues"} <span className="cnt">{shown.length}</span></h2>
         <div className="pi-legend">
           {(["open", "closed", "all"] as Filter[]).map((v) => (
             <button key={v} className={"wk-chip" + (filter === v ? " on" : "")} onClick={() => setFilter(v)}>
               {v[0].toUpperCase() + v.slice(1)} {count(v)}
             </button>
           ))}
-          <button className="btn sm primary" disabled={editing === "new"} onClick={() => setEditing("new")}>+ New issue</button>
+          <button className="btn sm primary" disabled={editing === "new"} onClick={() => setEditing("new")}>{props.setupRowId ? "+ New problem" : "+ New issue"}</button>
         </div>
       </div>
+      {uploading !== null && (
+        <div className="wk-upload" role="status">
+          Uploading {uploading}%… <span className="wk-upload-bar"><span style={{ width: `${uploading}%` }} /></span>
+        </div>
+      )}
       {editing === "new" && (
         <div className="pi-sec-b">
-          <IssueForm value={blankEntry("issue", today, props.modelPhase)} images={[]} lists={lists} busy={busy}
+          <IssueForm value={{ ...blankEntry("issue", today, props.modelPhase), ...props.newDefaults, ...(props.setupRowId ? { setupRowId: props.setupRowId } : {}) }} images={[]} lists={lists} busy={busy}
             onSave={add} onCancel={() => setEditing(null)} onOpen={setViewer} />
         </div>
       )}
@@ -382,14 +435,22 @@ export default function IssueTable(props: {
         </table>
       </div>
       {viewer && (
-        <div className="wk-viewer" role="dialog" aria-label="Picture" onClick={() => setViewer(null)}>
+        <div className="wk-viewer" role="dialog" aria-label={isVideo(viewer.contentType) ? "Video" : "Picture"} onClick={() => setViewer(null)}>
           <div onClick={(ev) => ev.stopPropagation()}>
             <div className="wk-viewer-h">
-              <span>{viewer.fileName} · {viewer.createdBy}</span>
-              <a href={workingApi.imageUrl(viewer.id)} target="_blank" rel="noreferrer">Open original</a>
+              <span>{viewer.fileName} · {(viewer.size / 1024 / 1024).toFixed(1)} MB · {viewer.createdBy}</span>
+              {!isVideo(viewer.contentType) && <a href={workingApi.imageUrl(viewer.id)} target="_blank" rel="noreferrer">Open original</a>}
+              <a href={workingApi.imageUrl(viewer.id)} download={viewer.fileName}>Download</a>
               <button className="btn sm" onClick={() => setViewer(null)}>Close</button>
             </div>
-            <img src={workingApi.imageUrl(viewer.id)} alt={viewer.fileName} />
+            {isVideo(viewer.contentType) ? (
+              <>
+                <video src={workingApi.imageUrl(viewer.id)} controls autoPlay />
+                {(viewer.contentType === "video/x-msvideo" || viewer.contentType === "video/x-matroska") && (
+                  <div className="muted small">If this video does not play in the browser, download it and open it in a video player.</div>
+                )}
+              </>
+            ) : <img src={workingApi.imageUrl(viewer.id)} alt={viewer.fileName} />}
           </div>
         </div>
       )}

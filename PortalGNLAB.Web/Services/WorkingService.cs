@@ -16,18 +16,37 @@ public sealed record WorkingModelSave(JsonElement Info, int Revision);
 
 /// <summary>
 /// An entry. Issue fields (Seq … FinalResult) are "" / 0 for other kinds; Logs are the dated progress notes, oldest first;
-/// Images are the entry's own pictures (each note carries its own).
+/// Images are the entry's own pictures (each note carries its own). SetupRowId is the Setup Plan row an issue was raised
+/// against (it is one of that row's Issue (Problem) list), or "".
 /// </summary>
 public sealed record WorkingEntry(
     string Id, string ModelName, string Kind, string Date, string Title, string Body, string Status, string Severity,
     string Result, string Owner, string Due, int Revision, string CreatedBy, string CreatedAt, string UpdatedBy, string UpdatedAt,
     int Seq, string Phase, string Category, string Process, string Cause, string DoneDate, string FinalResult, List<WorkingEntryLog> Logs,
-    List<WorkingImage> Images);
+    List<WorkingImage> Images, string SetupRowId = "");
 
 public sealed record WorkingEntrySave(
     string? Kind, string? Date, string? Title, string? Body, string? Status, string? Severity,
     string? Result, string? Owner, string? Due, int Revision,
-    string? Phase = null, string? Category = null, string? Process = null, string? Cause = null, string? DoneDate = null, string? FinalResult = null);
+    string? Phase = null, string? Category = null, string? Process = null, string? Cause = null, string? DoneDate = null, string? FinalResult = null,
+    string? SetupRowId = null);
+
+/// <summary>
+/// A process row of a model's Setup Plan: machine line plan / state / note and setup plan / finish / status.
+/// States are "", "O" (OK), "X" (not yet set up) or "Δ" (setting up now); dates are "" or yyyy-MM-dd.
+/// Its problems are the issues whose SetupRowId is this row.
+/// </summary>
+public sealed record WorkingSetupRow(
+    string Id, string ModelName, int No, string LayoutNo, string Line, string ProcessName,
+    string MachinePlan, string MachineState, string MachineNote, string SetupPlan, string SetupFinish, string SetupStatus,
+    int Revision, string CreatedBy, string CreatedAt, string UpdatedBy, string UpdatedAt);
+
+/// <summary>No 0 / null on create = after the last row; on update = keep.</summary>
+public sealed record WorkingSetupRowSave(
+    int? No, string? LayoutNo, string? Line, string? ProcessName, string? MachinePlan, string? MachineState, string? MachineNote,
+    string? SetupPlan, string? SetupFinish, string? SetupStatus, int Revision = 0);
+
+public sealed record WorkingSetupImport(List<WorkingSetupRowSave>? Rows);
 
 /// <summary>A dated progress note; Due / DoneDate are "" or yyyy-MM-dd (a note with a done date is done).</summary>
 public sealed record WorkingEntryLog(
@@ -36,8 +55,27 @@ public sealed record WorkingEntryLog(
 
 public sealed record WorkingLogSave(string? Date, string? Text, int Revision = 0, string? Owner = null, string? Due = null, string? DoneDate = null);
 
-/// <summary>A pasted picture of an entry (LogId "") or of one of its notes. The bytes are served by GetImage.</summary>
+/// <summary>
+/// A picture or video pasted into an entry (LogId "") or into one of its notes. The original bytes are stored in the DB
+/// unchanged and served by OpenImage.
+/// </summary>
 public sealed record WorkingImage(string Id, string EntryId, string LogId, string FileName, string ContentType, long Size, string CreatedBy, string CreatedAt);
+
+/// <summary>An uploaded file: its name, length and a way to read it (opened once to tell the format and once to store it).</summary>
+public sealed record WorkingUpload(string Name, long Length, Func<Stream> Open)
+{
+    public static WorkingUpload Of(string name, byte[] data) => new(name, data.LongLength, () => new MemoryStream(data, false));
+}
+
+/// <summary>A stored file opened for reading; disposing it closes its DB connection.</summary>
+public sealed class WorkingImageFile(string fileName, string contentType, long size, Stream data) : IDisposable
+{
+    public string FileName { get; } = fileName;
+    public string ContentType { get; } = contentType;
+    public long Size { get; } = size;
+    public Stream Data { get; } = data;
+    public void Dispose() => Data.Dispose();
+}
 
 /// <summary>
 /// Per-model work history. Model groups are read (never written) from the CompanyGlossary DB; model info
@@ -96,6 +134,26 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             CreatedAt TEXT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS IX_WorkingImages_EntryId ON WorkingImages (EntryId);
+        CREATE TABLE IF NOT EXISTS WorkingSetupRows (
+            Id TEXT PRIMARY KEY,
+            ModelName TEXT NOT NULL COLLATE NOCASE,
+            No INTEGER NOT NULL,
+            LayoutNo TEXT NOT NULL DEFAULT '',
+            Line TEXT NOT NULL DEFAULT '',
+            ProcessName TEXT NOT NULL,
+            MachinePlan TEXT NOT NULL DEFAULT '',
+            MachineState TEXT NOT NULL DEFAULT '',
+            MachineNote TEXT NOT NULL DEFAULT '',
+            SetupPlan TEXT NOT NULL DEFAULT '',
+            SetupFinish TEXT NOT NULL DEFAULT '',
+            SetupStatus TEXT NOT NULL DEFAULT '',
+            Revision INTEGER NOT NULL,
+            CreatedBy TEXT NOT NULL DEFAULT '',
+            CreatedAt TEXT NOT NULL,
+            UpdatedBy TEXT NOT NULL DEFAULT '',
+            UpdatedAt TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS IX_WorkingSetupRows_ModelName ON WorkingSetupRows (ModelName);
         CREATE TABLE IF NOT EXISTS WorkingEntrySeq (
             ModelName TEXT NOT NULL COLLATE NOCASE,
             Kind TEXT NOT NULL,
@@ -114,6 +172,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         ("Cause", "TEXT NOT NULL DEFAULT ''"),
         ("DoneDate", "TEXT NOT NULL DEFAULT ''"),
         ("FinalResult", "TEXT NOT NULL DEFAULT ''"),
+        ("SetupRowId", "TEXT NOT NULL DEFAULT ''"),
     ];
 
     /// <summary>Note columns added 2026-11-09 (schedule and done date of a note).</summary>
@@ -124,10 +183,16 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         ("DoneDate", "TEXT NOT NULL DEFAULT ''"),
     ];
 
-    /// <summary>Picture formats kept, told apart by their first bytes (the sent content type is not trusted).</summary>
+    /// <summary>Picture and video formats kept, told apart by their first bytes (the sent content type is not trusted).</summary>
     public static readonly string[] ImageTypes = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp"];
+    public static readonly string[] VideoTypes = ["video/mp4", "video/quicktime", "video/webm", "video/x-matroska", "video/x-msvideo"];
     public const long MaxImageBytes = 10L * 1024 * 1024;
+    public const long MaxVideoBytes = 500L * 1024 * 1024;
+    /// <summary>All files of one upload together.</summary>
+    public const long MaxUploadBytes = 1024L * 1024 * 1024;
     public const int MaxImagesPerUpload = 20;
+    /// <summary>Bytes read from the start of a file to tell its format.</summary>
+    public const int SniffBytes = 64;
 
     public const string DefaultGlossaryDb = @"E:\db\CompanyGlossary\company-glossary.db";
     public const string GlossaryEnvVar = "PORTALGNLAB_GLOSSARY_DB";
@@ -135,7 +200,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
 
     private const string EntryColumns =
         "Id, ModelName, Kind, Date, Title, Body, Status, Severity, Result, Owner, Due, Revision, CreatedBy, CreatedAt, UpdatedBy, UpdatedAt, " +
-        "Seq, Phase, Category, Process, Cause, DoneDate, FinalResult";
+        "Seq, Phase, Category, Process, Cause, DoneDate, FinalResult, SetupRowId";
 
     private const string LogColumns = "Id, EntryId, Date, Text, Revision, CreatedBy, CreatedAt, UpdatedBy, UpdatedAt, Owner, Due, DoneDate";
 
@@ -340,7 +405,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         new(r.GetString(0), r.GetString(1), r.GetString(2), r.GetString(3), r.GetString(4), r.GetString(5), r.GetString(6),
             r.GetString(7), r.GetString(8), r.GetString(9), r.GetString(10), r.GetInt32(11), r.GetString(12), r.GetString(13),
             r.GetString(14), r.GetString(15), r.GetInt32(16), r.GetString(17), r.GetString(18), r.GetString(19), r.GetString(20),
-            r.GetString(21), r.GetString(22), logs, images);
+            r.GetString(21), r.GetString(22), logs, images, r.GetString(23));
 
     /// <summary>A note row; its pictures are picked from <paramref name="images"/> (pictures of its entry or wider).</summary>
     private static WorkingEntryLog ReadLog(SqliteDataReader r, List<WorkingImage> images) =>
@@ -456,10 +521,12 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         string now = Now();
         using SqliteConnection conn = Open();
         using SqliteTransaction tx = conn.BeginTransaction();
+        string setupRowId = SetupRowOf(conn, tx, model, e.Kind, (body.SetupRowId ?? "").Trim());
         using (SqliteCommand ins = Cmd(conn,
             $"INSERT INTO WorkingEntries ({EntryColumns}) VALUES " +
-            "(@id,@m,@k,@d,@t,@b,@s,@sv,@r,@o,@due,1,@u,@now,@u,@now,@seq,@ph,@cat,@proc,@cause,@done,@fin)", tx,
-            [("@id", id), ("@m", model), ("@u", user), ("@now", now), ("@seq", NextSeq(conn, tx, model, e.Kind)), .. EntryArgs(e)]))
+            "(@id,@m,@k,@d,@t,@b,@s,@sv,@r,@o,@due,1,@u,@now,@u,@now,@seq,@ph,@cat,@proc,@cause,@done,@fin,@setup)", tx,
+            [("@id", id), ("@m", model), ("@u", user), ("@now", now), ("@seq", NextSeq(conn, tx, model, e.Kind)), ("@setup", setupRowId),
+             .. EntryArgs(e)]))
             ins.ExecuteNonQuery();
         WorkingEntry saved = ReadEntryRow(conn, model, id, tx)!;
         tx.Commit();
@@ -479,11 +546,14 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             throw new WorkingConflictException("Someone else saved this entry first. Reload and try again.");
         // a kind change gives the entry the next number of its new kind
         int seq = current.Kind == e.Kind ? current.Seq : NextSeq(conn, tx, model, e.Kind);
+        // an issue saved without a SetupRowId stays on its setup row
+        string setupRowId = body.SetupRowId is null && e.Kind == "issue" ? current.SetupRowId
+            : SetupRowOf(conn, tx, model, e.Kind, (body.SetupRowId ?? "").Trim());
         using (SqliteCommand upd = Cmd(conn,
             "UPDATE WorkingEntries SET Kind=@k, Date=@d, Title=@t, Body=@b, Status=@s, Severity=@sv, Result=@r, Owner=@o, Due=@due, " +
-            "Seq=@seq, Phase=@ph, Category=@cat, Process=@proc, Cause=@cause, DoneDate=@done, FinalResult=@fin, " +
+            "Seq=@seq, Phase=@ph, Category=@cat, Process=@proc, Cause=@cause, DoneDate=@done, FinalResult=@fin, SetupRowId=@setup, " +
             "Revision=Revision+1, UpdatedBy=@u, UpdatedAt=@now WHERE Id=@id AND ModelName=@m", tx,
-            [("@id", id), ("@m", model), ("@u", user), ("@now", Now()), ("@seq", seq), .. EntryArgs(e)]))
+            [("@id", id), ("@m", model), ("@u", user), ("@now", Now()), ("@seq", seq), ("@setup", setupRowId), .. EntryArgs(e)]))
             upd.ExecuteNonQuery();
         WorkingEntry saved = ReadEntryRow(conn, model, id, tx)!;
         tx.Commit();
@@ -502,6 +572,155 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             logs.ExecuteNonQuery();
         using (SqliteCommand pics = Cmd(conn, "DELETE FROM WorkingImages WHERE EntryId=@id", tx, ("@id", id)))
             pics.ExecuteNonQuery();
+        tx.Commit();
+        return true;
+    }
+
+    /// <summary>The setup row an entry may be linked to: "" for none; otherwise an issue on a row of the same model.</summary>
+    private static string SetupRowOf(SqliteConnection conn, SqliteTransaction tx, string model, string kind, string setupRowId)
+    {
+        if (setupRowId.Length == 0) return "";
+        if (kind != "issue") throw new ArgumentException("Only an issue can be a problem of a setup row.");
+        if (ReadSetupRow(conn, tx, model, setupRowId) is null) throw new ArgumentException("That setup row is not in this model.");
+        return setupRowId;
+    }
+
+    // ── Setup Plan: process rows with machine line and setup progress ───────
+
+    private const string SetupColumns =
+        "Id, ModelName, No, LayoutNo, Line, ProcessName, MachinePlan, MachineState, MachineNote, SetupPlan, SetupFinish, SetupStatus, " +
+        "Revision, CreatedBy, CreatedAt, UpdatedBy, UpdatedAt";
+
+    public const int MaxSetupRowsPerImport = 2000;
+
+    private static WorkingSetupRow ReadSetup(SqliteDataReader r) =>
+        new(r.GetString(0), r.GetString(1), r.GetInt32(2), r.GetString(3), r.GetString(4), r.GetString(5), r.GetString(6), r.GetString(7),
+            r.GetString(8), r.GetString(9), r.GetString(10), r.GetString(11), r.GetInt32(12), r.GetString(13), r.GetString(14),
+            r.GetString(15), r.GetString(16));
+
+    private static WorkingSetupRow? ReadSetupRow(SqliteConnection conn, SqliteTransaction? tx, string model, string id)
+    {
+        using SqliteCommand cmd = Cmd(conn, $"SELECT {SetupColumns} FROM WorkingSetupRows WHERE Id=@id AND ModelName=@m", tx, ("@id", id), ("@m", model));
+        using SqliteDataReader r = cmd.ExecuteReader();
+        return r.Read() ? ReadSetup(r) : null;
+    }
+
+    /// <summary>"", "O", "X" or "Δ"; the look-alikes typed in Excel (o, ○, x, ×, △, ▲ …) are taken as those.</summary>
+    public static string SetupState(string? value, string label) => (value ?? "").Trim() switch
+    {
+        "" => "",
+        "O" or "o" or "0" or "○" or "◯" or "●" => "O",
+        "X" or "x" or "×" or "✕" => "X",
+        "Δ" or "△" or "▲" or "δ" => "Δ",
+        _ => throw new ArgumentException($"{label} must be O (OK), X (not yet set up) or Δ (setting up now)."),
+    };
+
+    private sealed record CleanedSetup(int No, string LayoutNo, string Line, string ProcessName, string MachinePlan, string MachineState,
+        string MachineNote, string SetupPlan, string SetupFinish, string SetupStatus);
+
+    private static CleanedSetup CleanSetup(WorkingSetupRowSave b)
+    {
+        string process = (b.ProcessName ?? "").Trim();
+        if (process.Length == 0) throw new ArgumentException("Process name is required.");
+        if (process.Length > 200) throw new ArgumentException("Process name must be 200 characters or fewer.");
+        int no = b.No ?? 0;
+        if (no is < 0 or > 100000) throw new ArgumentException("No. must be between 1 and 100000.");
+        return new(no, Limit(b.LayoutNo, "No. layout", 20), Limit(b.Line, "Line", 50), process,
+            OptionalDate(b.MachinePlan, "Machine plan"), SetupState(b.MachineState, "Machine state"), Limit(b.MachineNote, "Machine note", 100),
+            OptionalDate(b.SetupPlan, "Setup plan"), OptionalDate(b.SetupFinish, "Setup finish"), SetupState(b.SetupStatus, "Setup status"));
+    }
+
+    private static (string, object?)[] SetupArgs(CleanedSetup c) =>
+    [
+        ("@no", c.No), ("@lay", c.LayoutNo), ("@line", c.Line), ("@proc", c.ProcessName), ("@mp", c.MachinePlan), ("@ms", c.MachineState),
+        ("@mn", c.MachineNote), ("@sp", c.SetupPlan), ("@sf", c.SetupFinish), ("@ss", c.SetupStatus),
+    ];
+
+    /// <summary>The model's setup rows by No. (then in the order they were added).</summary>
+    public List<WorkingSetupRow> ListSetupRows(string model)
+    {
+        model = CleanModelName(model);
+        using SqliteConnection conn = Open();
+        using SqliteCommand cmd = Cmd(conn, $"SELECT {SetupColumns} FROM WorkingSetupRows WHERE ModelName=@m ORDER BY No, CreatedAt, Id", null, ("@m", model));
+        var list = new List<WorkingSetupRow>();
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read()) list.Add(ReadSetup(r));
+        return list;
+    }
+
+    public WorkingSetupRow CreateSetupRow(string model, WorkingSetupRowSave body, string user) => ImportSetupRows(model, [body], user)[0];
+
+    /// <summary>Adds rows in one go (all or nothing); a row without a No. takes the one after the last.</summary>
+    public List<WorkingSetupRow> ImportSetupRows(string model, IReadOnlyList<WorkingSetupRowSave> rows, string user)
+    {
+        model = CleanModelName(model);
+        if (rows.Count == 0) throw new ArgumentException("Add at least one row.");
+        if (rows.Count > MaxSetupRowsPerImport) throw new ArgumentException($"Add at most {MaxSetupRowsPerImport} rows at a time.");
+        var clean = new List<CleanedSetup>();
+        for (int i = 0; i < rows.Count; i++)
+        {
+            try { clean.Add(CleanSetup(rows[i])); }
+            catch (ArgumentException ex) when (rows.Count > 1) { throw new ArgumentException($"Row {i + 1}: {ex.Message}"); }
+        }
+        using SqliteConnection conn = Open();
+        using SqliteTransaction tx = conn.BeginTransaction();
+        int last;
+        using (SqliteCommand max = Cmd(conn, "SELECT COALESCE(MAX(No), 0) FROM WorkingSetupRows WHERE ModelName=@m", tx, ("@m", model)))
+            last = Convert.ToInt32(max.ExecuteScalar(), CultureInfo.InvariantCulture);
+        var ids = new List<string>();
+        DateTime at = DateTime.UtcNow;
+        foreach (CleanedSetup c in clean)
+        {
+            string id = Guid.NewGuid().ToString("N");
+            int no = c.No > 0 ? c.No : last + 1;
+            last = Math.Max(last, no);
+            // a tick apart so rows with the same No. keep the order they came in
+            string now = at.AddTicks(ids.Count).ToString("o", CultureInfo.InvariantCulture);
+            using SqliteCommand ins = Cmd(conn,
+                $"INSERT INTO WorkingSetupRows ({SetupColumns}) VALUES (@id,@m,@no,@lay,@line,@proc,@mp,@ms,@mn,@sp,@sf,@ss,1,@u,@now,@u,@now)", tx,
+                [("@id", id), ("@m", model), ("@u", user), ("@now", now), .. SetupArgs(c with { No = no })]);
+            ins.ExecuteNonQuery();
+            ids.Add(id);
+        }
+        List<WorkingSetupRow> saved = ids.Select(id => ReadSetupRow(conn, tx, model, id)!).ToList();
+        tx.Commit();
+        return saved;
+    }
+
+    /// <summary>Null when the row is not in this model; a stale revision is a conflict.</summary>
+    public WorkingSetupRow? UpdateSetupRow(string model, string id, WorkingSetupRowSave body, string user)
+    {
+        model = CleanModelName(model);
+        CleanedSetup c = CleanSetup(body);
+        using SqliteConnection conn = Open();
+        using SqliteTransaction tx = conn.BeginTransaction();
+        WorkingSetupRow? current = ReadSetupRow(conn, tx, model, id);
+        if (current is null) return null;
+        if (current.Revision != body.Revision)
+            throw new WorkingConflictException("Someone else saved this setup row first. Reload and try again.");
+        using (SqliteCommand upd = Cmd(conn,
+            "UPDATE WorkingSetupRows SET No=@no, LayoutNo=@lay, Line=@line, ProcessName=@proc, MachinePlan=@mp, MachineState=@ms, " +
+            "MachineNote=@mn, SetupPlan=@sp, SetupFinish=@sf, SetupStatus=@ss, Revision=Revision+1, UpdatedBy=@u, UpdatedAt=@now " +
+            "WHERE Id=@id AND ModelName=@m", tx,
+            [("@id", id), ("@m", model), ("@u", user), ("@now", Now()), .. SetupArgs(c with { No = c.No > 0 ? c.No : current.No })]))
+            upd.ExecuteNonQuery();
+        WorkingSetupRow saved = ReadSetupRow(conn, tx, model, id)!;
+        tx.Commit();
+        return saved;
+    }
+
+    /// <summary>Deletes the row. Its problems are kept as ordinary issues, no longer linked to a row.</summary>
+    public bool DeleteSetupRow(string model, string id)
+    {
+        model = CleanModelName(model);
+        using SqliteConnection conn = Open();
+        using SqliteTransaction tx = conn.BeginTransaction();
+        using (SqliteCommand del = Cmd(conn, "DELETE FROM WorkingSetupRows WHERE Id=@id AND ModelName=@m", tx, ("@id", id), ("@m", model)))
+            if (del.ExecuteNonQuery() == 0) return false;
+        using (SqliteCommand unlink = Cmd(conn,
+            "UPDATE WorkingEntries SET SetupRowId='', Revision=Revision+1, UpdatedAt=@now WHERE SetupRowId=@id AND ModelName=@m", tx,
+            ("@id", id), ("@m", model), ("@now", Now())))
+            unlink.ExecuteNonQuery();
         tx.Commit();
         return true;
     }
@@ -595,39 +814,78 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         return removed;
     }
 
-    // ── Pictures pasted into an entry or a note ─────────────────────────────
+    // ── Pictures and videos pasted into an entry or a note ──────────────────
 
-    /// <summary>The picture format from the first bytes, or null when the bytes are not PNG / JPEG / GIF / WebP / BMP.</summary>
-    public static string? ImageType(byte[] d)
+    /// <summary>ISO media brands of a video; a file whose own brand is audio or a still picture (HEIC, AVIF, M4A …) is not one.</summary>
+    private static readonly string[] VideoBrands =
+        ["isom", "iso2", "iso4", "iso5", "iso6", "mp41", "mp42", "avc1", "M4V ", "M4VH", "M4VP", "dash", "qt  ", "3gp4", "3gp5", "3gp6", "3g2a", "mmp4", "XAVC", "MSNV"];
+    private static readonly string[] NotVideoBrands = ["M4A ", "M4B ", "M4P ", "F4A ", "F4B ", "heic", "heix", "mif1", "msf1", "avif", "avis", "crx "];
+
+    /// <summary>
+    /// The format from the first bytes (<see cref="SniffBytes"/> are enough), or null when the bytes are not a PNG / JPEG / GIF /
+    /// WebP / BMP picture or an MP4 / MOV / WebM / MKV / AVI video. <paramref name="length"/> is the whole file's length.
+    /// </summary>
+    public static string? FileType(ReadOnlySpan<byte> head, long length)
     {
-        bool At(int offset, params byte[] sig) => d.Length >= offset + sig.Length && d.AsSpan(offset, sig.Length).SequenceEqual(sig);
-        if (At(0, 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)) return "image/png";
-        if (At(0, 0xFF, 0xD8, 0xFF)) return "image/jpeg";
-        if (At(0, (byte)'G', (byte)'I', (byte)'F', (byte)'8')) return "image/gif";
-        if (At(0, (byte)'R', (byte)'I', (byte)'F', (byte)'F') && At(8, (byte)'W', (byte)'E', (byte)'B', (byte)'P')) return "image/webp";
-        if (At(0, (byte)'B', (byte)'M') && d.Length > 26) return "image/bmp";
+        if (At(head, 0, [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])) return "image/png";
+        if (At(head, 0, [0xFF, 0xD8, 0xFF])) return "image/jpeg";
+        if (At(head, 0, "GIF8"u8)) return "image/gif";
+        if (At(head, 0, "RIFF"u8) && At(head, 8, "WEBP"u8)) return "image/webp";
+        if (At(head, 0, "RIFF"u8) && At(head, 8, "AVI "u8)) return "video/x-msvideo";
+        if (At(head, 0, "BM"u8) && length > 26) return "image/bmp";
+        if (At(head, 0, [0x1A, 0x45, 0xDF, 0xA3]))
+            return head.IndexOf("webm"u8) >= 0 ? "video/webm" : head.IndexOf("matroska"u8) >= 0 ? "video/x-matroska" : null;
+        if (At(head, 4, "ftyp"u8) && head.Length >= 12)
+        {
+            string major = System.Text.Encoding.ASCII.GetString(head.Slice(8, 4));
+            if (NotVideoBrands.Contains(major)) return null;
+            // the ftyp box: size, "ftyp", major brand, minor version, then the compatible brands
+            long boxSize = System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(head);
+            int boxEnd = (int)Math.Min(head.Length, boxSize);
+            bool video = VideoBrands.Contains(major);
+            for (int i = 16; !video && i + 4 <= boxEnd; i += 4)
+                video = VideoBrands.Contains(System.Text.Encoding.ASCII.GetString(head.Slice(i, 4)));
+            return video ? (major == "qt  " ? "video/quicktime" : "video/mp4") : null;
+        }
         return null;
     }
 
+    private static bool At(ReadOnlySpan<byte> head, int offset, ReadOnlySpan<byte> sig) =>
+        head.Length >= offset + sig.Length && head.Slice(offset, sig.Length).SequenceEqual(sig);
+
+    /// <summary>Stores pictures / videos given as bytes; see <see cref="AddFiles"/>.</summary>
+    public List<WorkingImage>? AddImages(string model, string entryId, string? logId, IReadOnlyList<(string Name, byte[] Data)> files, string user) =>
+        AddFiles(model, entryId, logId, files.Select(f => WorkingUpload.Of(f.Name, f.Data)).ToList(), user);
+
     /// <summary>
-    /// Stores pictures under the entry, or under its note <paramref name="logId"/>. Null when the entry is not in the model or the
-    /// note is not under the entry. Every file is checked before anything is stored; the format comes from the bytes.
+    /// Stores pictures and videos under the entry, or under its note <paramref name="logId"/>, byte for byte as sent. Null when the
+    /// entry is not in the model or the note is not under the entry. Every file is checked before anything is stored; the format
+    /// comes from the bytes. Each file is streamed into its row, so a video is never held in memory whole.
     /// </summary>
-    public List<WorkingImage>? AddImages(string model, string entryId, string? logId, IReadOnlyList<(string Name, byte[] Data)> files, string user)
+    public List<WorkingImage>? AddFiles(string model, string entryId, string? logId, IReadOnlyList<WorkingUpload> files, string user)
     {
         model = CleanModelName(model);
         logId = (logId ?? "").Trim();
-        if (files.Count == 0) throw new ArgumentException("Add at least one picture.");
-        if (files.Count > MaxImagesPerUpload) throw new ArgumentException($"Add at most {MaxImagesPerUpload} pictures at a time.");
-        var clean = new List<(string Name, string Type, byte[] Data)>();
-        foreach ((string rawName, byte[] data) in files)
+        if (files.Count == 0) throw new ArgumentException("Add at least one picture or video.");
+        if (files.Count > MaxImagesPerUpload) throw new ArgumentException($"Add at most {MaxImagesPerUpload} files at a time.");
+        if (files.Sum(f => f.Length) > MaxUploadBytes) throw new ArgumentException("One upload must be 1 GB or less in total.");
+        var clean = new List<(string Name, string Type, WorkingUpload File)>();
+        foreach (WorkingUpload file in files)
         {
-            string name = Path.GetFileName((rawName ?? "").Trim());
-            if (name.Length == 0) name = "picture";
+            string name = Path.GetFileName((file.Name ?? "").Trim());
+            if (name.Length == 0) name = "file";
             if (name.Length > 200) name = name[^200..];
-            if (data.LongLength > MaxImageBytes) throw new ArgumentException($"{name} is larger than 10 MB.");
-            string type = ImageType(data) ?? throw new ArgumentException($"{name} is not a PNG, JPEG, GIF, WebP or BMP picture.");
-            clean.Add((name, type, data));
+            byte[] head = new byte[SniffBytes];
+            int read = 0;
+            using (Stream s = file.Open())
+                for (int n; read < head.Length && (n = s.Read(head, read, head.Length - read)) > 0;) read += n;
+            string type = FileType(head.AsSpan(0, read), file.Length)
+                ?? throw new ArgumentException($"{name} is not a PNG, JPEG, GIF, WebP or BMP picture or an MP4, MOV, WebM, MKV or AVI video.");
+            if (type.StartsWith("image/", StringComparison.Ordinal) && file.Length > MaxImageBytes)
+                throw new ArgumentException($"{name} is larger than 10 MB.");
+            if (type.StartsWith("video/", StringComparison.Ordinal) && file.Length > MaxVideoBytes)
+                throw new ArgumentException($"{name} is larger than 500 MB.");
+            clean.Add((name, type, file));
         }
         using SqliteConnection conn = Open();
         using SqliteTransaction tx = conn.BeginTransaction();
@@ -635,17 +893,30 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         if (logId.Length > 0 && ReadLogRow(conn, tx, entryId, logId) is null) return null;
         var ids = new List<string>();
         DateTime at = DateTime.UtcNow;
-        foreach ((string name, string type, byte[] data) in clean)
+        foreach ((string name, string type, WorkingUpload file) in clean)
         {
             string id = Guid.NewGuid().ToString("N");
             // a tick apart so the paste order is kept
             string created = at.AddTicks(ids.Count).ToString("o", CultureInfo.InvariantCulture);
-            using SqliteCommand ins = Cmd(conn,
+            long rowId;
+            using (SqliteCommand ins = Cmd(conn,
                 "INSERT INTO WorkingImages (Id, EntryId, LogId, FileName, ContentType, Size, Data, CreatedBy, CreatedAt) " +
-                "VALUES (@id,@e,@l,@n,@ct,@sz,@data,@u,@at)", tx,
-                ("@id", id), ("@e", entryId), ("@l", logId), ("@n", name), ("@ct", type), ("@sz", data.LongLength), ("@data", data),
-                ("@u", user), ("@at", created));
-            ins.ExecuteNonQuery();
+                "VALUES (@id,@e,@l,@n,@ct,@sz,zeroblob(@sz),@u,@at); SELECT last_insert_rowid();", tx,
+                ("@id", id), ("@e", entryId), ("@l", logId), ("@n", name), ("@ct", type), ("@sz", file.Length), ("@u", user), ("@at", created)))
+                rowId = (long)ins.ExecuteScalar()!;
+            long copied = 0;
+            using (var blob = new SqliteBlob(conn, "WorkingImages", "Data", rowId))
+            using (Stream src = file.Open())
+            {
+                byte[] buf = new byte[81920];
+                for (int n; (n = src.Read(buf, 0, buf.Length)) > 0;)
+                {
+                    if (copied + n > file.Length) throw new ArgumentException($"{name} is longer than its stated size.");
+                    blob.Write(buf, 0, n);
+                    copied += n;
+                }
+            }
+            if (copied != file.Length) throw new ArgumentException($"{name} was cut short.");
             ids.Add(id);
         }
         List<WorkingImage> saved = QueryImages(conn, tx, "i.EntryId=@e AND i.LogId=@l", ("@e", entryId), ("@l", logId))
@@ -654,13 +925,41 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         return saved;
     }
 
-    /// <summary>The bytes of a picture, or null.</summary>
+    /// <summary>
+    /// A stored picture / video opened for reading (seekable, so byte ranges can be served), or null. Dispose it when done;
+    /// it keeps its own DB connection open until then.
+    /// </summary>
+    public WorkingImageFile? OpenImage(string id)
+    {
+        SqliteConnection conn = Open();
+        try
+        {
+            long rowId;
+            string fileName, contentType;
+            using (SqliteCommand cmd = Cmd(conn, "SELECT rowid, FileName, ContentType FROM WorkingImages WHERE Id=@id", null, ("@id", id)))
+            using (SqliteDataReader r = cmd.ExecuteReader())
+            {
+                if (!r.Read()) { conn.Dispose(); return null; }
+                (rowId, fileName, contentType) = (r.GetInt64(0), r.GetString(1), r.GetString(2));
+            }
+            var blob = new SqliteBlob(conn, "WorkingImages", "Data", rowId, readOnly: true);
+            return new WorkingImageFile(fileName, contentType, blob.Length, new OwnedStream(blob, conn));
+        }
+        catch
+        {
+            conn.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>The bytes of a picture / video, or null (the whole file in memory; the endpoint streams with OpenImage).</summary>
     public (string FileName, string ContentType, byte[] Data)? GetImage(string id)
     {
-        using SqliteConnection conn = Open();
-        using SqliteCommand cmd = Cmd(conn, "SELECT FileName, ContentType, Data FROM WorkingImages WHERE Id=@id", null, ("@id", id));
-        using SqliteDataReader r = cmd.ExecuteReader();
-        return r.Read() ? (r.GetString(0), r.GetString(1), (byte[])r.GetValue(2)) : null;
+        using WorkingImageFile? file = OpenImage(id);
+        if (file is null) return null;
+        using var copy = new MemoryStream();
+        file.Data.CopyTo(copy);
+        return (file.FileName, file.ContentType, copy.ToArray());
     }
 
     /// <summary>False when the picture is not under that entry of that model.</summary>
@@ -675,5 +974,25 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             removed = del.ExecuteNonQuery() > 0;
         tx.Commit();
         return removed;
+    }
+
+    /// <summary>A blob stream that also closes the connection it reads through (disposing twice is harmless).</summary>
+    private sealed class OwnedStream(SqliteBlob blob, SqliteConnection conn) : Stream
+    {
+        public override bool CanRead => true;
+        public override bool CanSeek => true;
+        public override bool CanWrite => false;
+        public override long Length => blob.Length;
+        public override long Position { get => blob.Position; set => blob.Position = value; }
+        public override int Read(byte[] buffer, int offset, int count) => blob.Read(buffer, offset, count);
+        public override long Seek(long offset, SeekOrigin origin) => blob.Seek(offset, origin);
+        public override void Flush() { }
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) { blob.Dispose(); conn.Dispose(); }
+            base.Dispose(disposing);
+        }
     }
 }
