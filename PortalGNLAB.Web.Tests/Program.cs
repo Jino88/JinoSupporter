@@ -574,6 +574,42 @@ try
           && WBad(() => working.AddImages("PIC", p1.Id, null, Enumerable.Repeat(("a.png", png), 21).ToList(), "a"))
           && working.ListEntries("PIC").Single(e => e.Id == p1.Id).Images.Count == 2,
         "working: only PNG / JPEG / GIF / WebP / BMP bytes up to 10 MB, 1 to 20 at a time; a refused upload stores nothing");
+    // Videos: told by their bytes, stored byte for byte, read back in ranges; HEIC / M4A (same box format) are refused.
+    static byte[] Ftyp(string major, params string[] compat)
+    {
+        var box = new List<byte> { 0, 0, 0, (byte)(16 + 4 * compat.Length) };
+        foreach (string s in new[] { "ftyp", major, "\0\0\0\0" }.Concat(compat)) box.AddRange(System.Text.Encoding.ASCII.GetBytes(s));
+        return [.. box];
+    }
+    byte[] mp4 = [.. Ftyp("isom", "isom", "mp41"), .. Enumerable.Range(0, 300_000).Select(i => (byte)(i * 7))];
+    byte[] mov = [.. Ftyp("qt  ", "qt  "), 5, 6];
+    byte[] webm = [0x1A, 0x45, 0xDF, 0xA3, 0x9F, 0x42, 0x82, 0x84, .. "webm"u8, 1];
+    byte[] mkv = [0x1A, 0x45, 0xDF, 0xA3, 0xA3, 0x42, 0x82, 0x88, .. "matroska"u8, 1];
+    byte[] avi = [.. "RIFF"u8, 0, 0, 0, 0, .. "AVI LIST"u8];
+    List<WorkingImage>? videos = working.AddImages("PIC", p1.Id, pn.Id, [("a.mp4", mp4), ("b.mov", mov), ("c.webm", webm), ("d.mkv", mkv), ("e.avi", avi)], "bob");
+    Check(videos?.Select(v => v.ContentType).SequenceEqual(["video/mp4", "video/quicktime", "video/webm", "video/x-matroska", "video/x-msvideo"]) == true
+          && videos[0].Size == mp4.Length && working.GetImage(videos[0].Id) is { } gotVideo && gotVideo.Data.SequenceEqual(mp4),
+        "working: MP4 / MOV / WebM / MKV / AVI videos stored byte for byte");
+    using (WorkingImageFile? open = working.OpenImage(videos![0].Id))
+    {
+        byte[] part = new byte[1000];
+        open!.Data.Seek(200_000, SeekOrigin.Begin);
+        open.Data.ReadExactly(part);
+        Check(open.Data.CanSeek && open.Size == mp4.Length && part.SequenceEqual(mp4.AsSpan(200_000, 1000).ToArray()),
+            "working: a stored video can be read from any point (byte ranges)");
+    }
+    Check(WBad(() => working.AddImages("PIC", p1.Id, null, [("p.heic", Ftyp("heic", "mif1", "heic"))], "a"))
+          && WBad(() => working.AddImages("PIC", p1.Id, null, [("s.m4a", Ftyp("M4A ", "M4A ", "mp42", "isom"))], "a"))
+          && WBad(() => working.AddImages("PIC", p1.Id, null, [("x.mkv", [0x1A, 0x45, 0xDF, 0xA3, 1, 2, 3])], "a"))
+          && WBad(() => working.AddFiles("PIC", p1.Id, null, [new WorkingUpload("big.mp4", WorkingService.MaxVideoBytes + 1, () => new MemoryStream(mp4))], "a"))
+          && WBad(() => working.AddFiles("PIC", p1.Id, null,
+                 [new WorkingUpload("1.mp4", WorkingService.MaxVideoBytes, () => new MemoryStream(mp4)), new WorkingUpload("2.mp4", WorkingService.MaxVideoBytes, () => new MemoryStream(mp4)),
+                  new WorkingUpload("3.mp4", 1, () => new MemoryStream(mp4))], "a"))
+          && WBad(() => working.AddFiles("PIC", p1.Id, null, [new WorkingUpload("short.mp4", mp4.Length + 10, () => new MemoryStream(mp4))], "a"))
+          && working.ListEntries("PIC").Single(e => e.Id == p1.Id).Images.Count == 2,
+        "working: HEIC / M4A / unknown Matroska refused, videos up to 500 MB and 1 GB per upload, a short file refused; nothing stored");
+    Check(working.AddImages("PIC", p1.Id, pn.Id, [("big.mp4", [.. Ftyp("mp42", "mp42"), .. new byte[WorkingService.MaxImageBytes]])], "a") is [{ ContentType: "video/mp4" }],
+        "working: a video may be larger than the 10 MB picture limit");
     WorkingEntryLog otherNote = working.CreateLog("PIC", p2.Id, new("2026-11-09", "other"), "a")!;
     Check(working.AddImages("PIC", p1.Id, otherNote.Id, [("a.png", png)], "a") is null && working.AddImages("PIC", p1.Id, "nope", [("a.png", png)], "a") is null
           && working.AddImages("OTHER", p1.Id, null, [("a.png", png)], "a") is null,
@@ -588,6 +624,45 @@ try
     string notePic = working.AddImages("PIC", p1.Id, pn3.Id, [("n.png", png)], "a")![0].Id;
     Check(working.DeleteEntry("PIC", p1.Id) && working.GetImage(onIssue[1].Id) is null && working.GetImage(notePic) is null,
         "working: deleting an issue deletes its pictures and its notes' pictures");
+
+    // Setup Plan rows and the issues raised as their problems.
+    WorkingSetupRowSave SRow(string process, int? no = null, string state = "", string status = "", int rev = 0) =>
+        new(no, "", "SUB 1", process, "2026-11-20", state, "", "2026-11-27", "", status, rev);
+    List<WorkingSetupRow> imported = working.ImportSetupRows("SET", [SRow("CD LOADING", 1, "x"), SRow("CD ETCHING", null, "△", "○"), SRow("CD BENDING", 5, "O", "O")], "alice");
+    WorkingSetupRow s4 = working.CreateSetupRow("set", SRow("SP LOADING"), "bob");
+    Check(imported.Select(r => (r.No, r.MachineState, r.SetupStatus)).SequenceEqual([(1, "X", ""), (2, "Δ", "O"), (5, "O", "O")]) && s4.No == 6
+          && working.ListSetupRows("SET").Select(r => r.ProcessName).SequenceEqual(["CD LOADING", "CD ETCHING", "CD BENDING", "SP LOADING"])
+          && working.ListSetupRows("OTHER").Count == 0,
+        "working: setup rows numbered after the last, O / X / Δ look-alikes taken, listed by No. within the model");
+    Check(WBad(() => working.ImportSetupRows("SET", [SRow("ok"), SRow("bad", state: "Y")], "a"))
+          && WBad(() => working.CreateSetupRow("SET", SRow(" "), "a"))
+          && WBad(() => working.CreateSetupRow("SET", SRow("x") with { SetupPlan = "27-Nov" }, "a"))
+          && WBad(() => working.ImportSetupRows("SET", [], "a"))
+          && working.ListSetupRows("SET").Count == 4,
+        "working: setup state is O / X / Δ, process required, dates yyyy-MM-dd; a refused import adds nothing");
+    WorkingSetupRow s1 = imported[0];
+    Check(working.UpdateSetupRow("SET", s1.Id, SRow("CD LOADING", null, "O", "Δ", 1) with { SetupFinish = "2026-11-03" }, "c")
+              is { No: 1, MachineState: "O", SetupStatus: "Δ", SetupFinish: "2026-11-03", Revision: 2, UpdatedBy: "c" }
+          && WConflicts(() => working.UpdateSetupRow("SET", s1.Id, SRow("CD LOADING", rev: 1), "c"))
+          && working.UpdateSetupRow("OTHER", s1.Id, SRow("x", rev: 2), "c") is null,
+        "working: setup row update keeps its No., stale revision conflicts, other model 404");
+    WorkingEntry prob = working.CreateEntry("SET", IBody("Not yet drawing laser") with { SetupRowId = s1.Id }, "alice");
+    WorkingEntry plain = working.CreateEntry("SET", IBody("plain issue"), "alice");
+    Check(prob.SetupRowId == s1.Id && plain.SetupRowId == "" && prob.Seq == 1 && plain.Seq == 2
+          && working.UpdateEntry("SET", prob.Id, IBody("Not yet drawing laser", 1), "b") is { SetupRowId: var kept } && kept == s1.Id
+          && working.CreateLog("SET", prob.Id, new("2026-11-09", "laser ordered"), "b") is not null,
+        "working: an issue raised on a setup row keeps the row (same numbers, notes as any issue)");
+    WorkingEntry otherRow = working.CreateEntry("OTHER", IBody("x"), "a");
+    Check(WBad(() => working.CreateEntry("SET", IBody("x") with { SetupRowId = "nope" }, "a"))
+          && WBad(() => working.CreateEntry("OTHER", IBody("x") with { SetupRowId = s1.Id }, "a"))
+          && WBad(() => working.CreateEntry("SET", WBody("dev", "2026-11-03", "dev") with { SetupRowId = s1.Id }, "a"))
+          && working.UpdateEntry("SET", plain.Id, IBody("plain issue", 1) with { SetupRowId = s4.Id }, "a") is { SetupRowId: var moved } && moved == s4.Id
+          && otherRow.SetupRowId == "",
+        "working: a problem needs a setup row of the same model and must be an issue");
+    Check(working.DeleteSetupRow("SET", s1.Id) && !working.DeleteSetupRow("SET", s1.Id) && !working.DeleteSetupRow("OTHER", s4.Id)
+          && working.ListEntries("SET").Single(e => e.Id == prob.Id) is { SetupRowId: "", Logs.Count: 1 }
+          && working.ListEntries("SET").Single(e => e.Id == plain.Id).SetupRowId == s4.Id,
+        "working: deleting a setup row keeps its problems as plain issues");
 
     // A WorkingEntries table from before the issue columns gets them added and numbered on open.
     string oldDb = Path.Combine(Path.GetTempPath(), $"working-old-{Guid.NewGuid():N}.db");
@@ -612,7 +687,7 @@ try
         }
         var migrated = new WorkingService(oldDb, glossDb);
         List<WorkingEntry> old = migrated.ListEntries("M");
-        Check(old.Single(e => e.Id == "a").Seq == 1 && old.Single(e => e.Id == "b").Seq == 2 && old.All(e => e.Phase == "" && e.DoneDate == "" && e.Images.Count == 0)
+        Check(old.Single(e => e.Id == "a").Seq == 1 && old.Single(e => e.Id == "b").Seq == 2 && old.All(e => e.Phase == "" && e.DoneDate == "" && e.Images.Count == 0 && e.SetupRowId == "")
               && migrated.CreateEntry("M", IBody("new"), "u").Seq == 3 && migrated.CreateLog("M", "a", new("2026-11-10", "note"), "u") is not null,
             "working: old table gets the issue columns, existing rows numbered by creation");
         Check(old.Single(e => e.Id == "b").Logs is [{ Text: "old note", Owner: "", Due: "", DoneDate: "" }]

@@ -45,17 +45,30 @@ public static class WorkingEndpoints
         api.MapDelete("/models/{name}/entries/{id}/logs/{logId}", (string name, string id, string logId, WorkingService svc) =>
             svc.DeleteLog(name, id, logId) ? Results.NoContent() : Results.NotFound());
 
-        // pictures pasted into an entry (no logId) or into one of its notes
+        // Setup Plan rows; their problems are issues with a SetupRowId
+        api.MapGet("/models/{name}/setup", (string name, WorkingService svc) => Results.Ok(new { rows = svc.ListSetupRows(name) }));
+        api.MapPost("/models/{name}/setup", (string name, WorkingSetupRowSave body, WorkingService svc, ClaimsPrincipal user) =>
+            Results.Ok(svc.CreateSetupRow(name, body, User(user))));
+        api.MapPost("/models/{name}/setup/import", (string name, WorkingSetupImport body, WorkingService svc, ClaimsPrincipal user) =>
+            Results.Ok(new { rows = svc.ImportSetupRows(name, body.Rows ?? [], User(user)) }));
+        api.MapPut("/models/{name}/setup/{rowId}", (string name, string rowId, WorkingSetupRowSave body, WorkingService svc, ClaimsPrincipal user) =>
+            svc.UpdateSetupRow(name, rowId, body, User(user)) is { } r ? Results.Ok(r) : Results.NotFound());
+        api.MapDelete("/models/{name}/setup/{rowId}", (string name, string rowId, WorkingService svc) =>
+            svc.DeleteSetupRow(name, rowId) ? Results.NoContent() : Results.NotFound());
+
+        // pictures and videos pasted into an entry (no logId) or into one of its notes, stored as sent
         api.MapPost("/models/{name}/entries/{id}/images", async (string name, string id, HttpContext ctx, WorkingService svc, ClaimsPrincipal user) =>
         {
-            (string? logId, List<(string Name, byte[] Data)> files) = await ReadPictures(ctx);
-            return svc.AddImages(name, id, logId, files, User(user)) is { } images ? Results.Ok(new { images }) : Results.NotFound();
+            (string? logId, List<WorkingUpload> files) = await ReadPictures(ctx);
+            return svc.AddFiles(name, id, logId, files, User(user)) is { } images ? Results.Ok(new { images }) : Results.NotFound();
         });
+        // streamed from the DB with byte ranges, so a video can be played from any point
         api.MapGet("/images/{imageId}", (string imageId, WorkingService svc, HttpContext ctx) =>
         {
-            if (svc.GetImage(imageId) is not { } file) return Results.NotFound();
+            if (svc.OpenImage(imageId) is not { } file) return Results.NotFound();
+            ctx.Response.RegisterForDispose(file);
             ctx.Response.Headers.XContentTypeOptions = "nosniff";
-            return Results.File(file.Data, file.ContentType);
+            return Results.Stream(file.Data, file.ContentType, enableRangeProcessing: true);
         });
         api.MapDelete("/models/{name}/entries/{id}/images/{imageId}", (string name, string id, string imageId, WorkingService svc) =>
             svc.DeleteImage(name, id, imageId) ? Results.NoContent() : Results.NotFound());
@@ -63,27 +76,23 @@ public static class WorkingEndpoints
         return app;
     }
 
-    /// <summary>The "files" and optional "logId" of a multipart upload; the form is read here (no IFormFile binding).</summary>
-    private static async Task<(string? LogId, List<(string Name, byte[] Data)> Files)> ReadPictures(HttpContext ctx)
+    /// <summary>
+    /// The "files" and optional "logId" of a multipart upload; the form is read here (no IFormFile binding). Files over the
+    /// in-memory threshold are buffered to a temp file by ASP.NET Core, and each is read from there when stored.
+    /// </summary>
+    private static async Task<(string? LogId, List<WorkingUpload> Files)> ReadPictures(HttpContext ctx)
     {
-        if (!ctx.Request.HasFormContentType) throw new ArgumentException("Send the pictures as multipart/form-data.");
-        const long totalLimit = WorkingService.MaxImagesPerUpload * WorkingService.MaxImageBytes + 1024 * 1024;
+        if (!ctx.Request.HasFormContentType) throw new ArgumentException("Send the files as multipart/form-data.");
+        const long totalLimit = WorkingService.MaxUploadBytes + 1024 * 1024;
         var limit = ctx.Features.Get<IHttpMaxRequestBodySizeFeature>();
         if (limit is { IsReadOnly: false }) limit.MaxRequestBodySize = totalLimit;
         ctx.Features.Set<IFormFeature>(new FormFeature(ctx.Request, new FormOptions { MultipartBodyLengthLimit = totalLimit }));
         IFormCollection form;
         try { form = await ctx.Request.ReadFormAsync(ctx.RequestAborted); }
-        catch (InvalidDataException) { throw new ArgumentException("The pictures are too large."); }
+        catch (InvalidDataException) { throw new ArgumentException("The files are too large (1 GB per upload)."); }
         if (form.Files.Count > WorkingService.MaxImagesPerUpload)
-            throw new ArgumentException($"Add at most {WorkingService.MaxImagesPerUpload} pictures at a time.");
-        var files = new List<(string, byte[])>();
-        foreach (IFormFile file in form.Files)
-        {
-            if (file.Length > WorkingService.MaxImageBytes) throw new ArgumentException($"{file.FileName} is larger than 10 MB.");
-            using var data = new MemoryStream();
-            await file.CopyToAsync(data, ctx.RequestAborted);
-            files.Add((file.FileName, data.ToArray()));
-        }
+            throw new ArgumentException($"Add at most {WorkingService.MaxImagesPerUpload} files at a time.");
+        var files = form.Files.Select(f => new WorkingUpload(f.FileName, f.Length, f.OpenReadStream)).ToList();
         return (form["logId"].ToString(), files);
     }
 }
