@@ -75,3 +75,33 @@ export function visibleBom(rows: BomRow[], closed: Set<number>): { row: BomRow; 
   });
   return out;
 }
+
+/** A drawing (PDM master row) of a material: PDRTX is the material name it belongs to. */
+export interface PdmRow {
+  pdmno: string;
+  pdmvr: string;
+  pdtnoTx: string;
+  pdrtx: string;
+}
+
+export const drawingApi = {
+  /** Drawings of these material names, from the local PDM master (BOM & Drawing > Fetch PDM). */
+  find: (names: string[]) => toolSend<{ rows: PdmRow[] }>("working/bmes/pdm", { names }).then((r) => r.rows),
+  /** The drawing file, opened in a new tab (read from BMES PDM). */
+  url: (d: PdmRow) => toolPath(`working/bmes/drawing?pdmno=${encodeURIComponent(d.pdmno)}&pdmvr=${encodeURIComponent(d.pdmvr || "0")}`),
+};
+
+/** Material name (case and spaces ignored) → its drawings, each PDM number and version once. */
+export function drawingsByName(rows: PdmRow[]): Map<string, PdmRow[]> {
+  const out = new Map<string, PdmRow[]>();
+  for (const r of rows) {
+    const key = norm(r.pdrtx);
+    if (!key) continue;
+    const list = out.get(key) ?? [];
+    if (!list.some((x) => x.pdmno === r.pdmno && x.pdmvr === r.pdmvr)) list.push(r);
+    out.set(key, list);
+  }
+  return out;
+}
+
+export const drawingsOf = (by: Map<string, PdmRow[]>, materialName: string) => by.get(norm(materialName)) ?? [];

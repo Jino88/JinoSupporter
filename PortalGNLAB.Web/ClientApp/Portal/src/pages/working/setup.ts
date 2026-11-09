@@ -167,6 +167,45 @@ export function parseState(text: string): SetupState | null {
   return null;
 }
 
+/** Columns of a Setup Plan row in the sheet, No. to Note. */
+const SHEET_COLUMNS = 11;
+
+/**
+ * The cells of a pasted line. Excel separates them with tabs; text without a tab (copied through a viewer that turns
+ * tabs into spaces) is split where two or more spaces stand. Extra cells are dropped from the end when empty, else
+ * right after the process name, where a process name merged over two cells leaves an empty one.
+ */
+export function cellsOf(line: string): string[] {
+  const c = (line.includes("\t") ? line.split("\t") : line.trim().split(/\s{2,}/)).map((v) => v.trim());
+  while (c.length > SHEET_COLUMNS) {
+    if (c[c.length - 1] === "") c.pop();
+    else if (c[4] === "") c.splice(4, 1);
+    else break;
+  }
+  return c;
+}
+
+const ENTITIES: Record<string, string> = { nbsp: " ", amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
+const textOf = (html: string) =>
+  html.replace(/<br\s*\/?>/gi, " ").replace(/<[^>]*>/g, "")
+    .replace(/&(#x[0-9a-f]+|#\d+|\w+);/gi, (m, e: string) =>
+      e[0] === "#" ? String.fromCodePoint(e[1].toLowerCase() === "x" ? parseInt(e.slice(2), 16) : Number(e.slice(1))) : ENTITIES[e.toLowerCase()] ?? m)
+    .replace(/\s+/g, " ").trim();
+
+/**
+ * The rows of the first HTML table on the clipboard (Excel and Google Sheets put one there) as tab-separated lines;
+ * a cell spanning several columns is followed by empty ones, as in the sheet. "" when there is no table.
+ */
+export function tableToTsv(html: string): string {
+  const table = /<table[\s\S]*?<\/table>/i.exec(html);
+  if (!table) return "";
+  return (table[0].match(/<tr[\s\S]*?<\/tr>/gi) ?? []).map((tr) =>
+    (tr.match(/<t[dh]\b[^>]*>[\s\S]*?<\/t[dh]>/gi) ?? []).flatMap((td) => {
+      const span = Number(/colspan\s*=\s*["']?(\d+)/i.exec(td)?.[1] ?? 1);
+      return [textOf(td), ...Array(Math.max(span, 1) - 1).fill("")];
+    }).join("\t")).join("\n");
+}
+
 export interface PastedSetup {
   rows: (SetupFields & { note: string })[];
   problem: string;
@@ -182,7 +221,7 @@ export function parseSetupPaste(text: string, today: string): PastedSetup {
   let line = "";
   const lines = text.replace(/\r\n?/g, "\n").split("\n");
   for (let i = 0; i < lines.length; i++) {
-    const c = lines[i].split("\t").map((v) => v.trim());
+    const c = cellsOf(lines[i]);
     const process = c[3] ?? "";
     if (!process || /^process\s*name$/i.test(process)) continue;
     const at = `Line ${i + 1}`;
@@ -206,5 +245,8 @@ export function parseSetupPaste(text: string, today: string): PastedSetup {
     if (problem) return { rows: [], problem: `${at}: ${problem}` };
     rows.push(row);
   }
-  return { rows, problem: rows.length ? "" : "No rows found. Copy the rows from No. to Note in Excel and paste them here." };
+  return {
+    rows,
+    problem: rows.length ? "" : "No rows found. Copy the rows from No. to Note in Excel (the 11 columns, tab separated) and paste them here.",
+  };
 }

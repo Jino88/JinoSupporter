@@ -17,7 +17,11 @@ export interface GroupsResponse {
   error: string | null;
 }
 
-export const PHASES = ["Proto", "EVT", "DVT", "PVT", "MP"] as const;
+export const PHASES = ["ER", "DR", "DV", "PV", "MP"] as const;
+/** Phase names used before 2026-11-09 and the ones they became. */
+const OLD_PHASES: Record<string, string> = { proto: "ER", evt: "DR", dvt: "DV", pvt: "PV" };
+/** The current name of a phase (Proto → ER, EVT → DR, DVT → DV, PVT → PV); others stay as they are. */
+export const phaseName = (p: string | undefined) => (p ? OLD_PHASES[p.trim().toLowerCase()] ?? p : "");
 
 /** Stored verbatim as InfoJson; every field is optional so older rows keep loading. */
 export interface ModelInfo {

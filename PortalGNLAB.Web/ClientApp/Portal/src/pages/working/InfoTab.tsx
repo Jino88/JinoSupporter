@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { workingApi } from "./api";
 import BmesPanel from "./BmesPanel";
-import { PHASES, type ModelInfo, type WorkingModel } from "./types";
+import { PHASES, phaseName, type ModelInfo, type WorkingModel } from "./types";
+
+/** Model info with an old phase name (Proto, EVT …) shown as the current one; saving writes the new name. */
+const current = (info: ModelInfo | undefined): ModelInfo => (info?.phase ? { ...info, phase: phaseName(info.phase) } : info ?? {});
 
 const FIELDS: { key: keyof ModelInfo; label: string; placeholder?: string }[] = [
   { key: "customer", label: "Customer" },
@@ -19,10 +22,10 @@ export default function InfoTab(props: {
   onError: (e: unknown) => void;
 }) {
   const { model } = props;
-  const [info, setInfo] = useState<ModelInfo>(model.info ?? {});
+  const [info, setInfo] = useState<ModelInfo>(current(model.info));
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState("");
-  const dirty = JSON.stringify(info) !== JSON.stringify(model.info ?? {});
+  const dirty = JSON.stringify(info) !== JSON.stringify(current(model.info));
   useEffect(() => props.onDirty(dirty), [dirty]);
 
   const set = (key: keyof ModelInfo, value: string) => setInfo((cur) => ({ ...cur, [key]: value }));
@@ -30,7 +33,7 @@ export default function InfoTab(props: {
     setBusy(true);
     try {
       const m = await workingApi.saveModel(model.name, info, model.revision);
-      setInfo(m.info ?? {});
+      setInfo(current(m.info));
       props.onSaved(m);
       setSaved("Saved.");
       window.setTimeout(() => setSaved(""), 2500);
@@ -75,11 +78,10 @@ export default function InfoTab(props: {
               <textarea id="wk-note" className="inp wk-ta" rows={4} value={info.note ?? ""} onChange={(e) => set("note", e.target.value)} />
             </div>
           </div>
+          <BmesPanel modelName={model.name} saved={info.bmesMaterial ?? ""} onError={props.onError}
+            onPick={(m) => setInfo(({ bmesMaterial: _old, ...rest }) => (m ? { ...rest, bmesMaterial: m } : rest))} />
         </div>
       </section>
-
-      <BmesPanel modelName={model.name} saved={info.bmesMaterial ?? ""} onError={props.onError}
-        onPick={(m) => setInfo(({ bmesMaterial: _old, ...rest }) => (m ? { ...rest, bmesMaterial: m } : rest))} />
     </>
   );
 }

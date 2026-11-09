@@ -1,5 +1,5 @@
 import {
-  IMAGE_TYPES, MAX_IMAGE_BYTES, MAX_IMAGES_PER_UPLOAD, MAX_UPLOAD_BYTES, MAX_VIDEO_BYTES, VIDEO_EXTENSIONS, VIDEO_TYPES,
+  IMAGE_TYPES, MAX_IMAGE_BYTES, MAX_IMAGES_PER_UPLOAD, MAX_UPLOAD_BYTES, MAX_VIDEO_BYTES, phaseName, VIDEO_EXTENSIONS, VIDEO_TYPES,
 } from "./types";
 import type { Entry, EntryFields, EntryKind, EntryLog, LogFields, ModelGroup } from "./types";
 
@@ -112,7 +112,7 @@ export function blankEntry(kind: EntryKind, today: string, phase = ""): EntryFie
 export const fieldsOf = (e: Entry): EntryFields => ({
   kind: e.kind, date: e.date, title: e.title, body: e.body, status: e.status,
   severity: e.severity, result: e.result, owner: e.owner, due: e.due,
-  phase: e.phase ?? "", category: e.category ?? "", process: e.process ?? "", cause: e.cause ?? "",
+  phase: phaseName(e.phase), category: e.category ?? "", process: e.process ?? "", cause: e.cause ?? "",
   doneDate: e.doneDate ?? "", finalResult: e.finalResult ?? "",
 });
 

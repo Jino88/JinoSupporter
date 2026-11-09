@@ -116,10 +116,32 @@ public static class WorkingEndpoints
             }
         });
 
+        // PDM drawings for the BOM materials (same lookups as BOM & Drawing; the BMES side is read-only)
+        api.MapPost("/bmes/pdm", (WorkingPdmRequest body, BmesPdmScrapeService pdm) =>
+        {
+            var names = (body.Names ?? []).Where(n => !string.IsNullOrWhiteSpace(n)).ToList();
+            if (names.Count == 0) return Results.Ok(new { rows = Array.Empty<object>() });
+            var matches = pdm.SearchByNames(names, []);
+            return Results.Ok(new { rows = matches.Select(m => new { m.Pdmno, m.Pdmvr, m.PdtnoTx, m.Pdrtx }).ToList() });
+        });
+        api.MapGet("/bmes/drawing", async (string? pdmno, string? pdmvr, BmesPdmScrapeService pdm, HttpContext ctx) =>
+        {
+            string no = (pdmno ?? "").Trim();
+            if (no.Length == 0) return Results.BadRequest(new { error = "pdmno is required." });
+            var result = await pdm.DownloadDrawingAsync(no, string.IsNullOrWhiteSpace(pdmvr) ? "0" : pdmvr.Trim());
+            if (!result.Success) return Results.BadRequest(new { error = result.Error });
+            var disposition = new Microsoft.Net.Http.Headers.ContentDispositionHeaderValue("inline");
+            disposition.SetHttpFileName(result.FileName);
+            ctx.Response.Headers.ContentDisposition = disposition.ToString();
+            ctx.Response.Headers.XContentTypeOptions = "nosniff";
+            return Results.File(result.Bytes, WorkingBmesService.DrawingContentType(result.FileName));
+        });
+
         return app;
     }
 
     public sealed record WorkingBmesBomRequest(string? Product);
+    public sealed record WorkingPdmRequest(List<string>? Names);
 
     /// <summary>
     /// The "files" and optional "logId" of a multipart upload; the form is read here (no IFormFile binding). Files over the

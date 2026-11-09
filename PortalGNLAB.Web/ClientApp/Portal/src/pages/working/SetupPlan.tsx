@@ -3,7 +3,7 @@ import { workingApi } from "./api";
 import IssueTable from "./IssueTable";
 import { blankEntry, isOpenIssue, issuesBySeq } from "./logic";
 import {
-  newSetupRow, parseSetupPaste, rate, rowsInOrder, SETUP_STATES, setupApi, setupBatch, setupFieldsOf, setupProblem, setupSummary, shortDate,
+  newSetupRow, parseSetupPaste, rate, rowsInOrder, SETUP_STATES, setupApi, setupBatch, setupFieldsOf, setupProblem, setupSummary, shortDate, tableToTsv,
 } from "./setup";
 import type { PastedSetup, SetupFields, SetupRow, SetupState } from "./setup";
 import type { Entry } from "./types";
@@ -82,7 +82,15 @@ function PasteBox(props: { today: string; busy: boolean; onImport: (p: PastedSet
         Status, Note), copy them and paste here. Header lines are skipped and an empty LINE takes the one above.
       </div>
       <textarea className="inp wk-ta su-paste-ta" aria-label="Rows from Excel" placeholder="Paste the rows here (Ctrl+V)" value={text}
-        onChange={(e) => setText(e.target.value)} />
+        onChange={(e) => setText(e.target.value)}
+        onPaste={(e) => {
+          // the plain text of some copies has no tabs; the HTML table Excel puts next to it keeps every column
+          const plain = e.clipboardData.getData("text/plain");
+          const tsv = plain.includes("\t") ? "" : tableToTsv(e.clipboardData.getData("text/html"));
+          if (!tsv) return;
+          e.preventDefault();
+          setText((t) => (t.trim() ? t.replace(/\s*$/, "\n") : "") + tsv);
+        }} />
       <div className="su-paste-f">
         {parsed?.problem ? <span className="su-err">{parsed.problem}</span>
           : parsed ? <span>{parsed.rows.length} rows{notes ? `, ${notes} with a note` : ""}.</span> : <span className="muted">Nothing pasted yet.</span>}

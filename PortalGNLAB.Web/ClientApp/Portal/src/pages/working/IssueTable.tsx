@@ -5,7 +5,7 @@ import {
   mediaKind, notesInOrder, pastedImages, suggestions,
 } from "./logic";
 import {
-  ISSUE_CAUSES, ISSUE_PROCESSES, ISSUE_TYPES, isVideo, PHASES, type Entry, type EntryFields, type EntryLog, type LogFields, type WorkingImage,
+  ISSUE_CAUSES, ISSUE_PROCESSES, ISSUE_TYPES, isVideo, PHASES, phaseName, type Entry, type EntryFields, type EntryLog, type LogFields, type WorkingImage,
 } from "./types";
 
 type Filter = "open" | "closed" | "all";
@@ -369,7 +369,7 @@ export default function IssueTable(props: {
         <tr className={"wk-it-row" + (sub ? " child" : "") + (isOpenIssue(e) ? "" : " done") + (expanded ? " on" : "")} onClick={() => toggle(e.id)}>
           <td className="tog">{expanded ? "▾" : "▸"}</td>
           <td className={"n" + (sub ? " sub" : "")}>{no}</td>
-          <td>{e.phase || "—"}</td>
+          <td>{phaseName(e.phase) || "—"}</td>
           <td>{e.category}</td>
           <td>{e.process}</td>
           <td>{e.cause}</td>
@@ -415,7 +415,7 @@ export default function IssueTable(props: {
             <div className="wk-it-subh">New sub-issue of No. {no} {e.title}</div>
             <IssueForm
               value={{
-                ...blankEntry("issue", today, e.phase || props.modelPhase), category: e.category, process: e.process, cause: e.cause,
+                ...blankEntry("issue", today, phaseName(e.phase) || props.modelPhase), category: e.category, process: e.process, cause: e.cause,
                 ...setupLink, parentId: e.id,
               }}
               images={[]} lists={lists} busy={busy} onSave={add} onCancel={() => setAddingSub(null)} onOpen={setViewer} />
