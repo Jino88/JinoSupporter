@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchMaterial, qty, visibleBom } from "./bmes";
+import { drawingsByName, drawingsOf, matchMaterial, qty, visibleBom } from "./bmes";
 import type { BmesMaterial, BomRow } from "./bmes";
 
 const mat = (material: string, group = "UNIT"): BmesMaterial => ({ group, productGroup: group, material, products: [], subGroups: [] });
@@ -30,5 +30,16 @@ describe("BMES model group", () => {
     expect(visibleBom(rows, new Set([1])).map((x) => x.index)).toEqual([0, 1, 4, 5, 6]);
     expect(visibleBom(rows, new Set([0])).map((x) => x.index)).toEqual([0, 5, 6]);
     expect(visibleBom(rows, new Set([0, 5])).map((x) => x.index)).toEqual([0, 5]);
+  });
+
+  it("finds the drawings of a material by its name, each PDM number and version once", () => {
+    const d = (pdmno: string, pdmvr: string, pdrtx: string) => ({ pdmno, pdmvr, pdtnoTx: "", pdrtx });
+    const by = drawingsByName([
+      d("P-1", "0", "FRAME-C11-18-L"), d("P-1", "0", "frame-c11-18-l "), d("P-1", "1", "FRAME-C11-18-L"), d("P-2", "0", "COIL-C11-18"), d("P-3", "0", ""),
+    ]);
+    expect(drawingsOf(by, "Frame-C11-18-L").map((x) => x.pdmno + "/" + x.pdmvr)).toEqual(["P-1/0", "P-1/1"]);
+    expect(drawingsOf(by, "COIL-C11-18").length).toBe(1);
+    expect(drawingsOf(by, "EA6116R")).toEqual([]);
+    expect(by.size).toBe(2);
   });
 });

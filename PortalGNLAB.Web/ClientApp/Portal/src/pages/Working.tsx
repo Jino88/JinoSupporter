@@ -9,7 +9,7 @@ import {
 } from "./working/logic";
 import PlanView from "./working/PlanView";
 import SetupPlan from "./working/SetupPlan";
-import type { Entry, GroupsResponse, WorkingModel } from "./working/types";
+import { phaseName, type Entry, type GroupsResponse, type WorkingModel } from "./working/types";
 import "./working/working.css";
 
 type Tab = "info" | "plan" | "devissue" | "dev" | "review" | "all" | "setup" | "issue";
@@ -101,6 +101,7 @@ export default function Working() {
     setTab(k);
   };
   const category = categoryOf(tab);
+  const modelPhase = phaseName(model?.info.phase);
   const stage = stageOf(tab);
   const stageIssues = stage ? issuesOfStage(entries, stage) : [];
 
@@ -158,7 +159,7 @@ export default function Working() {
                   </div>
                 </div>
                 <div className="wk-head-r">
-                  {model?.info.phase && <span className="wk-phase">{model.info.phase}</span>}
+                  {modelPhase && <span className="wk-phase">{modelPhase}</span>}
                   {openIssues > 0 && <span className="wk-open">{openIssues} open issue{openIssues > 1 ? "s" : ""}</span>}
                 </div>
               </div>
@@ -196,14 +197,14 @@ export default function Working() {
                   )}
                   {tab === "plan" && <PlanView key={selected} modelName={selected} />}
                   {tab === "setup" && (
-                    <SetupPlan key={selected} modelName={selected} modelPhase={model.info.phase ?? ""}
+                    <SetupPlan key={selected} modelName={selected} modelPhase={modelPhase}
                       entries={entries} today={today} onChanged={onChanged} onError={fail} />
                   )}
                   {stage && (
-                    <IssueTable key={selected + stage} modelName={selected} modelPhase={model.info.phase ?? ""}
+                    <IssueTable key={selected + stage} modelName={selected} modelPhase={modelPhase}
                       heading={stage === "dev" ? "Dev Issues" : "Mass Production Issues"}
                       // a new issue starts in the model's phase when it belongs here, else in MP / no phase
-                      newDefaults={{ phase: stage === "mp" ? "MP" : model.info.phase === "MP" ? "" : model.info.phase ?? "" }}
+                      newDefaults={{ phase: stage === "mp" ? "MP" : modelPhase === "MP" ? "" : modelPhase }}
                       entries={stageIssues} today={today} onChanged={(list) => onChanged(replaceSome(entries, stageIssues, list))} onError={fail} />
                   )}
                   {(tab === "dev" || tab === "review" || tab === "all") && (

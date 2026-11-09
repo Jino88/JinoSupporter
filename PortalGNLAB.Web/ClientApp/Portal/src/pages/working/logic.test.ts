@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { matchingModels } from "./PlanView";
 import {
-  blankEntry, blankLog, buildTree, byMonth, countByKind, entryProblem, filterTree, firstModel, isLate, isLogLate, isOpenIssue, issueFields,
+  blankEntry, blankLog, buildTree, fieldsOf, byMonth, countByKind, entryProblem, filterTree, firstModel, isLate, isLogLate, isOpenIssue, issueFields,
   issuesBySeq, issuesOfStage, issueTree, logProblem, mediaKind, notesInOrder, pastedImages, pathOf, replaceSome, sortEntries, suggestions,
 } from "./logic";
+import { PHASES, phaseName } from "./types";
 import type { Entry, EntryLog, ModelGroup } from "./types";
 
 const g = (id: string, name: string, parentId: string | null, models: string[], sort = 0, position = 0): ModelGroup =>
@@ -148,6 +149,12 @@ describe("issue register", () => {
     const b2 = { ...b, title: "edited" }, d = entry("d", "issue", "2026-11-02");
     expect(replaceSome([a, b, c], [b], [b2, d]).map((e) => [e.id, e.title])).toEqual([["a", "a"], ["c", "c"], ["b", "edited"], ["d", "d"]]);
     expect(replaceSome([a, b, c], [a, b], [b]).map((e) => e.id)).toEqual(["c", "b"]);
+  });
+
+  it("shows the old phase names as ER / DR / DV / PV and saves the new one", () => {
+    expect(["Proto", "EVT", "dvt", " PVT ", "MP", "ER", "", undefined].map(phaseName)).toEqual(["ER", "DR", "DV", "PV", "MP", "ER", "", ""]);
+    expect(PHASES).toEqual(["ER", "DR", "DV", "PV", "MP"]);
+    expect(fieldsOf(entry("x", "issue", "2026-11-01", { phase: "EVT" })).phase).toBe("DR");
   });
 
   it("checks a daily note, its schedule and done date", () => {

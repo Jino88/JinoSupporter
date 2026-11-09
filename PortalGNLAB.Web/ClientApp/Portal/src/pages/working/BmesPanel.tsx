@@ -1,13 +1,30 @@
 import { useEffect, useState } from "react";
-import { bmesApi, matchMaterial, qty, visibleBom } from "./bmes";
-import type { BmesMaterial, BomResult } from "./bmes";
+import { bmesApi, drawingApi, drawingsByName, drawingsOf, matchMaterial, qty, visibleBom } from "./bmes";
+import type { BmesMaterial, BomResult, PdmRow } from "./bmes";
 
-/** BOM of one product: from the local cache when there is one, or loaded from BMES on request. */
+/** Links to the drawings of a material (opened in a new tab), or a dash. */
+function Drawings(props: { list: PdmRow[] }) {
+  if (!props.list.length) return <span className="muted">—</span>;
+  return (
+    <>
+      {props.list.map((d) => (
+        <a key={d.pdmno + "/" + d.pdmvr} className="wk-dwg" href={drawingApi.url(d)} target="_blank" rel="noreferrer"
+          title={`Open drawing ${d.pdmno} rev ${d.pdmvr || "0"}${d.pdtnoTx ? ` (${d.pdtnoTx})` : ""}`}>
+          {d.pdmno}{d.pdmvr && d.pdmvr !== "0" ? ` r${d.pdmvr}` : ""}
+        </a>
+      ))}
+    </>
+  );
+}
+
+/** BOM of one product with the material names and their drawings: from the local cache, or loaded from BMES on request. */
 function BomTable(props: { product: string; onError: (e: unknown) => void }) {
   const { product } = props;
   const [bom, setBom] = useState<BomResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [closed, setClosed] = useState<Set<number>>(new Set());
+  const [drawings, setDrawings] = useState<Map<string, PdmRow[]>>(new Map());
+  const [drawingError, setDrawingError] = useState("");
 
   useEffect(() => {
     let live = true;
@@ -17,6 +34,18 @@ function BomTable(props: { product: string; onError: (e: unknown) => void }) {
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product]);
+
+  // drawings of the product and of every material in its BOM
+  const names = bom ? [product, ...bom.rows.map((r) => r.materialName)].join("\n") : "";
+  useEffect(() => {
+    if (!names) return;
+    let live = true;
+    setDrawingError("");
+    drawingApi.find([...new Set(names.split("\n"))])
+      .then((rows) => { if (live) setDrawings(drawingsByName(rows)); })
+      .catch((e: Error) => { if (live) setDrawingError(e.message); });
+    return () => { live = false; };
+  }, [names]);
 
   const load = async () => {
     setBusy(true);
@@ -28,6 +57,7 @@ function BomTable(props: { product: string; onError: (e: unknown) => void }) {
     <div className="wk-bom">
       <div className="wk-bom-h">
         <b>{product}</b>
+        <span className="wk-bom-own">Drawing <Drawings list={drawingsOf(drawings, product)} /></span>
         {bom === null ? <span className="muted small">Loading…</span>
           : bom.rows.length ? (
             <span className="muted small">
@@ -41,11 +71,12 @@ function BomTable(props: { product: string; onError: (e: unknown) => void }) {
         </button>
       </div>
       {bom?.error && <div className="pi-dirty">{bom.error}</div>}
+      {drawingError && <div className="muted small">Drawings could not be looked up: {drawingError}</div>}
       {!!bom?.rows.length && (
         <div className="pi-wrap">
           <table className="wk-it wk-bom-t">
             <thead>
-              <tr><th>Level</th><th className="l">Material</th><th>Code</th><th>Qty</th><th>Unit</th></tr>
+              <tr><th>Level</th><th className="l">Material name</th><th>Material code</th><th>Qty</th><th>Unit</th><th className="l">Drawing</th></tr>
             </thead>
             <tbody>
               {visibleBom(bom.rows, closed).map(({ row, index }) => (
@@ -60,6 +91,7 @@ function BomTable(props: { product: string; onError: (e: unknown) => void }) {
                   <td className="wk-bom-code">{row.materialCode}</td>
                   <td className="n">{qty(row.usageQty)}</td>
                   <td>{row.usageUnit}</td>
+                  <td className="l"><Drawings list={drawingsOf(drawings, row.materialName)} /></td>
                 </tr>
               ))}
             </tbody>
@@ -71,8 +103,8 @@ function BomTable(props: { product: string; onError: (e: unknown) => void }) {
 }
 
 /**
- * BMES model group of the model (BMES > Make Model Group): found by the model name or picked here and saved with the
- * model information, with its sub-groups, line shifts and the BOM of each product.
+ * BMES model group of the model (BMES > Make Model Group), shown inside Model information: found by the model name or
+ * picked here and saved with the model information, with its sub-groups, line shifts and the BOM of each product.
  */
 export default function BmesPanel(props: {
   modelName: string;
@@ -98,55 +130,51 @@ export default function BmesPanel(props: {
   const groups = [...new Set((materials ?? []).map((x) => x.group))];
 
   return (
-    <section className="card pi-sec">
-      <div className="pi-sec-h">
-        <h2>BMES model group</h2>
-        <div className="pi-legend">
-          <label className="wk-bmes-pick">
-            Linked material{" "}
-            <select className="inp sm" value={props.saved} disabled={!materials} onChange={(e) => props.onPick(e.target.value)}>
-              <option value="">{byName ? `Same name: ${byName.material}` : "Same name (none found)"}</option>
-              {groups.map((g) => (
-                <optgroup key={g} label={g}>
-                  {materials!.filter((x) => x.group === g).map((x) => <option key={x.material} value={x.material}>{x.material}</option>)}
-                </optgroup>
-              ))}
-            </select>
-          </label>
-        </div>
+    <div className="wk-bmes">
+      <div className="wk-bmes-h">
+        <h3>BMES model group</h3>
+        <label className="wk-bmes-pick">
+          Linked material{" "}
+          <select className="inp sm" value={props.saved} disabled={!materials} onChange={(e) => props.onPick(e.target.value)}>
+            <option value="">{byName ? `Same name: ${byName.material}` : "Same name (none found)"}</option>
+            {groups.map((g) => (
+              <optgroup key={g} label={g}>
+                {materials!.filter((x) => x.group === g).map((x) => <option key={x.material} value={x.material}>{x.material}</option>)}
+              </optgroup>
+            ))}
+          </select>
+        </label>
       </div>
-      <div className="pi-sec-b">
-        {materials === null ? <div className="muted">Loading the BMES model groups…</div>
-          : !m ? (
-            <div className="muted">
-              No BMES model group has a material named like {props.modelName}. Pick the material above, or add it in BMES &gt; Make Model Group.
+      {materials === null ? <div className="muted">Loading the BMES model groups…</div>
+        : !m ? (
+          <div className="muted">
+            No BMES model group has a material named like {props.modelName}. Pick the material above, or add it in BMES &gt; Make Model Group.
+          </div>
+        ) : (
+          <>
+            <div className="wk-bmes-path">
+              <span className="wk-chip on">{m.group}</span><span className="muted">›</span><b>{m.material}</b>
+              {m.productGroup && m.productGroup !== m.group && <span className="muted small">Product group {m.productGroup}</span>}
+              <span className="muted small">{found?.by === "saved" ? "picked in Model Info" : "found by the model name"}</span>
             </div>
-          ) : (
-            <>
-              <div className="wk-bmes-path">
-                <span className="wk-chip on">{m.group}</span><span className="muted">›</span><b>{m.material}</b>
-                {m.productGroup && m.productGroup !== m.group && <span className="muted small">Product group {m.productGroup}</span>}
-                <span className="muted small">{found?.by === "saved" ? "picked in Model Info" : "found by the model name"}</span>
-              </div>
-              <table className="wk-it wk-bmes-sub">
-                <thead><tr><th className="l">Sub-group</th><th className="l">Line shifts</th></tr></thead>
-                <tbody>
-                  {m.subGroups.map((s) => (
-                    <tr key={s.path}><td className="l">{s.path}</td><td className="l wk-bmes-ls">{s.lineShifts.join(", ")}</td></tr>
-                  ))}
-                  {!m.subGroups.length && <tr><td colSpan={2} className="wk-it-empty">No line shift in this material.</td></tr>}
-                </tbody>
-              </table>
-              <div className="wk-bmes-bomh">
-                <h3>BOM</h3>
-                {m.products.map((p) => (
-                  <button key={p} className={"wk-chip" + (p === shown ? " on" : "")} onClick={() => setProduct(p)}>{p}</button>
+            <table className="wk-it wk-bmes-sub">
+              <thead><tr><th className="l">Sub-group</th><th className="l">Line shifts</th></tr></thead>
+              <tbody>
+                {m.subGroups.map((s) => (
+                  <tr key={s.path}><td className="l">{s.path || "—"}</td><td className="l wk-bmes-ls">{s.lineShifts.join(", ")}</td></tr>
                 ))}
-              </div>
-              {shown ? <BomTable key={shown} product={shown} onError={props.onError} /> : <div className="muted">No product in this material.</div>}
-            </>
-          )}
-      </div>
-    </section>
+                {!m.subGroups.length && <tr><td colSpan={2} className="wk-it-empty">No line shift in this material.</td></tr>}
+              </tbody>
+            </table>
+            <div className="wk-bmes-bomh">
+              <h3>BOM</h3>
+              {m.products.map((p) => (
+                <button key={p} className={"wk-chip" + (p === shown ? " on" : "")} onClick={() => setProduct(p)}>{p}</button>
+              ))}
+            </div>
+            {shown ? <BomTable key={shown} product={shown} onError={props.onError} /> : <div className="muted">No product in this material.</div>}
+          </>
+        )}
+    </div>
   );
 }
