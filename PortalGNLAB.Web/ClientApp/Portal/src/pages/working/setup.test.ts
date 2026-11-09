@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { blankSetup, parseSetupPaste, parseSheetDate, parseState, rate, rowsInOrder, setupProblem, setupSummary, shortDate } from "./setup";
+import { blankSetup, nextNo, parseSetupPaste, parseSheetDate, parseState, rate, rowsInOrder, setupProblem, setupSummary, shortDate } from "./setup";
 import type { SetupFields, SetupRow } from "./setup";
 
 const row = (id: string, f: Partial<SetupFields>, createdAt = "2026-11-09T00:00:00Z"): SetupRow => ({
@@ -25,6 +25,11 @@ describe("setup plan", () => {
   it("orders rows by No., then by when they were added", () => {
     const r = rowsInOrder([row("x", { no: 2 }), row("y", { no: 1 }, "2026-11-09T02:00:00Z"), row("z", { no: 1 }, "2026-11-09T01:00:00Z")]);
     expect(r.map((x) => x.id)).toEqual(["z", "y", "x"]);
+  });
+
+  it("gives a new row the No. after the highest", () => {
+    expect(nextNo([])).toBe(1);
+    expect(nextNo([row("a", { no: 3 }), row("b", { no: 18 }), row("c", { no: 7 })])).toBe(19);
   });
 
   it("reads dates as typed in Excel", () => {

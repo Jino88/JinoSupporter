@@ -3,7 +3,7 @@ import { workingApi } from "./api";
 import IssueTable from "./IssueTable";
 import { blankEntry, isOpenIssue, issuesBySeq } from "./logic";
 import {
-  blankSetup, parseSetupPaste, rate, rowsInOrder, SETUP_STATES, setupApi, setupFieldsOf, setupProblem, setupSummary, shortDate,
+  blankSetup, nextNo, parseSetupPaste, rate, rowsInOrder, SETUP_STATES, setupApi, setupFieldsOf, setupProblem, setupSummary, shortDate,
 } from "./setup";
 import type { PastedSetup, SetupFields, SetupRow, SetupState } from "./setup";
 import type { Entry } from "./types";
@@ -43,17 +43,17 @@ function SetupEditRow(props: {
   return (
     <tr className="su-edit" onKeyDown={(e) => { if (e.key === "Escape") props.onCancel(); if (e.key === "Enter" && e.target instanceof HTMLInputElement) save(); }}>
       <td></td>
-      <td><input className="inp sm su-no" type="number" min={0} aria-label="No." placeholder="Auto" value={f.no || ""}
+      <td><input className="inp sm su-no" type="number" min={1} autoFocus aria-label="No." value={f.no || ""}
         onChange={(e) => set("no", e.target.value === "" ? 0 : Number(e.target.value))} /></td>
       <td><input className="inp sm su-no" aria-label="No. layout" value={f.layoutNo} onChange={(e) => set("layoutNo", e.target.value)} /></td>
       <td>
-        <input className="inp sm su-line" aria-label="Line" list="su-lines" placeholder="SUB 1" value={f.line} onChange={(e) => set("line", e.target.value)} />
+        <input className="inp sm su-line" aria-label="Line" list="su-lines" value={f.line} onChange={(e) => set("line", e.target.value)} />
         <datalist id="su-lines">{props.lines.map((l) => <option key={l} value={l} />)}</datalist>
       </td>
-      <td className="l"><input className="inp sm su-proc" aria-label="Process name" autoFocus value={f.processName} onChange={(e) => set("processName", e.target.value)} /></td>
+      <td className="l"><input className="inp sm su-proc" aria-label="Process name" value={f.processName} onChange={(e) => set("processName", e.target.value)} /></td>
       {date("machinePlan", "Machine plan")}
       <td><StateSelect label="Machine state" value={f.machineState} onChange={(v) => set("machineState", v)} /></td>
-      <td><input className="inp sm su-note" aria-label="Machine note" placeholder="90.0%" value={f.machineNote} onChange={(e) => set("machineNote", e.target.value)} /></td>
+      <td><input className="inp sm su-note" aria-label="Machine note" value={f.machineNote} onChange={(e) => set("machineNote", e.target.value)} /></td>
       {date("setupPlan", "Setup plan")}
       {date("setupFinish", "Setup finish")}
       <td><StateSelect label="Setup status" value={f.setupStatus} onChange={(v) => set("setupStatus", v)} /></td>
@@ -279,7 +279,7 @@ export default function SetupPlan(props: {
               );
             })}
             {editing === "new" && (
-              <SetupEditRow value={blankSetup(line || ordered.at(-1)?.line || "")} lines={lines} busy={busy} isNew
+              <SetupEditRow value={{ ...blankSetup(line || ordered.at(-1)?.line || ""), no: nextNo(rows) }} lines={lines} busy={busy} isNew
                 onSave={add} onCancel={() => setEditing(null)} />
             )}
             {!rows.length && editing !== "new" && (

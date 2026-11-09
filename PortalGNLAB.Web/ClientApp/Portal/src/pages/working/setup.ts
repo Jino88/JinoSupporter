@@ -56,6 +56,9 @@ export const setupFieldsOf = (r: SetupRow): SetupFields => ({
   setupStatus: r.setupStatus,
 });
 
+/** The No. a new row gets unless it is changed: one after the highest. */
+export const nextNo = (rows: SetupRow[]) => rows.reduce((m, r) => Math.max(m, r.no), 0) + 1;
+
 export const rowsInOrder = (rows: SetupRow[]) =>
   [...rows].sort((a, b) => a.no - b.no || a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
 
