@@ -66,7 +66,7 @@ export default function EntryList(props: {
   today: string;
   onChanged: (list: Entry[]) => void;
   onError: (e: unknown) => void;
-  onOpenIssues: () => void;
+  onOpenIssues: (issue: Entry) => void;
 }) {
   const { modelName, kind, entries, today } = props;
   const [editing, setEditing] = useState<string | null>(null); // entry id, "new" or null
@@ -127,7 +127,7 @@ export default function EntryList(props: {
                       {e.kind === "issue" && e.due && <span>Due {e.due}</span>}
                       <span>Written by {e.createdBy || "—"}{e.updatedAt !== e.createdAt && e.updatedBy ? ` · edited by ${e.updatedBy}` : ""}</span>
                       {e.kind === "issue" ? (
-                        <button className="wk-link" onClick={props.onOpenIssues}>Open in Issues ({e.logs?.length ?? 0} notes)</button>
+                        <button className="wk-link" onClick={() => props.onOpenIssues(e)}>Open in Issues ({e.logs?.length ?? 0} notes)</button>
                       ) : (
                         <>
                           <button className="wk-link" onClick={() => setEditing(e.id)} disabled={busy}>Edit</button>

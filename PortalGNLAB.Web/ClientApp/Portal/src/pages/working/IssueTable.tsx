@@ -1,7 +1,7 @@
-import { Fragment, useEffect, useState, type ClipboardEvent, type DragEvent } from "react";
+import { Fragment, useEffect, useState, type ClipboardEvent, type DragEvent, type ReactNode } from "react";
 import { workingApi } from "./api";
 import {
-  blankEntry, blankLog, entryProblem, fieldsOf, isLate, isLogLate, isOpenIssue, issueFields, issuesBySeq, logFieldsOf, logProblem,
+  blankEntry, blankLog, entryProblem, fieldsOf, isLate, isLogLate, isOpenIssue, issueFields, issuesBySeq, issueTree, logFieldsOf, logProblem,
   mediaKind, notesInOrder, pastedImages, suggestions,
 } from "./logic";
 import {
@@ -242,7 +242,8 @@ function LogEditRow(props: {
 
 /**
  * Issue register: No., dev phase, classification (issue type / process / cause group), issue, owner,
- * registered / due / done dates and final result. An issue opens into its progress notes, one row each in the same columns.
+ * registered / due / done dates and final result. An issue opens into its progress notes, one row each in the same columns,
+ * and its sub-issues (No. 1.1, 1.2 …), which have the same columns and their own notes.
  */
 export default function IssueTable(props: {
   modelName: string;
@@ -260,6 +261,7 @@ export default function IssueTable(props: {
   const { modelName, entries, today } = props;
   const [filter, setFilter] = useState<Filter>("open");
   const [editing, setEditing] = useState<string | null>(null); // issue id, "new" or null
+  const [addingSub, setAddingSub] = useState<string | null>(null); // id of the issue getting a new sub-issue
   const [editingLog, setEditingLog] = useState<string | null>(null);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
@@ -267,7 +269,10 @@ export default function IssueTable(props: {
   const [uploading, setUploading] = useState<number | null>(null);
 
   const all = issuesBySeq(entries);
-  const shown = all.filter((e) => filter === "all" || (filter === "open") === isOpenIssue(e));
+  const { top, subs } = issueTree(entries);
+  const matches = (e: Entry, f: Filter) => f === "all" || (f === "open") === isOpenIssue(e);
+  // an issue stays in the list while one of its sub-issues matches the filter
+  const shown = top.filter((e) => matches(e, filter) || (subs.get(e.id) ?? []).some((c) => matches(c, filter)));
   const lists: Lists = {
     types: suggestions(all.map((e) => e.category), ISSUE_TYPES),
     processes: suggestions(all.map((e) => e.process), ISSUE_PROCESSES),
@@ -298,7 +303,7 @@ export default function IssueTable(props: {
 
   const run = async (work: () => Promise<Entry[]>) => {
     setBusy(true);
-    try { props.onChanged(await work()); setEditing(null); } catch (e) { props.onError(e); } finally { setBusy(false); }
+    try { props.onChanged(await work()); setEditing(null); setAddingSub(null); } catch (e) { props.onError(e); } finally { setBusy(false); }
   };
   const add = (f: EntryFields, pics: Pics) => run(async () => {
     const saved = await workingApi.addEntry(modelName, f);
@@ -309,9 +314,18 @@ export default function IssueTable(props: {
     const images = await syncPictures(e.id, "", saved.images ?? e.images ?? [], pics);
     return entries.map((x) => (x.id === e.id ? { ...saved, images } : x));
   });
-  const remove = (e: Entry) => {
-    if (!window.confirm(`Delete issue No. ${e.seq} "${e.title}" and its ${e.logs?.length ?? 0} notes?`)) return;
-    void run(async () => { await workingApi.deleteEntry(modelName, e.id); return entries.filter((x) => x.id !== e.id); });
+  const remove = (e: Entry, no: string) => {
+    const kids = subs.get(e.id)?.length ?? 0;
+    const keep = kids ? ` Its ${kids} sub-issue${kids > 1 ? "s stay as issues" : " stays as an issue"}.` : "";
+    if (!window.confirm(`Delete issue No. ${no} "${e.title}" and its ${e.logs?.length ?? 0} notes?${keep}`)) return;
+    void run(async () => {
+      await workingApi.deleteEntry(modelName, e.id);
+      const rest = entries.filter((x) => x.id !== e.id);
+      if (!kids) return rest;
+      // the server keeps the sub-issues as issues of their own; take them back with their new revision
+      const fresh = new Map((await workingApi.entries(modelName)).map((x) => [x.id, x]));
+      return rest.map((x) => fresh.get(x.id) ?? x);
+    });
   };
 
   const setLogs = (e: Entry, change: (logs: EntryLog[]) => EntryLog[]) =>
@@ -340,7 +354,83 @@ export default function IssueTable(props: {
   };
 
   const toggle = (id: string) => setOpen((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-  const count = (f: Filter) => all.filter((e) => f === "all" || (f === "open") === isOpenIssue(e)).length;
+  const count = (f: Filter) => all.filter((e) => matches(e, f)).length;
+  const setupLink = props.setupRowId ? { setupRowId: props.setupRowId } : {};
+
+  /** An issue or a sub-issue row, then (opened) its notes and, for an issue, its sub-issues. */
+  const issueRows = (e: Entry, no: string, sub: boolean): ReactNode => {
+    const expanded = open.has(e.id);
+    const notes = notesInOrder(e.logs ?? []);
+    const last = notes.at(-1);
+    const kids = sub ? [] : subs.get(e.id) ?? [];
+    const openKids = kids.filter(isOpenIssue).length;
+    return (
+      <Fragment key={e.id}>
+        <tr className={"wk-it-row" + (sub ? " child" : "") + (isOpenIssue(e) ? "" : " done") + (expanded ? " on" : "")} onClick={() => toggle(e.id)}>
+          <td className="tog">{expanded ? "▾" : "▸"}</td>
+          <td className={"n" + (sub ? " sub" : "")}>{no}</td>
+          <td>{e.phase || "—"}</td>
+          <td>{e.category}</td>
+          <td>{e.process}</td>
+          <td>{e.cause}</td>
+          <td className="l wk-it-title" title={e.body || undefined}>
+            {sub ? <span className="wk-it-subt">{e.title}</span> : <b>{e.title}</b>}
+            {kids.length > 0 && !expanded && (
+              <span className="wk-it-kids">{kids.length} sub-issue{kids.length > 1 ? "s" : ""}{openKids ? `, ${openKids} open` : ""}</span>
+            )}
+            <Thumbs images={e.images ?? []} onOpen={setViewer} />
+            {last && !expanded && <div className="muted small">{last.date.slice(5)} · {last.text.split("\n")[0]}</div>}
+          </td>
+          <td>{e.owner}</td>
+          <td>{e.date}</td>
+          <td className={isLate(e, today) ? "late" : ""}>{e.due}{isLate(e, today) && <span className="wk-late">Late</span>}</td>
+          <td><DoneCell doneDate={e.doneDate} /></td>
+          <td className="l wk-it-final">{e.finalResult}</td>
+          <td className="n">{notes.length}</td>
+          <td className="act" onClick={(ev) => ev.stopPropagation()}>
+            <button className="wk-link" onClick={() => setEditing(e.id)} disabled={busy}>Edit</button>
+            <button className="wk-link danger" onClick={() => remove(e, no)} disabled={busy}>Delete</button>
+          </td>
+        </tr>
+        {editing === e.id && (
+          <tr className="wk-it-sub"><td colSpan={COLS}>
+            <IssueForm value={fieldsOf(e)} images={e.images ?? []} lists={lists} busy={busy}
+              onSave={(f, pics) => save(e, f, pics)} onCancel={() => setEditing(null)} onOpen={setViewer} />
+          </td></tr>
+        )}
+        {expanded && editing !== e.id && notes.map((l, i) => editingLog === l.id ? (
+          <LogEditRow key={l.id} no={`${no}-${i + 1}`} value={logFieldsOf(l)} images={l.images ?? []} today={today} busy={busy} isNew={false}
+            onSave={(f, pics) => saveLog(e, l, f, pics)} onCancel={() => setEditingLog(null)} onOpen={setViewer} />
+        ) : (
+          <LogRow key={l.id} no={`${no}-${i + 1}`} log={l} today={today} busy={busy}
+            onEdit={() => setEditingLog(l.id)} onDelete={() => removeLog(e, l)} onOpen={setViewer} />
+        ))}
+        {expanded && editing !== e.id && (
+          <LogEditRow key="new" no="" value={blankLog(today)} images={[]} today={today} busy={busy} isNew
+            onSave={(f, pics) => addLog(e, f, pics)} onOpen={setViewer} />
+        )}
+        {expanded && editing !== e.id && kids.map((c, i) => issueRows(c, `${no}.${i + 1}`, true))}
+        {expanded && editing !== e.id && !sub && (addingSub === e.id ? (
+          <tr className="wk-it-sub child"><td colSpan={COLS}>
+            <div className="wk-it-subh">New sub-issue of No. {no} {e.title}</div>
+            <IssueForm
+              value={{
+                ...blankEntry("issue", today, e.phase || props.modelPhase), category: e.category, process: e.process, cause: e.cause,
+                ...setupLink, parentId: e.id,
+              }}
+              images={[]} lists={lists} busy={busy} onSave={add} onCancel={() => setAddingSub(null)} onOpen={setViewer} />
+          </td></tr>
+        ) : (
+          <tr className="wk-it-addsub">
+            <td></td>
+            <td colSpan={COLS - 1}>
+              <button className="wk-link" disabled={busy} onClick={() => setAddingSub(e.id)}>+ Sub-issue</button>
+            </td>
+          </tr>
+        ))}
+      </Fragment>
+    );
+  };
 
   return (
     <section className="card pi-sec">
@@ -362,7 +452,7 @@ export default function IssueTable(props: {
       )}
       {editing === "new" && (
         <div className="pi-sec-b">
-          <IssueForm value={{ ...blankEntry("issue", today, props.modelPhase), ...props.newDefaults, ...(props.setupRowId ? { setupRowId: props.setupRowId } : {}) }} images={[]} lists={lists} busy={busy}
+          <IssueForm value={{ ...blankEntry("issue", today, props.modelPhase), ...props.newDefaults, ...setupLink }} images={[]} lists={lists} busy={busy}
             onSave={add} onCancel={() => setEditing(null)} onOpen={setViewer} />
         </div>
       )}
@@ -382,55 +472,7 @@ export default function IssueTable(props: {
             {!shown.length && (
               <tr><td colSpan={COLS} className="wk-it-empty">{all.length ? "No issue in this filter." : "No issue yet. Add one with + New issue."}</td></tr>
             )}
-            {shown.map((e) => {
-              const expanded = open.has(e.id);
-              const notes = notesInOrder(e.logs ?? []);
-              const last = notes.at(-1);
-              return (
-                <Fragment key={e.id}>
-                  <tr className={"wk-it-row" + (isOpenIssue(e) ? "" : " done") + (expanded ? " on" : "")} onClick={() => toggle(e.id)}>
-                    <td className="tog">{expanded ? "▾" : "▸"}</td>
-                    <td className="n">{e.seq || "—"}</td>
-                    <td>{e.phase || "—"}</td>
-                    <td>{e.category}</td>
-                    <td>{e.process}</td>
-                    <td>{e.cause}</td>
-                    <td className="l wk-it-title" title={e.body || undefined}>
-                      <b>{e.title}</b>
-                      <Thumbs images={e.images ?? []} onOpen={setViewer} />
-                      {last && !expanded && <div className="muted small">{last.date.slice(5)} · {last.text.split("\n")[0]}</div>}
-                    </td>
-                    <td>{e.owner}</td>
-                    <td>{e.date}</td>
-                    <td className={isLate(e, today) ? "late" : ""}>{e.due}{isLate(e, today) && <span className="wk-late">Late</span>}</td>
-                    <td><DoneCell doneDate={e.doneDate} /></td>
-                    <td className="l wk-it-final">{e.finalResult}</td>
-                    <td className="n">{notes.length}</td>
-                    <td className="act" onClick={(ev) => ev.stopPropagation()}>
-                      <button className="wk-link" onClick={() => setEditing(e.id)} disabled={busy}>Edit</button>
-                      <button className="wk-link danger" onClick={() => remove(e)} disabled={busy}>Delete</button>
-                    </td>
-                  </tr>
-                  {editing === e.id && (
-                    <tr className="wk-it-sub"><td colSpan={COLS}>
-                      <IssueForm value={fieldsOf(e)} images={e.images ?? []} lists={lists} busy={busy}
-                        onSave={(f, pics) => save(e, f, pics)} onCancel={() => setEditing(null)} onOpen={setViewer} />
-                    </td></tr>
-                  )}
-                  {expanded && editing !== e.id && notes.map((l, i) => editingLog === l.id ? (
-                    <LogEditRow key={l.id} no={`${e.seq}-${i + 1}`} value={logFieldsOf(l)} images={l.images ?? []} today={today} busy={busy} isNew={false}
-                      onSave={(f, pics) => saveLog(e, l, f, pics)} onCancel={() => setEditingLog(null)} onOpen={setViewer} />
-                  ) : (
-                    <LogRow key={l.id} no={`${e.seq}-${i + 1}`} log={l} today={today} busy={busy}
-                      onEdit={() => setEditingLog(l.id)} onDelete={() => removeLog(e, l)} onOpen={setViewer} />
-                  ))}
-                  {expanded && editing !== e.id && (
-                    <LogEditRow key="new" no="" value={blankLog(today)} images={[]} today={today} busy={busy} isNew
-                      onSave={(f, pics) => addLog(e, f, pics)} onOpen={setViewer} />
-                  )}
-                </Fragment>
-              );
-            })}
+            {shown.map((e) => issueRows(e, String(e.seq || "—"), false))}
           </tbody>
         </table>
       </div>

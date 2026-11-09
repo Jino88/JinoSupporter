@@ -1,9 +1,9 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { workingApi } from "./api";
 import IssueTable from "./IssueTable";
 import { blankEntry, isOpenIssue, issuesBySeq } from "./logic";
 import {
-  blankSetup, nextNo, parseSetupPaste, rate, rowsInOrder, SETUP_STATES, setupApi, setupFieldsOf, setupProblem, setupSummary, shortDate,
+  newSetupRow, parseSetupPaste, rate, rowsInOrder, SETUP_STATES, setupApi, setupBatch, setupFieldsOf, setupProblem, setupSummary, shortDate,
 } from "./setup";
 import type { PastedSetup, SetupFields, SetupRow, SetupState } from "./setup";
 import type { Entry } from "./types";
@@ -18,38 +18,25 @@ function StateSelect(props: { value: SetupState; label: string; onChange: (v: Se
   return (
     <select className="inp sm su-state-in" aria-label={props.label} value={props.value} onChange={(e) => props.onChange(e.target.value as SetupState)}>
       <option value="">–</option>
-      {SETUP_STATES.map((s) => <option key={s.value} value={s.value}>{s.value} {s.label}</option>)}
+      {/* the sign alone keeps the column narrow; the legend above says what it means */}
+      {SETUP_STATES.map((s) => <option key={s.value} value={s.value} title={s.label}>{s.value}</option>)}
     </select>
   );
 }
 
-/** A row being added or edited, in place, in the same columns. */
-function SetupEditRow(props: {
-  value: SetupFields;
-  lines: string[];
-  busy: boolean;
-  isNew: boolean;
-  onSave: (f: SetupFields) => void;
-  onCancel: () => void;
-}) {
-  const [f, setF] = useState(props.value);
-  const [shown, setShown] = useState(false);
-  const set = <K extends keyof SetupFields>(k: K, v: SetupFields[K]) => setF((x) => ({ ...x, [k]: v }));
-  const problem = setupProblem(f);
-  const save = () => { setShown(true); if (!problem) props.onSave({ ...f, processName: f.processName.trim() }); };
+/** The input cells of a row being added or edited, in the process table's columns (No. … Status). */
+function SetupCells(props: { value: SetupFields; onChange: (f: SetupFields) => void; autoFocus?: boolean }) {
+  const f = props.value;
+  const set = <K extends keyof SetupFields>(k: K, v: SetupFields[K]) => props.onChange({ ...f, [k]: v });
   const date = (k: "machinePlan" | "setupPlan" | "setupFinish", label: string) => (
     <td><input className="inp sm su-date" type="date" aria-label={label} value={f[k]} onChange={(e) => set(k, e.target.value)} /></td>
   );
   return (
-    <tr className="su-edit" onKeyDown={(e) => { if (e.key === "Escape") props.onCancel(); if (e.key === "Enter" && e.target instanceof HTMLInputElement) save(); }}>
-      <td></td>
-      <td><input className="inp sm su-no" type="number" min={1} autoFocus aria-label="No." value={f.no || ""}
+    <>
+      <td><input className="inp sm su-no" type="number" min={1} autoFocus={props.autoFocus} aria-label="No." value={f.no || ""}
         onChange={(e) => set("no", e.target.value === "" ? 0 : Number(e.target.value))} /></td>
       <td><input className="inp sm su-no" aria-label="No. layout" value={f.layoutNo} onChange={(e) => set("layoutNo", e.target.value)} /></td>
-      <td>
-        <input className="inp sm su-line" aria-label="Line" list="su-lines" value={f.line} onChange={(e) => set("line", e.target.value)} />
-        <datalist id="su-lines">{props.lines.map((l) => <option key={l} value={l} />)}</datalist>
-      </td>
+      <td><input className="inp sm su-line" aria-label="Line" list="su-lines" value={f.line} onChange={(e) => set("line", e.target.value)} /></td>
       <td className="l"><input className="inp sm su-proc" aria-label="Process name" value={f.processName} onChange={(e) => set("processName", e.target.value)} /></td>
       {date("machinePlan", "Machine plan")}
       <td><StateSelect label="Machine state" value={f.machineState} onChange={(v) => set("machineState", v)} /></td>
@@ -57,12 +44,25 @@ function SetupEditRow(props: {
       {date("setupPlan", "Setup plan")}
       {date("setupFinish", "Setup finish")}
       <td><StateSelect label="Setup status" value={f.setupStatus} onChange={(v) => set("setupStatus", v)} /></td>
-      <td className="l">
-        {shown && problem ? <span className="su-err">{problem}</span>
-          : <span className="muted small">{props.isNew ? "Add problems after saving the row." : "Problems are edited below the row."}</span>}
+    </>
+  );
+}
+
+/** A saved row being edited, in place. */
+function SetupEditRow(props: { value: SetupFields; busy: boolean; onSave: (f: SetupFields) => void; onCancel: () => void }) {
+  const [f, setF] = useState(props.value);
+  const [shown, setShown] = useState(false);
+  const problem = setupProblem(f);
+  const save = () => { setShown(true); if (!problem) props.onSave({ ...f, processName: f.processName.trim() }); };
+  return (
+    <tr className="su-edit" onKeyDown={(e) => { if (e.key === "Escape") props.onCancel(); if (e.key === "Enter" && e.target instanceof HTMLInputElement) save(); }}>
+      <td></td>
+      <SetupCells value={f} onChange={setF} autoFocus />
+      <td className="l su-msg">
+        {shown && problem ? <span className="su-err">{problem}</span> : <span className="muted small">Problems are edited below the row.</span>}
       </td>
       <td className="act">
-        <button className="btn sm primary" disabled={props.busy} onClick={save}>{props.isNew ? "Add" : "Save"}</button>
+        <button className="btn sm primary" disabled={props.busy} onClick={save}>Save</button>
         <button className="btn sm" disabled={props.busy} onClick={props.onCancel}>Cancel</button>
       </td>
     </tr>
@@ -113,7 +113,10 @@ export default function SetupPlan(props: {
 }) {
   const { modelName, entries, today } = props;
   const [rows, setRows] = useState<SetupRow[] | null>(null);
-  const [editing, setEditing] = useState<string | null>(null); // row id, "new" or null
+  const [editing, setEditing] = useState<string | null>(null); // id of the saved row being edited
+  const [adding, setAdding] = useState<{ key: number; f: SetupFields }[]>([]); // new rows, saved together
+  const [addTried, setAddTried] = useState(false);
+  const addKey = useRef(0);
   const [pasting, setPasting] = useState(false);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [line, setLine] = useState("");
@@ -136,12 +139,29 @@ export default function SetupPlan(props: {
 
   const run = async (work: () => Promise<void>) => {
     setBusy(true);
-    try { await work(); setEditing(null); } catch (e) { props.onError(e); } finally { setBusy(false); }
+    try { await work(); } catch (e) { props.onError(e); } finally { setBusy(false); }
   };
-  const add = (f: SetupFields) => run(async () => { const saved = await setupApi.add(modelName, f); setRows((r) => [...(r ?? []), saved]); });
+  const addRow = () => {
+    const key = ++addKey.current;
+    setAdding((a) => [...a, { key, f: newSetupRow(rows, a.map((x) => x.f), line) }]);
+  };
+  const setAdded = (key: number, f: SetupFields) => setAdding((a) => a.map((x) => (x.key === key ? { key, f } : x)));
+  const dropAdded = (key: number) => setAdding((a) => a.filter((x) => x.key !== key));
+  const cancelAdding = () => { setAdding([]); setAddTried(false); };
+  const batch = setupBatch(adding.map((x) => x.f));
+  const saveAdded = () => {
+    setAddTried(true);
+    if (batch.problem || !batch.rows.length) return;
+    void run(async () => {
+      const saved = await setupApi.import(modelName, batch.rows);
+      setRows((r) => [...(r ?? []), ...saved]);
+      cancelAdding();
+    });
+  };
   const save = (row: SetupRow, f: SetupFields) => run(async () => {
     const saved = await setupApi.save(modelName, row, f);
     setRows((r) => (r ?? []).map((x) => (x.id === row.id ? saved : x)));
+    setEditing(null);
   });
   const remove = (row: SetupRow) => {
     const n = problemsOf(row).length;
@@ -179,7 +199,7 @@ export default function SetupPlan(props: {
         <h2>■ {modelName} Setup Plan <span className="cnt">{rows.length}</span></h2>
         <div className="pi-legend">
           <button className="btn sm" disabled={pasting} onClick={() => setPasting(true)}>Paste from Excel</button>
-          <button className="btn sm primary" disabled={editing === "new"} onClick={() => setEditing("new")}>+ Add row</button>
+          <button className="btn sm primary" disabled={busy} onClick={addRow}>+ Add row</button>
         </div>
       </div>
 
@@ -230,8 +250,7 @@ export default function SetupPlan(props: {
           <tbody>
             {shown.map((r, i) => {
               if (editing === r.id)
-                return <SetupEditRow key={r.id} value={setupFieldsOf(r)} lines={lines} busy={busy} isNew={false}
-                  onSave={(f) => save(r, f)} onCancel={() => setEditing(null)} />;
+                return <SetupEditRow key={r.id} value={setupFieldsOf(r)} busy={busy} onSave={(f) => save(r, f)} onCancel={() => setEditing(null)} />;
               const problems = problemsOf(r);
               const openOnes = problems.filter(isOpenIssue);
               const isOpen = open.has(r.id);
@@ -278,15 +297,35 @@ export default function SetupPlan(props: {
                 </Fragment>
               );
             })}
-            {editing === "new" && (
-              <SetupEditRow value={{ ...blankSetup(line || ordered.at(-1)?.line || ""), no: nextNo(rows) }} lines={lines} busy={busy} isNew
-                onSave={add} onCancel={() => setEditing(null)} />
+            {adding.map((x, i) => {
+              const problem = addTried ? setupProblem(x.f) : "";
+              return (
+                <tr key={x.key} className="su-edit su-new"
+                  onKeyDown={(e) => { if (e.key === "Enter" && e.target instanceof HTMLInputElement) saveAdded(); }}>
+                  <td className="tog">+</td>
+                  <SetupCells value={x.f} onChange={(f) => setAdded(x.key, f)} autoFocus={i === adding.length - 1} />
+                  <td className="l su-msg">{problem && <span className="su-err">{problem}</span>}</td>
+                  <td className="act"><button className="wk-link bad" title="Remove this new row" onClick={() => dropAdded(x.key)}>Remove</button></td>
+                </tr>
+              );
+            })}
+            {adding.length > 0 && (
+              <tr className="su-add-f">
+                <td colSpan={COLS}>
+                  <button className="btn sm" disabled={busy} onClick={addRow}>+ Another row</button>
+                  <button className="btn sm primary" disabled={busy} onClick={saveAdded}>Add {adding.length} row{adding.length > 1 ? "s" : ""}</button>
+                  <button className="btn sm" disabled={busy} onClick={cancelAdding}>Cancel</button>
+                  {addTried && batch.problem ? <span className="su-err">{batch.problem}</span>
+                    : <span className="muted small">Enter adds them all. Problems are added once a row is saved.</span>}
+                </td>
+              </tr>
             )}
-            {!rows.length && editing !== "new" && (
+            {!rows.length && !adding.length && (
               <tr><td colSpan={COLS} className="wk-it-empty">No process yet. Add a row, or paste the rows of the Setup Plan sheet from Excel.</td></tr>
             )}
           </tbody>
         </table>
+        <datalist id="su-lines">{lines.map((l) => <option key={l} value={l} />)}</datalist>
       </div>
     </section>
   );

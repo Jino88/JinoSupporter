@@ -23,19 +23,26 @@ tr.su-row.ok:hover td { background: #e7f9ed; }
 tr.su-row.on td { background: var(--accent-soft); }
 .su-line-c { font-weight: 700; }
 .su-line-c.same { color: #cbd5e1; font-weight: 600; }
-.su-proc-c { font-weight: 600; min-width: 150px; }
-.su-prob { white-space: normal !important; min-width: 260px; max-width: 520px; }
+.su-proc-c { font-weight: 600; min-width: 120px; }
+.su-prob { white-space: normal !important; min-width: 170px; max-width: 520px; }
 .su-prob-open { color: var(--bad); font-weight: 600; }
 tr.su-sub > td { background: #f8fafc; padding: 10px 12px 14px 30px; text-align: left; white-space: normal; }
 tr.su-sub .card { box-shadow: none; }
 
-tr.su-edit td { background: #fff; border-bottom-style: dashed; vertical-align: middle; }
-.su-no { width: 64px; }
-.su-line { width: 100px; }
-.su-proc { width: 100%; min-width: 160px; }
-.su-note { width: 110px; }
-.su-date { width: 128px; }
-.su-state-in { width: 118px; }
+/* Rows being added or edited take the width the saved rows give each column, so the table never gets wider. */
+tr.su-edit td { background: #fff; border-bottom-style: dashed; vertical-align: middle; padding: 4px 3px; }
+tr.su-new td { background: #fbfdff; }
+tr.su-edit .inp { width: 100%; padding: 0 5px; }
+tr.su-edit .su-no { min-width: 44px; }
+tr.su-edit .su-line { min-width: 64px; }
+tr.su-edit .su-proc { min-width: 110px; }
+tr.su-edit .su-note { min-width: 52px; }
+tr.su-edit .su-date { min-width: 104px; padding: 0 2px 0 4px; }
+tr.su-edit .su-state-in { min-width: 44px; padding: 0 2px 0 6px; }
+tr.su-edit td.su-msg { white-space: normal; }
+tr.su-edit td.act .btn + .btn { margin-left: 4px; }
+tr.su-add-f td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+tr.su-add-f .btn { margin-right: 6px; }
 .su-err { color: var(--bad); font-weight: 600; font-size: 11.5px; }
 
 .su-paste { display: flex; flex-direction: column; gap: 8px; }

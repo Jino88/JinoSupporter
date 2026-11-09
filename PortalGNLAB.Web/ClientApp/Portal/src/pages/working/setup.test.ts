@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { blankSetup, nextNo, parseSetupPaste, parseSheetDate, parseState, rate, rowsInOrder, setupProblem, setupSummary, shortDate } from "./setup";
+import {
+  blankSetup, newSetupRow, nextNo, parseSetupPaste, parseSheetDate, parseState, rate, rowsInOrder, setupBatch, setupProblem, setupSummary, shortDate,
+} from "./setup";
 import type { SetupFields, SetupRow } from "./setup";
 
 const row = (id: string, f: Partial<SetupFields>, createdAt = "2026-11-09T00:00:00Z"): SetupRow => ({
@@ -30,6 +32,23 @@ describe("setup plan", () => {
   it("gives a new row the No. after the highest", () => {
     expect(nextNo([])).toBe(1);
     expect(nextNo([row("a", { no: 3 }), row("b", { no: 18 }), row("c", { no: 7 })])).toBe(19);
+  });
+
+  it("adds several rows at once: each new one gets the next No. and the line above it", () => {
+    const rows = [row("a", { no: 18, line: "MAIN" }), row("b", { no: 2, line: "SUB 1" })];
+    const first = newSetupRow(rows, [], "");
+    expect([first.no, first.line]).toEqual([19, "MAIN"]);
+    expect(newSetupRow(rows, [], "SUB 1").line).toBe("SUB 1");
+    const second = newSetupRow(rows, [{ ...first, line: "SUB 2" }], "");
+    expect([second.no, second.line]).toEqual([20, "SUB 2"]);
+    expect(newSetupRow([], [], "")).toMatchObject({ no: 1, line: "" });
+  });
+
+  it("checks all the rows being added before any is saved", () => {
+    const ok = { ...blankSetup(), processName: " CD LOADING " };
+    expect(setupBatch([ok, { ...ok, no: 3 }])).toEqual({ rows: [{ ...ok, processName: "CD LOADING" }, { ...ok, no: 3, processName: "CD LOADING" }], problem: "" });
+    expect(setupBatch([ok, blankSetup()])).toEqual({ rows: [], problem: "Row 2: Process name is required." });
+    expect(setupBatch([blankSetup()]).problem).toBe("Process name is required.");
   });
 
   it("reads dates as typed in Excel", () => {

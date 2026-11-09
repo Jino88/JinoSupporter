@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { workingApi } from "./api";
-import { countByKind, isLate, isOpenIssue } from "./logic";
-import { PHASES, type Entry, type ModelInfo, type WorkingModel } from "./types";
+import BmesPanel from "./BmesPanel";
+import { PHASES, type ModelInfo, type WorkingModel } from "./types";
 
 const FIELDS: { key: keyof ModelInfo; label: string; placeholder?: string }[] = [
   { key: "customer", label: "Customer" },
@@ -11,16 +11,14 @@ const FIELDS: { key: keyof ModelInfo; label: string; placeholder?: string }[] = 
   { key: "sopTarget", label: "SOP target", placeholder: "yyyy-MM-dd" },
 ];
 
-/** Model information form plus a short summary of the history counts. */
+/** Model information form and the BMES model group of the model. */
 export default function InfoTab(props: {
   model: WorkingModel;
-  entries: Entry[];
-  today: string;
   onDirty: (dirty: boolean) => void;
   onSaved: (model: WorkingModel) => void;
   onError: (e: unknown) => void;
 }) {
-  const { model, entries, today } = props;
+  const { model } = props;
   const [info, setInfo] = useState<ModelInfo>(model.info ?? {});
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState("");
@@ -39,21 +37,10 @@ export default function InfoTab(props: {
     } catch (e) { props.onError(e); } finally { setBusy(false); }
   };
 
-  const c = countByKind(entries);
-  const open = entries.filter(isOpenIssue);
-  const late = open.filter((e) => isLate(e, today)).length;
-  const lastReview = entries.find((e) => e.kind === "review");
   const phaseIdx = PHASES.indexOf((info.phase ?? "") as (typeof PHASES)[number]);
 
   return (
     <>
-      <section className="card pi-kpis wk-kpis">
-        <div className="pi-kp"><div className="pi-kp-k">Phase</div><div className="pi-kp-v">{info.phase || "—"}</div><div className="pi-kp-n">{info.build || "No build"}</div></div>
-        <div className="pi-kp"><div className="pi-kp-k">Open issues</div><div className={"pi-kp-v" + (open.length ? " bad" : "")}>{open.length}</div><div className="pi-kp-n">{late ? `${late} past due` : `${c.issue} in total`}</div></div>
-        <div className="pi-kp"><div className="pi-kp-k">Dev history</div><div className="pi-kp-v">{c.dev}</div><div className="pi-kp-n">entries</div></div>
-        <div className="pi-kp"><div className="pi-kp-k">Last review</div><div className="pi-kp-v">{lastReview?.result || "—"}</div><div className="pi-kp-n">{lastReview ? lastReview.date : "No review yet"}</div></div>
-      </section>
-
       <section className="card pi-sec">
         <div className="pi-sec-h">
           <h2>Model information</h2>
@@ -90,6 +77,9 @@ export default function InfoTab(props: {
           </div>
         </div>
       </section>
+
+      <BmesPanel modelName={model.name} saved={info.bmesMaterial ?? ""} onError={props.onError}
+        onPick={(m) => setInfo(({ bmesMaterial: _old, ...rest }) => (m ? { ...rest, bmesMaterial: m } : rest))} />
     </>
   );
 }
