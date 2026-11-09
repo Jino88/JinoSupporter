@@ -544,6 +544,51 @@ try
     Check(working.DeleteEntry("SEQ", i1.Id) && working.UpdateLog("SEQ", i1.Id, n1.Id, new("2026-11-07", "x", 2), "c") is null,
         "working: deleting an entry deletes its notes");
 
+    // Note schedule / done date and pictures pasted into an issue or a note.
+    WorkingEntry p1 = working.CreateEntry("PIC", IBody("pictures"), "alice");
+    WorkingEntry p2 = working.CreateEntry("PIC", IBody("other issue"), "alice");
+    WorkingEntryLog pn = working.CreateLog("PIC", p1.Id, new("2026-11-09", "measured", 0, " lee ", "2026-11-12", "2026-11-10"), "alice")!;
+    Check(pn is { Owner: "lee", Due: "2026-11-12", DoneDate: "2026-11-10" } && pn.Images.Count == 0, "working: note owner, due and done date saved");
+    Check(working.UpdateLog("PIC", p1.Id, pn.Id, new("2026-11-09", "measured", 1, "kim", "", ""), "bob") is { Owner: "kim", Due: "", DoneDate: "", Revision: 2 },
+        "working: note schedule changed on update");
+    Check(WBad(() => working.CreateLog("PIC", p1.Id, new("2026-11-09", "x", 0, "", "soon"), "a"))
+          && WBad(() => working.CreateLog("PIC", p1.Id, new("2026-11-09", "x", 0, "", "", "11/10"), "a"))
+          && WBad(() => working.CreateLog("PIC", p1.Id, new("2026-11-09", "x", 0, new string('o', 101)), "a")),
+        "working: note due / done date are yyyy-MM-dd and owner is capped at 100");
+    byte[] png = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3];
+    byte[] jpg = [0xFF, 0xD8, 0xFF, 0xE0, 9];
+    List<WorkingImage>? onIssue = working.AddImages("pic", p1.Id, null, [("image.png", png), ("..\\x.jpg", jpg)], "alice");
+    List<WorkingImage>? onNote = working.AddImages("PIC", p1.Id, pn.Id, [("note.png", png)], "bob");
+    WorkingEntry withPics = working.ListEntries("PIC").Single(e => e.Id == p1.Id);
+    Check(onIssue is [{ ContentType: "image/png", Size: 11, LogId: "" }, { FileName: "x.jpg", ContentType: "image/jpeg" }] && onNote is [{ CreatedBy: "bob" }]
+          && withPics.Images.Select(i => i.Id).SequenceEqual(onIssue.Select(i => i.Id))
+          && withPics.Logs.Single().Images.Single().Id == onNote[0].Id && onNote[0].LogId == pn.Id,
+        "working: pictures kept in paste order under the issue and under the note");
+    Check(working.ListEntries("PIC").Single(e => e.Id == p2.Id).Images.Count == 0, "working: pictures stay on their own issue");
+    Check(working.GetImage(onIssue![0].Id) is { } got && got.ContentType == "image/png" && got.Data.SequenceEqual(png) && working.GetImage("nope") is null,
+        "working: picture bytes round-trip");
+    Check(WBad(() => working.AddImages("PIC", p1.Id, null, [("a.png", png), ("a.svg", "<svg/>"u8.ToArray())], "a"))
+          && WBad(() => working.AddImages("PIC", p1.Id, null, [("fake.png", "MZ not a png"u8.ToArray())], "a"))
+          && WBad(() => working.AddImages("PIC", p1.Id, null, [("big.png", [.. png, .. new byte[WorkingService.MaxImageBytes]])], "a"))
+          && WBad(() => working.AddImages("PIC", p1.Id, null, [], "a"))
+          && WBad(() => working.AddImages("PIC", p1.Id, null, Enumerable.Repeat(("a.png", png), 21).ToList(), "a"))
+          && working.ListEntries("PIC").Single(e => e.Id == p1.Id).Images.Count == 2,
+        "working: only PNG / JPEG / GIF / WebP / BMP bytes up to 10 MB, 1 to 20 at a time; a refused upload stores nothing");
+    WorkingEntryLog otherNote = working.CreateLog("PIC", p2.Id, new("2026-11-09", "other"), "a")!;
+    Check(working.AddImages("PIC", p1.Id, otherNote.Id, [("a.png", png)], "a") is null && working.AddImages("PIC", p1.Id, "nope", [("a.png", png)], "a") is null
+          && working.AddImages("OTHER", p1.Id, null, [("a.png", png)], "a") is null,
+        "working: pictures need an issue of the model and a note of that issue (404)");
+    Check(!working.DeleteImage("PIC", p2.Id, onIssue[0].Id) && !working.DeleteImage("OTHER", p1.Id, onIssue[0].Id)
+          && working.DeleteImage("PIC", p1.Id, onIssue[0].Id) && !working.DeleteImage("PIC", p1.Id, onIssue[0].Id)
+          && working.GetImage(onIssue[0].Id) is null && working.ListEntries("PIC").Single(e => e.Id == p1.Id).Images.Count == 1,
+        "working: picture delete only under its own issue, once");
+    Check(working.DeleteLog("PIC", p1.Id, pn.Id) && working.GetImage(onNote![0].Id) is null && working.GetImage(onIssue[1].Id) is not null,
+        "working: deleting a note deletes its pictures only");
+    WorkingEntryLog pn3 = working.CreateLog("PIC", p1.Id, new("2026-11-10", "again"), "a")!;
+    string notePic = working.AddImages("PIC", p1.Id, pn3.Id, [("n.png", png)], "a")![0].Id;
+    Check(working.DeleteEntry("PIC", p1.Id) && working.GetImage(onIssue[1].Id) is null && working.GetImage(notePic) is null,
+        "working: deleting an issue deletes its pictures and its notes' pictures");
+
     // A WorkingEntries table from before the issue columns gets them added and numbered on open.
     string oldDb = Path.Combine(Path.GetTempPath(), $"working-old-{Guid.NewGuid():N}.db");
     try
@@ -559,14 +604,21 @@ try
                   CreatedBy TEXT NOT NULL DEFAULT '', CreatedAt TEXT NOT NULL, UpdatedBy TEXT NOT NULL DEFAULT '', UpdatedAt TEXT NOT NULL);
                 INSERT INTO WorkingEntries VALUES ('b','M','issue','2026-11-09','later','','Open','Major','','','2026-11-20',1,'','2026-11-09T02:00:00Z','','2026-11-09T02:00:00Z');
                 INSERT INTO WorkingEntries VALUES ('a','M','issue','2026-11-09','earlier','','Open','Major','','','',1,'','2026-11-09T01:00:00Z','','2026-11-09T01:00:00Z');
+                CREATE TABLE WorkingEntryLogs (Id TEXT PRIMARY KEY, EntryId TEXT NOT NULL, Date TEXT NOT NULL, Text TEXT NOT NULL, Revision INTEGER NOT NULL,
+                  CreatedBy TEXT NOT NULL DEFAULT '', CreatedAt TEXT NOT NULL, UpdatedBy TEXT NOT NULL DEFAULT '', UpdatedAt TEXT NOT NULL);
+                INSERT INTO WorkingEntryLogs VALUES ('n','b','2026-11-09','old note',1,'u','2026-11-09T03:00:00Z','u','2026-11-09T03:00:00Z');
                 """;
             oCmd.ExecuteNonQuery();
         }
         var migrated = new WorkingService(oldDb, glossDb);
         List<WorkingEntry> old = migrated.ListEntries("M");
-        Check(old.Single(e => e.Id == "a").Seq == 1 && old.Single(e => e.Id == "b").Seq == 2 && old.All(e => e.Phase == "" && e.DoneDate == "" && e.Logs.Count == 0)
+        Check(old.Single(e => e.Id == "a").Seq == 1 && old.Single(e => e.Id == "b").Seq == 2 && old.All(e => e.Phase == "" && e.DoneDate == "" && e.Images.Count == 0)
               && migrated.CreateEntry("M", IBody("new"), "u").Seq == 3 && migrated.CreateLog("M", "a", new("2026-11-10", "note"), "u") is not null,
-            "working: old table gets the issue columns, existing rows numbered by creation, notes table created");
+            "working: old table gets the issue columns, existing rows numbered by creation");
+        Check(old.Single(e => e.Id == "b").Logs is [{ Text: "old note", Owner: "", Due: "", DoneDate: "" }]
+              && migrated.UpdateLog("M", "b", "n", new("2026-11-09", "old note", 1, "lee", "2026-11-11"), "u") is { Owner: "lee", Due: "2026-11-11" }
+              && migrated.AddImages("M", "b", "n", [("a.png", png)], "u") is [_],
+            "working: old notes table gets owner / due / done date; pictures table created");
     }
     finally
     {

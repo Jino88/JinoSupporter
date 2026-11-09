@@ -65,12 +65,34 @@ export interface EntryFields {
   finalResult: string;
 }
 
-/** A dated progress note under an issue (one or more per day). */
-export interface EntryLog {
+/** A picture pasted into an issue (logId "") or into one of its notes. */
+export interface WorkingImage {
   id: string;
   entryId: string;
+  logId: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+  createdBy: string;
+  createdAt: string;
+}
+
+/** Editable fields of a progress note. */
+export interface LogFields {
   date: string;
   text: string;
+  owner: string;
+  /** Planned completion date (yyyy-MM-dd) or "". */
+  due: string;
+  /** Actual completion date (yyyy-MM-dd) or ""; a note with a done date is done. */
+  doneDate: string;
+}
+
+/** A dated progress note under an issue (one or more per day). */
+export interface EntryLog extends LogFields {
+  id: string;
+  entryId: string;
+  images: WorkingImage[];
   revision: number;
   createdBy: string;
   createdAt: string;
@@ -84,6 +106,8 @@ export interface Entry extends EntryFields {
   seq: number;
   /** Progress notes, oldest first. */
   logs: EntryLog[];
+  /** The entry's own pictures (notes carry theirs). */
+  images: WorkingImage[];
   modelName: string;
   revision: number;
   createdBy: string;
@@ -91,6 +115,11 @@ export interface Entry extends EntryFields {
   updatedBy: string;
   updatedAt: string;
 }
+
+/** Pictures the server stores (WorkingEndpoints images upload). */
+export const IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp"];
+export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+export const MAX_IMAGES_PER_UPLOAD = 20;
 
 export const KIND_LABEL: Record<EntryKind, string> = { dev: "Dev", issue: "Issue", review: "Review" };
 export const SEVERITIES = ["Critical", "Major", "Minor"];

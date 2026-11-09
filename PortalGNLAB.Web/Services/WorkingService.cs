@@ -14,21 +14,30 @@ public sealed record WorkingModel(string Name, JsonElement Info, int Revision, s
 
 public sealed record WorkingModelSave(JsonElement Info, int Revision);
 
-/// <summary>An entry. Issue fields (Seq … FinalResult) are "" / 0 for other kinds; Logs are the dated progress notes, oldest first.</summary>
+/// <summary>
+/// An entry. Issue fields (Seq … FinalResult) are "" / 0 for other kinds; Logs are the dated progress notes, oldest first;
+/// Images are the entry's own pictures (each note carries its own).
+/// </summary>
 public sealed record WorkingEntry(
     string Id, string ModelName, string Kind, string Date, string Title, string Body, string Status, string Severity,
     string Result, string Owner, string Due, int Revision, string CreatedBy, string CreatedAt, string UpdatedBy, string UpdatedAt,
-    int Seq, string Phase, string Category, string Process, string Cause, string DoneDate, string FinalResult, List<WorkingEntryLog> Logs);
+    int Seq, string Phase, string Category, string Process, string Cause, string DoneDate, string FinalResult, List<WorkingEntryLog> Logs,
+    List<WorkingImage> Images);
 
 public sealed record WorkingEntrySave(
     string? Kind, string? Date, string? Title, string? Body, string? Status, string? Severity,
     string? Result, string? Owner, string? Due, int Revision,
     string? Phase = null, string? Category = null, string? Process = null, string? Cause = null, string? DoneDate = null, string? FinalResult = null);
 
+/// <summary>A dated progress note; Due / DoneDate are "" or yyyy-MM-dd (a note with a done date is done).</summary>
 public sealed record WorkingEntryLog(
-    string Id, string EntryId, string Date, string Text, int Revision, string CreatedBy, string CreatedAt, string UpdatedBy, string UpdatedAt);
+    string Id, string EntryId, string Date, string Text, int Revision, string CreatedBy, string CreatedAt, string UpdatedBy, string UpdatedAt,
+    string Owner, string Due, string DoneDate, List<WorkingImage> Images);
 
-public sealed record WorkingLogSave(string? Date, string? Text, int Revision = 0);
+public sealed record WorkingLogSave(string? Date, string? Text, int Revision = 0, string? Owner = null, string? Due = null, string? DoneDate = null);
+
+/// <summary>A pasted picture of an entry (LogId "") or of one of its notes. The bytes are served by GetImage.</summary>
+public sealed record WorkingImage(string Id, string EntryId, string LogId, string FileName, string ContentType, long Size, string CreatedBy, string CreatedAt);
 
 /// <summary>
 /// Per-model work history. Model groups are read (never written) from the CompanyGlossary DB; model info
@@ -75,6 +84,18 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             UpdatedAt TEXT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS IX_WorkingEntryLogs_EntryId ON WorkingEntryLogs (EntryId);
+        CREATE TABLE IF NOT EXISTS WorkingImages (
+            Id TEXT PRIMARY KEY,
+            EntryId TEXT NOT NULL,
+            LogId TEXT NOT NULL DEFAULT '',
+            FileName TEXT NOT NULL,
+            ContentType TEXT NOT NULL,
+            Size INTEGER NOT NULL,
+            Data BLOB NOT NULL,
+            CreatedBy TEXT NOT NULL DEFAULT '',
+            CreatedAt TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS IX_WorkingImages_EntryId ON WorkingImages (EntryId);
         CREATE TABLE IF NOT EXISTS WorkingEntrySeq (
             ModelName TEXT NOT NULL COLLATE NOCASE,
             Kind TEXT NOT NULL,
@@ -95,6 +116,19 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         ("FinalResult", "TEXT NOT NULL DEFAULT ''"),
     ];
 
+    /// <summary>Note columns added 2026-11-09 (schedule and done date of a note).</summary>
+    private static readonly (string Name, string Type)[] AddedLogColumns =
+    [
+        ("Owner", "TEXT NOT NULL DEFAULT ''"),
+        ("Due", "TEXT NOT NULL DEFAULT ''"),
+        ("DoneDate", "TEXT NOT NULL DEFAULT ''"),
+    ];
+
+    /// <summary>Picture formats kept, told apart by their first bytes (the sent content type is not trusted).</summary>
+    public static readonly string[] ImageTypes = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp"];
+    public const long MaxImageBytes = 10L * 1024 * 1024;
+    public const int MaxImagesPerUpload = 20;
+
     public const string DefaultGlossaryDb = @"E:\db\CompanyGlossary\company-glossary.db";
     public const string GlossaryEnvVar = "PORTALGNLAB_GLOSSARY_DB";
     public static readonly string[] Kinds = ["dev", "issue", "review"];
@@ -103,7 +137,9 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         "Id, ModelName, Kind, Date, Title, Body, Status, Severity, Result, Owner, Due, Revision, CreatedBy, CreatedAt, UpdatedBy, UpdatedAt, " +
         "Seq, Phase, Category, Process, Cause, DoneDate, FinalResult";
 
-    private const string LogColumns = "Id, EntryId, Date, Text, Revision, CreatedBy, CreatedAt, UpdatedBy, UpdatedAt";
+    private const string LogColumns = "Id, EntryId, Date, Text, Revision, CreatedBy, CreatedAt, UpdatedBy, UpdatedAt, Owner, Due, DoneDate";
+
+    private const string ImageColumns = "i.Id, i.EntryId, i.LogId, i.FileName, i.ContentType, i.Size, i.CreatedBy, i.CreatedAt";
 
     private static readonly object SchemaGate = new();
     private static readonly HashSet<string> SchemaReady = [];
@@ -126,17 +162,14 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         return conn;
     }
 
-    /// <summary>Adds the issue columns missing from an older WorkingEntries and numbers rows that have no Seq yet.</summary>
+    /// <summary>
+    /// Adds the columns missing from older WorkingEntries / WorkingEntryLogs tables and numbers entries that have no Seq yet.
+    /// </summary>
     private static void MigrateEntries(SqliteConnection conn)
     {
-        var have = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        using (SqliteCommand info = Cmd(conn, "PRAGMA table_info(WorkingEntries)"))
-        using (SqliteDataReader r = info.ExecuteReader())
-            while (r.Read()) have.Add(r.GetString(1));
         using SqliteTransaction tx = conn.BeginTransaction();
-        foreach ((string name, string type) in AddedEntryColumns.Where(c => !have.Contains(c.Name)))
-            using (SqliteCommand alter = Cmd(conn, $"ALTER TABLE WorkingEntries ADD COLUMN {name} {type}", tx))
-                alter.ExecuteNonQuery();
+        AddMissingColumns(conn, tx, "WorkingEntries", AddedEntryColumns);
+        AddMissingColumns(conn, tx, "WorkingEntryLogs", AddedLogColumns);
         var unnumbered = new List<(string Id, string Model, string Kind)>();
         using (SqliteCommand find = Cmd(conn, "SELECT Id, ModelName, Kind FROM WorkingEntries WHERE Seq<=0 ORDER BY CreatedAt, Id", tx))
         using (SqliteDataReader r = find.ExecuteReader())
@@ -146,6 +179,17 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
                 ("@s", NextSeq(conn, tx, model, kind)), ("@id", id)))
                 set.ExecuteNonQuery();
         tx.Commit();
+    }
+
+    private static void AddMissingColumns(SqliteConnection conn, SqliteTransaction tx, string table, (string Name, string Type)[] columns)
+    {
+        var have = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using (SqliteCommand info = Cmd(conn, $"PRAGMA table_info({table})", tx))
+        using (SqliteDataReader r = info.ExecuteReader())
+            while (r.Read()) have.Add(r.GetString(1));
+        foreach ((string name, string type) in columns.Where(c => !have.Contains(c.Name)))
+            using (SqliteCommand alter = Cmd(conn, $"ALTER TABLE {table} ADD COLUMN {name} {type}", tx))
+                alter.ExecuteNonQuery();
     }
 
     /// <summary>
@@ -292,33 +336,49 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
 
     // ── Entries ─────────────────────────────────────────────────────────────
 
-    private static WorkingEntry ReadEntry(SqliteDataReader r, List<WorkingEntryLog> logs) =>
+    private static WorkingEntry ReadEntry(SqliteDataReader r, List<WorkingEntryLog> logs, List<WorkingImage> images) =>
         new(r.GetString(0), r.GetString(1), r.GetString(2), r.GetString(3), r.GetString(4), r.GetString(5), r.GetString(6),
             r.GetString(7), r.GetString(8), r.GetString(9), r.GetString(10), r.GetInt32(11), r.GetString(12), r.GetString(13),
             r.GetString(14), r.GetString(15), r.GetInt32(16), r.GetString(17), r.GetString(18), r.GetString(19), r.GetString(20),
-            r.GetString(21), r.GetString(22), logs);
+            r.GetString(21), r.GetString(22), logs, images);
 
-    private static WorkingEntryLog ReadLog(SqliteDataReader r) =>
+    /// <summary>A note row; its pictures are picked from <paramref name="images"/> (pictures of its entry or wider).</summary>
+    private static WorkingEntryLog ReadLog(SqliteDataReader r, List<WorkingImage> images) =>
         new(r.GetString(0), r.GetString(1), r.GetString(2), r.GetString(3), r.GetInt32(4), r.GetString(5), r.GetString(6),
-            r.GetString(7), r.GetString(8));
+            r.GetString(7), r.GetString(8), r.GetString(9), r.GetString(10), r.GetString(11), ImagesOf(images, r.GetString(0)));
 
-    private static List<WorkingEntryLog> ReadLogs(SqliteConnection conn, string entryId, SqliteTransaction? tx = null)
+    private static List<WorkingImage> ImagesOf(List<WorkingImage> images, string logId) => images.Where(i => i.LogId == logId).ToList();
+
+    /// <summary>Picture rows (no bytes) in paste order; <paramref name="where"/> may use i. (WorkingImages) and e. (WorkingEntries).</summary>
+    private static List<WorkingImage> QueryImages(SqliteConnection conn, SqliteTransaction? tx, string where, params (string, object?)[] args)
+    {
+        using SqliteCommand cmd = Cmd(conn,
+            $"SELECT {ImageColumns} FROM WorkingImages i JOIN WorkingEntries e ON e.Id = i.EntryId WHERE {where} ORDER BY i.CreatedAt, i.Id", tx, args);
+        var list = new List<WorkingImage>();
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+            list.Add(new(r.GetString(0), r.GetString(1), r.GetString(2), r.GetString(3), r.GetString(4), r.GetInt64(5), r.GetString(6), r.GetString(7)));
+        return list;
+    }
+
+    private static List<WorkingEntryLog> ReadLogs(SqliteConnection conn, string entryId, List<WorkingImage> images, SqliteTransaction? tx = null)
     {
         using SqliteCommand cmd = Cmd(conn, $"SELECT {LogColumns} FROM WorkingEntryLogs WHERE EntryId=@e ORDER BY Date, CreatedAt, Id", tx,
             ("@e", entryId));
         var list = new List<WorkingEntryLog>();
         using SqliteDataReader r = cmd.ExecuteReader();
-        while (r.Read()) list.Add(ReadLog(r));
+        while (r.Read()) list.Add(ReadLog(r, images));
         return list;
     }
 
     private static WorkingEntry? ReadEntryRow(SqliteConnection conn, string model, string id, SqliteTransaction? tx = null)
     {
-        List<WorkingEntryLog> logs = ReadLogs(conn, id, tx);
+        List<WorkingImage> images = QueryImages(conn, tx, "i.EntryId=@e AND e.ModelName=@m", ("@e", id), ("@m", model));
+        List<WorkingEntryLog> logs = ReadLogs(conn, id, images, tx);
         using SqliteCommand cmd = Cmd(conn, $"SELECT {EntryColumns} FROM WorkingEntries WHERE Id=@id AND ModelName=@m", tx,
             ("@id", id), ("@m", model));
         using SqliteDataReader r = cmd.ExecuteReader();
-        return r.Read() ? ReadEntry(r, logs) : null;
+        return r.Read() ? ReadEntry(r, logs, ImagesOf(images, "")) : null;
     }
 
     private static bool IsDate(string value) =>
@@ -365,16 +425,17 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
     {
         model = CleanModelName(model);
         using SqliteConnection conn = Open();
-        // every note of the model in one read, grouped by entry
+        // every picture and note of the model in one read each, grouped by entry
+        var images = QueryImages(conn, null, "e.ModelName=@m", ("@m", model)).GroupBy(i => i.EntryId).ToDictionary(g => g.Key, g => g.ToList());
         var logs = new Dictionary<string, List<WorkingEntryLog>>();
         using (SqliteCommand lc = Cmd(conn,
-            "SELECT l.Id, l.EntryId, l.Date, l.Text, l.Revision, l.CreatedBy, l.CreatedAt, l.UpdatedBy, l.UpdatedAt " +
-            "FROM WorkingEntryLogs l JOIN WorkingEntries e ON e.Id = l.EntryId WHERE e.ModelName=@m ORDER BY l.Date, l.CreatedAt, l.Id",
+            "SELECT " + string.Join(", ", LogColumns.Split(", ").Select(c => "l." + c)) +
+            " FROM WorkingEntryLogs l JOIN WorkingEntries e ON e.Id = l.EntryId WHERE e.ModelName=@m ORDER BY l.Date, l.CreatedAt, l.Id",
             null, ("@m", model)))
         using (SqliteDataReader lr = lc.ExecuteReader())
             while (lr.Read())
             {
-                WorkingEntryLog log = ReadLog(lr);
+                WorkingEntryLog log = ReadLog(lr, images.GetValueOrDefault(lr.GetString(1)) ?? []);
                 if (!logs.TryGetValue(log.EntryId, out List<WorkingEntryLog>? forEntry)) logs[log.EntryId] = forEntry = [];
                 forEntry.Add(log);
             }
@@ -382,7 +443,8 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             $"SELECT {EntryColumns} FROM WorkingEntries WHERE ModelName=@m ORDER BY Date DESC, CreatedAt DESC", null, ("@m", model));
         var list = new List<WorkingEntry>();
         using SqliteDataReader r = cmd.ExecuteReader();
-        while (r.Read()) list.Add(ReadEntry(r, logs.GetValueOrDefault(r.GetString(0)) ?? []));
+        while (r.Read())
+            list.Add(ReadEntry(r, logs.GetValueOrDefault(r.GetString(0)) ?? [], ImagesOf(images.GetValueOrDefault(r.GetString(0)) ?? [], "")));
         return list;
     }
 
@@ -428,7 +490,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         return saved;
     }
 
-    /// <summary>Deletes the entry together with its progress notes.</summary>
+    /// <summary>Deletes the entry together with its progress notes and every picture of both.</summary>
     public bool DeleteEntry(string model, string id)
     {
         model = CleanModelName(model);
@@ -438,21 +500,28 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             if (del.ExecuteNonQuery() == 0) return false;
         using (SqliteCommand logs = Cmd(conn, "DELETE FROM WorkingEntryLogs WHERE EntryId=@id", tx, ("@id", id)))
             logs.ExecuteNonQuery();
+        using (SqliteCommand pics = Cmd(conn, "DELETE FROM WorkingImages WHERE EntryId=@id", tx, ("@id", id)))
+            pics.ExecuteNonQuery();
         tx.Commit();
         return true;
     }
 
     // ── Progress notes: dated notes under an entry; they do not change the entry's revision ──
 
-    private static (string Date, string Text) CleanLog(WorkingLogSave b)
+    private sealed record CleanedLog(string Date, string Text, string Owner, string Due, string DoneDate);
+
+    private static CleanedLog CleanLog(WorkingLogSave b)
     {
         string date = (b.Date ?? "").Trim();
         if (!IsDate(date)) throw new ArgumentException("Date must be yyyy-MM-dd.");
         string text = (b.Text ?? "").Trim();
         if (text.Length == 0) throw new ArgumentException("Note text is required.");
         if (text.Length > 5000) throw new ArgumentException("Note text must be 5000 characters or fewer.");
-        return (date, text);
+        return new(date, text, Limit(b.Owner, "Owner", 100), OptionalDate(b.Due, "Due"), OptionalDate(b.DoneDate, "Done date"));
     }
+
+    private static (string, object?)[] LogArgs(CleanedLog l) =>
+        [("@d", l.Date), ("@t", l.Text), ("@o", l.Owner), ("@due", l.Due), ("@done", l.DoneDate)];
 
     private static bool EntryExists(SqliteConnection conn, SqliteTransaction tx, string model, string entryId)
     {
@@ -462,24 +531,25 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
 
     private static WorkingEntryLog? ReadLogRow(SqliteConnection conn, SqliteTransaction tx, string entryId, string logId)
     {
+        List<WorkingImage> images = QueryImages(conn, tx, "i.EntryId=@e AND i.LogId=@l", ("@e", entryId), ("@l", logId));
         using SqliteCommand cmd = Cmd(conn, $"SELECT {LogColumns} FROM WorkingEntryLogs WHERE Id=@id AND EntryId=@e", tx,
             ("@id", logId), ("@e", entryId));
         using SqliteDataReader r = cmd.ExecuteReader();
-        return r.Read() ? ReadLog(r) : null;
+        return r.Read() ? ReadLog(r, images) : null;
     }
 
     /// <summary>Null when the entry is not in this model.</summary>
     public WorkingEntryLog? CreateLog(string model, string entryId, WorkingLogSave body, string user)
     {
         model = CleanModelName(model);
-        (string date, string text) = CleanLog(body);
+        CleanedLog log = CleanLog(body);
         using SqliteConnection conn = Open();
         using SqliteTransaction tx = conn.BeginTransaction();
         if (!EntryExists(conn, tx, model, entryId)) return null;
         string id = Guid.NewGuid().ToString("N"), now = Now();
         using (SqliteCommand ins = Cmd(conn,
-            $"INSERT INTO WorkingEntryLogs ({LogColumns}) VALUES (@id,@e,@d,@t,1,@u,@now,@u,@now)", tx,
-            ("@id", id), ("@e", entryId), ("@d", date), ("@t", text), ("@u", user), ("@now", now)))
+            $"INSERT INTO WorkingEntryLogs ({LogColumns}) VALUES (@id,@e,@d,@t,1,@u,@now,@u,@now,@o,@due,@done)", tx,
+            [("@id", id), ("@e", entryId), ("@u", user), ("@now", now), .. LogArgs(log)]))
             ins.ExecuteNonQuery();
         WorkingEntryLog saved = ReadLogRow(conn, tx, entryId, id)!;
         tx.Commit();
@@ -490,7 +560,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
     public WorkingEntryLog? UpdateLog(string model, string entryId, string logId, WorkingLogSave body, string user)
     {
         model = CleanModelName(model);
-        (string date, string text) = CleanLog(body);
+        CleanedLog log = CleanLog(body);
         using SqliteConnection conn = Open();
         using SqliteTransaction tx = conn.BeginTransaction();
         if (!EntryExists(conn, tx, model, entryId)) return null;
@@ -499,14 +569,16 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         if (current.Revision != body.Revision)
             throw new WorkingConflictException("Someone else saved this note first. Reload and try again.");
         using (SqliteCommand upd = Cmd(conn,
-            "UPDATE WorkingEntryLogs SET Date=@d, Text=@t, Revision=Revision+1, UpdatedBy=@u, UpdatedAt=@now WHERE Id=@id AND EntryId=@e", tx,
-            ("@id", logId), ("@e", entryId), ("@d", date), ("@t", text), ("@u", user), ("@now", Now())))
+            "UPDATE WorkingEntryLogs SET Date=@d, Text=@t, Owner=@o, Due=@due, DoneDate=@done, Revision=Revision+1, UpdatedBy=@u, " +
+            "UpdatedAt=@now WHERE Id=@id AND EntryId=@e", tx,
+            [("@id", logId), ("@e", entryId), ("@u", user), ("@now", Now()), .. LogArgs(log)]))
             upd.ExecuteNonQuery();
         WorkingEntryLog saved = ReadLogRow(conn, tx, entryId, logId)!;
         tx.Commit();
         return saved;
     }
 
+    /// <summary>Deletes the note and its pictures.</summary>
     public bool DeleteLog(string model, string entryId, string logId)
     {
         model = CleanModelName(model);
@@ -515,6 +587,91 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         if (!EntryExists(conn, tx, model, entryId)) return false;
         bool removed;
         using (SqliteCommand del = Cmd(conn, "DELETE FROM WorkingEntryLogs WHERE Id=@id AND EntryId=@e", tx, ("@id", logId), ("@e", entryId)))
+            removed = del.ExecuteNonQuery() > 0;
+        if (removed)
+            using (SqliteCommand pics = Cmd(conn, "DELETE FROM WorkingImages WHERE EntryId=@e AND LogId=@id", tx, ("@id", logId), ("@e", entryId)))
+                pics.ExecuteNonQuery();
+        tx.Commit();
+        return removed;
+    }
+
+    // ── Pictures pasted into an entry or a note ─────────────────────────────
+
+    /// <summary>The picture format from the first bytes, or null when the bytes are not PNG / JPEG / GIF / WebP / BMP.</summary>
+    public static string? ImageType(byte[] d)
+    {
+        bool At(int offset, params byte[] sig) => d.Length >= offset + sig.Length && d.AsSpan(offset, sig.Length).SequenceEqual(sig);
+        if (At(0, 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)) return "image/png";
+        if (At(0, 0xFF, 0xD8, 0xFF)) return "image/jpeg";
+        if (At(0, (byte)'G', (byte)'I', (byte)'F', (byte)'8')) return "image/gif";
+        if (At(0, (byte)'R', (byte)'I', (byte)'F', (byte)'F') && At(8, (byte)'W', (byte)'E', (byte)'B', (byte)'P')) return "image/webp";
+        if (At(0, (byte)'B', (byte)'M') && d.Length > 26) return "image/bmp";
+        return null;
+    }
+
+    /// <summary>
+    /// Stores pictures under the entry, or under its note <paramref name="logId"/>. Null when the entry is not in the model or the
+    /// note is not under the entry. Every file is checked before anything is stored; the format comes from the bytes.
+    /// </summary>
+    public List<WorkingImage>? AddImages(string model, string entryId, string? logId, IReadOnlyList<(string Name, byte[] Data)> files, string user)
+    {
+        model = CleanModelName(model);
+        logId = (logId ?? "").Trim();
+        if (files.Count == 0) throw new ArgumentException("Add at least one picture.");
+        if (files.Count > MaxImagesPerUpload) throw new ArgumentException($"Add at most {MaxImagesPerUpload} pictures at a time.");
+        var clean = new List<(string Name, string Type, byte[] Data)>();
+        foreach ((string rawName, byte[] data) in files)
+        {
+            string name = Path.GetFileName((rawName ?? "").Trim());
+            if (name.Length == 0) name = "picture";
+            if (name.Length > 200) name = name[^200..];
+            if (data.LongLength > MaxImageBytes) throw new ArgumentException($"{name} is larger than 10 MB.");
+            string type = ImageType(data) ?? throw new ArgumentException($"{name} is not a PNG, JPEG, GIF, WebP or BMP picture.");
+            clean.Add((name, type, data));
+        }
+        using SqliteConnection conn = Open();
+        using SqliteTransaction tx = conn.BeginTransaction();
+        if (!EntryExists(conn, tx, model, entryId)) return null;
+        if (logId.Length > 0 && ReadLogRow(conn, tx, entryId, logId) is null) return null;
+        var ids = new List<string>();
+        DateTime at = DateTime.UtcNow;
+        foreach ((string name, string type, byte[] data) in clean)
+        {
+            string id = Guid.NewGuid().ToString("N");
+            // a tick apart so the paste order is kept
+            string created = at.AddTicks(ids.Count).ToString("o", CultureInfo.InvariantCulture);
+            using SqliteCommand ins = Cmd(conn,
+                "INSERT INTO WorkingImages (Id, EntryId, LogId, FileName, ContentType, Size, Data, CreatedBy, CreatedAt) " +
+                "VALUES (@id,@e,@l,@n,@ct,@sz,@data,@u,@at)", tx,
+                ("@id", id), ("@e", entryId), ("@l", logId), ("@n", name), ("@ct", type), ("@sz", data.LongLength), ("@data", data),
+                ("@u", user), ("@at", created));
+            ins.ExecuteNonQuery();
+            ids.Add(id);
+        }
+        List<WorkingImage> saved = QueryImages(conn, tx, "i.EntryId=@e AND i.LogId=@l", ("@e", entryId), ("@l", logId))
+            .Where(i => ids.Contains(i.Id)).ToList();
+        tx.Commit();
+        return saved;
+    }
+
+    /// <summary>The bytes of a picture, or null.</summary>
+    public (string FileName, string ContentType, byte[] Data)? GetImage(string id)
+    {
+        using SqliteConnection conn = Open();
+        using SqliteCommand cmd = Cmd(conn, "SELECT FileName, ContentType, Data FROM WorkingImages WHERE Id=@id", null, ("@id", id));
+        using SqliteDataReader r = cmd.ExecuteReader();
+        return r.Read() ? (r.GetString(0), r.GetString(1), (byte[])r.GetValue(2)) : null;
+    }
+
+    /// <summary>False when the picture is not under that entry of that model.</summary>
+    public bool DeleteImage(string model, string entryId, string imageId)
+    {
+        model = CleanModelName(model);
+        using SqliteConnection conn = Open();
+        using SqliteTransaction tx = conn.BeginTransaction();
+        if (!EntryExists(conn, tx, model, entryId)) return false;
+        bool removed;
+        using (SqliteCommand del = Cmd(conn, "DELETE FROM WorkingImages WHERE Id=@id AND EntryId=@e", tx, ("@id", imageId), ("@e", entryId)))
             removed = del.ExecuteNonQuery() > 0;
         tx.Commit();
         return removed;

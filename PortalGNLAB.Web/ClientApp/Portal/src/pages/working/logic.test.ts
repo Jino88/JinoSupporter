@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { matchingModels } from "./PlanView";
 import {
-  blankEntry, buildTree, byMonth, countByKind, entryProblem, filterTree, firstModel, isLate, isOpenIssue, issueFields, issuesBySeq,
-  logProblem, pathOf, sortEntries, suggestions,
+  blankEntry, blankLog, buildTree, byMonth, countByKind, entryProblem, filterTree, firstModel, isLate, isLogLate, isOpenIssue, issueFields,
+  issuesBySeq, logProblem, notesInOrder, pastedImages, pathOf, sortEntries, suggestions,
 } from "./logic";
-import type { Entry, ModelGroup } from "./types";
+import type { Entry, EntryLog, ModelGroup } from "./types";
 
 const g = (id: string, name: string, parentId: string | null, models: string[], sort = 0, position = 0): ModelGroup =>
   ({ id, name, parentId, models, sort, position });
@@ -20,7 +20,7 @@ const rows = [
 ];
 
 const entry = (id: string, kind: Entry["kind"], date: string, extra: Partial<Entry> = {}): Entry => ({
-  ...blankEntry(kind, date), id, seq: 0, logs: [], modelName: "M", title: id, revision: 1,
+  ...blankEntry(kind, date), id, seq: 0, logs: [], images: [], modelName: "M", title: id, revision: 1,
   createdBy: "", createdAt: date + "T00:00:00Z", updatedBy: "", updatedAt: date + "T00:00:00Z", ...extra,
 });
 
@@ -114,10 +114,28 @@ describe("issue register", () => {
     expect(issuesBySeq(list).map((e) => e.id)).toEqual(["a", "b"]);
     expect(suggestions(["Rub & buzz", " quality ", ""], ["Quality", "Design"])).toEqual(["Quality", "Design", "Rub & buzz"]);
   });
-  it("checks a daily note", () => {
-    expect(logProblem("2026-11-09", "  ")).toBe("Write what was done.");
-    expect(logProblem("2026/11/09", "x")).toBe("Date must be yyyy-MM-dd.");
-    expect(logProblem("2026-11-09", "x".repeat(5001))).toMatch(/5000/);
-    expect(logProblem("2026-11-09", "Checked 20 pcs, 2 NG")).toBe("");
+  it("checks a daily note, its schedule and done date", () => {
+    const f = { ...blankLog("2026-11-09"), text: "Checked 20 pcs, 2 NG" };
+    expect(logProblem({ ...f, text: "  " })).toBe("Write what was done.");
+    expect(logProblem({ ...f, date: "2026/11/09" })).toBe("Date must be yyyy-MM-dd.");
+    expect(logProblem({ ...f, text: "x".repeat(5001) })).toMatch(/5000/);
+    expect(logProblem({ ...f, due: "11/12" })).toBe("Due must be yyyy-MM-dd.");
+    expect(logProblem({ ...f, doneDate: "2026-11-08" })).toMatch(/before the note date/);
+    expect(logProblem({ ...f, due: "2026-11-12", doneDate: "2026-11-10" })).toBe("");
+    expect(isLogLate({ ...f, due: "2026-11-08" }, "2026-11-09")).toBe(true);
+    expect(isLogLate({ ...f, due: "2026-11-08", doneDate: "2026-11-09" }, "2026-11-09")).toBe(false);
+    expect(isLogLate({ ...f, due: "2026-11-09" }, "2026-11-09")).toBe(false);
+  });
+  it("lists notes oldest first", () => {
+    const n = (id: string, date: string, createdAt: string) => ({ ...blankLog(date), id, createdAt }) as EntryLog;
+    expect(notesInOrder([n("c", "2026-11-09", "2"), n("a", "2026-11-08", "9"), n("b", "2026-11-09", "1")]).map((l) => l.id)).toEqual(["a", "b", "c"]);
+  });
+  it("takes only pictures the server stores from a paste", () => {
+    const file = (name: string, type: string, size = 1000) => ({ name, type, size });
+    expect(pastedImages([file("a.txt", "text/plain")], 0)).toEqual({ files: [], problem: "" });
+    expect(pastedImages([file("image.png", "image/png"), file("a.txt", "text/plain")], 0).files.map((f) => f.name)).toEqual(["image.png"]);
+    expect(pastedImages([file("x.svg", "image/svg+xml")], 0).problem).toMatch(/not PNG/);
+    expect(pastedImages([file("big.jpg", "image/jpeg", 10 * 1024 * 1024 + 1)], 0).problem).toMatch(/10 MB/);
+    expect(pastedImages([file("c.png", "image/png")], 20).problem).toMatch(/at most 20/);
   });
 });
