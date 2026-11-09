@@ -804,6 +804,22 @@ try
           && tiu.SubGroups[1].LineShifts.Count == 3 && bmesMaterials[1].SubGroups[0].Path == "",
         "working bmes: sub-group paths join nested names with ›");
 
+    Check(PortalGNLAB.Web.Services.WorkingBmesService.DrawingContentType("a.pdf") == "application/pdf"
+          && PortalGNLAB.Web.Services.WorkingBmesService.DrawingContentType("a.png") == "image/png"
+          && PortalGNLAB.Web.Services.WorkingBmesService.DrawingContentType("a.jpg") == "image/jpeg"
+          && PortalGNLAB.Web.Services.WorkingBmesService.DrawingContentType("a.jpeg") == "image/jpeg"
+          && PortalGNLAB.Web.Services.WorkingBmesService.DrawingContentType("a.gif") == "image/gif"
+          && PortalGNLAB.Web.Services.WorkingBmesService.DrawingContentType("a.tif") == "image/tiff"
+          && PortalGNLAB.Web.Services.WorkingBmesService.DrawingContentType("a.tiff") == "image/tiff",
+        "working bmes: drawing Content-Type maps pdf / png / jpg / jpeg / gif / tif / tiff");
+    Check(PortalGNLAB.Web.Services.WorkingBmesService.DrawingContentType("DWG-01.PDF") == "application/pdf"
+          && PortalGNLAB.Web.Services.WorkingBmesService.DrawingContentType("x.JpEg") == "image/jpeg"
+          && PortalGNLAB.Web.Services.WorkingBmesService.DrawingContentType("noext") == "application/octet-stream"
+          && PortalGNLAB.Web.Services.WorkingBmesService.DrawingContentType("a.dwg") == "application/octet-stream"
+          && PortalGNLAB.Web.Services.WorkingBmesService.DrawingContentType("") == "application/octet-stream"
+          && PortalGNLAB.Web.Services.WorkingBmesService.DrawingContentType(null) == "application/octet-stream",
+        "working bmes: drawing Content-Type ignores case; no or unknown extension is octet-stream");
+
     // latest successful BOM cache of a product, on a temp DB (never the real cache)
     string bomDb = Path.Combine(Path.GetTempPath(), $"working-bom-{Guid.NewGuid():N}.db");
     try

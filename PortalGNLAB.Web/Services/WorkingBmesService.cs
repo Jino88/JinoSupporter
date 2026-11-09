@@ -22,6 +22,18 @@ public static class WorkingBmesService
     public const int MaxRows = 2000;
     private const string PathSeparator = " › ";
 
+    /// <summary>Content-Type of a downloaded drawing, from its file extension (any case).</summary>
+    public static string DrawingContentType(string? fileName) =>
+        Path.GetExtension(fileName ?? "").ToLowerInvariant() switch
+        {
+            ".pdf" => "application/pdf",
+            ".png" => "image/png",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".gif" => "image/gif",
+            ".tif" or ".tiff" => "image/tiff",
+            _ => "application/octet-stream",
+        };
+
     /// <summary>One entry per group material, in group SortOrder and then input order.</summary>
     public static List<WorkingBmesMaterial> BuildMaterials(IEnumerable<ModelGroupRecord> groups) =>
         groups.OrderBy(g => g.SortOrder)
