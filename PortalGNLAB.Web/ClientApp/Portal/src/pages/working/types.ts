@@ -63,6 +63,8 @@ export interface EntryFields {
   /** Issue: actual completion date (yyyy-MM-dd) or ""; an issue with a done date is closed. */
   doneDate: string;
   finalResult: string;
+  /** Issue: the Setup Plan row it is a problem of, or ""; left out on save to keep the row it has. */
+  setupRowId?: string;
 }
 
 /** A picture pasted into an issue (logId "") or into one of its notes. */

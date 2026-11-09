@@ -213,6 +213,11 @@ export default function IssueTable(props: {
   today: string;
   onChanged: (list: Entry[]) => void;
   onError: (e: unknown) => void;
+  /** Problems of a Setup Plan row: entries are that row's issues and a new one is put on the row. */
+  setupRowId?: string;
+  heading?: string;
+  /** Prefilled fields of a new issue. */
+  newDefaults?: Partial<EntryFields>;
 }) {
   const { modelName, entries, today } = props;
   const [filter, setFilter] = useState<Filter>("open");
@@ -297,19 +302,19 @@ export default function IssueTable(props: {
   return (
     <section className="card pi-sec">
       <div className="pi-sec-h">
-        <h2>Issues <span className="cnt">{shown.length}</span></h2>
+        <h2>{props.heading ?? "Issues"} <span className="cnt">{shown.length}</span></h2>
         <div className="pi-legend">
           {(["open", "closed", "all"] as Filter[]).map((v) => (
             <button key={v} className={"wk-chip" + (filter === v ? " on" : "")} onClick={() => setFilter(v)}>
               {v[0].toUpperCase() + v.slice(1)} {count(v)}
             </button>
           ))}
-          <button className="btn sm primary" disabled={editing === "new"} onClick={() => setEditing("new")}>+ New issue</button>
+          <button className="btn sm primary" disabled={editing === "new"} onClick={() => setEditing("new")}>{props.setupRowId ? "+ New problem" : "+ New issue"}</button>
         </div>
       </div>
       {editing === "new" && (
         <div className="pi-sec-b">
-          <IssueForm value={blankEntry("issue", today, props.modelPhase)} images={[]} lists={lists} busy={busy}
+          <IssueForm value={{ ...blankEntry("issue", today, props.modelPhase), ...props.newDefaults, ...(props.setupRowId ? { setupRowId: props.setupRowId } : {}) }} images={[]} lists={lists} busy={busy}
             onSave={add} onCancel={() => setEditing(null)} onOpen={setViewer} />
         </div>
       )}

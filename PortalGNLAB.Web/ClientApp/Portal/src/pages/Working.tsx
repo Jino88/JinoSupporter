@@ -6,12 +6,13 @@ import InfoTab from "./working/InfoTab";
 import IssueTable from "./working/IssueTable";
 import { buildTree, countByKind, filterTree, firstModel, isOpenIssue, pathOf, sortEntries, type GroupNode } from "./working/logic";
 import PlanView from "./working/PlanView";
+import SetupPlan from "./working/SetupPlan";
 import type { Entry, GroupsResponse, WorkingModel } from "./working/types";
 import "./working/working.css";
 
-type Tab = "info" | "plan" | "dev" | "issue" | "review" | "all";
+type Tab = "info" | "plan" | "setup" | "dev" | "issue" | "review" | "all";
 const TABS: [Tab, string][] = [
-  ["info", "Model Info"], ["plan", "Dev Plan"], ["dev", "Dev History"], ["issue", "Issues"], ["review", "Reviews"], ["all", "Timeline"],
+  ["info", "Model Info"], ["plan", "Dev Plan"], ["setup", "Setup Plan"], ["dev", "Dev History"], ["issue", "Issues"], ["review", "Reviews"], ["all", "Timeline"],
 ];
 const isTab = (v: string | null): v is Tab => TABS.some(([k]) => k === v);
 
@@ -166,6 +167,10 @@ export default function Working() {
                       onSaved={(m) => { setModel(m); setInfoDirty(false); }} onError={fail} />
                   )}
                   {tab === "plan" && <PlanView key={selected} modelName={selected} />}
+                  {tab === "setup" && (
+                    <SetupPlan key={selected} modelName={selected} modelPhase={model.info.phase ?? ""}
+                      entries={entries} today={today} onChanged={onChanged} onError={fail} />
+                  )}
                   {tab === "issue" && (
                     <IssueTable key={selected} modelName={selected} modelPhase={model.info.phase ?? ""}
                       entries={entries} today={today} onChanged={onChanged} onError={fail} />
