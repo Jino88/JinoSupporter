@@ -12,6 +12,7 @@ import Translate from "./pages/Translate";
 import ReviewReport from "./pages/ReviewReport";
 import GraphMaker from "./pages/GraphMaker";
 import ProductionInput from "./pages/ProductionInput";
+import Working from "./pages/Working";
 import QrSummary from "./pages/QrSummary";
 import QrBakoData from "./pages/QrBakoData";
 import QrAirleakData from "./pages/QrAirleakData";
@@ -45,6 +46,7 @@ const pages: Record<string, { title: string; render: (menu: MenuItem[]) => React
   "/tools/review-report": { title: "Review Report", render: () => <ReviewReport /> },
   "/tools/graph-maker": { title: "Graph Maker", render: () => <GraphMaker /> },
   "/production/input": { title: "Production Input", render: () => <ProductionInput /> },
+  "/working": { title: "Working", render: () => <Working /> },
   "/qr/summary": { title: "QR SUMMARY", render: () => <QrSummary /> },
   "/qr/bako-data": { title: "QR BAKO DATA", render: () => <QrBakoData /> },
   "/qr/airleak-data": { title: "QR AIRLEAK DATA", render: () => <QrAirleakData /> },
