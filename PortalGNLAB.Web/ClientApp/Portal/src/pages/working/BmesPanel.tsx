@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { bmesApi, drawingApi, drawingsByName, drawingsOf, matchMaterial, qty, visibleBom } from "./bmes";
 import type { BmesMaterial, BomResult, PdmRow } from "./bmes";
+import ManualGroup from "./ManualGroup";
+import { MANUAL, type ManualGroup as ManualGroupData } from "./manual";
 
 /** Links to the drawings of a material (opened in a new tab), or a dash. */
 function Drawings(props: { list: PdmRow[] }) {
@@ -111,6 +113,9 @@ export default function BmesPanel(props: {
   /** Material saved in Model Info ("" = found by name). */
   saved: string;
   onPick: (material: string) => void;
+  /** Model group entered by hand (Model Info), shown when "Manual" is picked or BMES has no group for the model. */
+  manual: ManualGroupData;
+  onManual: (g: ManualGroupData) => void;
   onError: (e: unknown) => void;
 }) {
   const [materials, setMaterials] = useState<BmesMaterial[] | null>(null);
@@ -123,7 +128,8 @@ export default function BmesPanel(props: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const found = materials ? matchMaterial(props.modelName, materials, props.saved) : null;
+  const isManual = props.saved === MANUAL;
+  const found = materials && !isManual ? matchMaterial(props.modelName, materials, props.saved) : null;
   const m = found?.material ?? null;
   const shown = m && m.products.includes(product) ? product : m?.products[0] ?? "";
   const byName = materials ? matchMaterial(props.modelName, materials).material : null;
@@ -137,6 +143,7 @@ export default function BmesPanel(props: {
           Linked material{" "}
           <select className="inp sm" value={props.saved} disabled={!materials} onChange={(e) => props.onPick(e.target.value)}>
             <option value="">{byName ? `Same name: ${byName.material}` : "Same name (none found)"}</option>
+            <option value={MANUAL}>Manual (entered here)</option>
             {groups.map((g) => (
               <optgroup key={g} label={g}>
                 {materials!.filter((x) => x.group === g).map((x) => <option key={x.material} value={x.material}>{x.material}</option>)}
@@ -145,10 +152,13 @@ export default function BmesPanel(props: {
           </select>
         </label>
       </div>
-      {materials === null ? <div className="muted">Loading the BMES model groups…</div>
+      {isManual || (materials !== null && !m && (props.manual.processes.length > 0 || props.manual.materials.length > 0)) ? (
+        <ManualGroup modelName={props.modelName} value={props.manual} onChange={props.onManual} onError={props.onError} />
+      ) : materials === null ? <div className="muted">Loading the BMES model groups…</div>
         : !m ? (
           <div className="muted">
-            No BMES model group has a material named like {props.modelName}. Pick the material above, or add it in BMES &gt; Make Model Group.
+            No BMES model group has a material named like {props.modelName}. Pick the material above, add it in BMES &gt; Make Model Group,
+            or <button className="wk-link" onClick={() => props.onPick(MANUAL)}>enter the processes, NG items and materials here</button>.
           </div>
         ) : (
           <>

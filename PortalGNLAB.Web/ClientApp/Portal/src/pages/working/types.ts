@@ -32,8 +32,10 @@ export interface ModelInfo {
   line?: string;
   sopTarget?: string;
   note?: string;
-  /** BMES Make Model Group material picked for this model; unset = the material with the same name. */
+  /** BMES Make Model Group material picked for this model; unset = the material with the same name, "__manual" = manualGroup. */
   bmesMaterial?: string;
+  /** Processes, NG items and materials entered by hand when BMES has no model group for the model (manual.ts). */
+  manualGroup?: unknown;
 }
 
 export interface WorkingModel {
