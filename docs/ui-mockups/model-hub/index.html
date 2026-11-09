@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8" /><title>Model Hub — draft directions</title>
+<link rel="stylesheet" href="../mockup.css" /><link rel="stylesheet" href="hub.css" />
+<style>.list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;max-width:1100px}.list a{color:inherit;text-decoration:none}.list .card{padding:18px;height:100%}.list h2{margin:0 0 6px;font-size:16px}.list ul{margin:8px 0 0;padding-left:18px;color:var(--ink-2)}.list li{margin:3px 0}</style></head>
+<body>
+<div class="shell"><aside class="rail" id="rail"></aside>
+<main class="main"><div class="page">
+  <header class="ph"><div><div class="ph-crumb">Design <span class="faint">›</span> <b>Model Hub</b></div><h1>Model management — 4 directions</h1>
+    <div class="ph-sub">Left: model groups from CompanyGlossary (MODULE › MSM / SI-SM, SPEAKER › BRS / MSU, UNIT, TWS). Click a model to see 1. Model Info, 2. Dev Plan (Production Input plan), 3. Dev History, 4. Issues, 5. Reviews. Sample data only.</div></div></header>
+  <div class="list">
+    <a href="a-tabs.html"><div class="card"><h2>A · Tree + Tabs</h2><div class="muted">Classic master–detail. One category at a time.</div>
+      <ul><li>Tree left, model header with phase pill, tabs with counts</li><li>Dev Plan tab = phase gantt + the Production Input plan table (Plan / Actual / Gap)</li><li>Easiest to build; best when each category grows large</li></ul></div></a>
+    <a href="b-dossier.html"><div class="card"><h2>B · Dossier + Timeline</h2><div class="muted">Everything about one model on one scrolling page.</div>
+      <ul><li>Section nav (1–5) jumps inside the page</li><li>Dev / Issue / Review merged on one dated timeline with filter chips</li><li>Best for "what happened to this model" reviews and meetings</li></ul></div></a>
+    <a href="c-board.html"><div class="card"><h2>C · Portfolio Board + Drawer</h2><div class="muted">Pick a group, see its models as cards; open one in a side drawer.</div>
+      <ul><li>Cards show phase stepper, open issues, NG PPM, last review</li><li>Sort by phase / open issues / NG rate</li><li>Drawer holds the 5 categories as accordions</li></ul></div></a>
+    <a href="d-matrix.html"><div class="card"><h2>D · Group Matrix</h2><div class="muted">All models × all categories in one table.</div>
+      <ul><li>Rows = group tree (collapsible), columns = 1–5 categories summary</li><li>Click a cell to open that model + category on the right</li><li>Best for managers comparing many models at once</li></ul></div></a>
+  </div>
+</div></main></div>
+<script src="../mockup.js"></script><script>renderRail("");</script>
+</body></html>
