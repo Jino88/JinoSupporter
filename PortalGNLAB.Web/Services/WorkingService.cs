@@ -10,6 +10,10 @@ public sealed record WorkingGroup(string Id, string Name, string? ParentId, List
 
 public sealed record WorkingGroups(List<WorkingGroup> Groups, string Source, string? Error);
 
+public sealed record WorkingAddedModel(string Name, string GroupId, string CreatedBy, string CreatedAt);
+
+public sealed record WorkingTree(List<string> Hidden, List<WorkingAddedModel> Added);
+
 public sealed record WorkingModel(string Name, JsonElement Info, int Revision, string UpdatedAt, string UpdatedBy);
 
 public sealed record WorkingModelSave(JsonElement Info, int Revision);
@@ -159,6 +163,16 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             Kind TEXT NOT NULL,
             Last INTEGER NOT NULL,
             PRIMARY KEY (ModelName, Kind)
+        );
+        CREATE TABLE IF NOT EXISTS WorkingTreeModels (
+            Name TEXT PRIMARY KEY COLLATE NOCASE,
+            GroupId TEXT NOT NULL DEFAULT '',
+            Added INTEGER NOT NULL DEFAULT 0,
+            Hidden INTEGER NOT NULL DEFAULT 0,
+            CreatedBy TEXT NOT NULL DEFAULT '',
+            CreatedAt TEXT NOT NULL DEFAULT '',
+            UpdatedBy TEXT NOT NULL DEFAULT '',
+            UpdatedAt TEXT NOT NULL DEFAULT ''
         );
         """;
 
@@ -345,6 +359,107 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         }
         catch (JsonException) { }
         return list;
+    }
+
+    // ── Model tree settings (hidden models, added models) ───────────────────
+    // The Glossary DB is never written; what the tree hides or adds lives in PortalGNLAB.db.
+
+    public const int MaxHiddenModels = 5000;
+    public const int MaxTreeModelName = 100;
+
+    private static string TreeName(string? name, string label)
+    {
+        string n = (name ?? "").Trim();
+        if (n.Length == 0) throw new ArgumentException($"{label} is required.");
+        if (n.Length > MaxTreeModelName) throw new ArgumentException($"{label} must be {MaxTreeModelName} characters or fewer.");
+        return n;
+    }
+
+    public WorkingTree GetTree()
+    {
+        using SqliteConnection conn = Open();
+        return ReadTree(conn, null);
+    }
+
+    private static WorkingTree ReadTree(SqliteConnection conn, SqliteTransaction? tx)
+    {
+        var hidden = new List<string>();
+        using (SqliteCommand cmd = Cmd(conn, "SELECT Name FROM WorkingTreeModels WHERE Hidden=1 ORDER BY CreatedAt, Name", tx))
+        using (SqliteDataReader r = cmd.ExecuteReader())
+            while (r.Read()) hidden.Add(r.GetString(0));
+        var added = new List<WorkingAddedModel>();
+        using (SqliteCommand cmd = Cmd(conn, "SELECT Name, GroupId, CreatedBy, CreatedAt FROM WorkingTreeModels WHERE Added=1 ORDER BY CreatedAt, Name", tx))
+        using (SqliteDataReader r = cmd.ExecuteReader())
+            while (r.Read()) added.Add(new(r.GetString(0), r.GetString(1), r.GetString(2), r.GetString(3)));
+        return new(hidden, added);
+    }
+
+    /// <summary>Replaces the whole hidden list; names are trimmed, blanks dropped, duplicates (any case) merged.</summary>
+    public WorkingTree SetHidden(IEnumerable<string?>? names, string user)
+    {
+        var clean = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string? raw in names ?? [])
+        {
+            string n = (raw ?? "").Trim();
+            if (n.Length == 0) continue;
+            if (n.Length > MaxTreeModelName) throw new ArgumentException($"A model name must be {MaxTreeModelName} characters or fewer.");
+            if (seen.Add(n)) clean.Add(n);
+            if (clean.Count > MaxHiddenModels) throw new ArgumentException($"At most {MaxHiddenModels} models can be hidden.");
+        }
+        string now = Now();
+        using SqliteConnection conn = Open();
+        using SqliteTransaction tx = conn.BeginTransaction();
+        using (SqliteCommand clear = Cmd(conn, "UPDATE WorkingTreeModels SET Hidden=0, UpdatedBy=@u, UpdatedAt=@t WHERE Hidden=1", tx, ("@u", user), ("@t", now)))
+            clear.ExecuteNonQuery();
+        foreach (string n in clean)
+            using (SqliteCommand set = Cmd(conn,
+                "INSERT INTO WorkingTreeModels (Name, Hidden, CreatedBy, CreatedAt, UpdatedBy, UpdatedAt) VALUES (@n,1,@u,@t,@u,@t) " +
+                "ON CONFLICT(Name) DO UPDATE SET Hidden=1, UpdatedBy=@u, UpdatedAt=@t", tx, ("@n", n), ("@u", user), ("@t", now)))
+                set.ExecuteNonQuery();
+        using (SqliteCommand drop = Cmd(conn, "DELETE FROM WorkingTreeModels WHERE Added=0 AND Hidden=0", tx))
+            drop.ExecuteNonQuery();
+        WorkingTree tree = ReadTree(conn, tx);
+        tx.Commit();
+        return tree;
+    }
+
+    /// <summary>Adds a model to the tree: under a Glossary group, or in the "Added" bundle when groupId is empty.</summary>
+    public WorkingAddedModel AddTreeModel(string? name, string? groupId, string user)
+    {
+        string n = TreeName(name, "Model name");
+        string gid = (groupId ?? "").Trim();
+        WorkingGroups groups = ListGroups();
+        if (gid.Length > 0)
+        {
+            if (groups.Error is not null) throw new ArgumentException("Model groups could not be read, so the model can only be added without a group.");
+            if (!groups.Groups.Any(g => g.Id == gid)) throw new ArgumentException("The model group was not found.");
+        }
+        if (groups.Groups.Any(g => g.Models.Any(m => string.Equals(m.Trim(), n, StringComparison.OrdinalIgnoreCase))))
+            throw new WorkingConflictException("That model is already in a model group.");
+        string now = Now();
+        using SqliteConnection conn = Open();
+        using SqliteTransaction tx = conn.BeginTransaction();
+        using (SqliteCommand exists = Cmd(conn, "SELECT 1 FROM WorkingTreeModels WHERE Name=@n AND Added=1", tx, ("@n", n)))
+            if (exists.ExecuteScalar() is not null) throw new WorkingConflictException("That model was already added.");
+        // a name that was only hidden has a row already; it becomes an added model and keeps its hidden flag
+        using (SqliteCommand ins = Cmd(conn,
+            "INSERT INTO WorkingTreeModels (Name, GroupId, Added, CreatedBy, CreatedAt, UpdatedBy, UpdatedAt) VALUES (@n,@g,1,@u,@t,@u,@t) " +
+            "ON CONFLICT(Name) DO UPDATE SET GroupId=@g, Added=1, CreatedBy=@u, CreatedAt=@t, UpdatedBy=@u, UpdatedAt=@t", tx,
+            ("@n", n), ("@g", gid), ("@u", user), ("@t", now)))
+            ins.ExecuteNonQuery();
+        WorkingAddedModel added = ReadTree(conn, tx).Added.First(a => string.Equals(a.Name, n, StringComparison.OrdinalIgnoreCase));
+        tx.Commit();
+        return added;
+    }
+
+    /// <summary>Removes an added model (and its hidden flag); false when no such added model exists.</summary>
+    public bool DeleteTreeModel(string? name)
+    {
+        string n = (name ?? "").Trim();
+        using SqliteConnection conn = Open();
+        using SqliteCommand del = Cmd(conn, "DELETE FROM WorkingTreeModels WHERE Name=@n AND Added=1", null, ("@n", n));
+        return del.ExecuteNonQuery() > 0;
     }
 
     // ── Model info ──────────────────────────────────────────────────────────

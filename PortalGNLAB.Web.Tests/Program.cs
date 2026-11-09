@@ -754,6 +754,96 @@ try
     var badTable = new WorkingService(workDb, workDb).ListGroups();
     Check(badTable.Groups.Count == 0 && badTable.Error is not null, "working: glossary without model_groups gives error, not exception");
 
+    // Tree settings: hidden list, added models (glossary DB read only)
+    string treeDb = Path.Combine(Path.GetTempPath(), $"working-tree-{Guid.NewGuid():N}.db");
+    try
+    {
+        var tree = new WorkingService(treeDb, glossDb);
+        Check(tree.GetTree() is { Hidden: [], Added: [] }, "working tree: new DB has nothing hidden or added");
+        WorkingTree h1 = tree.SetHidden([" X400 ", "x400", "", null, "Other", "  "], "alice");
+        Check(h1.Hidden.Count == 2 && h1.Hidden.Contains("X400") && h1.Hidden.Contains("Other") && tree.GetTree().Hidden.Count == 2,
+            "working tree: hidden list is trimmed, blanks dropped, duplicates merged");
+        WorkingTree h2 = tree.SetHidden(["X316B"], "bob");
+        Check(h2.Hidden is ["X316B"] && tree.SetHidden([], "bob").Hidden.Count == 0, "working tree: hidden list is replaced as a whole");
+        Check(WBad(() => tree.SetHidden([new string('a', 101)], "a")) && WBad(() => tree.SetHidden(Enumerable.Range(0, 5001).Select(i => "m" + i), "a"))
+              && tree.SetHidden(Enumerable.Range(0, 5000).Select(i => "m" + i), "a").Hidden.Count == 5000,
+            "working tree: hidden names over 100 characters or more than 5000 names are rejected");
+        tree.SetHidden([], "a");
+
+        WorkingAddedModel a1 = tree.AddTreeModel(" NEW-1 ", "", "alice");
+        WorkingAddedModel a2 = tree.AddTreeModel("NEW-2", "g1", "bob");
+        Check(a1.Name == "NEW-1" && a1.GroupId == "" && a1.CreatedBy == "alice" && a1.CreatedAt != ""
+              && a2.GroupId == "g1" && tree.GetTree().Added.Select(a => a.Name).SequenceEqual(["NEW-1", "NEW-2"]),
+            "working tree: added models are saved in creation order");
+        Check(WConflicts(() => tree.AddTreeModel("new-1", "", "a")) && WConflicts(() => tree.AddTreeModel("x316b", "", "a"))
+              && WConflicts(() => tree.AddTreeModel(" X400", "g2", "a")),
+            "working tree: an added name or a glossary model name gives 409");
+        Check(WBad(() => tree.AddTreeModel("NEW-3", "nope", "a")) && WBad(() => tree.AddTreeModel("  ", "", "a"))
+              && WBad(() => tree.AddTreeModel(new string('a', 101), "", "a")) && tree.GetTree().Added.Count == 2,
+            "working tree: unknown group, blank or over-long name gives 400");
+        tree.SetHidden(["new-2", "Gone"], "alice");
+        Check(tree.GetTree().Hidden.Count == 2 && tree.SetHidden(["Gone"], "alice").Hidden is ["Gone"] && tree.GetTree().Added.Count == 2,
+            "working tree: an added model can be hidden and keeps existing when unhidden");
+        WorkingAddedModel up = tree.AddTreeModel("Gone", "", "carol");
+        Check(up.Name == "Gone" && tree.GetTree() is { Hidden: ["Gone"] } t3 && t3.Added.Count == 3, "working tree: a hidden-only name can be added later");
+        Check(tree.DeleteTreeModel("new-1") && !tree.DeleteTreeModel("NEW-1") && !tree.DeleteTreeModel("X316B") && !tree.DeleteTreeModel("nothing")
+              && tree.GetTree().Added.Select(a => a.Name).SequenceEqual(["NEW-2", "Gone"]),
+            "working tree: added model deleted, missing and glossary names are not found");
+        Check(new WorkingService(treeDb, Path.Combine(Path.GetTempPath(), "no-glossary-" + Guid.NewGuid().ToString("N") + ".db")) is { } noGloss
+              && WBad(() => noGloss.AddTreeModel("NEW-9", "g1", "a")) && noGloss.AddTreeModel("NEW-9", "", "a").Name == "NEW-9",
+            "working tree: without a readable glossary only the empty group is accepted");
+    }
+    finally
+    {
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        try { File.Delete(treeDb); } catch (IOException) { }
+    }
+
+    // A DB from before the tree table gets it on open.
+    string preTreeDb = Path.Combine(Path.GetTempPath(), $"working-pretree-{Guid.NewGuid():N}.db");
+    try
+    {
+        using (var pc = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={preTreeDb};Pooling=False"))
+        {
+            pc.Open();
+            using var pCmd = pc.CreateCommand();
+            pCmd.CommandText = "CREATE TABLE WorkingModels (ModelName TEXT PRIMARY KEY COLLATE NOCASE, InfoJson TEXT NOT NULL DEFAULT '{}', Revision INTEGER NOT NULL, UpdatedAt TEXT NOT NULL, UpdatedBy TEXT NOT NULL DEFAULT '');";
+            pCmd.ExecuteNonQuery();
+        }
+        var pre = new WorkingService(preTreeDb, glossDb);
+        Check(pre.GetTree() is { Hidden: [], Added: [] } && pre.AddTreeModel("OLD-1", "", "u").Name == "OLD-1",
+            "working tree: an old DB gets the tree table on open");
+    }
+    finally
+    {
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        try { File.Delete(preTreeDb); } catch (IOException) { }
+    }
+
+    // BMES model check: candidates from catalog / groups, merged with bmes first
+    WorkingModelCandidate Cand(string n, string src, string code = "") => new(n, code, src);
+    var checkCatalog = WorkingBmesService.CatalogCandidates("tiu-c11",
+        [new() { ProductName = "ASSY TIU-C11-18", ProductCode = "P-S-1" }, new() { ProductName = "OTHER", ProductCode = "P-S-2" }, new() { ProductName = "tiu-c11-20", ProductCode = "P-S-3" }]);
+    Check(checkCatalog.Count == 2 && checkCatalog.All(c => c.Source == "catalog") && checkCatalog[0].ProductCode == "P-S-1",
+        "working check: catalog candidates match by contained text, any case");
+    var manyCatalog = Enumerable.Range(0, 15).Select(i => new BmesBomModelCandidate { ProductName = "ABC" + i, ProductCode = "c" + i }).Append(new() { ProductName = "ABC", ProductCode = "x" }).ToList();
+    var capped = WorkingBmesService.CatalogCandidates("abc", manyCatalog);
+    Check(capped.Count == 10 && capped[0].ProductName == "ABC", "working check: catalog candidates are capped at 10 with the exact name first");
+    var checkGroups = WorkingBmesService.GroupCandidates("tiu-c11-18",
+    [
+        new() { Name = "UNIT", ProductGroup = "UNIT", MidGroups = [new() { Material = "TIU-C11-18", SubGroups = [new() { Name = "", LineShifts = ["TIU-C11-18-L_E21A", "TIU-C11-18-L_E22B", "PLAIN_X"] }] }] },
+    ]);
+    Check(checkGroups.Count >= 1 && checkGroups.All(c => c.Source == "group" && c.ProductName.Contains("TIU-C11-18", StringComparison.OrdinalIgnoreCase))
+          && checkGroups.Select(c => c.ProductName.ToLowerInvariant()).Distinct().Count() == checkGroups.Count,
+        "working check: group candidates come from materials and product names without duplicates");
+    var merged = WorkingBmesService.MergeCandidates(" abc-1 ",
+        [Cand("ABC-1", "bmes", "B1")], [Cand("abc-1", "catalog", "C1"), Cand("ABC-2", "catalog", "C2")], [Cand("Abc-2", "group"), Cand("ABC-3", "group")]);
+    Check(merged.Exact && merged.Candidates.Select(c => c.Source + ":" + c.ProductName).SequenceEqual(["bmes:ABC-1", "catalog:ABC-2", "group:ABC-3"]),
+        "working check: duplicates keep the bmes > catalog > group source, exact ignores case and outer spaces");
+    var noExact = WorkingBmesService.MergeCandidates("ABC", [], [Cand("ABC-1", "catalog")], [Cand("ABC-2", "group")]);
+    Check(!noExact.Exact && noExact.Candidates.Count == 2 && !WorkingBmesService.MergeCandidates("ABC", [], [], []).Exact,
+        "working check: a longer name is not exact, nothing found is not exact");
+
     // Menu + one-time grant
     var wManager = PortalGNLAB.Web.Endpoints.PortalShellEndpoints.MenuFor(AppRoles.Manager, (role, id) => AppMenus.DefaultsByRole[role].Contains(id));
     var wViewer = PortalGNLAB.Web.Endpoints.PortalShellEndpoints.MenuFor(AppRoles.Viewer, (role, id) => AppMenus.DefaultsByRole[role].Contains(id));
