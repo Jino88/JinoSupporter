@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { matchingModels } from "./PlanView";
-import { blankEntry, buildTree, byMonth, countByKind, entryProblem, filterTree, firstModel, isLate, pathOf, sortEntries } from "./logic";
+import {
+  blankEntry, buildTree, byMonth, countByKind, entryProblem, filterTree, firstModel, isLate, isOpenIssue, issueFields, issuesBySeq,
+  logProblem, pathOf, sortEntries, suggestions,
+} from "./logic";
 import type { Entry, ModelGroup } from "./types";
 
 const g = (id: string, name: string, parentId: string | null, models: string[], sort = 0, position = 0): ModelGroup =>
@@ -17,7 +20,7 @@ const rows = [
 ];
 
 const entry = (id: string, kind: Entry["kind"], date: string, extra: Partial<Entry> = {}): Entry => ({
-  ...blankEntry(kind, date), id, modelName: "M", title: id, revision: 1,
+  ...blankEntry(kind, date), id, seq: 0, logs: [], modelName: "M", title: id, revision: 1,
   createdBy: "", createdAt: date + "T00:00:00Z", updatedBy: "", updatedAt: date + "T00:00:00Z", ...extra,
 });
 
@@ -85,5 +88,36 @@ describe("matchingModels", () => {
       ({ id, name, build, processCount: 0, materialCount: 0, revision: 1, updatedAt: "", updatedBy: "" });
     const list = [m("1", "MSM-X316B", "PV2"), m("2", "msm-x316b ", "MP1"), m("3", "MSM-X316", "PV2")];
     expect(matchingModels(list, "MSM-X316B").map((x) => x.id)).toEqual(["1", "2"]);
+  });
+});
+
+describe("issue register", () => {
+  it("closes an issue by its done date and keeps Status in step", () => {
+    const open = entry("a", "issue", "2026-11-01");
+    expect(isOpenIssue(open)).toBe(true);
+    expect(isOpenIssue({ ...open, doneDate: "2026-11-08" })).toBe(false);
+    expect(isOpenIssue({ ...open, status: "Closed" })).toBe(false); // saved before done dates existed
+    expect(isLate({ ...open, due: "2026-11-05", doneDate: "2026-11-08" }, "2026-11-09")).toBe(false);
+    expect(issueFields({ ...open, doneDate: "2026-11-08" }).status).toBe("Closed");
+    expect(issueFields({ ...open, doneDate: "" }).status).toBe("Open");
+  });
+  it("starts a new issue in the model's phase and checks the done date", () => {
+    const f = { ...blankEntry("issue", "2026-11-09", "DVT"), title: "Buzz" };
+    expect(f.phase).toBe("DVT");
+    expect(blankEntry("dev", "2026-11-09", "DVT").phase).toBe("");
+    expect(entryProblem({ ...f, doneDate: "2026-11-01" })).toMatch(/before the registered date/);
+    expect(entryProblem({ ...f, doneDate: "11/10" })).toBe("Done date must be yyyy-MM-dd.");
+    expect(entryProblem({ ...f, doneDate: "2026-11-10" })).toBe("");
+  });
+  it("lists issues by number and merges used values into the suggestions", () => {
+    const list = [entry("b", "issue", "2026-11-02", { seq: 2 }), entry("d", "dev", "2026-11-03", { seq: 1 }), entry("a", "issue", "2026-11-05", { seq: 1 })];
+    expect(issuesBySeq(list).map((e) => e.id)).toEqual(["a", "b"]);
+    expect(suggestions(["Rub & buzz", " quality ", ""], ["Quality", "Design"])).toEqual(["Quality", "Design", "Rub & buzz"]);
+  });
+  it("checks a daily note", () => {
+    expect(logProblem("2026-11-09", "  ")).toBe("Write what was done.");
+    expect(logProblem("2026/11/09", "x")).toBe("Date must be yyyy-MM-dd.");
+    expect(logProblem("2026-11-09", "x".repeat(5001))).toMatch(/5000/);
+    expect(logProblem("2026-11-09", "Checked 20 pcs, 2 NG")).toBe("");
   });
 });

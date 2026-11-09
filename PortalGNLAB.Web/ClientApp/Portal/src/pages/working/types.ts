@@ -52,12 +52,38 @@ export interface EntryFields {
   /** Review: Pass / Conditional / Fail. */
   result: string;
   owner: string;
-  /** Issue due date (yyyy-MM-dd) or "". */
+  /** Issue: planned completion date (yyyy-MM-dd) or "". */
   due: string;
+  /** Issue: development phase when it was raised (Proto … MP). */
+  phase: string;
+  /** Issue classification: issue type, process and cause group. */
+  category: string;
+  process: string;
+  cause: string;
+  /** Issue: actual completion date (yyyy-MM-dd) or ""; an issue with a done date is closed. */
+  doneDate: string;
+  finalResult: string;
+}
+
+/** A dated progress note under an issue (one or more per day). */
+export interface EntryLog {
+  id: string;
+  entryId: string;
+  date: string;
+  text: string;
+  revision: number;
+  createdBy: string;
+  createdAt: string;
+  updatedBy: string;
+  updatedAt: string;
 }
 
 export interface Entry extends EntryFields {
   id: string;
+  /** Number within the model and kind; kept when other entries are deleted. */
+  seq: number;
+  /** Progress notes, oldest first. */
+  logs: EntryLog[];
   modelName: string;
   revision: number;
   createdBy: string;
@@ -70,3 +96,7 @@ export const KIND_LABEL: Record<EntryKind, string> = { dev: "Dev", issue: "Issue
 export const SEVERITIES = ["Critical", "Major", "Minor"];
 export const ISSUE_STATUSES = ["Open", "Closed"];
 export const RESULTS = ["Pass", "Conditional", "Fail"];
+/** Suggestions only; any text can be typed. */
+export const ISSUE_TYPES = ["Quality", "Design", "Process", "Material", "Equipment", "Customer"];
+export const ISSUE_PROCESSES = ["SUB", "MAIN", "FUNCTION", "VISUAL", "OQC"];
+export const ISSUE_CAUSES = ["Man", "Machine", "Material", "Method", "Measurement", "Design", "Environment"];

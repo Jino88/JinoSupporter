@@ -503,6 +503,77 @@ try
     Check(WBad(() => working.CreateEntry("X316B", WBody(title: " "), "u")) && WBad(() => working.CreateEntry("X316B", WBody(title: new string('t', 201)), "u")), "working: title required and capped at 200");
     Check(WBad(() => working.CreateEntry("X316B", WBody() with { Body = new string('b', 20001) }, "u")), "working: body capped at 20000");
 
+    // Issue register: per model + kind numbers, issue fields, dated progress notes.
+    WorkingEntrySave IBody(string title, int rev = 0) => new("issue", "2026-11-03", title, "", "Open", "", "", "kim", "2026-11-20", rev,
+        "PVT", "Quality", "FUNCTION", "Material", "", "");
+    WorkingEntry i1 = working.CreateEntry("SEQ", IBody("one"), "alice");
+    WorkingEntry i2 = working.CreateEntry("SEQ", IBody("two"), "alice");
+    WorkingEntry d1 = working.CreateEntry("SEQ", WBody("dev", "2026-11-03", "dev one"), "alice");
+    Check(i1.Seq == 1 && i2.Seq == 2 && d1.Seq == 1 && working.CreateEntry("SEQ2", IBody("other model"), "a").Seq == 1,
+        "working: Seq counts per model and per kind");
+    working.DeleteEntry("SEQ", i2.Id);
+    Check(working.CreateEntry("SEQ", IBody("three"), "alice").Seq == 3, "working: Seq is not reused after a delete");
+    WorkingEntry? i1b = working.UpdateEntry("SEQ", i1.Id, IBody("one", 1) with { DoneDate = "2026-11-08", FinalResult = "Mesh changed", Status = "Closed" }, "bob");
+    Check(i1b is { Seq: 1, Phase: "PVT", Category: "Quality", Process: "FUNCTION", Cause: "Material", DoneDate: "2026-11-08", FinalResult: "Mesh changed", Due: "2026-11-20" },
+        "working: issue fields saved and Seq kept on update");
+    Check(working.UpdateEntry("SEQ", d1.Id, WBody("issue", "2026-11-03", "now an issue", 1), "bob") is { Seq: 4 }, "working: kind change takes the next number of the new kind");
+    Check(WBad(() => working.CreateEntry("SEQ", IBody("x") with { DoneDate = "11/08" }, "u")) && WBad(() => working.CreateEntry("SEQ", IBody("x") with { Due = "soon" }, "u"))
+          && working.CreateEntry("SEQ", IBody("no dates") with { Due = "", DoneDate = "" }, "u").Due == "",
+        "working: due and done date are empty or yyyy-MM-dd");
+    Check(WBad(() => working.CreateEntry("SEQ", IBody("x") with { Category = new string('c', 61) }, "u")), "working: issue type capped at 60");
+
+    WorkingEntryLog? n2 = working.CreateLog("SEQ", i1.Id, new("2026-11-06", " second day "), "alice");
+    WorkingEntryLog? n1 = working.CreateLog("seq", i1.Id, new("2026-11-04", "first day"), "alice");
+    Check(n1 is { Revision: 1, CreatedBy: "alice" } && n2 is { Text: "second day" }, "working: progress note created (text trimmed)");
+    Check(working.CreateLog("SEQ2", i1.Id, new("2026-11-04", "x"), "a") is null && working.CreateLog("SEQ", "nope", new("2026-11-04", "x"), "a") is null,
+        "working: a note needs an entry of the same model (404)");
+    Check(WBad(() => working.CreateLog("SEQ", i1.Id, new("2026/11/04", "x"), "a")) && WBad(() => working.CreateLog("SEQ", i1.Id, new("2026-11-04", "  "), "a"))
+          && WBad(() => working.CreateLog("SEQ", i1.Id, new("2026-11-04", new string('t', 5001)), "a")), "working: note date and text validated");
+    WorkingEntry listed = working.ListEntries("SEQ").Single(e => e.Id == i1.Id);
+    Check(listed.Logs.Select(l => l.Text).SequenceEqual(["first day", "second day"]) && listed.Revision == 2,
+        "working: entries list carries notes oldest first; notes do not bump the entry revision");
+    Check(working.ListEntries("SEQ").Where(e => e.Id != i1.Id).All(e => e.Logs.Count == 0), "working: notes stay on their own entry");
+    WorkingEntryLog? n1b = working.UpdateLog("SEQ", i1.Id, n1!.Id, new("2026-11-07", "moved", 1), "bob");
+    Check(n1b is { Revision: 2, Date: "2026-11-07", Text: "moved", UpdatedBy: "bob" }
+          && working.ListEntries("SEQ").Single(e => e.Id == i1.Id).Logs.Select(l => l.Text).SequenceEqual(["second day", "moved"]),
+        "working: note update bumps its revision and re-sorts by date");
+    Check(WConflicts(() => working.UpdateLog("SEQ", i1.Id, n1.Id, new("2026-11-07", "stale", 1), "c")), "working: stale note revision conflicts (409)");
+    Check(working.UpdateLog("SEQ", i1.Id, "nope", new("2026-11-07", "x", 1), "c") is null, "working: updating a missing note returns null (404)");
+    Check(working.DeleteLog("SEQ", i1.Id, n2!.Id) && !working.DeleteLog("SEQ", i1.Id, n2.Id) && !working.DeleteLog("SEQ2", i1.Id, n1.Id),
+        "working: note delete removes once and only within the model");
+    Check(working.DeleteEntry("SEQ", i1.Id) && working.UpdateLog("SEQ", i1.Id, n1.Id, new("2026-11-07", "x", 2), "c") is null,
+        "working: deleting an entry deletes its notes");
+
+    // A WorkingEntries table from before the issue columns gets them added and numbered on open.
+    string oldDb = Path.Combine(Path.GetTempPath(), $"working-old-{Guid.NewGuid():N}.db");
+    try
+    {
+        using (var oc = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={oldDb};Pooling=False"))
+        {
+            oc.Open();
+            using var oCmd = oc.CreateCommand();
+            oCmd.CommandText = """
+                CREATE TABLE WorkingEntries (Id TEXT PRIMARY KEY, ModelName TEXT NOT NULL COLLATE NOCASE, Kind TEXT NOT NULL, Date TEXT NOT NULL,
+                  Title TEXT NOT NULL, Body TEXT NOT NULL DEFAULT '', Status TEXT NOT NULL DEFAULT '', Severity TEXT NOT NULL DEFAULT '',
+                  Result TEXT NOT NULL DEFAULT '', Owner TEXT NOT NULL DEFAULT '', Due TEXT NOT NULL DEFAULT '', Revision INTEGER NOT NULL,
+                  CreatedBy TEXT NOT NULL DEFAULT '', CreatedAt TEXT NOT NULL, UpdatedBy TEXT NOT NULL DEFAULT '', UpdatedAt TEXT NOT NULL);
+                INSERT INTO WorkingEntries VALUES ('b','M','issue','2026-11-09','later','','Open','Major','','','2026-11-20',1,'','2026-11-09T02:00:00Z','','2026-11-09T02:00:00Z');
+                INSERT INTO WorkingEntries VALUES ('a','M','issue','2026-11-09','earlier','','Open','Major','','','',1,'','2026-11-09T01:00:00Z','','2026-11-09T01:00:00Z');
+                """;
+            oCmd.ExecuteNonQuery();
+        }
+        var migrated = new WorkingService(oldDb, glossDb);
+        List<WorkingEntry> old = migrated.ListEntries("M");
+        Check(old.Single(e => e.Id == "a").Seq == 1 && old.Single(e => e.Id == "b").Seq == 2 && old.All(e => e.Phase == "" && e.DoneDate == "" && e.Logs.Count == 0)
+              && migrated.CreateEntry("M", IBody("new"), "u").Seq == 3 && migrated.CreateLog("M", "a", new("2026-11-10", "note"), "u") is not null,
+            "working: old table gets the issue columns, existing rows numbered by creation, notes table created");
+    }
+    finally
+    {
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        try { File.Delete(oldDb); } catch (IOException) { }
+    }
+
     // Model groups: missing file reports an error instead of throwing.
     WorkingGroups missing = working.ListGroups();
     Check(missing.Groups.Count == 0 && !string.IsNullOrEmpty(missing.Error) && missing.Source == glossDb, "working: missing glossary file gives empty groups plus error");

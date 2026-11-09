@@ -36,6 +36,14 @@ public static class WorkingEndpoints
         api.MapDelete("/models/{name}/entries/{id}", (string name, string id, WorkingService svc) =>
             svc.DeleteEntry(name, id) ? Results.NoContent() : Results.NotFound());
 
+        // dated progress notes under an entry (issues)
+        api.MapPost("/models/{name}/entries/{id}/logs", (string name, string id, WorkingLogSave body, WorkingService svc, ClaimsPrincipal user) =>
+            svc.CreateLog(name, id, body, User(user)) is { } l ? Results.Ok(l) : Results.NotFound());
+        api.MapPut("/models/{name}/entries/{id}/logs/{logId}", (string name, string id, string logId, WorkingLogSave body, WorkingService svc, ClaimsPrincipal user) =>
+            svc.UpdateLog(name, id, logId, body, User(user)) is { } l ? Results.Ok(l) : Results.NotFound());
+        api.MapDelete("/models/{name}/entries/{id}/logs/{logId}", (string name, string id, string logId, WorkingService svc) =>
+            svc.DeleteLog(name, id, logId) ? Results.NoContent() : Results.NotFound());
+
         return app;
     }
 }
