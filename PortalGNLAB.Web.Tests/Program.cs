@@ -452,6 +452,103 @@ finally
         if (File.Exists(f)) File.Delete(f);
 }
 
+// Working: per-model info + entries, read-only model groups, menu entry and one-time grant.
+string workDb = Path.Combine(Path.GetTempPath(), $"working-{Guid.NewGuid():N}.db");
+string glossDb = Path.Combine(Path.GetTempPath(), $"glossary-{Guid.NewGuid():N}.db");
+string workGrantDb = Path.Combine(Path.GetTempPath(), $"working-grant-{Guid.NewGuid():N}.db");
+try
+{
+    JsonElement WJ(string json) => JsonDocument.Parse(json).RootElement.Clone();
+    WorkingEntrySave WBody(string kind = "dev", string date = "2026-11-01", string title = "T", int rev = 0) =>
+        new(kind, date, title, "body", "Open", "High", "", "kim", "2026-11-30", rev);
+    bool WConflicts(Action act)
+    {
+        try { act(); return false; }
+        catch (WorkingConflictException) { return true; }
+    }
+    bool WBad(Action act)
+    {
+        try { act(); return false; }
+        catch (ArgumentException) { return true; }
+    }
+
+    var working = new WorkingService(workDb, glossDb);
+
+    // Model info
+    WorkingModel none = working.GetModel("X316B");
+    Check(none.Revision == 0 && none.Info.ValueKind == JsonValueKind.Object && none.UpdatedAt == "", "working: unknown model has empty info and revision 0");
+    WorkingModel m1 = working.SaveModel("X316B", new(WJ("""{"customer":"A","n":[1]}"""), 0), "alice");
+    Check(m1.Revision == 1 && m1.UpdatedBy == "alice" && m1.Info.GetProperty("customer").GetString() == "A", "working: first save creates revision 1");
+    Check(WConflicts(() => working.SaveModel("x316b", new(WJ("{}"), 0), "bob")), "working: stale model revision conflicts (case-insensitive name)");
+    WorkingModel m2 = working.SaveModel("x316b", new(WJ("""{"customer":"B"}"""), 1), "bob");
+    Check(m2.Revision == 2 && working.GetModel("X316B").Info.GetProperty("customer").GetString() == "B", "working: matching revision saves and bumps");
+    Check(WConflicts(() => working.SaveModel("NEW1", new(WJ("{}"), 3), "bob")), "working: new model must start at revision 0");
+    Check(WBad(() => working.SaveModel(new string('a', 81), new(WJ("{}"), 0), "x")) && WBad(() => working.GetModel("  ")), "working: model name length validated");
+
+    // Entries
+    WorkingEntry e1 = working.CreateEntry("X316B", WBody(date: "2026-11-01", title: "first"), "alice");
+    WorkingEntry e2 = working.CreateEntry("X316B", WBody("issue", "2026-11-05", "second"), "alice");
+    WorkingEntry e3 = working.CreateEntry("X316B", WBody("review", "2026-11-05", "third"), "alice");
+    List<WorkingEntry> entries = working.ListEntries("x316b");
+    Check(entries.Select(e => e.Title).SequenceEqual(["third", "second", "first"]) && entries.All(e => e.Revision == 1 && e.CreatedBy == "alice"),
+        "working: entries sorted by date desc then created desc");
+    Check(working.ListEntries("OTHER").Count == 0, "working: entries are per model");
+    Check(working.UpdateEntry("X316B", "nope", WBody(), "u") is null, "working: updating a missing entry returns null (404)");
+    WorkingEntry? e1b = working.UpdateEntry("X316B", e1.Id, WBody("issue", "2026-11-02", "renamed", 1), "carol");
+    Check(e1b is { Revision: 2, Kind: "issue", Title: "renamed", UpdatedBy: "carol", CreatedBy: "alice" }, "working: entry update bumps revision and keeps creator");
+    Check(WConflicts(() => working.UpdateEntry("X316B", e1.Id, WBody(rev: 1), "dave")), "working: stale entry revision conflicts");
+    Check(working.DeleteEntry("X316B", e2.Id) && !working.DeleteEntry("X316B", e2.Id) && working.ListEntries("X316B").Count == 2, "working: delete removes once, second delete is false (404)");
+    Check(WBad(() => working.CreateEntry("X316B", WBody(kind: "bogus"), "u")), "working: invalid kind rejected");
+    Check(WBad(() => working.CreateEntry("X316B", WBody(date: "2026/11/01"), "u")), "working: invalid date rejected");
+    Check(WBad(() => working.CreateEntry("X316B", WBody(title: " "), "u")) && WBad(() => working.CreateEntry("X316B", WBody(title: new string('t', 201)), "u")), "working: title required and capped at 200");
+    Check(WBad(() => working.CreateEntry("X316B", WBody() with { Body = new string('b', 20001) }, "u")), "working: body capped at 20000");
+
+    // Model groups: missing file reports an error instead of throwing.
+    WorkingGroups missing = working.ListGroups();
+    Check(missing.Groups.Count == 0 && !string.IsNullOrEmpty(missing.Error) && missing.Source == glossDb, "working: missing glossary file gives empty groups plus error");
+    using (var g = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={glossDb}"))
+    {
+        g.Open();
+        using var c = g.CreateCommand();
+        c.CommandText = """
+            CREATE TABLE model_groups (id TEXT, name TEXT, parent_id TEXT, models TEXT, sort INT, position INT, updated_at_utc TEXT);
+            INSERT INTO model_groups VALUES ('g2','Beta','g1','[]',1,1,'t'), ('g1','Alpha',NULL,'["X316B","X400"]',0,0,'t');
+            """;
+        c.ExecuteNonQuery();
+    }
+    Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+    WorkingGroups groups = working.ListGroups();
+    Check(groups.Error is null && groups.Groups.Count == 2 && groups.Groups[0].Id == "g1" && groups.Groups[0].ParentId is null
+          && groups.Groups[0].Models.SequenceEqual(["X316B", "X400"]) && groups.Groups[1].ParentId == "g1",
+        "working: model_groups read from a temp sqlite");
+    var badTable = new WorkingService(workDb, workDb).ListGroups();
+    Check(badTable.Groups.Count == 0 && badTable.Error is not null, "working: glossary without model_groups gives error, not exception");
+
+    // Menu + one-time grant
+    var wManager = PortalGNLAB.Web.Endpoints.PortalShellEndpoints.MenuFor(AppRoles.Manager, (role, id) => AppMenus.DefaultsByRole[role].Contains(id));
+    var wViewer = PortalGNLAB.Web.Endpoints.PortalShellEndpoints.MenuFor(AppRoles.Viewer, (role, id) => AppMenus.DefaultsByRole[role].Contains(id));
+    Check(wManager.Any(m => m.Id == AppMenus.Working && m.React && m.Href == "/app/working" && m.Label == "Working")
+          && !wViewer.Any(m => m.Id == AppMenus.Working),
+        "working menu is offered to Manager with the React href and not to Viewer");
+    var wRepo = new WebRepository(Microsoft.Extensions.Configuration.MemoryConfigurationBuilderExtensions.AddInMemoryCollection(
+        new Microsoft.Extensions.Configuration.ConfigurationBuilder(),
+        new Dictionary<string, string?> { ["Database:Path"] = workGrantDb }).Build());
+    wRepo.SetMenuPermission(AppRoles.Leader, AppMenus.NgRate, true);
+    var wPerms = new MenuPermissionService(wRepo);
+    bool wGranted = wPerms.IsAllowed(AppRoles.Leader, AppMenus.Working);
+    wRepo.SetMenuPermission(AppRoles.Leader, AppMenus.Working, false);
+    _ = new MenuPermissionService(wRepo);
+    Check(wGranted && !wPerms.IsAllowed(AppRoles.Leader, AppMenus.Working) && !wRepo.GetMenuPermissionsForRole(AppRoles.Viewer).Contains(AppMenus.Working),
+        "working is granted once to seeded roles and an admin removal sticks");
+}
+finally
+{
+    Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+    foreach (string f in new[] { workDb, glossDb, workGrantDb })
+        foreach (string s in new[] { f, f + "-wal", f + "-shm" })
+            if (File.Exists(s)) File.Delete(s);
+}
+
 if (failures.Count > 0)
     throw new InvalidOperationException($"Host-cutover checks failed: {string.Join(", ", failures)}");
 

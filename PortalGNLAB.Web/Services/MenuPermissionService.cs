@@ -15,6 +15,7 @@ public sealed class MenuPermissionService
         _repo = repo;
         _repo.SeedDefaultMenuPermissionsIfEmpty();
         GrantProductionInputOnce();
+        GrantWorkingOnce();
     }
 
     private const string ProductionInputGrantMarker = "Migration:grant-production-input-2026-10-30";
@@ -33,6 +34,21 @@ public sealed class MenuPermissionService
                 _repo.SetMenuPermission(role, AppMenus.ProductionInput, true);
         }
         _repo.SetSetting(ProductionInputGrantMarker, DateTime.UtcNow.ToString("O"));
+    }
+
+    private const string WorkingGrantMarker = "Migration:grant-working-2026-11-09";
+
+    /// <summary>Same one-time grant as Production Input, for the Working menu.</summary>
+    private void GrantWorkingOnce()
+    {
+        if (!string.IsNullOrEmpty(_repo.GetSetting(WorkingGrantMarker))) return;
+        foreach ((string role, string[] menus) in AppMenus.DefaultsByRole)
+        {
+            if (role == AppRoles.Admin || !menus.Contains(AppMenus.Working)) continue;
+            if (_repo.GetMenuPermissionsForRole(role).Count > 0)
+                _repo.SetMenuPermission(role, AppMenus.Working, true);
+        }
+        _repo.SetSetting(WorkingGrantMarker, DateTime.UtcNow.ToString("O"));
     }
 
     public bool IsAllowed(string role, string menuId)

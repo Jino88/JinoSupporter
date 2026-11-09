@@ -161,6 +161,8 @@ builder.Services.AddScoped<TeamMemoAiSummaryService>();
 // Review report writer (Codex API): notes + pictures -> report laid out for WorkHub normalization.
 builder.Services.AddScoped<ReviewReportService>();
 builder.Services.AddSingleton(new ProductionInputService());
+// Working: per-model info and work history (dev / issue / review) plus read-only model groups.
+builder.Services.AddSingleton(new WorkingService());
 // Team memo display translation (EN/KO/VI via Codex Luna, cached in the memo DB).
 builder.Services.AddScoped<TeamMemoTranslationService>();
 builder.Services.AddScoped<TeamMemoLanguageState>();
@@ -734,6 +736,7 @@ static string PrepareAskHistoryHtml(string html)
 }
 
 app.MapPortalShell();
+app.MapWorking();
 
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode();

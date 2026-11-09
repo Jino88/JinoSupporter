@@ -89,8 +89,15 @@ export default function ProductionInput() {
   const refreshModels = useCallback(() => productionApi.models().then((list) => { setModels(list); return list; }), []);
 
   useEffect(() => {
+    // ?model=<id>&tab=stock opens one model on one tab (link from Working → Dev Plan).
+    const query = new URLSearchParams(window.location.search);
+    const wantTab = query.get("tab");
+    if (wantTab === "setup" || wantTab === "proc" || wantTab === "stock" || wantTab === "rep") setTab(wantTab);
     refreshModels()
-      .then((list) => { if (list.length) openModel(list[0].id); else setTab("setup"); })
+      .then((list) => {
+        const wanted = list.find((m) => m.id === query.get("model")) ?? list[0];
+        if (wanted) openModel(wanted.id); else setTab("setup");
+      })
       .catch(fail);
   }, []);
 

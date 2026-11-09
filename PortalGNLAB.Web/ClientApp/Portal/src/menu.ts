@@ -64,6 +64,7 @@ export const ICON_PATHS: Record<string, string> = {
   drop: "<path d='M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z'/>",
   bell: "<path d='M3 19c4 0 5-13 9-13s5 13 9 13'/><path d='M3 21h18'/>",
   signout: "<path d='M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10'/>",
+  briefcase: "<rect x='3' y='7' width='18' height='13' rx='2'/><path d='M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18M11 13v2h2v-2'/>",
 };
 
 export interface RailTileInfo {
@@ -86,6 +87,7 @@ const RAIL_TILES: Record<string, RailTileInfo> = {
   "qr-gauss-data": { icon: "bell", label: "Gauss" },
   "bmes-daily-report": { icon: "daily", label: "Daily" },
   "production-input": { icon: "clipboard", label: "Input" },
+  working: { icon: "briefcase", label: "Working" },
   translate: { icon: "translate", label: "Translate" },
   "review-report": { icon: "write", label: "Write" },
   "bmes-setting": { icon: "gear", label: "Setting" },
@@ -141,7 +143,7 @@ export function buildRail(items: MenuItem[]): RailEntry[] {
       { tiles: tiles(BMES_MAIN) },
       { title: "Setting Model", tiles: tiles(BMES_SETTING_MODEL) },
     ]),
-    ...single(["bmes-daily-report", "production-input"]),
+    ...single(["bmes-daily-report", "production-input", "working"]),
     ...group("qr", "qr", "QR", "QR inspection data", [{ tiles: tiles(QR_MAIN) }]),
     ...sep(single(TOOLS)),
     ...sep([...single(["bmes-setting"]), ...single(ADMIN)]),
