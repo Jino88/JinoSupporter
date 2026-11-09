@@ -122,6 +122,44 @@ export const issueFields = (f: EntryFields): EntryFields => ({ ...f, status: f.d
 /** Issues in number order (No. 1 first). */
 export const issuesBySeq = (list: Entry[]) => list.filter((e) => e.kind === "issue").sort((a, b) => a.seq - b.seq || a.createdAt.localeCompare(b.createdAt));
 
+/**
+ * Issues as a two-level list: the top issues in number order and the sub-issues of each, also in number order.
+ * A sub-issue whose issue is not in the list (e.g. another setup row) is shown as a top issue.
+ */
+export function issueTree(list: Entry[]): { top: Entry[]; subs: Map<string, Entry[]> } {
+  const issues = issuesBySeq(list);
+  const ids = new Set(issues.map((e) => e.id));
+  const subs = new Map<string, Entry[]>();
+  const top: Entry[] = [];
+  for (const e of issues) {
+    if (e.parentId && e.parentId !== e.id && ids.has(e.parentId)) subs.set(e.parentId, [...(subs.get(e.parentId) ?? []), e]);
+    else top.push(e);
+  }
+  return { top, subs };
+}
+
+export type IssueStage = "dev" | "mp";
+
+/**
+ * Where an issue is listed: Mass Production when it was raised in MP or against a Setup Plan row, Development otherwise.
+ * A sub-issue is listed with its issue.
+ */
+export function issuesOfStage(list: Entry[], stage: IssueStage): Entry[] {
+  const byId = new Map(list.map((e) => [e.id, e]));
+  const own = (e: Entry): IssueStage => (e.phase === "MP" || e.setupRowId ? "mp" : "dev");
+  return list.filter((e) => {
+    if (e.kind !== "issue") return false;
+    const parent = e.parentId && e.parentId !== e.id ? byId.get(e.parentId) : undefined;
+    return own(parent ?? e) === stage;
+  });
+}
+
+/** All entries with the ones a part of the page was given (some) swapped for what it gave back (list). */
+export function replaceSome(all: Entry[], some: Entry[], list: Entry[]): Entry[] {
+  const mine = new Set(some.map((e) => e.id));
+  return [...all.filter((e) => !mine.has(e.id)), ...list];
+}
+
 /** Values already used in a field, followed by the suggestions, without duplicates (case-insensitive). */
 export function suggestions(used: string[], defaults: string[]): string[] {
   const seen = new Set<string>();

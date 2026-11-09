@@ -9,18 +9,49 @@ namespace PortalGNLAB.Web.Services;
 /// Local, model-level cache for the read-only BMES MAST/BOMC explosion used by Test 5.
 /// The network connection and its credentials are deliberately not persisted.
 /// </summary>
-public sealed class BmesBomCacheService(NgRateSettingsService settings)
+public sealed class BmesBomCacheService
 {
     private readonly object _writeGate = new();
+    private readonly NgRateSettingsService? _settings;
+    private readonly string? _dbPath;
 
-    public string CacheDbPath => PortalDb.FilePath;
+    public BmesBomCacheService(NgRateSettingsService settings) => _settings = settings;
+
+    /// <summary>Cache in an explicit SQLite file (checks use a temp DB, never the real one).</summary>
+    public BmesBomCacheService(string dbPath) => _dbPath = dbPath;
+
+    public string CacheDbPath => _dbPath ?? PortalDb.FilePath;
 
     public BmesBomCacheEntry? TryLoad(BmesBomCacheQuery query)
     {
         EnsureDatabase();
-        string cacheKey = BuildCacheKey(query);
-
         using var conn = OpenConnection(readOnly: true);
+        return LoadByKey(conn, BuildCacheKey(query));
+    }
+
+    /// <summary>
+    /// The most recently fetched successful (RowCount &gt; 0) cache entry of a model, whatever its
+    /// work date, depth or plant. Null when the model has none.
+    /// </summary>
+    public BmesBomCacheEntry? TryLoadLatest(string modelName)
+    {
+        EnsureDatabase();
+        using var conn = OpenConnection(readOnly: true);
+        using var find = conn.CreateCommand();
+        find.CommandText =
+            """
+            SELECT CacheKey
+            FROM BmesBomCacheHeaders
+            WHERE ModelName = @model AND RowCount > 0
+            ORDER BY FetchedAt DESC
+            LIMIT 1;
+            """;
+        find.Parameters.AddWithValue("@model", Normalize(modelName));
+        return find.ExecuteScalar() is string key ? LoadByKey(conn, key) : null;
+    }
+
+    private static BmesBomCacheEntry? LoadByKey(SqliteConnection conn, string cacheKey)
+    {
         using var header = conn.CreateCommand();
         header.CommandText =
             """
@@ -399,7 +430,9 @@ public sealed class BmesBomCacheService(NgRateSettingsService settings)
 
     private void EnsureDatabaseCore()
     {
-        Directory.CreateDirectory(settings.SettingsDbDirectory);
+        Directory.CreateDirectory(_dbPath is null
+            ? _settings!.SettingsDbDirectory
+            : Path.GetDirectoryName(Path.GetFullPath(_dbPath))!);
         using var conn = OpenConnection(readOnly: false);
         using var cmd = conn.CreateCommand();
         cmd.CommandText =

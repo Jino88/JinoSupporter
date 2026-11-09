@@ -73,8 +73,53 @@ public static class WorkingEndpoints
         api.MapDelete("/models/{name}/entries/{id}/images/{imageId}", (string name, string id, string imageId, WorkingService svc) =>
             svc.DeleteImage(name, id, imageId) ? Results.NoContent() : Results.NotFound());
 
+        // BMES model groups and a product's BOM for Model Info (read-only on the BMES side)
+        api.MapGet("/bmes/groups", (WebRepository repo) =>
+            Results.Ok(new { materials = WorkingBmesService.BuildMaterials(repo.GetModelGroups()) }));
+        api.MapGet("/bmes/bom", (string? product, BmesBomCacheService cache) =>
+        {
+            string name = (product ?? "").Trim();
+            if (name.Length == 0) return Results.BadRequest(new { error = "product is required." });
+            return Results.Ok(cache.TryLoadLatest(name) is { } entry
+                ? WorkingBmesService.ToBom(name, "cache", entry)
+                : WorkingBmesService.Empty(name));
+        });
+        api.MapPost("/bmes/bom", async (WorkingBmesBomRequest body, BmesFcostActualService fcostActual,
+            BmesBomCacheService cache, AppPathsService paths) =>
+        {
+            string name = (body.Product ?? "").Trim();
+            if (name.Length == 0) return Results.BadRequest(new { error = "product is required." });
+            var connection = BmesReportEndpoints.BuildNetworkDbConnection(paths);
+            if (string.IsNullOrWhiteSpace(connection.Server) || string.IsNullOrWhiteSpace(connection.UserId))
+                return Results.Ok(WorkingBmesService.Empty(name, "The BMES network DB connection is not configured."));
+            try
+            {
+                var query = new BmesBomCacheQuery(name, WorkingBmesService.Plant, DateTime.Today,
+                    WorkingBmesService.MaxDepth, WorkingBmesService.MaxRows);
+                var rows = await fcostActual.FetchBomTreeAsync(new BmesBomMaterialQuery
+                {
+                    Connection = connection,
+                    ModelName = name,
+                    Plant = query.Plant,
+                    MaxRows = query.MaxRows,
+                    MaxDepth = query.MaxDepth,
+                    WorkDate = query.WorkDate,
+                });
+                cache.Save(query, rows);
+                return Results.Ok(cache.TryLoad(query) is { } saved
+                    ? WorkingBmesService.ToBom(name, "server", saved)
+                    : WorkingBmesService.Empty(name));
+            }
+            catch (Exception ex)
+            {
+                return Results.Ok(WorkingBmesService.Empty(name, "BOM could not be read from the BMES server: " + ex.Message));
+            }
+        });
+
         return app;
     }
+
+    public sealed record WorkingBmesBomRequest(string? Product);
 
     /// <summary>
     /// The "files" and optional "logId" of a multipart upload; the form is read here (no IFormFile binding). Files over the

@@ -4,17 +4,25 @@ import { workingApi } from "./working/api";
 import EntryList from "./working/EntryList";
 import InfoTab from "./working/InfoTab";
 import IssueTable from "./working/IssueTable";
-import { buildTree, countByKind, filterTree, firstModel, isOpenIssue, pathOf, sortEntries, type GroupNode } from "./working/logic";
+import {
+  buildTree, countByKind, filterTree, firstModel, isOpenIssue, issuesOfStage, pathOf, replaceSome, sortEntries, type GroupNode, type IssueStage,
+} from "./working/logic";
 import PlanView from "./working/PlanView";
 import SetupPlan from "./working/SetupPlan";
 import type { Entry, GroupsResponse, WorkingModel } from "./working/types";
 import "./working/working.css";
 
-type Tab = "info" | "plan" | "setup" | "dev" | "issue" | "review" | "all";
-const TABS: [Tab, string][] = [
-  ["info", "Model Info"], ["plan", "Dev Plan"], ["setup", "Setup Plan"], ["dev", "Dev History"], ["issue", "Issues"], ["review", "Reviews"], ["all", "Timeline"],
+type Tab = "info" | "plan" | "devissue" | "dev" | "review" | "all" | "setup" | "issue";
+/** Categories of a model page and the tabs under each (Model Info has none). */
+const CATEGORIES: { label: string; tabs: [Tab, string][] }[] = [
+  { label: "Model Info", tabs: [["info", "Model Info"]] },
+  { label: "Development", tabs: [["plan", "Dev Plan"], ["devissue", "Dev Issue"], ["dev", "Dev History"], ["review", "Reviews"], ["all", "Timeline"]] },
+  { label: "Mass Production", tabs: [["setup", "Setup Plan"], ["issue", "Issues"]] },
 ];
-const isTab = (v: string | null): v is Tab => TABS.some(([k]) => k === v);
+const categoryOf = (tab: Tab) => CATEGORIES.find((c) => c.tabs.some(([k]) => k === tab))!;
+const isTab = (v: string | null): v is Tab => CATEGORIES.some((c) => c.tabs.some(([k]) => k === v));
+/** The issue list of a tab: Dev Issue (development) or Issues (mass production). */
+const stageOf = (tab: Tab): IssueStage | null => (tab === "devissue" ? "dev" : tab === "issue" ? "mp" : null);
 
 /** Keeps ?model=&tab= in the address so a model page can be linked and survives reload. */
 function writeQuery(model: string | null, tab: Tab) {
@@ -85,6 +93,16 @@ export default function Working() {
   const openIssues = entries.filter(isOpenIssue).length;
   const path = selected ? pathOf(tree, selected) : [];
   const onChanged = (list: Entry[]) => setEntries(sortEntries(list));
+  const openIn = (stage: IssueStage) => issuesOfStage(entries, stage).filter(isOpenIssue).length;
+  const go = (k: Tab) => {
+    if (k === tab) return;
+    if (infoDirty && !window.confirm("Discard the unsaved model info?")) return;
+    setInfoDirty(false);
+    setTab(k);
+  };
+  const category = categoryOf(tab);
+  const stage = stageOf(tab);
+  const stageIssues = stage ? issuesOfStage(entries, stage) : [];
 
   const renderNode = (n: GroupNode, depth: number) => (
     <div key={n.id} className={`wk-g d${Math.min(depth, 2)}`}>
@@ -145,25 +163,35 @@ export default function Working() {
                 </div>
               </div>
 
-              <div className="pi-tabs" role="tablist">
-                {TABS.map(([k, label]) => {
-                  const n = k === "dev" || k === "review" ? counts[k] : k === "issue" ? openIssues : k === "all" ? entries.length : null;
+              <div className="pi-tabs" role="tablist" aria-label="Category">
+                {CATEGORIES.map((c) => {
+                  const n = c.label === "Development" ? openIn("dev") : c.label === "Mass Production" ? openIn("mp") : 0;
                   return (
-                    <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""}
-                      onClick={() => {
-                        if (k === tab) return;
-                        if (infoDirty && !window.confirm("Discard the unsaved model info?")) return;
-                        setInfoDirty(false);
-                        setTab(k);
-                      }}>{label}{n != null && n > 0 && <span className="cnt">{n}</span>}</button>
+                    <button key={c.label} role="tab" aria-selected={c === category} className={c === category ? "on" : ""}
+                      title={n ? `${n} open issue${n > 1 ? "s" : ""}` : undefined} onClick={() => go(c.tabs[0][0])}>
+                      {c.label}{n > 0 && <span className="cnt bad">{n}</span>}
+                    </button>
                   );
                 })}
               </div>
+              {category.tabs.length > 1 && (
+                <div className="wk-subtabs" role="tablist" aria-label={category.label}>
+                  {category.tabs.map(([k, label]) => {
+                    const n = k === "dev" || k === "review" ? counts[k] : k === "devissue" ? openIn("dev") : k === "issue" ? openIn("mp")
+                      : k === "all" ? entries.length : null;
+                    return (
+                      <button key={k} role="tab" aria-selected={tab === k} className={"wk-chip" + (tab === k ? " on" : "")} onClick={() => go(k)}>
+                        {label}{n != null && n > 0 && <span className="cnt">{n}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               {!model ? <div className="muted">Loading…</div> : (
                 <>
                   {tab === "info" && (
-                    <InfoTab key={selected} model={model} entries={entries} today={today} onDirty={setInfoDirty}
+                    <InfoTab key={selected} model={model} onDirty={setInfoDirty}
                       onSaved={(m) => { setModel(m); setInfoDirty(false); }} onError={fail} />
                   )}
                   {tab === "plan" && <PlanView key={selected} modelName={selected} />}
@@ -171,13 +199,16 @@ export default function Working() {
                     <SetupPlan key={selected} modelName={selected} modelPhase={model.info.phase ?? ""}
                       entries={entries} today={today} onChanged={onChanged} onError={fail} />
                   )}
-                  {tab === "issue" && (
-                    <IssueTable key={selected} modelName={selected} modelPhase={model.info.phase ?? ""}
-                      entries={entries} today={today} onChanged={onChanged} onError={fail} />
+                  {stage && (
+                    <IssueTable key={selected + stage} modelName={selected} modelPhase={model.info.phase ?? ""}
+                      heading={stage === "dev" ? "Dev Issues" : "Mass Production Issues"}
+                      // a new issue starts in the model's phase when it belongs here, else in MP / no phase
+                      newDefaults={{ phase: stage === "mp" ? "MP" : model.info.phase === "MP" ? "" : model.info.phase ?? "" }}
+                      entries={stageIssues} today={today} onChanged={(list) => onChanged(replaceSome(entries, stageIssues, list))} onError={fail} />
                   )}
                   {(tab === "dev" || tab === "review" || tab === "all") && (
                     <EntryList key={selected + tab} modelName={selected} kind={tab === "all" ? null : tab}
-                      entries={entries} today={today} onChanged={onChanged} onError={fail} onOpenIssues={() => setTab("issue")} />
+                      entries={entries} today={today} onChanged={onChanged} onError={fail} onOpenIssues={(e) => setTab(issuesOfStage([e], "mp").length ? "issue" : "devissue")} />
                   )}
                 </>
               )}

@@ -26,7 +26,6 @@
 .wk-phase, .wk-open { font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
 .wk-phase { background: var(--accent-soft); color: var(--accent-ink); }
 .wk-open { background: var(--warn-soft); color: var(--warn); }
-.wk-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
 .wk-phase-steps { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
 .wk-step { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 4px 12px 4px 4px; font: inherit; font-weight: 600; color: var(--muted); cursor: pointer; }
@@ -122,6 +121,17 @@ tr.wk-it-log.edit td.wk-it-title { vertical-align: top; }
 tr.wk-it-log.new td { background: #fff; border-bottom-style: dashed; }
 tr.wk-it-log .inp.sm { width: 100%; min-width: 118px; }
 tr.wk-it-log .wk-ta { width: 100%; min-height: 34px; }
+/* Sub-issues: one level under an issue, after its notes; a left bar marks them. */
+tr.wk-it-row.child td { background: #f6f8ff; }
+tr.wk-it-row.child td:first-child { box-shadow: inset 3px 0 0 var(--accent); text-align: right; }
+tr.wk-it-row.child.on td { background: var(--accent-soft); }
+tr.wk-it-row.child.done td { color: var(--muted); }
+tr.wk-it-row.child td.sub { color: var(--accent-ink); }
+.wk-it-subt { font-weight: 600; }
+.wk-it-kids { display: inline-block; margin-left: 8px; font-size: 10.5px; font-weight: 700; color: var(--accent-ink); background: var(--accent-soft); border-radius: 999px; padding: 0 7px; }
+tr.wk-it-addsub td { padding: 3px 8px 6px; text-align: left; border-bottom: 1px solid var(--line); }
+tr.wk-it-sub.child > td { box-shadow: inset 3px 0 0 var(--accent); }
+.wk-it-subh { font-size: 12px; font-weight: 700; margin-bottom: 8px; }
 .wk-in-owner { max-width: 110px; }
 .wk-done { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--ink-2); margin-bottom: 3px; cursor: pointer; }
 
@@ -153,3 +163,21 @@ tr.wk-it-log .wk-ta { width: 100%; min-height: 34px; }
 .wk-upload-bar > span { display: block; height: 100%; background: var(--accent); transition: width .2s; }
 .wk-tag { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 5px; background: #f1f5f9; color: #475569; }
 @media (max-width: 1000px) { .wk-if { grid-template-columns: 1fr; } }
+/* Model Info: BMES model group and BOM (BmesPanel.tsx). */
+.wk-bmes-pick { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+.wk-bmes-pick .inp { min-width: 220px; }
+.wk-bmes-path { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 13px; }
+table.wk-bmes-sub { width: auto; min-width: 520px; margin-bottom: 14px; }
+.wk-bmes-ls { white-space: normal !important; max-width: 760px; font-variant-numeric: tabular-nums; }
+.wk-bmes-bomh { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; }
+.wk-bmes-bomh h3 { margin: 0 8px 0 0; font-size: 13px; }
+.wk-bom-h { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 8px; }
+table.wk-bom-t td { padding-top: 4px; padding-bottom: 4px; }
+table.wk-bom-t tr.lv1 td { font-weight: 700; }
+.wk-bom-code { font-family: ui-monospace, Consolas, monospace; font-size: 11px; color: var(--muted); }
+.wk-bom-tog { border: 0; background: none; padding: 0; width: 16px; color: var(--muted); cursor: pointer; font: inherit; }
+.wk-bom-leaf { display: inline-block; width: 16px; }
+/* Tabs under a category (Working.tsx). */
+.wk-subtabs { display: flex; flex-wrap: wrap; gap: 6px; margin: -4px 0 14px; }
+.wk-subtabs .cnt { font-size: 10px; font-weight: 700; margin-left: 5px; color: inherit; opacity: .75; }
+.pi-tabs .cnt.bad { color: var(--bad); background: #fef2f2; }

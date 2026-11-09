@@ -56,10 +56,28 @@ export const setupFieldsOf = (r: SetupRow): SetupFields => ({
   setupStatus: r.setupStatus,
 });
 
-/** The No. a new row gets unless it is changed: one after the highest. */
-export const nextNo = (rows: SetupRow[]) => rows.reduce((m, r) => Math.max(m, r.no), 0) + 1;
+/** The No. a new row gets unless it is changed: one after the highest of the rows and the rows being added. */
+export const nextNo = (rows: { no: number }[]) => rows.reduce((m, r) => Math.max(m, r.no), 0) + 1;
 
-export const rowsInOrder = (rows: SetupRow[]) =>
+/**
+ * One more row to add after the ones already being added: the next No. and the line of the row above it (the last new
+ * row, else the line shown, else the last saved row).
+ */
+export function newSetupRow(rows: SetupRow[], adding: SetupFields[], shownLine: string): SetupFields {
+  const line = adding.at(-1)?.line ?? (shownLine || rowsInOrder(rows).at(-1)?.line || "");
+  return { ...blankSetup(line), no: nextNo([...rows, ...adding]) };
+}
+
+/** The rows being added, trimmed, or the first problem among them ("Row 2: …" when there are several). */
+export function setupBatch(adding: SetupFields[]): { rows: SetupFields[]; problem: string } {
+  for (let i = 0; i < adding.length; i++) {
+    const problem = setupProblem(adding[i]);
+    if (problem) return { rows: [], problem: adding.length > 1 ? `Row ${i + 1}: ${problem}` : problem };
+  }
+  return { rows: adding.map((f) => ({ ...f, processName: f.processName.trim() })), problem: "" };
+}
+
+export const rowsInOrder =(rows: SetupRow[]) =>
   [...rows].sort((a, b) => a.no - b.no || a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
 
 const ymd = /^\d{4}-\d{2}-\d{2}$/;

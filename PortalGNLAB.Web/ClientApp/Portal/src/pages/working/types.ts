@@ -28,6 +28,8 @@ export interface ModelInfo {
   line?: string;
   sopTarget?: string;
   note?: string;
+  /** BMES Make Model Group material picked for this model; unset = the material with the same name. */
+  bmesMaterial?: string;
 }
 
 export interface WorkingModel {
@@ -65,6 +67,8 @@ export interface EntryFields {
   finalResult: string;
   /** Issue: the Setup Plan row it is a problem of, or ""; left out on save to keep the row it has. */
   setupRowId?: string;
+  /** Issue: the issue it is a sub-issue of, or "" (one level only); left out on save to keep it. */
+  parentId?: string;
 }
 
 /** A picture pasted into an issue (logId "") or into one of its notes. */

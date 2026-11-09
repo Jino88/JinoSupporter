@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { matchingModels } from "./PlanView";
 import {
   blankEntry, blankLog, buildTree, byMonth, countByKind, entryProblem, filterTree, firstModel, isLate, isLogLate, isOpenIssue, issueFields,
-  issuesBySeq, logProblem, mediaKind, notesInOrder, pastedImages, pathOf, sortEntries, suggestions,
+  issuesBySeq, issuesOfStage, issueTree, logProblem, mediaKind, notesInOrder, pastedImages, pathOf, replaceSome, sortEntries, suggestions,
 } from "./logic";
 import type { Entry, EntryLog, ModelGroup } from "./types";
 
@@ -114,6 +114,42 @@ describe("issue register", () => {
     expect(issuesBySeq(list).map((e) => e.id)).toEqual(["a", "b"]);
     expect(suggestions(["Rub & buzz", " quality ", ""], ["Quality", "Design"])).toEqual(["Quality", "Design", "Rub & buzz"]);
   });
+  it("puts sub-issues under their issue, in number order, one level only", () => {
+    const list = [
+      entry("p2", "issue", "2026-11-01", { seq: 2 }),
+      entry("c2", "issue", "2026-11-03", { seq: 5, parentId: "p1" }),
+      entry("p1", "issue", "2026-11-01", { seq: 1 }),
+      entry("c1", "issue", "2026-11-02", { seq: 3, parentId: "p1" }),
+      entry("lost", "issue", "2026-11-02", { seq: 4, parentId: "elsewhere" }),
+      entry("self", "issue", "2026-11-02", { seq: 6, parentId: "self" }),
+      entry("d", "dev", "2026-11-02", { seq: 1, parentId: "p1" }),
+    ];
+    const t = issueTree(list);
+    expect(t.top.map((e) => e.id)).toEqual(["p1", "p2", "lost", "self"]);
+    expect(t.subs.get("p1")?.map((e) => e.id)).toEqual(["c1", "c2"]);
+    expect(t.subs.has("p2")).toBe(false);
+  });
+
+  it("lists MP and setup-row issues under Mass Production, the rest under Development, sub-issues with their issue", () => {
+    const list = [
+      entry("proto", "issue", "2026-11-01", { phase: "Proto" }),
+      entry("none", "issue", "2026-11-01", { phase: "" }),
+      entry("mp", "issue", "2026-11-01", { phase: "MP" }),
+      entry("setup", "issue", "2026-11-01", { phase: "PVT", setupRowId: "row1" }),
+      entry("kid", "issue", "2026-11-01", { phase: "Proto", parentId: "mp" }),
+      entry("devlog", "dev", "2026-11-01", { phase: "MP" }),
+    ];
+    expect(issuesOfStage(list, "dev").map((e) => e.id)).toEqual(["proto", "none"]);
+    expect(issuesOfStage(list, "mp").map((e) => e.id)).toEqual(["mp", "setup", "kid"]);
+  });
+
+  it("puts back what a part of the page changed without losing the other entries", () => {
+    const a = entry("a", "issue", "2026-11-01"), b = entry("b", "issue", "2026-11-01"), c = entry("c", "dev", "2026-11-01");
+    const b2 = { ...b, title: "edited" }, d = entry("d", "issue", "2026-11-02");
+    expect(replaceSome([a, b, c], [b], [b2, d]).map((e) => [e.id, e.title])).toEqual([["a", "a"], ["c", "c"], ["b", "edited"], ["d", "d"]]);
+    expect(replaceSome([a, b, c], [a, b], [b]).map((e) => e.id)).toEqual(["c", "b"]);
+  });
+
   it("checks a daily note, its schedule and done date", () => {
     const f = { ...blankLog("2026-11-09"), text: "Checked 20 pcs, 2 NG" };
     expect(logProblem({ ...f, text: "  " })).toBe("Write what was done.");
