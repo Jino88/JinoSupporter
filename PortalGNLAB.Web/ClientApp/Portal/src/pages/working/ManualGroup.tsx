@@ -15,7 +15,7 @@ function ProcessEdit(props: { no: number; value: ManualProcess; materials: strin
   const setUse = (i: number, f: Partial<{ material: string; qtyPerUnit: number }>) =>
     setP((cur) => ({ ...cur, materials: cur.materials.map((u, j) => (j === i ? { ...u, ...f } : u)) }));
   return (
-    <tr className="wk-mg-edit">
+    <tr className="wk-man-edit">
       <td className="n">{props.no}</td>
       <td>
         <select className="inp sm" value={p.type} onChange={(e) => setP({ ...p, type: e.target.value as ManualType })}>
@@ -24,7 +24,7 @@ function ProcessEdit(props: { no: number; value: ManualProcess; materials: strin
       </td>
       <td className="l">
         <input className="inp sm" value={p.name} placeholder="Process name" autoFocus onChange={(e) => setP({ ...p, name: e.target.value })} />
-        <input className="inp sm wk-mg-local" value={p.localName} placeholder="Local name (optional)" onChange={(e) => setP({ ...p, localName: e.target.value })} />
+        <input className="inp sm wk-man-local" value={p.localName} placeholder="Local name (optional)" onChange={(e) => setP({ ...p, localName: e.target.value })} />
       </td>
       <td className="l">
         <textarea className="inp sm wk-ta" rows={Math.max(3, ng.split("\n").length)} value={ng} placeholder={"One NG item per line\nGlue overflow\nMisalign"}
@@ -32,11 +32,11 @@ function ProcessEdit(props: { no: number; value: ManualProcess; materials: strin
       </td>
       <td className="l">
         {p.materials.map((u, i) => (
-          <div className="wk-mg-use" key={i}>
+          <div className="wk-man-use" key={i}>
             <select className="inp sm" value={u.material} onChange={(e) => setUse(i, { material: e.target.value })}>
               {[u.material, ...unused].filter(Boolean).map((m) => <option key={m}>{m}</option>)}
             </select>
-            <input className="inp sm wk-mg-qty" type="number" min={0} step="any" value={u.qtyPerUnit} aria-label="Qty per unit"
+            <input className="inp sm wk-man-qty" type="number" min={0} step="any" value={u.qtyPerUnit} aria-label="Qty per unit"
               onChange={(e) => setUse(i, { qtyPerUnit: Number(e.target.value) })} />
             <span className="muted small">/ unit</span>
             <button className="wk-link bad" onClick={() => setP({ ...p, materials: p.materials.filter((_, j) => j !== i) })}>✕</button>
@@ -95,14 +95,14 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
   const isNew = editing && !g.processes.some((p) => p.id === editing.id);
 
   return (
-    <div className="wk-mg">
-      <div className="wk-mg-h">
+    <div className="wk-man">
+      <div className="wk-man-h">
         <span className="muted small">Entered here because BMES has no model group for this model. Save the model information to keep changes.</span>
         {source && <button className="btn sm" onClick={copy}>Copy from Production Input {source.name} ({source.build})</button>}
       </div>
-      <div className="wk-mg-body">
-        <div className="pi-wrap wk-mg-procs">
-          <table className="wk-it wk-mg-t">
+      <div className="wk-man-body">
+        <div className="pi-wrap wk-man-procs">
+          <table className="wk-it wk-man-t">
             <thead>
               <tr>
                 <th className="fit">#</th><th className="fit">Type</th><th className="l">Process name</th>
@@ -117,10 +117,10 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
                   ) : (
                     <tr>
                       <td className="n">{i + 1}</td>
-                      <td><span className={"wk-mg-type t-" + p.type.toLowerCase()}>{p.type}</span></td>
+                      <td><span className={"wk-man-type t-" + p.type.toLowerCase()}>{p.type}</span></td>
                       <td className="l"><b>{p.name}</b>{p.localName && <div className="muted small">{p.localName}</div>}</td>
-                      <td className="l wk-mg-list">{p.ngItems.length ? p.ngItems.map((n) => <div key={n}>{n}</div>) : <span className="muted">—</span>}</td>
-                      <td className="l wk-mg-list">
+                      <td className="l wk-man-list">{p.ngItems.length ? p.ngItems.map((n) => <div key={n}>{n}</div>) : <span className="muted">—</span>}</td>
+                      <td className="l wk-man-list">
                         {p.materials.length
                           ? p.materials.map((u) => <div key={u.material}>{u.material} <span className="muted">× {u.qtyPerUnit}</span></div>)
                           : <span className="muted">—</span>}
@@ -140,11 +140,11 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
             </tbody>
           </table>
           {!editing && (
-            <button className="btn sm wk-mg-add"
+            <button className="btn sm wk-man-add"
               onClick={() => setEditing(blankProcess(g.processes.length ? g.processes[g.processes.length - 1].type : "SUB"))}>+ Add process</button>
           )}
         </div>
-        <div className="wk-mg-mats">
+        <div className="wk-man-mats">
           <table className="wk-it">
             <thead><tr><th className="l">Material</th><th className="fit">Used in</th><th className="fit"></th></tr></thead>
             <tbody>
@@ -158,7 +158,7 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
               {!g.materials.length && <tr><td colSpan={3} className="wk-it-empty">No material yet.</td></tr>}
             </tbody>
           </table>
-          <div className="wk-mg-newmat">
+          <div className="wk-man-newmat">
             <input className="inp sm" value={newMat} placeholder="New material name" onChange={(e) => setNewMat(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") addMat(); }} />
             <button className="btn sm" disabled={!newMat.trim()} onClick={addMat}>+ Add</button>

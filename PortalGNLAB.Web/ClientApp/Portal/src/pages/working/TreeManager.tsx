@@ -13,6 +13,8 @@ const SOURCE_LABEL: Record<string, string> = { bmes: "BMES", catalog: "BOM & Dra
 export default function TreeManager(props: {
   /** The whole tree, added models included, nothing hidden. */
   tree: GroupNode[];
+  /** Models that come from BMES > Make Model Group (not in the Company Glossary). */
+  bmesModels: string[];
   settings: TreeSettings;
   onChanged: (s: TreeSettings) => void;
   onClose: () => void;
@@ -29,6 +31,7 @@ export default function TreeManager(props: {
 
   const models = allModels(tree);
   const added = new Set(settings.added.map((a) => a.name.toLowerCase()));
+  const fromBmes = new Set(props.bmesModels.map((m) => m.toLowerCase()));
   const userGroups = new Set((settings.groups ?? []).map((g) => g.id));
   // models sitting in a sub-group made here, which "Back to its own group" can undo
   const moved = new Set([
@@ -133,6 +136,7 @@ export default function TreeManager(props: {
               {moved.has(m.toLowerCase()) && <option value={"\u0000"}>Back to its own group</option>}
               {choices.filter(([id]) => id !== n.id).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
             </select>
+            {fromBmes.has(m.toLowerCase()) && <span className="wk-mg-tag" title="From BMES > Make Model Group">BMES</span>}
             {added.has(m.toLowerCase()) && (
               <>
                 <span className="wk-mg-tag">added</span>
