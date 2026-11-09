@@ -792,6 +792,43 @@ try
         Check(new WorkingService(treeDb, Path.Combine(Path.GetTempPath(), "no-glossary-" + Guid.NewGuid().ToString("N") + ".db")) is { } noGloss
               && WBad(() => noGloss.AddTreeModel("NEW-9", "g1", "a")) && noGloss.AddTreeModel("NEW-9", "", "a").Name == "NEW-9",
             "working tree: without a readable glossary only the empty group is accepted");
+
+        // Sub-groups made in Manage and models moved into them
+        WorkingUserGroup ug1 = tree.AddTreeGroup(" X5 series ", "g1", "alice");
+        WorkingUserGroup ug2 = tree.AddTreeGroup("Deep", ug1.Id, "alice");
+        WorkingUserGroup ug3 = tree.AddTreeGroup("Next", "g1", "bob");
+        Check(ug1.Id.StartsWith("ug-") && ug1.Name == "X5 series" && ug1.ParentId == "g1" && ug1.Sort == 0 && ug3.Sort == 1 && ug2.ParentId == ug1.Id
+              && tree.GetTree().Groups.Count == 3,
+            "working tree: sub-groups are made under a glossary group or another sub-group, after their siblings");
+        Check(WConflicts(() => tree.AddTreeGroup("x5 SERIES", "g1", "a")) && WBad(() => tree.AddTreeGroup("Z", "nope", "a"))
+              && WBad(() => tree.AddTreeGroup("  ", "g1", "a")) && WBad(() => tree.AddTreeGroup(new string('a', 61), "g1", "a"))
+              && tree.AddTreeGroup("X5 series", "g2", "a") is { ParentId: "g2" },
+            "working tree: a sub-group name used under the same group gives 409; unknown parent, blank or long name 400");
+        Check(tree.RenameTreeGroup(ug3.Id, "Next gen", "carol") is { Name: "Next gen" } && tree.RenameTreeGroup("ug-none", "x", "a") is null
+              && WConflicts(() => tree.RenameTreeGroup(ug3.Id, "X5 SERIES", "a")),
+            "working tree: a sub-group is renamed; missing gives null, a sibling's name 409");
+
+        WorkingTree? mv1 = tree.MoveTreeModel("x316b", ug1.Id, "alice");
+        WorkingTree? mv2 = tree.MoveTreeModel("NEW-2", ug2.Id, "alice");
+        Check(mv1 is not null && mv2 is not null && mv2.Placed.Count == 1 && mv2.Placed[0].Name == "X316B" && mv2.Placed[0].GroupId == ug1.Id
+              && mv2.Added.First(a => a.Name == "NEW-2").GroupId == ug2.Id,
+            "working tree: a glossary model (kept in its glossary spelling) and an added model are moved into sub-groups");
+        Check(tree.MoveTreeModel("nobody", ug1.Id, "a") is null && WBad(() => tree.MoveTreeModel("X400", "ug-none", "a"))
+              && tree.MoveTreeModel("X400", "g2", "a") is { Placed.Count: 2 },
+            "working tree: an unknown model is not found, an unknown group gives 400, a glossary group is allowed");
+        tree.SetHidden(["X316B"], "a");
+        tree.SetHidden([], "a");
+        Check(tree.GetTree().Placed.Any(p => p.Name == "X316B"), "working tree: unhiding a moved model keeps it where it was moved");
+        Check(tree.MoveTreeModel("X400", "", "a") is { Placed.Count: 1 } && tree.MoveTreeModel("NEW-2", "", "a")!.Added.First(a => a.Name == "NEW-2").GroupId == "",
+            "working tree: moving to \"\" puts a model back where it came from");
+
+        tree.MoveTreeModel("NEW-2", ug2.Id, "a");
+        tree.AddTreeModel("NEW-5", ug1.Id, "a");
+        Check(tree.DeleteTreeGroup(ug1.Id) && !tree.DeleteTreeGroup(ug1.Id) && tree.GetTree() is { } afterDel
+              && afterDel.Placed.Count == 0 && afterDel.Added.First(a => a.Name == "NEW-5").GroupId == "g1"
+              && afterDel.Groups.First(g => g.Id == ug2.Id).ParentId == "g1" && afterDel.Added.First(a => a.Name == "NEW-2").GroupId == ug2.Id
+              && afterDel.Groups.All(g => g.Id != ug1.Id),
+            "working tree: deleting a sub-group moves its glossary models back, its added models and sub-groups up");
     }
     finally
     {

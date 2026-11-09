@@ -6,8 +6,9 @@ import type { BmesCheck, TreeSettings } from "./tree";
 const SOURCE_LABEL: Record<string, string> = { bmes: "BMES", catalog: "BOM & Drawing list", group: "Make Model Group" };
 
 /**
- * Manage the model tree: tick the models to show (the rest are hidden for everyone), add a model that is not in the
- * Company Glossary after checking its name in BMES, or remove an added one.
+ * Manage the model tree: tick the models to show (the rest are hidden for everyone), make sub-groups under any group and
+ * move models into them, add a model that is not in the Company Glossary after checking its name in BMES, or remove an
+ * added one.
  */
 export default function TreeManager(props: {
   /** The whole tree, added models included, nothing hidden. */
@@ -28,6 +29,13 @@ export default function TreeManager(props: {
 
   const models = allModels(tree);
   const added = new Set(settings.added.map((a) => a.name.toLowerCase()));
+  const userGroups = new Set((settings.groups ?? []).map((g) => g.id));
+  // models sitting in a sub-group made here, which "Back to its own group" can undo
+  const moved = new Set([
+    ...(settings.placed ?? []).map((p) => p.name.toLowerCase()),
+    ...settings.added.filter((a) => userGroups.has(a.groupId)).map((a) => a.name.toLowerCase()),
+  ]);
+  const choices = groupChoices(tree);
   const dirty = models.some((m) => hidden.has(m.toLowerCase()) !== settings.hidden.some((h) => h.toLowerCase() === m.toLowerCase()));
   const shownCount = models.filter((m) => !hidden.has(m.toLowerCase())).length;
   const q = query.trim().toLowerCase();
@@ -62,25 +70,69 @@ export default function TreeManager(props: {
     if (!window.confirm(`Remove the added model ${m} from the tree? Its Working data stays and comes back if it is added again.`)) return;
     void run(async () => {
       await treeApi.remove(m);
-      props.onChanged({ hidden: settings.hidden.filter((h) => h.toLowerCase() !== m.toLowerCase()), added: settings.added.filter((a) => a.name.toLowerCase() !== m.toLowerCase()) });
+      props.onChanged({
+        ...settings,
+        hidden: settings.hidden.filter((h) => h.toLowerCase() !== m.toLowerCase()),
+        added: settings.added.filter((a) => a.name.toLowerCase() !== m.toLowerCase()),
+      });
     });
   };
+  const addGroup = (parent: GroupNode) => {
+    const n = window.prompt(`Name of the new sub-group under ${parent.name}:`)?.trim();
+    if (!n) return;
+    void run(async () => {
+      const g = await treeApi.addGroup(n, parent.id);
+      props.onChanged({ ...settings, groups: [...(settings.groups ?? []), g] });
+    });
+  };
+  const renameGroup = (g: GroupNode) => {
+    const n = window.prompt("New name of the sub-group:", g.name)?.trim();
+    if (!n || n === g.name) return;
+    void run(async () => {
+      const u = await treeApi.renameGroup(g.id, n);
+      props.onChanged({ ...settings, groups: (settings.groups ?? []).map((x) => (x.id === u.id ? u : x)) });
+    });
+  };
+  const removeGroup = (g: GroupNode) => {
+    if (!window.confirm(`Delete the sub-group ${g.name}? Its models and sub-groups move up to the group above it.`)) return;
+    void run(async () => {
+      await treeApi.removeGroup(g.id);
+      props.onChanged(await treeApi.get());
+    });
+  };
+  const move = (m: string, to: string) => void run(async () => props.onChanged(await treeApi.move(m, to)));
 
   const renderNode = (n: GroupNode, depth: number): ReactNode => {
     const own = n.models.filter((m) => !q || m.toLowerCase().includes(q));
     const kids = n.children.map((c) => renderNode(c, depth + 1)).filter(Boolean);
-    if (!own.length && !kids.length) return null;
+    const mine = userGroups.has(n.id);
+    // an empty sub-group made here stays listed so models can be moved into it
+    if (!own.length && !kids.length && (q || !mine)) return null;
     const all = allModels([n]);
     return (
-      <div key={n.id} className={"wk-mg d" + Math.min(depth, 2)}>
+      <div key={n.id} className={"wk-mg d" + Math.min(depth, 2) + (mine ? " mine" : "")}>
         <div className="wk-mg-h">
           <b>{n.name}</b>
+          {mine && <span className="wk-mg-tag">sub-group</span>}
           <button className="wk-link" onClick={() => setAll(true, all)}>Show all</button>
           <button className="wk-link" onClick={() => setAll(false, all)}>Hide all</button>
+          {n.id !== ADDED_GROUP && <button className="wk-link" disabled={busy} onClick={() => addGroup(n)}>+ Sub-group</button>}
+          {mine && (
+            <>
+              <button className="wk-link" disabled={busy} onClick={() => renameGroup(n)}>Rename</button>
+              <button className="wk-link danger" disabled={busy} onClick={() => removeGroup(n)}>Delete</button>
+            </>
+          )}
         </div>
         {own.map((m) => (
           <label key={m} className="wk-mg-m">
             <input type="checkbox" checked={!hidden.has(m.toLowerCase())} onChange={() => toggle(m)} /> {m}
+            <select className="wk-mg-move" value="" disabled={busy} aria-label={`Move ${m}`} title="Move this model into another group"
+              onClick={(e) => e.preventDefault()} onChange={(e) => move(m, e.target.value === "\u0000" ? "" : e.target.value)}>
+              <option value="">Move to…</option>
+              {moved.has(m.toLowerCase()) && <option value={"\u0000"}>Back to its own group</option>}
+              {choices.filter(([id]) => id !== n.id).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+            </select>
             {added.has(m.toLowerCase()) && (
               <>
                 <span className="wk-mg-tag">added</span>

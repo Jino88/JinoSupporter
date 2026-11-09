@@ -33,6 +33,15 @@ public static class WorkingEndpoints
             Results.Ok(svc.AddTreeModel(body.Name, body.GroupId, User(user))));
         api.MapDelete("/tree/models/{name}", (string name, WorkingService svc) =>
             svc.DeleteTreeModel(name) ? Results.NoContent() : Results.NotFound());
+        api.MapPut("/tree/models/{name}/group", (string name, WorkingTreeMoveSave body, WorkingService svc, ClaimsPrincipal user) =>
+            svc.MoveTreeModel(name, body.GroupId, User(user)) is { } moved ? Results.Ok(moved) : Results.NotFound());
+        // sub-groups made in Manage
+        api.MapPost("/tree/groups", (WorkingTreeGroupSave body, WorkingService svc, ClaimsPrincipal user) =>
+            Results.Ok(svc.AddTreeGroup(body.Name, body.ParentId, User(user))));
+        api.MapPut("/tree/groups/{id}", (string id, WorkingTreeGroupSave body, WorkingService svc, ClaimsPrincipal user) =>
+            svc.RenameTreeGroup(id, body.Name, User(user)) is { } g ? Results.Ok(g) : Results.NotFound());
+        api.MapDelete("/tree/groups/{id}", (string id, WorkingService svc) =>
+            svc.DeleteTreeGroup(id) ? Results.NoContent() : Results.NotFound());
 
         api.MapGet("/models/{name}", (string name, WorkingService svc) => Results.Ok(svc.GetModel(name)));
         api.MapPut("/models/{name}", (string name, WorkingModelSave body, WorkingService svc, ClaimsPrincipal user) =>
@@ -185,6 +194,8 @@ public static class WorkingEndpoints
     public sealed record WorkingBmesBomRequest(string? Product);
     public sealed record WorkingHiddenSave(List<string?>? Hidden);
     public sealed record WorkingTreeModelSave(string? Name, string? GroupId);
+    public sealed record WorkingTreeMoveSave(string? GroupId);
+    public sealed record WorkingTreeGroupSave(string? Name, string? ParentId);
     public sealed record WorkingPdmRequest(List<string>? Names);
 
     /// <summary>

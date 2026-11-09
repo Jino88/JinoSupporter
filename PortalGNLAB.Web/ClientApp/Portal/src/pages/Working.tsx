@@ -51,7 +51,8 @@ export default function Working() {
   const today = localToday();
 
   // every model (Glossary + added here), then the ones not hidden in Manage
-  const fullTree = useMemo(() => buildTree(withAdded(groups?.groups ?? [], treeSettings.added)), [groups, treeSettings.added]);
+  const fullTree = useMemo(
+    () => buildTree(withAdded(groups?.groups ?? [], treeSettings.added, treeSettings.groups, treeSettings.placed)), [groups, treeSettings]);
   const tree = useMemo(() => hideModels(fullTree, treeSettings.hidden), [fullTree, treeSettings.hidden]);
   const shown = useMemo(() => filterTree(tree, filter), [tree, filter]);
   const fail = (e: unknown) => setError((e as Error).message);
@@ -63,7 +64,7 @@ export default function Working() {
       .then(([g, t]) => {
         setGroups(g);
         setTreeSettings(t);
-        setSelected((cur) => cur ?? firstModel(hideModels(buildTree(withAdded(g.groups, t.added)), t.hidden)));
+        setSelected((cur) => cur ?? firstModel(hideModels(buildTree(withAdded(g.groups, t.added, t.groups, t.placed)), t.hidden)));
       })
       .catch(fail);
   }, []);
