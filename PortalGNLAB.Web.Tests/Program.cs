@@ -664,6 +664,38 @@ try
           && working.ListEntries("SET").Single(e => e.Id == plain.Id).SetupRowId == s4.Id,
         "working: deleting a setup row keeps its problems as plain issues");
 
+    // Sub-issues: one level under an issue.
+    WorkingEntry par = working.CreateEntry("SET", IBody("parent issue") with { SetupRowId = s4.Id }, "alice");
+    WorkingEntry sub = working.CreateEntry("SET", IBody("sub issue") with { ParentId = par.Id, SetupRowId = "ignored" }, "alice");
+    WorkingEntry sub2 = working.CreateEntry("SET", IBody("sub issue 2") with { ParentId = par.Id }, "alice");
+    WorkingEntry dev1 = working.CreateEntry("SET", WBody("dev", "2026-11-03", "dev item"), "alice");
+    Check(sub.ParentId == par.Id && par.ParentId == "" && sub.SetupRowId == s4.Id && sub2.Seq == sub.Seq + 1 && sub.Kind == "issue"
+          && working.ListEntries("SET").Single(e => e.Id == sub.Id).ParentId == par.Id,
+        "working: a sub-issue is created under an issue, follows its setup row and keeps the model's numbering");
+    Check(WBad(() => working.CreateEntry("SET", IBody("x") with { ParentId = otherRow.Id }, "a"))
+          && WBad(() => working.CreateEntry("SET", IBody("x") with { ParentId = dev1.Id }, "a"))
+          && WBad(() => working.CreateEntry("SET", IBody("x") with { ParentId = sub.Id }, "a"))
+          && WBad(() => working.CreateEntry("SET", IBody("x") with { ParentId = "nope" }, "a"))
+          && WBad(() => working.CreateEntry("SET", WBody("dev", "2026-11-03", "x") with { ParentId = par.Id }, "a")),
+        "working: a parent must be a top-level issue of the same model (other model, non-issue, grandchild refused)");
+    Check(WBad(() => working.UpdateEntry("SET", par.Id, IBody("parent issue", par.Revision) with { ParentId = par.Id }, "a"))
+          && WBad(() => working.UpdateEntry("SET", par.Id, IBody("parent issue", par.Revision) with { ParentId = plain.Id }, "a"))
+          && WBad(() => working.UpdateEntry("SET", plain.Id, IBody("plain issue", 2) with { ParentId = sub.Id }, "a")),
+        "working: an issue cannot be its own parent, and an issue with sub-issues cannot move under another issue");
+    Check(working.UpdateEntry("SET", sub.Id, IBody("sub issue renamed", sub.Revision), "a") is { ParentId: var keptParent } && keptParent == par.Id
+          && working.UpdateEntry("SET", par.Id, IBody("parent issue", par.Revision) with { SetupRowId = "" }, "a") is { SetupRowId: "" }
+          && working.ListEntries("SET").Where(e => e.ParentId == par.Id).All(e => e.SetupRowId == "" && e.Revision >= 2),
+        "working: ParentId null keeps the parent; changing the parent's setup row moves its sub-issues too");
+    WorkingEntry freed = working.CreateEntry("SET", IBody("to move"), "alice");
+    Check(working.UpdateEntry("SET", freed.Id, IBody("to move", freed.Revision) with { ParentId = par.Id }, "a") is { ParentId: var moved2 } && moved2 == par.Id
+          && working.UpdateEntry("SET", freed.Id, IBody("to move", freed.Revision + 1) with { ParentId = "" }, "a") is { ParentId: "" },
+        "working: an issue can be moved under a parent and back to top level with ParentId \"\"");
+    int subRev = working.ListEntries("SET").Single(e => e.Id == sub.Id).Revision;
+    Check(working.DeleteEntry("SET", par.Id)
+          && working.ListEntries("SET").Single(e => e.Id == sub.Id) is { ParentId: "" } afterDelete && afterDelete.Revision == subRev + 1
+          && working.ListEntries("SET").Single(e => e.Id == sub2.Id).ParentId == "",
+        "working: deleting a parent keeps its sub-issues as top-level issues");
+
     // A WorkingEntries table from before the issue columns gets them added and numbered on open.
     string oldDb = Path.Combine(Path.GetTempPath(), $"working-old-{Guid.NewGuid():N}.db");
     try
@@ -687,7 +719,7 @@ try
         }
         var migrated = new WorkingService(oldDb, glossDb);
         List<WorkingEntry> old = migrated.ListEntries("M");
-        Check(old.Single(e => e.Id == "a").Seq == 1 && old.Single(e => e.Id == "b").Seq == 2 && old.All(e => e.Phase == "" && e.DoneDate == "" && e.Images.Count == 0 && e.SetupRowId == "")
+        Check(old.Single(e => e.Id == "a").Seq == 1 && old.Single(e => e.Id == "b").Seq == 2 && old.All(e => e.Phase == "" && e.DoneDate == "" && e.Images.Count == 0 && e.SetupRowId == "" && e.ParentId == "")
               && migrated.CreateEntry("M", IBody("new"), "u").Seq == 3 && migrated.CreateLog("M", "a", new("2026-11-10", "note"), "u") is not null,
             "working: old table gets the issue columns, existing rows numbered by creation");
         Check(old.Single(e => e.Id == "b").Logs is [{ Text: "old note", Owner: "", Due: "", DoneDate: "" }]

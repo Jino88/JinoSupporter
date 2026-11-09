@@ -23,13 +23,13 @@ public sealed record WorkingEntry(
     string Id, string ModelName, string Kind, string Date, string Title, string Body, string Status, string Severity,
     string Result, string Owner, string Due, int Revision, string CreatedBy, string CreatedAt, string UpdatedBy, string UpdatedAt,
     int Seq, string Phase, string Category, string Process, string Cause, string DoneDate, string FinalResult, List<WorkingEntryLog> Logs,
-    List<WorkingImage> Images, string SetupRowId = "");
+    List<WorkingImage> Images, string SetupRowId = "", string ParentId = "");
 
 public sealed record WorkingEntrySave(
     string? Kind, string? Date, string? Title, string? Body, string? Status, string? Severity,
     string? Result, string? Owner, string? Due, int Revision,
     string? Phase = null, string? Category = null, string? Process = null, string? Cause = null, string? DoneDate = null, string? FinalResult = null,
-    string? SetupRowId = null);
+    string? SetupRowId = null, string? ParentId = null);
 
 /// <summary>
 /// A process row of a model's Setup Plan: machine line plan / state / note and setup plan / finish / status.
@@ -173,6 +173,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         ("DoneDate", "TEXT NOT NULL DEFAULT ''"),
         ("FinalResult", "TEXT NOT NULL DEFAULT ''"),
         ("SetupRowId", "TEXT NOT NULL DEFAULT ''"),
+        ("ParentId", "TEXT NOT NULL DEFAULT ''"),
     ];
 
     /// <summary>Note columns added 2026-11-09 (schedule and done date of a note).</summary>
@@ -200,7 +201,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
 
     private const string EntryColumns =
         "Id, ModelName, Kind, Date, Title, Body, Status, Severity, Result, Owner, Due, Revision, CreatedBy, CreatedAt, UpdatedBy, UpdatedAt, " +
-        "Seq, Phase, Category, Process, Cause, DoneDate, FinalResult, SetupRowId";
+        "Seq, Phase, Category, Process, Cause, DoneDate, FinalResult, SetupRowId, ParentId";
 
     private const string LogColumns = "Id, EntryId, Date, Text, Revision, CreatedBy, CreatedAt, UpdatedBy, UpdatedAt, Owner, Due, DoneDate";
 
@@ -405,7 +406,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         new(r.GetString(0), r.GetString(1), r.GetString(2), r.GetString(3), r.GetString(4), r.GetString(5), r.GetString(6),
             r.GetString(7), r.GetString(8), r.GetString(9), r.GetString(10), r.GetInt32(11), r.GetString(12), r.GetString(13),
             r.GetString(14), r.GetString(15), r.GetInt32(16), r.GetString(17), r.GetString(18), r.GetString(19), r.GetString(20),
-            r.GetString(21), r.GetString(22), logs, images, r.GetString(23));
+            r.GetString(21), r.GetString(22), logs, images, r.GetString(23), r.GetString(24));
 
     /// <summary>A note row; its pictures are picked from <paramref name="images"/> (pictures of its entry or wider).</summary>
     private static WorkingEntryLog ReadLog(SqliteDataReader r, List<WorkingImage> images) =>
@@ -521,11 +522,15 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         string now = Now();
         using SqliteConnection conn = Open();
         using SqliteTransaction tx = conn.BeginTransaction();
-        string setupRowId = SetupRowOf(conn, tx, model, e.Kind, (body.SetupRowId ?? "").Trim());
+        string parentId = (body.ParentId ?? "").Trim();
+        // a sub-issue follows its parent's setup row
+        string setupRowId = parentId.Length > 0
+            ? ParentOf(conn, tx, model, e.Kind, parentId, null).SetupRowId
+            : SetupRowOf(conn, tx, model, e.Kind, (body.SetupRowId ?? "").Trim());
         using (SqliteCommand ins = Cmd(conn,
             $"INSERT INTO WorkingEntries ({EntryColumns}) VALUES " +
-            "(@id,@m,@k,@d,@t,@b,@s,@sv,@r,@o,@due,1,@u,@now,@u,@now,@seq,@ph,@cat,@proc,@cause,@done,@fin,@setup)", tx,
-            [("@id", id), ("@m", model), ("@u", user), ("@now", now), ("@seq", NextSeq(conn, tx, model, e.Kind)), ("@setup", setupRowId),
+            "(@id,@m,@k,@d,@t,@b,@s,@sv,@r,@o,@due,1,@u,@now,@u,@now,@seq,@ph,@cat,@proc,@cause,@done,@fin,@setup,@parent)", tx,
+            [("@id", id), ("@m", model), ("@u", user), ("@now", now), ("@seq", NextSeq(conn, tx, model, e.Kind)), ("@setup", setupRowId), ("@parent", parentId),
              .. EntryArgs(e)]))
             ins.ExecuteNonQuery();
         WorkingEntry saved = ReadEntryRow(conn, model, id, tx)!;
@@ -547,14 +552,30 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         // a kind change gives the entry the next number of its new kind
         int seq = current.Kind == e.Kind ? current.Seq : NextSeq(conn, tx, model, e.Kind);
         // an issue saved without a SetupRowId stays on its setup row
-        string setupRowId = body.SetupRowId is null && e.Kind == "issue" ? current.SetupRowId
+        string parentId = body.ParentId is null ? current.ParentId : body.ParentId.Trim();
+        if (parentId.Length > 0)
+        {
+            if (parentId == id) throw new ArgumentException("An issue cannot be its own sub-issue's parent.");
+            if (HasSubIssues(conn, tx, model, id)) throw new ArgumentException("An issue that has sub-issues cannot become a sub-issue.");
+        }
+        else if (e.Kind != "issue" && HasSubIssues(conn, tx, model, id))
+            throw new ArgumentException("An issue that has sub-issues must stay an issue.");
+        string setupRowId = parentId.Length > 0 ? ParentOf(conn, tx, model, e.Kind, parentId, id).SetupRowId
+            : body.SetupRowId is null && e.Kind == "issue" ? current.SetupRowId
             : SetupRowOf(conn, tx, model, e.Kind, (body.SetupRowId ?? "").Trim());
         using (SqliteCommand upd = Cmd(conn,
             "UPDATE WorkingEntries SET Kind=@k, Date=@d, Title=@t, Body=@b, Status=@s, Severity=@sv, Result=@r, Owner=@o, Due=@due, " +
-            "Seq=@seq, Phase=@ph, Category=@cat, Process=@proc, Cause=@cause, DoneDate=@done, FinalResult=@fin, SetupRowId=@setup, " +
+            "Seq=@seq, Phase=@ph, Category=@cat, Process=@proc, Cause=@cause, DoneDate=@done, FinalResult=@fin, SetupRowId=@setup, ParentId=@parent, " +
             "Revision=Revision+1, UpdatedBy=@u, UpdatedAt=@now WHERE Id=@id AND ModelName=@m", tx,
-            [("@id", id), ("@m", model), ("@u", user), ("@now", Now()), ("@seq", seq), ("@setup", setupRowId), .. EntryArgs(e)]))
+            [("@id", id), ("@m", model), ("@u", user), ("@now", Now()), ("@seq", seq), ("@setup", setupRowId), ("@parent", parentId),
+             .. EntryArgs(e)]))
             upd.ExecuteNonQuery();
+        // sub-issues follow the setup row of their parent
+        if (setupRowId != current.SetupRowId)
+            using (SqliteCommand kids = Cmd(conn,
+                "UPDATE WorkingEntries SET SetupRowId=@setup, Revision=Revision+1, UpdatedAt=@now WHERE ParentId=@id AND ModelName=@m", tx,
+                ("@setup", setupRowId), ("@now", Now()), ("@id", id), ("@m", model)))
+                kids.ExecuteNonQuery();
         WorkingEntry saved = ReadEntryRow(conn, model, id, tx)!;
         tx.Commit();
         return saved;
@@ -568,12 +589,34 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         using SqliteTransaction tx = conn.BeginTransaction();
         using (SqliteCommand del = Cmd(conn, "DELETE FROM WorkingEntries WHERE Id=@id AND ModelName=@m", tx, ("@id", id), ("@m", model)))
             if (del.ExecuteNonQuery() == 0) return false;
+        // its sub-issues are kept as top-level issues
+        using (SqliteCommand unlink = Cmd(conn,
+            "UPDATE WorkingEntries SET ParentId='', Revision=Revision+1, UpdatedAt=@now WHERE ParentId=@id AND ModelName=@m", tx,
+            ("@id", id), ("@m", model), ("@now", Now())))
+            unlink.ExecuteNonQuery();
         using (SqliteCommand logs = Cmd(conn, "DELETE FROM WorkingEntryLogs WHERE EntryId=@id", tx, ("@id", id)))
             logs.ExecuteNonQuery();
         using (SqliteCommand pics = Cmd(conn, "DELETE FROM WorkingImages WHERE EntryId=@id", tx, ("@id", id)))
             pics.ExecuteNonQuery();
         tx.Commit();
         return true;
+    }
+
+    private static bool HasSubIssues(SqliteConnection conn, SqliteTransaction tx, string model, string id)
+    {
+        using SqliteCommand cmd = Cmd(conn, "SELECT 1 FROM WorkingEntries WHERE ParentId=@id AND ModelName=@m LIMIT 1", tx, ("@id", id), ("@m", model));
+        return cmd.ExecuteScalar() is not null;
+    }
+
+    /// <summary>The parent of a sub-issue: an issue of the same model that is itself top-level (one level only).</summary>
+    private static WorkingEntry ParentOf(SqliteConnection conn, SqliteTransaction tx, string model, string kind, string parentId, string? selfId)
+    {
+        if (kind != "issue") throw new ArgumentException("Only an issue can be a sub-issue.");
+        if (parentId == selfId) throw new ArgumentException("An issue cannot be its own parent.");
+        WorkingEntry? parent = ReadEntryRow(conn, model, parentId, tx);
+        if (parent is null || parent.Kind != "issue") throw new ArgumentException("The parent must be an issue of this model.");
+        if (parent.ParentId.Length > 0) throw new ArgumentException("A sub-issue cannot have its own sub-issues.");
+        return parent;
     }
 
     /// <summary>The setup row an entry may be linked to: "" for none; otherwise an issue on a row of the same model.</summary>
