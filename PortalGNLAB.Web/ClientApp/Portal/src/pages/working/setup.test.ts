@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  blankSetup, newSetupRow, nextNo, parseSetupPaste, parseSheetDate, parseState, rate, rowsInOrder, setupBatch, setupProblem, setupSummary, shortDate, tableToTsv,
+  blankSetup, issueProcessOf, newSetupRow, nextNo, parseSetupPaste, parseSheetDate, parseState, rate, rowsInOrder, setupBatch, setupProblem, setupSummary, shortDate, tableToTsv,
 } from "./setup";
 import type { SetupFields, SetupRow } from "./setup";
 
@@ -42,6 +42,11 @@ describe("setup plan", () => {
     const second = newSetupRow(rows, [{ ...first, line: "SUB 2" }], "");
     expect([second.no, second.line]).toEqual([20, "SUB 2"]);
     expect(newSetupRow([], [], "")).toMatchObject({ no: 1, line: "" });
+  });
+
+  it("gives a problem of a row its process name as the issue Process, not its line", () => {
+    expect(issueProcessOf(row("a", { line: "SUB 1", processName: " CD ETCHING " }))).toBe("CD ETCHING");
+    expect(issueProcessOf({ processName: "P".repeat(70) })).toHaveLength(60);
   });
 
   it("checks all the rows being added before any is saved", () => {

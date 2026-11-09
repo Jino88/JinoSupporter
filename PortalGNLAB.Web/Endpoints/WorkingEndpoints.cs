@@ -9,6 +9,12 @@ public static class WorkingEndpoints
 {
     private static string User(ClaimsPrincipal user) => user.Identity?.Name ?? "";
 
+    /// <summary>
+    /// The model name of a {name} route value. The server decodes the path except %2F, so a model with a '/' in its name
+    /// (MSM-X526/X626B) arrives as MSM-X526%2FX626B and would be kept under that name.
+    /// </summary>
+    public static string ModelName(string name) => name.Replace("%2F", "/", StringComparison.OrdinalIgnoreCase);
+
     public static IEndpointRouteBuilder MapWorking(this IEndpointRouteBuilder app)
     {
         var api = app.MapGroup("/api/portal/tools/working").RequireAuthorization();
@@ -32,9 +38,9 @@ public static class WorkingEndpoints
         api.MapPost("/tree/models", (WorkingTreeModelSave body, WorkingService svc, ClaimsPrincipal user) =>
             Results.Ok(svc.AddTreeModel(body.Name, body.GroupId, User(user))));
         api.MapDelete("/tree/models/{name}", (string name, WorkingService svc) =>
-            svc.DeleteTreeModel(name) ? Results.NoContent() : Results.NotFound());
+            svc.DeleteTreeModel(ModelName(name)) ? Results.NoContent() : Results.NotFound());
         api.MapPut("/tree/models/{name}/group", (string name, WorkingTreeMoveSave body, WorkingService svc, ClaimsPrincipal user) =>
-            svc.MoveTreeModel(name, body.GroupId, User(user)) is { } moved ? Results.Ok(moved) : Results.NotFound());
+            svc.MoveTreeModel(ModelName(name), body.GroupId, User(user)) is { } moved ? Results.Ok(moved) : Results.NotFound());
         // sub-groups made in Manage
         api.MapPost("/tree/groups", (WorkingTreeGroupSave body, WorkingService svc, ClaimsPrincipal user) =>
             Results.Ok(svc.AddTreeGroup(body.Name, body.ParentId, User(user))));
@@ -43,42 +49,42 @@ public static class WorkingEndpoints
         api.MapDelete("/tree/groups/{id}", (string id, WorkingService svc) =>
             svc.DeleteTreeGroup(id) ? Results.NoContent() : Results.NotFound());
 
-        api.MapGet("/models/{name}", (string name, WorkingService svc) => Results.Ok(svc.GetModel(name)));
+        api.MapGet("/models/{name}", (string name, WorkingService svc) => Results.Ok(svc.GetModel(ModelName(name))));
         api.MapPut("/models/{name}", (string name, WorkingModelSave body, WorkingService svc, ClaimsPrincipal user) =>
-            Results.Ok(svc.SaveModel(name, body, User(user))));
+            Results.Ok(svc.SaveModel(ModelName(name), body, User(user))));
 
-        api.MapGet("/models/{name}/entries", (string name, WorkingService svc) => Results.Ok(new { entries = svc.ListEntries(name) }));
+        api.MapGet("/models/{name}/entries", (string name, WorkingService svc) => Results.Ok(new { entries = svc.ListEntries(ModelName(name)) }));
         api.MapPost("/models/{name}/entries", (string name, WorkingEntrySave body, WorkingService svc, ClaimsPrincipal user) =>
-            Results.Ok(svc.CreateEntry(name, body, User(user))));
+            Results.Ok(svc.CreateEntry(ModelName(name), body, User(user))));
         api.MapPut("/models/{name}/entries/{id}", (string name, string id, WorkingEntrySave body, WorkingService svc, ClaimsPrincipal user) =>
-            svc.UpdateEntry(name, id, body, User(user)) is { } e ? Results.Ok(e) : Results.NotFound());
+            svc.UpdateEntry(ModelName(name), id, body, User(user)) is { } e ? Results.Ok(e) : Results.NotFound());
         api.MapDelete("/models/{name}/entries/{id}", (string name, string id, WorkingService svc) =>
-            svc.DeleteEntry(name, id) ? Results.NoContent() : Results.NotFound());
+            svc.DeleteEntry(ModelName(name), id) ? Results.NoContent() : Results.NotFound());
 
         // dated progress notes under an entry (issues)
         api.MapPost("/models/{name}/entries/{id}/logs", (string name, string id, WorkingLogSave body, WorkingService svc, ClaimsPrincipal user) =>
-            svc.CreateLog(name, id, body, User(user)) is { } l ? Results.Ok(l) : Results.NotFound());
+            svc.CreateLog(ModelName(name), id, body, User(user)) is { } l ? Results.Ok(l) : Results.NotFound());
         api.MapPut("/models/{name}/entries/{id}/logs/{logId}", (string name, string id, string logId, WorkingLogSave body, WorkingService svc, ClaimsPrincipal user) =>
-            svc.UpdateLog(name, id, logId, body, User(user)) is { } l ? Results.Ok(l) : Results.NotFound());
+            svc.UpdateLog(ModelName(name), id, logId, body, User(user)) is { } l ? Results.Ok(l) : Results.NotFound());
         api.MapDelete("/models/{name}/entries/{id}/logs/{logId}", (string name, string id, string logId, WorkingService svc) =>
-            svc.DeleteLog(name, id, logId) ? Results.NoContent() : Results.NotFound());
+            svc.DeleteLog(ModelName(name), id, logId) ? Results.NoContent() : Results.NotFound());
 
         // Setup Plan rows; their problems are issues with a SetupRowId
-        api.MapGet("/models/{name}/setup", (string name, WorkingService svc) => Results.Ok(new { rows = svc.ListSetupRows(name) }));
+        api.MapGet("/models/{name}/setup", (string name, WorkingService svc) => Results.Ok(new { rows = svc.ListSetupRows(ModelName(name)) }));
         api.MapPost("/models/{name}/setup", (string name, WorkingSetupRowSave body, WorkingService svc, ClaimsPrincipal user) =>
-            Results.Ok(svc.CreateSetupRow(name, body, User(user))));
+            Results.Ok(svc.CreateSetupRow(ModelName(name), body, User(user))));
         api.MapPost("/models/{name}/setup/import", (string name, WorkingSetupImport body, WorkingService svc, ClaimsPrincipal user) =>
-            Results.Ok(new { rows = svc.ImportSetupRows(name, body.Rows ?? [], User(user)) }));
+            Results.Ok(new { rows = svc.ImportSetupRows(ModelName(name), body.Rows ?? [], User(user)) }));
         api.MapPut("/models/{name}/setup/{rowId}", (string name, string rowId, WorkingSetupRowSave body, WorkingService svc, ClaimsPrincipal user) =>
-            svc.UpdateSetupRow(name, rowId, body, User(user)) is { } r ? Results.Ok(r) : Results.NotFound());
+            svc.UpdateSetupRow(ModelName(name), rowId, body, User(user)) is { } r ? Results.Ok(r) : Results.NotFound());
         api.MapDelete("/models/{name}/setup/{rowId}", (string name, string rowId, WorkingService svc) =>
-            svc.DeleteSetupRow(name, rowId) ? Results.NoContent() : Results.NotFound());
+            svc.DeleteSetupRow(ModelName(name), rowId) ? Results.NoContent() : Results.NotFound());
 
         // pictures and videos pasted into an entry (no logId) or into one of its notes, stored as sent
         api.MapPost("/models/{name}/entries/{id}/images", async (string name, string id, HttpContext ctx, WorkingService svc, ClaimsPrincipal user) =>
         {
             (string? logId, List<WorkingUpload> files) = await ReadPictures(ctx);
-            return svc.AddFiles(name, id, logId, files, User(user)) is { } images ? Results.Ok(new { images }) : Results.NotFound();
+            return svc.AddFiles(ModelName(name), id, logId, files, User(user)) is { } images ? Results.Ok(new { images }) : Results.NotFound();
         });
         // streamed from the DB with byte ranges, so a video can be played from any point
         api.MapGet("/images/{imageId}", (string imageId, WorkingService svc, HttpContext ctx) =>
@@ -89,7 +95,7 @@ public static class WorkingEndpoints
             return Results.Stream(file.Data, file.ContentType, enableRangeProcessing: true);
         });
         api.MapDelete("/models/{name}/entries/{id}/images/{imageId}", (string name, string id, string imageId, WorkingService svc) =>
-            svc.DeleteImage(name, id, imageId) ? Results.NoContent() : Results.NotFound());
+            svc.DeleteImage(ModelName(name), id, imageId) ? Results.NoContent() : Results.NotFound());
 
         // BMES model groups and a product's BOM for Model Info (read-only on the BMES side)
         api.MapGet("/bmes/groups", (WebRepository repo) =>

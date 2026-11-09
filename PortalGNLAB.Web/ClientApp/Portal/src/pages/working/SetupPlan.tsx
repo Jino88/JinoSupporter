@@ -3,7 +3,7 @@ import { workingApi } from "./api";
 import IssueTable from "./IssueTable";
 import { blankEntry, isOpenIssue, issuesBySeq } from "./logic";
 import {
-  newSetupRow, parseSetupPaste, rate, rowsInOrder, SETUP_STATES, setupApi, setupBatch, setupFieldsOf, setupProblem, setupSummary, shortDate, tableToTsv,
+  issueProcessOf, newSetupRow, parseSetupPaste, rate, rowsInOrder, SETUP_STATES, setupApi, setupBatch, setupFieldsOf, setupProblem, setupSummary, shortDate, tableToTsv,
 } from "./setup";
 import type { PastedSetup, SetupFields, SetupRow, SetupState } from "./setup";
 import type { Entry } from "./types";
@@ -192,7 +192,7 @@ export default function SetupPlan(props: {
       if (!note) continue;
       created.push(await workingApi.addEntry(modelName, {
         ...blankEntry("issue", today, props.modelPhase), title: note.slice(0, 200), body: note.length > 200 ? note : "",
-        process: saved[i].line, setupRowId: saved[i].id,
+        process: issueProcessOf(saved[i]), setupRowId: saved[i].id,
       }));
     }
     if (created.length) props.onChanged([...entries, ...created]);
@@ -293,7 +293,7 @@ export default function SetupPlan(props: {
                     <tr className="su-sub">
                       <td colSpan={COLS}>
                         <IssueTable modelName={modelName} modelPhase={props.modelPhase} entries={problems} today={today}
-                          setupRowId={r.id} heading={`Issue (Problem) · No. ${r.no} ${r.processName}`} newDefaults={{ process: r.line }}
+                          setupRowId={r.id} heading={`Issue (Problem) · No. ${r.no} ${r.processName}`} newDefaults={{ process: issueProcessOf(r) }}
                           onChanged={(list) => {
                             const mine = new Set(problems.map((p) => p.id));
                             props.onChanged([...entries.filter((e) => !mine.has(e.id)), ...list]);

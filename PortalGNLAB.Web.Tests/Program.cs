@@ -733,6 +733,50 @@ try
         try { File.Delete(oldDb); } catch (IOException) { }
     }
 
+    // Problems of a Setup Plan row saved with the row's LINE as Process get its process name, once.
+    string[] procDbs = [.. Enumerable.Range(0, 3).Select(i => Path.Combine(Path.GetTempPath(), $"working-proc{i}-{Guid.NewGuid():N}.db"))];
+    try
+    {
+        var before = new WorkingService(procDbs[0], glossDb);
+        List<WorkingSetupRow> sr = before.ImportSetupRows("PROC", [
+            new(1, "", "SUB 1", " CD ETCHING ", "", "", "", "", "", ""), new(2, "", "SUB 1", new string('P', 70), "", "", "", "", "", "")], "a");
+        WorkingEntrySave SBody(string title, string process, string setupRowId) =>
+            new("issue", "2026-11-09", title, "", "Open", "", "", "", "", 0, "MP", "SETUP", process, "", "", "", setupRowId);
+        before.CreateEntry("PROC", SBody("from line", "SUB 1", sr[0].Id), "a");
+        before.CreateEntry("PROC", SBody("long name", "SUB 1", sr[1].Id), "a");
+        before.CreateEntry("PROC", SBody("own process", "WELDING", sr[0].Id), "a");
+        before.CreateEntry("PROC", SBody("no row", "SUB 1", ""), "a");
+        void CopyDb(string from, string to, bool clearMark)
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            File.Copy(from, to);
+            if (!clearMark) return;
+            using var pc = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={to};Pooling=False");
+            pc.Open();
+            using var pCmd = pc.CreateCommand();
+            pCmd.CommandText = "DROP TABLE IF EXISTS WorkingMigrations";
+            pCmd.ExecuteNonQuery();
+        }
+        CopyDb(procDbs[0], procDbs[1], clearMark: true); // as a database from before the fix
+        var fixedSvc = new WorkingService(procDbs[1], glossDb);
+        Dictionary<string, string> procOf = fixedSvc.ListEntries("PROC").ToDictionary(e => e.Title, e => e.Process);
+        Check(procOf["from line"] == "CD ETCHING" && procOf["long name"] == new string('P', 60)
+              && procOf["own process"] == "WELDING" && procOf["no row"] == "SUB 1",
+            "working: setup problems with the LINE as Process get the row's process name");
+        WorkingEntry relined = fixedSvc.ListEntries("PROC").Single(e => e.Title == "from line");
+        fixedSvc.UpdateEntry("PROC", relined.Id, SBody("from line", "SUB 1", sr[0].Id) with { Revision = relined.Revision }, "a");
+        CopyDb(procDbs[1], procDbs[2], clearMark: false);
+        Check(new WorkingService(procDbs[2], glossDb).ListEntries("PROC").Single(e => e.Title == "from line").Process == "SUB 1",
+            "working: the Process fix runs once, a line set by hand later is kept");
+    }
+    finally
+    {
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        foreach (string f in procDbs)
+            foreach (string s in new[] { f, f + "-wal", f + "-shm" })
+                try { File.Delete(s); } catch (IOException) { }
+    }
+
     // Model groups: missing file reports an error instead of throwing.
     WorkingGroups missing = working.ListGroups();
     Check(missing.Groups.Count == 0 && !string.IsNullOrEmpty(missing.Error) && missing.Source == glossDb, "working: missing glossary file gives empty groups plus error");
@@ -979,6 +1023,26 @@ finally
     foreach (string f in new[] { workDb, glossDb, workGrantDb })
         foreach (string s in new[] { f, f + "-wal", f + "-shm" })
             if (File.Exists(s)) File.Delete(s);
+}
+
+// Working: a model name with '/' in a {name} route (the page sends encodeURIComponent(name), so '/' comes as %2F).
+{
+    var slashApp = Microsoft.AspNetCore.Builder.WebApplication.Create();
+    slashApp.Urls.Add("http://127.0.0.1:0");
+    Microsoft.AspNetCore.Builder.EndpointRouteBuilderExtensions.MapGet(slashApp, "/m/{name}",
+        (string name) => PortalGNLAB.Web.Endpoints.WorkingEndpoints.ModelName(name));
+    slashApp.StartAsync().GetAwaiter().GetResult();
+    try
+    {
+        string root = slashApp.Urls.First();
+        using var http = new HttpClient();
+        string Echo(string name) => http.GetStringAsync($"{root}/m/{Uri.EscapeDataString(name)}").GetAwaiter().GetResult();
+        Check(Echo("MSM-X526/X626B") == "MSM-X526/X626B"
+              && http.GetStringAsync($"{root}/m/MSM-X526%2fX626B").GetAwaiter().GetResult() == "MSM-X526/X626B"
+              && Echo("TIU-C11 18%") == "TIU-C11 18%" && Echo("A%20B") == "A%20B",
+            "working route gives a model name with '/' back as it was sent (other escapes decoded once)");
+    }
+    finally { slashApp.StopAsync().GetAwaiter().GetResult(); }
 }
 
 if (failures.Count > 0)
