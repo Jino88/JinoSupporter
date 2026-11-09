@@ -274,7 +274,29 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             using (SqliteCommand set = Cmd(conn, "UPDATE WorkingEntries SET Seq=@s WHERE Id=@id", tx,
                 ("@s", NextSeq(conn, tx, model, kind)), ("@id", id)))
                 set.ExecuteNonQuery();
+        FixSetupIssueProcess(conn, tx);
         tx.Commit();
+    }
+
+    /// <summary>
+    /// Once (kept in WorkingMigrations): the problems of a Setup Plan row were given the row's LINE as their Process;
+    /// they get the row's process name instead. Runs one time so a Process set to the line by hand later is kept.
+    /// </summary>
+    private static void FixSetupIssueProcess(SqliteConnection conn, SqliteTransaction tx)
+    {
+        const string name = "setup-issue-process";
+        using (SqliteCommand make = Cmd(conn, "CREATE TABLE IF NOT EXISTS WorkingMigrations (Name TEXT PRIMARY KEY, AppliedAt TEXT NOT NULL)", tx))
+            make.ExecuteNonQuery();
+        using (SqliteCommand done = Cmd(conn, "SELECT COUNT(*) FROM WorkingMigrations WHERE Name=@n", tx, ("@n", name)))
+            if (Convert.ToInt32(done.ExecuteScalar(), CultureInfo.InvariantCulture) > 0) return;
+        using (SqliteCommand fix = Cmd(conn,
+            "UPDATE WorkingEntries SET Process = substr(trim((SELECT s.ProcessName FROM WorkingSetupRows s WHERE s.Id = WorkingEntries.SetupRowId)), 1, 60) " +
+            "WHERE SetupRowId <> '' AND EXISTS (SELECT 1 FROM WorkingSetupRows s WHERE s.Id = WorkingEntries.SetupRowId " +
+            "AND s.Line <> '' AND WorkingEntries.Process = s.Line AND trim(s.ProcessName) <> '')", tx))
+            fix.ExecuteNonQuery();
+        using (SqliteCommand mark = Cmd(conn, "INSERT INTO WorkingMigrations (Name, AppliedAt) VALUES (@n, @at)", tx,
+            ("@n", name), ("@at", DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture))))
+            mark.ExecuteNonQuery();
     }
 
     private static void AddMissingColumns(SqliteConnection conn, SqliteTransaction tx, string table, (string Name, string Type)[] columns)

@@ -59,6 +59,9 @@ export const setupFieldsOf = (r: SetupRow): SetupFields => ({
 /** The No. a new row gets unless it is changed: one after the highest of the rows and the rows being added. */
 export const nextNo = (rows: { no: number }[]) => rows.reduce((m, r) => Math.max(m, r.no), 0) + 1;
 
+/** Issue "Process" of a problem of a setup row: its process name (not its line), cut to the 60 characters the field takes. */
+export const issueProcessOf = (r: { processName: string }) => r.processName.trim().slice(0, 60);
+
 /**
  * One more row to add after the ones already being added: the next No. and the line of the row above it (the last new
  * row, else the line shown, else the last saved row).
