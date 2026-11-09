@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8" /><title>Model Hub — A. Tree + Tabs</title>
+<link rel="stylesheet" href="../mockup.css" /><link rel="stylesheet" href="hub.css" /></head>
+<body>
+<div class="shell"><aside class="rail" id="rail"></aside>
+<main class="main"><div class="page hub">
+  <aside class="card side">
+    <div class="side-h"><h2>Model groups <span class="muted" id="total"></span></h2><input class="inp" id="q" placeholder="Search model…" /></div>
+    <div class="tree" id="tree"></div>
+    <div id="legend"></div>
+  </aside>
+  <section id="detail"></section>
+</div></main></div>
+<div class="variant-tag">A · Tree + Tabs <a href="index.html">All drafts</a></div>
+<script src="../mockup.js"></script><script src="hub.js"></script>
+<script>
+renderRail("");
+const TABS = [
+  ["info", "Model Info"], ["plan", "Dev Plan"], ["dev", "Dev History"], ["issue", "Issues"], ["review", "Reviews"], ["doc", "Documents"],
+];
+let sel = "MSM-X316B", tab = new URLSearchParams(location.search).get("tab") || "info";
+document.getElementById("total").textContent = allModels().length;
+document.getElementById("legend").innerHTML = PHASE_LEGEND;
+
+function draw() {
+  renderTree(document.getElementById("tree"), sel, (m) => { sel = m; draw(); }, { filter: document.getElementById("q").value });
+  const rec = modelRecord(sel);
+  const counts = { dev: rec.history.length, issue: rec.issues.filter((i) => i.status === "Open").length, review: rec.reviews.length };
+  const body = {
+    info: `<div class="stack">${kpiRow(rec)}<div class="card"><div class="card-h"><h2>Model information</h2><button class="lnk">Edit</button></div><div class="card-b">${infoGrid(rec)}</div></div>
+      <div class="card"><div class="card-h"><h2>Development phase</h2></div><div class="card-b">${phaseStepper(rec)}</div></div></div>`,
+    plan: `<div class="stack"><div class="card"><div class="card-h"><h2>Phase schedule</h2><span class="hint">Proto → MP</span></div><div class="card-b">${milestoneGantt(rec)}</div></div>
+      <div class="card"><div class="card-h"><h2>Production plan <span class="hint">from Production Input · 2026-11-02 – 11-15</span></h2><div class="tools"><button class="btn">← Week</button> <button class="btn">Week →</button> <button class="btn primary">Open in Production Input</button></div></div><div class="card-b">${planTable(rec)}</div></div></div>`,
+    dev: `<div class="card"><div class="card-h"><h2>Development history</h2><button class="btn primary">+ Add entry</button></div><div class="card-b">${historyList(rec)}</div></div>`,
+    issue: `<div class="card"><div class="card-h"><h2>Issues</h2><div class="chips"><span class="chip on">All</span><span class="chip">Open</span><span class="chip">Critical</span><button class="btn primary">+ New issue</button></div></div><div class="card-b flush">${issueTable(rec)}</div></div>`,
+    review: `<div class="card"><div class="card-h"><h2>Review history</h2><button class="btn primary">+ Add review</button></div><div class="card-b flush">${reviewTable(rec)}</div></div>`,
+    doc: `<div class="card"><div class="card-h"><h2>Documents</h2><button class="btn primary">Upload</button></div><div class="card-b flush"><table class="t"><thead><tr><th class="l">File</th><th class="l">Kind</th><th class="l">Rev</th><th class="l">Updated</th></tr></thead><tbody>
+      <tr><td class="l">${rec.name}_Spec.pdf</td><td class="l">Spec</td><td class="l">C</td><td class="l">2026-10-21</td></tr>
+      <tr><td class="l">${rec.name}_PFMEA.xlsx</td><td class="l">PFMEA</td><td class="l">B</td><td class="l">2026-09-30</td></tr>
+      <tr><td class="l">${rec.name}_BOM.xlsx</td><td class="l">BOM</td><td class="l">C</td><td class="l">2026-09-12</td></tr></tbody></table></div></div>`,
+  }[tab];
+  document.getElementById("detail").innerHTML = `
+    <div class="mh"><div><div class="ph-crumb">${rec.path.join(" › ")} <span class="faint">›</span> <b>${rec.name}</b></div><h1>${rec.name}</h1>
+      <div class="ph-sub">${rec.customer}<span class="dot-sep">·</span>${rec.build}<span class="dot-sep">·</span>${rec.owner}</div></div>
+      <div class="ph-actions"><span class="pill"><span class="led"></span>${rec.phase}</span><button class="btn">Export</button></div></div>
+    <div class="tabs">${TABS.map(([k, l]) => `<button data-t="${k}" class="${k === tab ? "on" : ""}">${l}${counts[k] != null ? `<span class="cnt">${counts[k]}</span>` : ""}</button>`).join("")}</div>
+    ${body}`;
+  document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => { tab = b.dataset.t; draw(); }));
+}
+document.getElementById("q").addEventListener("input", draw);
+draw();
+</script>
+</body></html>

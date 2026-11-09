@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8" /><title>Model Hub — D. Group Matrix</title>
+<link rel="stylesheet" href="../mockup.css" /><link rel="stylesheet" href="hub.css" />
+<style>
+  .mx-layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  table.mx { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; }
+  table.mx th { background: #f8fafc; color: var(--muted); font-size: 11px; font-weight: 600; padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 1; }
+  table.mx td { padding: 6px 10px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+  table.mx tr.grp td { background: #fbfcfe; font-weight: 800; font-size: 11px; letter-spacing: .06em; color: var(--ink-2); cursor: pointer; }
+  table.mx tr.grp.d1 td:first-child { padding-left: 24px; }
+  table.mx tr.mod td:first-child { padding-left: 34px; font-weight: 600; }
+  table.mx td.cell { cursor: pointer; border-radius: 6px; }
+  table.mx td.cell:hover { background: var(--accent-soft); }
+  table.mx td.cell.on { background: var(--accent); color: #fff; }
+  table.mx td.cell.on * { color: #fff !important; background: transparent !important; }
+  .pbar { width: 70px; height: 6px; background: #f1f5f9; border-radius: 3px; display: inline-block; vertical-align: middle; margin-right: 6px; overflow: hidden; }
+  .pbar i { display: block; height: 100%; background: var(--accent); }
+  .panel { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
+</style></head>
+<body>
+<div class="shell"><aside class="rail" id="rail"></aside>
+<main class="main"><div class="page" style="max-width:1600px">
+  <header class="ph"><div><div class="ph-crumb">Model Hub <span class="faint">›</span> <b>Group matrix</b></div><h1>All models at a glance</h1>
+    <div class="ph-sub">Rows follow the CompanyGlossary model groups. Click any cell to open that model's category on the right.</div></div>
+    <div class="ph-actions"><div class="chips"><span class="chip on">All phases</span><span class="chip">DVT+</span><span class="chip">Has open issues</span></div><button class="btn">Export</button></div></header>
+  <div class="mx-layout">
+    <div class="card"><div class="tbl-wrap"><table class="mx" id="mx"></table></div></div>
+    <div class="card panel" id="panel"></div>
+  </div>
+</div></main></div>
+<div class="variant-tag">D · Group Matrix <a href="index.html">All drafts</a></div>
+<script src="../mockup.js"></script><script src="hub.js"></script>
+<script>
+renderRail("");
+let sel = "TIM-338", cat = "info";
+const shut = new Set();
+const CATS = [["info", "Model Info"], ["plan", "Dev Plan"], ["dev", "Dev History"], ["issue", "Issues"], ["review", "Reviews"]];
+
+function cellOf(r, k) {
+  const open = r.issues.filter((i) => i.status === "Open"), crit = open.filter((i) => i.severity === "Critical").length;
+  if (k === "info") return `<span class="ph-dot p${r.phaseIdx}"></span> ${r.phase} <span class="muted">${r.build}</span>`;
+  if (k === "plan") { const p = Math.round(((r.seed % 40) + 60)); return `<span class="pbar"><i style="width:${p}%"></i></span>${p}%`; }
+  if (k === "dev") return `<span class="muted">${r.history[0].date.slice(5)}</span> ${r.history[0].kind}`;
+  if (k === "issue") return open.length ? `<b style="color:var(--warn)">${open.length} open</b>${crit ? ` <span class="sev crit">${crit} crit</span>` : ""}` : `<span class="faint">—</span>`;
+  return `<span class="res ${resCls(r.reviews[0].result)}">${r.reviews[0].result}</span> <span class="muted">${r.reviews[0].date.slice(5)}</span>`;
+}
+
+function drawMatrix() {
+  let rows = "";
+  const walk = (g, depth, key) => {
+    const k = key + "/" + g.name;
+    rows += `<tr class="grp d${Math.min(depth, 1)}" data-g="${k}"><td colspan="${CATS.length + 1}">${shut.has(k) ? "▸" : "▾"} ${g.name} <span class="faint">${allModelsOf(g).length}</span></td></tr>`;
+    if (shut.has(k)) return;
+    (g.children || []).forEach((c) => walk(c, depth + 1, k));
+    (g.models || []).forEach((m) => {
+      const r = modelRecord(m);
+      rows += `<tr class="mod"><td>${m}</td>${CATS.map(([c]) => `<td class="cell ${m === sel && c === cat ? "on" : ""}" data-m="${m}" data-c="${c}">${cellOf(r, c)}</td>`).join("")}</tr>`;
+    });
+  };
+  GROUPS.forEach((g) => walk(g, 0, ""));
+  const mx = document.getElementById("mx");
+  mx.innerHTML = `<thead><tr><th>Model</th>${CATS.map(([, l], i) => `<th>${i + 1}. ${l}</th>`).join("")}</tr></thead><tbody>${rows}</tbody>`;
+  mx.querySelectorAll("tr.grp").forEach((t) => t.addEventListener("click", () => { shut.has(t.dataset.g) ? shut.delete(t.dataset.g) : shut.add(t.dataset.g); drawMatrix(); }));
+  mx.querySelectorAll("td.cell").forEach((t) => t.addEventListener("click", () => { sel = t.dataset.m; cat = t.dataset.c; draw(); }));
+}
+
+function drawPanel() {
+  const r = modelRecord(sel);
+  const body = { info: infoGrid(r) + "<div style='height:14px'></div>" + phaseStepper(r), plan: milestoneGantt(r) + "<div style='height:12px'></div>" + planTable(r, { compact: true, days: 7 }), dev: historyList(r), issue: issueTable(r), review: reviewTable(r) }[cat];
+  document.getElementById("panel").innerHTML = `
+    <div class="card-h" style="padding-bottom:10px;border-bottom:1px solid var(--line)"><div><div class="ph-crumb">${r.path.join(" › ")}</div><h2 style="font-size:17px;margin-top:3px">${r.name}</h2></div><button class="btn">Open full page</button></div>
+    <div class="tabs" style="padding:0 12px;margin-bottom:0">${CATS.map(([k, l]) => `<button data-c="${k}" class="${k === cat ? "on" : ""}">${l}</button>`).join("")}</div>
+    <div class="card-b">${body}</div>`;
+  document.querySelectorAll("#panel .tabs button").forEach((b) => b.addEventListener("click", () => { cat = b.dataset.c; draw(); }));
+}
+function draw() { drawMatrix(); drawPanel(); }
+draw();
+</script>
+</body></html>

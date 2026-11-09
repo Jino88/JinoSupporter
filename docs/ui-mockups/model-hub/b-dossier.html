@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8" /><title>Model Hub — B. Dossier + Timeline</title>
+<link rel="stylesheet" href="../mockup.css" /><link rel="stylesheet" href="hub.css" />
+<style>
+  .dos { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; align-items: start; }
+  .toc { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 2px; padding: 8px; }
+  .toc a { padding: 7px 10px; border-radius: 7px; font-weight: 600; color: var(--muted); text-decoration: none; display: flex; justify-content: space-between; }
+  .toc a:hover { background: #f1f5f9; color: var(--ink); }
+  .toc a .cnt { font-size: 10.5px; color: var(--faint); }
+  .sec-anchor { scroll-margin-top: 16px; }
+  .hero { padding: 18px 20px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px 24px; align-items: center; }
+  .hero h1 { margin: 0; font-size: 24px; }
+  .hero .stepper { grid-column: 1 / -1; }
+</style></head>
+<body>
+<div class="shell"><aside class="rail" id="rail"></aside>
+<main class="main"><div class="page hub">
+  <aside class="card side">
+    <div class="side-h"><h2>Model groups</h2><input class="inp" id="q" placeholder="Search model…" /></div>
+    <div class="tree" id="tree"></div><div id="legend"></div>
+  </aside>
+  <section id="detail"></section>
+</div></main></div>
+<div class="variant-tag">B · Dossier + Timeline <a href="index.html">All drafts</a></div>
+<script src="../mockup.js"></script><script src="hub.js"></script>
+<script>
+renderRail("");
+document.getElementById("legend").innerHTML = PHASE_LEGEND;
+let sel = "BRS-181389S08ZZ";
+const only = new Set(["dev", "issue", "review"]);
+
+function draw() {
+  renderTree(document.getElementById("tree"), sel, (m) => { sel = m; draw(); window.scrollTo(0, 0); }, { filter: document.getElementById("q").value });
+  const rec = modelRecord(sel), open = rec.issues.filter((i) => i.status === "Open");
+  const chip = (k, l, n) => `<span class="chip ${only.has(k) ? "on" : ""}" data-k="${k}">${l}<span class="cnt">${n}</span></span>`;
+  document.getElementById("detail").innerHTML = `
+  <div class="dos">
+    <nav class="card toc">
+      <a href="#s-info">1. Model Info</a><a href="#s-plan">2. Dev Plan</a><a href="#s-time">3. History <span class="cnt">${unifiedEvents(rec).length}</span></a>
+      <a href="#s-issue">4. Open Issues <span class="cnt">${open.length}</span></a><a href="#s-review">5. Reviews <span class="cnt">${rec.reviews.length}</span></a>
+    </nav>
+    <div class="stack">
+      <div class="card hero sec-anchor" id="s-info">
+        <div><div class="ph-crumb">${rec.path.join(" › ")}</div><h1>${rec.name}</h1><div class="ph-sub">${rec.customer}<span class="dot-sep">·</span>${rec.build}<span class="dot-sep">·</span>PM ${rec.owner}<span class="dot-sep">·</span>SOP ${rec.sop}</div></div>
+        <div class="ph-actions"><button class="btn">Edit info</button><button class="btn primary">+ Log entry</button></div>
+        ${phaseStepper(rec)}
+      </div>
+      <div class="card"><div class="card-b">${infoGrid(rec)}</div></div>
+      <div class="card sec-anchor" id="s-plan"><div class="card-h"><h2>Dev Plan <span class="hint">phase schedule + Production Input plan (Sub → OQC)</span></h2><button class="lnk">Open Production Input →</button></div>
+        <div class="card-b">${milestoneGantt(rec)}<div style="height:14px"></div>${planTable(rec, { compact: true })}</div></div>
+      <div class="grid g-3-1">
+        <div class="card sec-anchor" id="s-time"><div class="card-h"><h2>History <span class="hint">development, issues and reviews on one line</span></h2>
+          <div class="chips">${chip("dev", "Dev", rec.history.length)}${chip("issue", "Issue", rec.issues.length)}${chip("review", "Review", rec.reviews.length)}</div></div>
+          <div class="card-b">${unifiedTimeline(rec, only)}</div></div>
+        <div class="stack">
+          <div class="card sec-anchor" id="s-issue"><div class="card-h"><h2>Open issues</h2></div><div class="card-b">
+            ${open.length ? open.map((i) => `<div style="padding:8px 0;border-bottom:1px solid var(--line-soft)"><span class="sev ${sevCls(i.severity)}">${i.severity}</span> <b>${i.title}</b><div class="muted" style="font-size:11.5px">${i.id} · ${i.owner} · due <span class="${i.due < TODAY ? "late" : ""}" style="${i.due < TODAY ? "color:var(--bad);font-weight:700" : ""}">${i.due}</span></div></div>`).join("") : `<div class="muted">No open issues.</div>`}
+          </div></div>
+          <div class="card sec-anchor" id="s-review"><div class="card-h"><h2>Latest reviews</h2></div><div class="card-b">
+            ${rec.reviews.slice(0, 4).map((v) => `<div style="padding:8px 0;border-bottom:1px solid var(--line-soft)"><span class="res ${resCls(v.result)}">${v.result}</span> <b>${v.kind}</b><div class="muted" style="font-size:11.5px">${v.date} · ${v.title}</div></div>`).join("")}
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  document.querySelectorAll(".chips .chip").forEach((c) => c.addEventListener("click", () => {
+    only.has(c.dataset.k) ? only.delete(c.dataset.k) : only.add(c.dataset.k); draw();
+  }));
+}
+document.getElementById("q").addEventListener("input", draw);
+draw();
+</script>
+</body></html>
