@@ -212,7 +212,7 @@ function LogEditRow(props: {
       <td colSpan={4}></td>
       <td className="l wk-it-title" onDragOver={pics.onDragOver} onDrop={pics.onFileDrop}>
         <div className="wk-note-in">
-          <textarea className="inp wk-ta" rows={2} value={f.text} onPaste={pics.onPaste} autoFocus={!props.isNew}
+          <textarea className="inp wk-ta" rows={3} value={f.text} onPaste={pics.onPaste} autoFocus={!props.isNew}
             placeholder={props.isNew ? "Add today's progress… (Ctrl+V or drop pictures / videos)" : "Ctrl+V or drop pictures / videos"}
             onChange={(e) => set("text", e.target.value)} />
           <PickFiles onPick={pics.pick} />
@@ -460,13 +460,13 @@ export default function IssueTable(props: {
         <table className="wk-it">
           <thead>
             <tr>
-              <th rowSpan={2}></th><th rowSpan={2}>No.</th><th rowSpan={2}>Dev phase</th>
+              <th rowSpan={2} className="fit"></th><th rowSpan={2} className="fit">No.</th><th rowSpan={2} className="fit">Dev phase</th>
               <th colSpan={3} className="grp">Classification</th>
-              <th rowSpan={2} className="l">Issue</th><th rowSpan={2}>Owner</th>
-              <th rowSpan={2}>Registered</th><th rowSpan={2}>Due</th><th rowSpan={2}>Done</th>
-              <th rowSpan={2} className="l">Final result</th><th rowSpan={2}>Notes</th><th rowSpan={2}></th>
+              <th rowSpan={2} className="l wide">Issue</th><th rowSpan={2} className="fit">Owner</th>
+              <th rowSpan={2} className="fit">Registered</th><th rowSpan={2} className="fit">Due</th><th rowSpan={2} className="fit">Done</th>
+              <th rowSpan={2} className="l final">Final result</th><th rowSpan={2} className="fit">Notes</th><th rowSpan={2} className="fit"></th>
             </tr>
-            <tr><th>Issue type</th><th>Process</th><th>Cause group</th></tr>
+            <tr><th className="fit">Issue type</th><th className="fit">Process</th><th className="fit">Cause group</th></tr>
           </thead>
           <tbody>
             {!shown.length && (

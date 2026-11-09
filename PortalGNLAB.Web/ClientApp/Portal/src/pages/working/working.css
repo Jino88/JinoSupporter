@@ -93,6 +93,9 @@ table.wk-it { width: 100%; border-collapse: separate; border-spacing: 0; font-si
 table.wk-it th { background: #f8fafc; color: var(--ink-2); font-size: 10.5px; font-weight: 700; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; text-align: center; }
 table.wk-it th.grp { border-bottom: 1px solid var(--line-soft); color: var(--accent-ink); background: var(--accent-soft); }
 table.wk-it th.l, table.wk-it td.l { text-align: left; }
+/* owner, dates, counts and buttons take only the room they need; Issue and Final result share the rest */
+table.wk-it th.fit { width: 1%; }
+table.wk-it th.final { width: 22%; }
 table.wk-it td { padding: 7px 8px; border-bottom: 1px solid var(--line-soft); text-align: center; vertical-align: top; white-space: nowrap; }
 table.wk-it td.n { font-variant-numeric: tabular-nums; font-weight: 700; }
 table.wk-it td.tog { color: var(--faint); width: 18px; padding-right: 0; }
@@ -104,9 +107,9 @@ table.wk-it td.act .wk-link + .wk-link { margin-left: 8px; }
 .wk-it-row:hover td { background: #fafbff; }
 .wk-it-row.on td { background: var(--accent-soft); }
 .wk-it-row.done td { color: var(--muted); }
-.wk-it-title { white-space: normal !important; min-width: 220px; max-width: 420px; }
-.wk-it-title .small { margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px; }
-.wk-it-final { white-space: pre-wrap !important; min-width: 140px; max-width: 280px; }
+.wk-it-title { white-space: normal !important; min-width: 300px; }
+.wk-it-title .small { margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 640px; }
+.wk-it-final { white-space: pre-wrap !important; min-width: 160px; }
 .wk-it-sub > td { background: #fbfcfe; padding: 10px 16px 14px 34px; text-align: left; white-space: normal; }
 .wk-it-empty { padding: 24px !important; color: var(--muted); }
 .wk-if { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -119,8 +122,9 @@ tr.wk-it-log .wk-text { margin-top: 0; }
 tr.wk-it-log.edit td { vertical-align: middle; }
 tr.wk-it-log.edit td.wk-it-title { vertical-align: top; }
 tr.wk-it-log.new td { background: #fff; border-bottom-style: dashed; }
-tr.wk-it-log .inp.sm { width: 100%; min-width: 118px; }
-tr.wk-it-log .wk-ta { width: 100%; min-height: 34px; }
+tr.wk-it-log .inp.sm { width: 100%; min-width: 110px; }
+tr.wk-it-log .inp.sm.wk-in-owner { min-width: 72px; width: 80px; }
+tr.wk-it-log .wk-ta { width: 100%; min-height: 64px; }
 /* Sub-issues: one level under an issue, after its notes; a left bar marks them. */
 tr.wk-it-row.child td { background: #f6f8ff; }
 tr.wk-it-row.child td:first-child { box-shadow: inset 3px 0 0 var(--accent); text-align: right; }
