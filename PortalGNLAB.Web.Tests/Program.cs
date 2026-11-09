@@ -770,6 +770,65 @@ try
     _ = new MenuPermissionService(wRepo);
     Check(wGranted && !wPerms.IsAllowed(AppRoles.Leader, AppMenus.Working) && !wRepo.GetMenuPermissionsForRole(AppRoles.Viewer).Contains(AppMenus.Working),
         "working is granted once to seeded roles and an admin removal sticks");
+
+    // BMES model groups for Model Info: products are the line shifts without their last "_" part
+    var bmesGroups = new List<ModelGroupRecord>
+    {
+        new() { Name = "SPK", ProductGroup = "SPK", SortOrder = 2, MidGroups = [new() { Material = "SPK-1", SubGroups = [new() { Name = "", LineShifts = ["SPK-1_A"] }] }] },
+        new()
+        {
+            Name = "UNIT", ProductGroup = "UNIT", SortOrder = 1,
+            MidGroups =
+            [
+                new()
+                {
+                    Material = "TIU-C11-18",
+                    SubGroups =
+                    [
+                        new()
+                        {
+                            Name = "TIU-C11-18", LineShifts = ["TIU-C11-18-L-ZZ_E21A", "TIU-C11-18-L-ZZ_E22B"],
+                            SubGroups = [new() { Name = "TIU-C11-18_L", LineShifts = ["TIU-C11-18-R-ZZ_E21A", "PLAIN", "TIU-C11-18-L-ZZ_E21A"] }],
+                        },
+                    ],
+                },
+            ],
+        },
+    };
+    var bmesMaterials = PortalGNLAB.Web.Services.WorkingBmesService.BuildMaterials(bmesGroups);
+    var tiu = bmesMaterials.FirstOrDefault(m => m.Material == "TIU-C11-18");
+    Check(bmesMaterials.Select(m => m.Group).SequenceEqual(["UNIT", "SPK"]) && tiu is not null
+          && tiu.Products.SequenceEqual(["TIU-C11-18-L-ZZ", "TIU-C11-18-R-ZZ", "PLAIN"]),
+        "working bmes: products drop the last _ part, keep first-seen order, no duplicates, names without _ stay");
+    Check(tiu!.SubGroups.Count == 2 && tiu.SubGroups[0].Path == "TIU-C11-18" && tiu.SubGroups[1].Path == "TIU-C11-18 › TIU-C11-18_L"
+          && tiu.SubGroups[1].LineShifts.Count == 3 && bmesMaterials[1].SubGroups[0].Path == "",
+        "working bmes: sub-group paths join nested names with ›");
+
+    // latest successful BOM cache of a product, on a temp DB (never the real cache)
+    string bomDb = Path.Combine(Path.GetTempPath(), $"working-bom-{Guid.NewGuid():N}.db");
+    try
+    {
+        var bomCache = new BmesBomCacheService(bomDb);
+        BmesBomMaterialCandidate Row(string code, int level) => new() { MaterialCode = code, MaterialName = code + "-N", BomLevel = level, UsageQty = 2.5m, UsageUnit = "EA", HasChildren = level == 0 };
+        Check(bomCache.TryLoadLatest("TIU-C11-18-L-ZZ") is null, "working bmes: no cache gives no latest BOM");
+        bomCache.Save(new BmesBomCacheQuery("TIU-C11-18-L-ZZ", "3200", new DateTime(2026, 1, 5), 6, 2000), [Row("OLD", 0)]);
+        Thread.Sleep(15);
+        bomCache.Save(new BmesBomCacheQuery("TIU-C11-18-L-ZZ", "3200", new DateTime(2026, 3, 9), 4, 2000), [Row("NEW", 0), Row("CHILD", 1)]);
+        Thread.Sleep(15);
+        bomCache.Save(new BmesBomCacheQuery("TIU-C11-18-L-ZZ", "3200", new DateTime(2026, 5, 1), 3, 2000), []);
+        var latest = bomCache.TryLoadLatest("tiu-c11-18-l-zz");
+        Check(latest is not null && latest.Rows.Select(r => r.MaterialCode).SequenceEqual(["NEW", "CHILD"]) && latest.Query.WorkDate == new DateTime(2026, 3, 9),
+            "working bmes: latest BOM is the newest cache with rows, whatever its date or depth, and an empty cache is skipped");
+        var bom = PortalGNLAB.Web.Services.WorkingBmesService.ToBom("TIU-C11-18-L-ZZ", "cache", latest!);
+        Check(bom.WorkDate == "2026-03-09" && bom.Rows.Count == 2 && bom.Rows[1].Level == 1 && bom.Rows[0].HasChildren && bom.Rows[0].UsageQty == 2.5m,
+            "working bmes: BOM response carries work date and rows");
+    }
+    finally
+    {
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        foreach (string s in new[] { bomDb, bomDb + "-wal", bomDb + "-shm" })
+            if (File.Exists(s)) File.Delete(s);
+    }
 }
 finally
 {

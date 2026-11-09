@@ -697,7 +697,7 @@ public static class BmesReportEndpoints
     }
 
     /// <summary>Same connection BmesTest5Page.razor builds from the Admin DB Query settings (read-only use).</summary>
-    private static BmesFcostDbConnection BuildNetworkDbConnection(AppPathsService paths)
+    internal static BmesFcostDbConnection BuildNetworkDbConnection(AppPathsService paths)
     {
         var c = paths.Current;
         return new BmesFcostDbConnection
