@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { workingApi } from "./api";
 import { blankEntry, byMonth, entryProblem, fieldsOf, isLate, isOpenIssue } from "./logic";
-import { ISSUE_STATUSES, KIND_LABEL, RESULTS, SEVERITIES, type Entry, type EntryFields, type EntryKind } from "./types";
+import { KIND_LABEL, RESULTS, type Entry, type EntryFields, type EntryKind } from "./types";
 
 const TITLES: Record<EntryKind, string> = { dev: "Development history", issue: "Issues", review: "Review history" };
 const ADD: Record<EntryKind, string> = { dev: "+ Add entry", issue: "+ New issue", review: "+ Add review" };
 const OWNER: Record<EntryKind, string> = { dev: "By", issue: "Owner", review: "Chair" };
 const KINDS: EntryKind[] = ["dev", "issue", "review"];
+/** Issues are added and edited in the Issues tab (IssueTable). */
+const ADDABLE: EntryKind[] = ["dev", "review"];
 
 type IssueFilter = "all" | "open" | "closed";
 
@@ -22,20 +24,11 @@ function EntryForm(props: { value: EntryFields; kindFixed: boolean; busy: boolea
             const kind = e.target.value as EntryKind;
             setF({ ...blankEntry(kind, f.date), title: f.title, body: f.body, owner: f.owner });
           }}>
-            {KINDS.map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}
+            {ADDABLE.map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}
           </select>
         </div>
       )}
       <div className="wk-f"><label>Date</label><input type="date" className="inp" value={f.date} onChange={(e) => set("date", e.target.value)} /></div>
-      {f.kind === "issue" && (
-        <>
-          <div className="wk-f"><label>Severity</label>
-            <select className="inp" value={f.severity} onChange={(e) => set("severity", e.target.value)}>{SEVERITIES.map((s) => <option key={s}>{s}</option>)}</select></div>
-          <div className="wk-f"><label>Status</label>
-            <select className="inp" value={f.status} onChange={(e) => set("status", e.target.value)}>{ISSUE_STATUSES.map((s) => <option key={s}>{s}</option>)}</select></div>
-          <div className="wk-f"><label>Due</label><input type="date" className="inp" value={f.due} onChange={(e) => set("due", e.target.value)} /></div>
-        </>
-      )}
       {f.kind === "review" && (
         <div className="wk-f"><label>Result</label>
           <select className="inp" value={f.result} onChange={(e) => set("result", e.target.value)}>{RESULTS.map((s) => <option key={s}>{s}</option>)}</select></div>
@@ -56,8 +49,9 @@ function Badges({ e, today }: { e: Entry; today: string }) {
   return (
     <>
       <span className={"wk-kind " + e.kind}>{KIND_LABEL[e.kind]}</span>
-      {e.kind === "issue" && <span className={"wk-sev " + e.severity.toLowerCase()}>{e.severity}</span>}
-      {e.kind === "issue" && <span className={"wk-st " + (isOpenIssue(e) ? "open" : "closed")}>{e.status || "Open"}</span>}
+      {e.kind === "issue" && e.seq > 0 && <span className="wk-tag">No. {e.seq}</span>}
+      {e.kind === "issue" && e.severity && <span className={"wk-sev " + e.severity.toLowerCase()}>{e.severity}</span>}
+      {e.kind === "issue" && <span className={"wk-st " + (isOpenIssue(e) ? "open" : "closed")}>{isOpenIssue(e) ? "Open" : "Closed"}</span>}
       {e.kind === "review" && e.result && <span className={"wk-res " + e.result.toLowerCase()}>{e.result}</span>}
       {isLate(e, today) && <span className="wk-late">Past due</span>}
     </>
@@ -72,6 +66,7 @@ export default function EntryList(props: {
   today: string;
   onChanged: (list: Entry[]) => void;
   onError: (e: unknown) => void;
+  onOpenIssues: () => void;
 }) {
   const { modelName, kind, entries, today } = props;
   const [editing, setEditing] = useState<string | null>(null); // entry id, "new" or null
@@ -131,8 +126,14 @@ export default function EntryList(props: {
                       {e.owner && <span>{OWNER[e.kind]} {e.owner}</span>}
                       {e.kind === "issue" && e.due && <span>Due {e.due}</span>}
                       <span>Written by {e.createdBy || "—"}{e.updatedAt !== e.createdAt && e.updatedBy ? ` · edited by ${e.updatedBy}` : ""}</span>
-                      <button className="wk-link" onClick={() => setEditing(e.id)} disabled={busy}>Edit</button>
-                      <button className="wk-link danger" onClick={() => remove(e)} disabled={busy}>Delete</button>
+                      {e.kind === "issue" ? (
+                        <button className="wk-link" onClick={props.onOpenIssues}>Open in Issues ({e.logs?.length ?? 0} notes)</button>
+                      ) : (
+                        <>
+                          <button className="wk-link" onClick={() => setEditing(e.id)} disabled={busy}>Edit</button>
+                          <button className="wk-link danger" onClick={() => remove(e)} disabled={busy}>Delete</button>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}

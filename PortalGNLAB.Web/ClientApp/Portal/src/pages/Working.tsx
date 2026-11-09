@@ -3,6 +3,7 @@ import { localToday } from "./productionInput/logic";
 import { workingApi } from "./working/api";
 import EntryList from "./working/EntryList";
 import InfoTab from "./working/InfoTab";
+import IssueTable from "./working/IssueTable";
 import { buildTree, countByKind, filterTree, firstModel, isOpenIssue, pathOf, sortEntries, type GroupNode } from "./working/logic";
 import PlanView from "./working/PlanView";
 import type { Entry, GroupsResponse, WorkingModel } from "./working/types";
@@ -165,9 +166,13 @@ export default function Working() {
                       onSaved={(m) => { setModel(m); setInfoDirty(false); }} onError={fail} />
                   )}
                   {tab === "plan" && <PlanView key={selected} modelName={selected} />}
-                  {(tab === "dev" || tab === "issue" || tab === "review" || tab === "all") && (
-                    <EntryList key={selected + tab} modelName={selected} kind={tab === "all" ? null : tab}
+                  {tab === "issue" && (
+                    <IssueTable key={selected} modelName={selected} modelPhase={model.info.phase ?? ""}
                       entries={entries} today={today} onChanged={onChanged} onError={fail} />
+                  )}
+                  {(tab === "dev" || tab === "review" || tab === "all") && (
+                    <EntryList key={selected + tab} modelName={selected} kind={tab === "all" ? null : tab}
+                      entries={entries} today={today} onChanged={onChanged} onError={fail} onOpenIssues={() => setTab("issue")} />
                   )}
                 </>
               )}

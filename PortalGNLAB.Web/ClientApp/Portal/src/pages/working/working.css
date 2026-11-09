@@ -88,3 +88,39 @@ td.wk-ev { color: #b45309; font-size: 10.5px; text-align: center; }
   .wk-side { position: static; max-height: 320px; }
   .wk-form { grid-template-columns: 1fr; }
 }
+
+/* Issue register (IssueTable): No. / phase / classification / dates / final result, daily notes under each row. */
+table.wk-it { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; }
+table.wk-it th { background: #f8fafc; color: var(--ink-2); font-size: 10.5px; font-weight: 700; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; text-align: center; }
+table.wk-it th.grp { border-bottom: 1px solid var(--line-soft); color: var(--accent-ink); background: var(--accent-soft); }
+table.wk-it th.l, table.wk-it td.l { text-align: left; }
+table.wk-it td { padding: 7px 8px; border-bottom: 1px solid var(--line-soft); text-align: center; vertical-align: top; white-space: nowrap; }
+table.wk-it td.n { font-variant-numeric: tabular-nums; font-weight: 700; }
+table.wk-it td.tog { color: var(--faint); width: 18px; padding-right: 0; }
+table.wk-it td.late { color: var(--bad); font-weight: 700; }
+table.wk-it td.late .wk-late { margin-left: 4px; }
+table.wk-it td.act { white-space: nowrap; }
+table.wk-it td.act .wk-link + .wk-link { margin-left: 8px; }
+.wk-it-row { cursor: pointer; }
+.wk-it-row:hover td { background: #fafbff; }
+.wk-it-row.on td { background: var(--accent-soft); }
+.wk-it-row.done td { color: var(--muted); }
+.wk-it-title { white-space: normal !important; min-width: 220px; max-width: 420px; }
+.wk-it-title .small { margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px; }
+.wk-it-final { white-space: pre-wrap !important; min-width: 140px; max-width: 280px; }
+.wk-it-sub > td { background: #fbfcfe; padding: 10px 16px 14px 34px; text-align: left; white-space: normal; }
+.wk-it-empty { padding: 24px !important; color: var(--muted); }
+.wk-if { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.wk-notes { display: grid; gap: 6px; max-width: 980px; }
+.wk-notes-body { margin-bottom: 4px; }
+.wk-notes-body b, .wk-notes-h { font-size: 10.5px; font-weight: 800; letter-spacing: .05em; color: var(--muted); text-transform: uppercase; }
+.wk-notes-h .cnt { font-size: 10.5px; background: #f1f5f9; border-radius: 999px; padding: 1px 7px; margin-left: 4px; }
+.wk-note { display: grid; grid-template-columns: 130px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 6px 10px; background: #fff; border: 1px solid var(--line-soft); border-radius: 7px; }
+.wk-note-d { font-weight: 700; font-variant-numeric: tabular-nums; padding-top: 1px; }
+.wk-note .wk-text { margin-top: 0; }
+.wk-note-act { display: flex; gap: 8px; align-items: center; font-size: 11.5px; white-space: nowrap; }
+.wk-note-new { border-style: dashed; border-color: #c7d2fe; }
+.wk-note .inp.sm { width: 100%; }
+.wk-tag { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 5px; background: #f1f5f9; color: #475569; }
+@media (max-width: 1000px) { .wk-if { grid-template-columns: 1fr; } .wk-note { grid-template-columns: 1fr; } }
