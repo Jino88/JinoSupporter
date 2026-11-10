@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { blankEvent, blankTask, calendarDays, eventSpan, inSpan, monthRuns, planProblem, progress, readDevPlan } from "./plan";
+import {
+  blankEvent, blankRow, blankTask, calendarDays, eventSpan, inSpan, monthRuns, planProblem, progress, qtyDays, readDevPlan, readQty, rowTotal, setQty,
+} from "./plan";
 import type { PlanEvent, PlanTask } from "./plan";
 
 const task = (start: string, end: string, f: Partial<PlanTask> = {}): PlanTask => ({ ...blankTask(), name: "t", start, end, ...f });
@@ -37,5 +39,29 @@ describe("development plan", () => {
     expect(p.events[0]).toMatchObject({ id: "a", name: "ER", start: "2026-11-01", end: "", color: "#4f46e5" });
     expect(p.events[0].tasks.map((t) => [t.name, t.done, t.owner])).toEqual([["Jig", false, ""]]);
     expect(readDevPlan(undefined)).toEqual({ events: [] });
+  });
+
+  it("keeps a quantity per day on each row of an event and totals it", () => {
+    let r = setQty(blankRow("SPK Assy"), "2026-11-19", 600);
+    r = setQty(r, "2026-11-18", 600);
+    expect(Object.keys(r.qty)).toEqual(["2026-11-18", "2026-11-19"]);
+    expect(rowTotal(r)).toBe(1200);
+    expect(setQty(r, "2026-11-19", undefined).qty).toEqual({ "2026-11-18": 600 });
+    expect(setQty(r, "2026-11-19", 0).qty).toEqual({ "2026-11-18": 600 });
+    expect([readQty("1,200"), readQty(" "), readQty("abc"), readQty("-5"), readQty("2.5")]).toEqual([1200, undefined, null, null, 2.5]);
+  });
+
+  it("lays the quantity table from a week before the event to 2 days after, with every day that has a quantity", () => {
+    const e = { ...ev("2026-11-18", "2026-11-20"), rows: [setQty(blankRow("OQC"), "2026-11-25", 450)] };
+    const days = qtyDays(e);
+    expect([days[0], days.at(-1), days.length]).toEqual(["2026-11-11", "2026-11-25", 15]);
+    expect(qtyDays(ev("", ""))).toEqual([]);
+    expect(qtyDays({ ...ev("", ""), rows: [setQty(blankRow("a"), "2026-11-03", 1)] })).toEqual(["2026-11-03"]);
+  });
+
+  it("reads the quantity rows of a saved event leniently", () => {
+    const p = readDevPlan({ events: [{ name: "LPR", rows: [{ id: "r", name: "SPK Assy", qty: { "2026-11-19": 600, "2026-11-18": 300, bad: 1, "2026-11-20": "x", "2026-11-21": 0 } }, 7] }, { name: "MP" }] });
+    expect(p.events[0].rows).toEqual([{ id: "r", name: "SPK Assy", qty: { "2026-11-18": 300, "2026-11-19": 600 } }]);
+    expect(p.events[1].rows).toEqual([]);
   });
 });
