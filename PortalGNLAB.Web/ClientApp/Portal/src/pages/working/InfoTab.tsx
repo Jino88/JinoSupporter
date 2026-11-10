@@ -47,7 +47,18 @@ export default function InfoTab(props: {
     <>
       <section className="card pi-sec">
         <div className="pi-sec-h">
-          <h2>Model information</h2>
+          <div className="wk-info-h">
+            <h2>Model information</h2>
+            <div className="wk-phase-steps" role="radiogroup" aria-label="Phase">
+              {PHASES.map((p, i) => (
+                <button key={p} role="radio" aria-checked={info.phase === p}
+                  className={"wk-step" + (i < phaseIdx ? " done" : i === phaseIdx ? " now" : "")}
+                  onClick={() => set("phase", info.phase === p ? "" : p)}>
+                  <i>{i < phaseIdx ? "✓" : i + 1}</i>{p}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="pi-legend">
             {dirty && <span className="pi-dirty">Unsaved</span>}
             {saved && <span className="pi-msg">{saved}</span>}
@@ -56,27 +67,18 @@ export default function InfoTab(props: {
           </div>
         </div>
         <div className="pi-sec-b">
-          <div className="wk-phase-steps" role="radiogroup" aria-label="Phase">
-            {PHASES.map((p, i) => (
-              <button key={p} role="radio" aria-checked={info.phase === p}
-                className={"wk-step" + (i < phaseIdx ? " done" : i === phaseIdx ? " now" : "")}
-                onClick={() => set("phase", info.phase === p ? "" : p)}>
-                <i>{i < phaseIdx ? "✓" : i + 1}</i>{p}
-              </button>
-            ))}
-          </div>
-          <div className="wk-form">
-            <div className="wk-f"><label>Model</label><div className="wk-ro">{model.name}</div></div>
+          <div className="wk-form wk-info">
+            <div className="wk-f"><label>Model</label><div className="wk-ro sm">{model.name}</div></div>
             {FIELDS.map((f) => (
               <div className="wk-f" key={f.key}>
                 <label htmlFor={"wk-" + f.key}>{f.label}</label>
-                <input id={"wk-" + f.key} className="inp" value={info[f.key] ?? ""} placeholder={f.placeholder}
+                <input id={"wk-" + f.key} className="inp sm" value={info[f.key] ?? ""} placeholder={f.placeholder}
                   onChange={(e) => set(f.key, e.target.value)} />
               </div>
             ))}
             <div className="wk-f wide">
               <label htmlFor="wk-note">Note</label>
-              <textarea id="wk-note" className="inp wk-ta" rows={4} value={info.note ?? ""} onChange={(e) => set("note", e.target.value)} />
+              <textarea id="wk-note" className="inp wk-ta" rows={2} value={info.note ?? ""} onChange={(e) => set("note", e.target.value)} />
             </div>
           </div>
           <BmesPanel modelName={model.name} saved={info.bmesMaterial ?? ""} onError={props.onError}
