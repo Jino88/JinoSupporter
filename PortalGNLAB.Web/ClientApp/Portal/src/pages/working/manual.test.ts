@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  addMaterial, blankProcess, deleteMaterial, emptyManual, fromProductionInput, moveProcess, ngFromText, processProblem, readManual,
+  addMaterial, blankProcess, deleteMaterial, emptyManual, fromProductionInput, moveProcess, ngFromText, processProblem, putMaterial, readManual,
   saveProcess, usage,
 } from "./manual";
 import type { ManualProcess } from "./manual";
@@ -22,6 +22,18 @@ describe("model group entered by hand", () => {
     expect([usage(g, "UPPER"), usage(g, "SPK 201507")]).toEqual([2, 1]);
     const after = deleteMaterial(g, "Upper");
     expect([after.materials, after.processes.map((p) => p.materials.map((u) => u.material))]).toEqual([["SPK 201507"], [[], ["SPK 201507"]]]);
+  });
+
+  it("puts a material dragged onto a process at 1 per unit, once", () => {
+    const keep = proc("AOI 1", { materials: [{ material: "UPPER", qtyPerUnit: 2 }] });
+    const other = proc("SPK Assy");
+    const g = { materials: ["UPPER", "SPK 201507"], processes: [keep, other] };
+    const once = putMaterial(g, other.id, "spk 201507");
+    expect(once.processes[1].materials).toEqual([{ material: "SPK 201507", qtyPerUnit: 1 }]);
+    expect(once.processes[0]).toBe(keep);
+    expect(putMaterial(once, other.id, "SPK 201507")).toEqual(once);
+    expect(putMaterial(g, keep.id, "upper").processes[0].materials).toEqual([{ material: "UPPER", qtyPerUnit: 2 }]);
+    expect(putMaterial(g, other.id, "LOWER")).toBe(g);
   });
 
   it("checks a process: a name, listed materials once each, qty above 0", () => {
