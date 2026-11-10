@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { drawingsByName, drawingsOf, matchMaterial, qty, visibleBom } from "./bmes";
+import { drawingsByName, drawingsOf, matchMaterial, qty, shiftCount, subGroupTree, suggestMaterials, visibleBom } from "./bmes";
 import type { BmesMaterial, BomRow } from "./bmes";
 
 const mat = (material: string, group = "UNIT"): BmesMaterial => ({ group, productGroup: group, material, products: [], subGroups: [] });
@@ -41,5 +41,27 @@ describe("BMES model group", () => {
     expect(drawingsOf(by, "COIL-C11-18").length).toBe(1);
     expect(drawingsOf(by, "EA6116R")).toEqual([]);
     expect(by.size).toBe(2);
+  });
+
+  it("suggests the Make Model Group models that share a number with the model", () => {
+    const list = [mat("ASSY 338 RA1", "TWS"), mat("ASSY REAR-TAPE-338", "TWS"), mat("MSM-X526/X626B", "MODULE"), mat("TIU-C11-18")];
+    expect(suggestMaterials("TIM-338", list).map((m) => m.material)).toEqual(["ASSY 338 RA1", "ASSY REAR-TAPE-338"]);
+    expect(suggestMaterials("MSM-X626", list).map((m) => m.material)).toEqual(["MSM-X526/X626B"]);
+    expect(suggestMaterials("TIU-C11", list)).toEqual([]);
+  });
+
+  it("lays the sub-groups out as Make Model Group does: Sub Group 1, the ones under it, their shift groups", () => {
+    const t = subGroupTree([
+      { path: "", lineShifts: ["X_C1A"] },
+      { path: "ASSY 338 RA1_C2 › ASSY 338 RA1_C2_L", lineShifts: ["REAR-L_C22A", "REAR-L_C22B"] },
+      { path: "ASSY 338 RA1_C2 › ASSY 338 RA1_C2_R", lineShifts: ["REAR-R_C21A"] },
+      { path: "ASSY 338 RA1_C3", lineShifts: ["F-PCB_C3AA"] },
+    ]);
+    expect(t.direct).toEqual(["X_C1A"]);
+    expect(t.nodes.map((n) => [n.name, n.depth, n.lineShifts, n.children.map((c) => [c.name, c.depth, c.lineShifts])])).toEqual([
+      ["ASSY 338 RA1_C2", 1, [], [["ASSY 338 RA1_C2_L", 2, ["REAR-L_C22A", "REAR-L_C22B"]], ["ASSY 338 RA1_C2_R", 2, ["REAR-R_C21A"]]]],
+      ["ASSY 338 RA1_C3", 1, ["F-PCB_C3AA"], []],
+    ]);
+    expect(t.nodes.map(shiftCount)).toEqual([3, 1]);
   });
 });
