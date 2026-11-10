@@ -7,14 +7,12 @@ const SOURCE_LABEL: Record<string, string> = { bmes: "BMES", catalog: "BOM & Dra
 
 /**
  * Manage the model tree: tick the models to show (the rest are hidden for everyone), make sub-groups under any group and
- * move models into them, add a model that is not in the Company Glossary after checking its name in BMES, or remove an
- * added one.
+ * move models into them, add a model that is not in the Company Glossary by its name (checking it in BMES if wanted; its
+ * BMES model group is linked in Model Info), or remove an added one.
  */
 export default function TreeManager(props: {
   /** The whole tree, added models included, nothing hidden. */
   tree: GroupNode[];
-  /** Models that come from BMES > Make Model Group (not in the Company Glossary). */
-  bmesModels: string[];
   settings: TreeSettings;
   onChanged: (s: TreeSettings) => void;
   onClose: () => void;
@@ -31,7 +29,6 @@ export default function TreeManager(props: {
 
   const models = allModels(tree);
   const added = new Set(settings.added.map((a) => a.name.toLowerCase()));
-  const fromBmes = new Set(props.bmesModels.map((m) => m.toLowerCase()));
   const userGroups = new Set((settings.groups ?? []).map((g) => g.id));
   // models sitting in a sub-group made here, which "Back to its own group" can undo
   const moved = new Set([
@@ -56,12 +53,9 @@ export default function TreeManager(props: {
     setChecking(true);
     try { setCheck(await treeApi.check(name.trim())); } catch (e) { props.onError(e); } finally { setChecking(false); }
   };
+  // the name is registered as typed; Check in BMES is only a help, and the BMES model group is linked in Model Info
   const add = () => {
     const n = name.trim();
-    if (check?.name !== n || !check.exact) {
-      const why = check?.name === n ? "was not found in BMES" : "has not been checked in BMES";
-      if (!window.confirm(`${n} ${why}. Add it anyway?`)) return;
-    }
     void run(async () => {
       const a = await treeApi.add(n, groupId);
       props.onChanged({ ...settings, added: [...settings.added, a] });
@@ -136,7 +130,6 @@ export default function TreeManager(props: {
               {moved.has(m.toLowerCase()) && <option value={"\u0000"}>Back to its own group</option>}
               {choices.filter(([id]) => id !== n.id).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
             </select>
-            {fromBmes.has(m.toLowerCase()) && <span className="wk-mg-tag" title="From BMES > Make Model Group">BMES</span>}
             {added.has(m.toLowerCase()) && (
               <>
                 <span className="wk-mg-tag">added</span>
@@ -160,6 +153,7 @@ export default function TreeManager(props: {
 
         <section className="wk-mgr-add">
           <h3>Add a model</h3>
+          <div className="muted small">Type the model name and Add. Link it to its BMES model group afterwards in Model Info.</div>
           <div className="wk-mgr-row">
             <input className="inp sm" placeholder="Model name, e.g. TIU-C11-18-ZZ" value={name} aria-label="Model name"
               onChange={(e) => { setName(e.target.value); setCheck(null); }}
