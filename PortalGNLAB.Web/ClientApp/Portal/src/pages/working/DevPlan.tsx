@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { WEEKDAYS, localToday, weekday } from "../productionInput/logic";
 import { workingApi } from "./api";
 import {
@@ -12,8 +13,11 @@ interface Row { id: string; label: string; sub: string; span: [string, string] |
 
 const dates = (span: [string, string] | null) => (span ? (span[0] === span[1] ? span[0].slice(5) : `${span[0].slice(5)} – ${span[1].slice(5)}`) : "no date");
 
-/** Horizontal calendar: a column per day, a row per item, the days of each item filled in its color. */
-function Gantt(props: { rows: Row[]; days: string[]; selected?: string; onPick?: (id: string) => void }) {
+/**
+ * Horizontal calendar: a column per day, a row per item, the days of each item filled in its color. `expand` opens
+ * right under the selected row.
+ */
+function Gantt(props: { rows: Row[]; days: string[]; selected?: string; onPick?: (id: string) => void; expand?: ReactNode }) {
   const today = localToday();
   const { rows, days } = props;
   return (
@@ -35,20 +39,26 @@ function Gantt(props: { rows: Row[]; days: string[]; selected?: string; onPick?:
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.id} className={(props.onPick ? "pick" : "") + (r.id === props.selected ? " on" : "")}
-              onClick={props.onPick ? () => props.onPick!(r.id) : undefined}>
-              <td className="nm">
-                <span className="dot" style={{ background: r.color }} />
-                <b className={r.done ? "done" : ""}>{r.label}</b>
-                <small>{r.sub}</small>
-              </td>
-              {days.map((d) => {
-                const on = inSpan(d, r.span);
-                const cls = "c" + (d === today ? " today" : weekday(d) % 6 === 0 ? " we" : "")
-                  + (on ? " on" + (d === r.span![0] ? " s" : "") + (d === r.span![1] ? " e" : "") : "");
-                return <td key={d} className={cls} style={on ? { background: r.done ? "#94a3b8" : r.color } : undefined} />;
-              })}
-            </tr>
+            <Fragment key={r.id}>
+              <tr className={(props.onPick ? "pick" : "") + (r.id === props.selected ? " on" : "") + (r.id === props.selected && props.expand ? " open" : "")}
+                onClick={props.onPick ? () => props.onPick!(r.id) : undefined}>
+                <td className="nm">
+                  {props.onPick && <span className="tw">{r.id === props.selected && props.expand ? "▾" : "▸"}</span>}
+                  <span className="dot" style={{ background: r.color }} />
+                  <b className={r.done ? "done" : ""}>{r.label}</b>
+                  <small>{r.sub}</small>
+                </td>
+                {days.map((d) => {
+                  const on = inSpan(d, r.span);
+                  const cls = "c" + (d === today ? " today" : weekday(d) % 6 === 0 ? " we" : "")
+                    + (on ? " on" + (d === r.span![0] ? " s" : "") + (d === r.span![1] ? " e" : "") : "");
+                  return <td key={d} className={cls} style={on ? { background: r.done ? "#94a3b8" : r.color } : undefined} />;
+                })}
+              </tr>
+              {r.id === props.selected && props.expand && (
+                <tr className="x"><td className="x" colSpan={days.length + 1}><div className="wk-gantt-x">{props.expand}</div></td></tr>
+              )}
+            </Fragment>
           ))}
         </tbody>
       </table>
@@ -229,7 +239,7 @@ export default function DevPlan(props: {
   const [selected, setSelected] = useState(savedPlan.events[0]?.id ?? "");
   const [editEvent, setEditEvent] = useState<PlanEvent | null>(null);
   const [editTask, setEditTask] = useState<PlanTask | null>(null);
-  const [showQty, setShowQty] = useState(true);
+  const [showQty, setShowQty] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const dirty = JSON.stringify(plan) !== JSON.stringify(savedPlan);
@@ -281,6 +291,21 @@ export default function DevPlan(props: {
     return { id: e.id, label: e.name, sub: dates(eventSpan(e)) + (all ? ` · ${done}/${all}` : ""), span: eventSpan(e), color: e.color };
   });
   const newTask = editTask && ev && !ev.tasks.some((t) => t.id === editTask.id);
+  // clicking an event opens its quantity plan right under it; clicking it again closes it
+  const pick = (id: string) => {
+    setShowQty(id === selected ? !showQty : true);
+    setSelected(id);
+    setEditTask(null);
+  };
+  const qty = ev && showQty && (
+    <>
+      <div className="wk-qty-h static">
+        Quantity plan · {ev.name}
+        <span className="muted small"> · {ev.rows.length} row(s){ev.rows.length ? ` · total ${num(ev.rows.reduce((a, r) => a + rowTotal(r), 0))}` : ""}</span>
+      </div>
+      <QtyTable key={ev.id} ev={ev} onRows={setRows} />
+    </>
+  );
 
   return (
     <section className="card pi-sec">
@@ -297,10 +322,13 @@ export default function DevPlan(props: {
         {editEvent && <EventEdit key={editEvent.id} value={editEvent} onKeep={keepEvent} onCancel={() => setEditEvent(null)} />}
         {!events.length && !editEvent && <div className="muted">No event yet. Add the events of the development (ER, DR, DV, PV builds, tooling, …) with + Event.</div>}
         {events.length > 0 && (days.length
-          ? <Gantt rows={rows} days={days} selected={selected} onPick={(id) => { setSelected(id); setEditTask(null); }} />
+          ? <Gantt rows={rows} days={days} selected={selected} onPick={pick} expand={qty || undefined} />
           : <div className="muted">Give the events (or their tasks) dates to see them on the calendar.</div>)}
         {events.length > 0 && !days.length && (
-          <div className="wk-dp-chips">{events.map((e) => <button key={e.id} className={"wk-chip" + (e.id === selected ? " on" : "")} onClick={() => setSelected(e.id)}>{e.name}</button>)}</div>
+          <>
+            <div className="wk-dp-chips">{events.map((e) => <button key={e.id} className={"wk-chip" + (e.id === selected ? " on" : "")} onClick={() => pick(e.id)}>{e.name}</button>)}</div>
+            {qty}
+          </>
         )}
 
         {ev && (
@@ -316,11 +344,6 @@ export default function DevPlan(props: {
                 <button className="wk-link bad" onClick={() => removeEvent(ev)}>Delete event</button>
               </span>
             </div>
-            <button className="wk-qty-h" onClick={() => setShowQty(!showQty)} aria-expanded={showQty}>
-              <span className="tw">{showQty ? "▾" : "▸"}</span> Quantity plan
-              <span className="muted small"> · {ev.rows.length} row(s){ev.rows.length ? ` · total ${num(ev.rows.reduce((a, r) => a + rowTotal(r), 0))}` : ""}</span>
-            </button>
-            {showQty && <QtyTable key={ev.id} ev={ev} onRows={setRows} />}
             <div className="wk-qty-h static">Detailed schedule</div>
             {evDays.length > 0 && ev.tasks.length > 0 && (
               <Gantt days={evDays} rows={ev.tasks.map((t) => ({ id: t.id, label: t.name, sub: dates(taskSpan(t)) + (t.owner ? " · " + t.owner : ""), span: taskSpan(t), color: ev.color, done: t.done }))} />
