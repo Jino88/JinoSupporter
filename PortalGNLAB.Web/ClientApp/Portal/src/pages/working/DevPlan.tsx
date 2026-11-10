@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { WEEKDAYS, localToday, weekday } from "../productionInput/logic";
 import { workingApi } from "./api";
 import {
-  COLORS, blankEvent, blankRow, blankTask, calendarDays, eventSpan, inSpan, monthRuns, planProblem, progress, qtyDays, readDevPlan,
+  COLORS, blankEvent, blankRow, blankTask, calendarDays, eventSpan, inSpan, monthRuns, planDays, planProblem, progress, readDevPlan,
   readQty, rowTotal, setQty, taskSpan,
 } from "./plan";
 import type { DevPlan as Plan, PlanEvent, PlanTask, QtyRow } from "./plan";
@@ -14,8 +14,8 @@ interface Row { id: string; label: string; sub: string; span: [string, string] |
 const dates = (span: [string, string] | null) => (span ? (span[0] === span[1] ? span[0].slice(5) : `${span[0].slice(5)} – ${span[1].slice(5)}`) : "no date");
 
 /**
- * Horizontal calendar: a column per day, a row per item, the days of each item filled in its color. `expand` opens
- * right under the selected row.
+ * Horizontal calendar: a column per day, a row per item, the days of each item filled in its color. `expand` (rows of
+ * the same day columns) opens right under the selected row.
  */
 function Gantt(props: { rows: Row[]; days: string[]; selected?: string; onPick?: (id: string) => void; expand?: ReactNode }) {
   const today = localToday();
@@ -23,7 +23,7 @@ function Gantt(props: { rows: Row[]; days: string[]; selected?: string; onPick?:
   return (
     <div className="wk-gantt-wrap">
       {/* a short calendar fills the width; a long one scrolls */}
-      <table className={"wk-gantt" + (days.length <= 60 ? " fill" : "")}>
+      <table className={"wk-gantt" + (days.length <= 60 ? " fill" : "") + (props.expand ? " qopen" : "")}>
         <thead>
           <tr>
             <th className="nm" rowSpan={2}></th>
@@ -55,9 +55,7 @@ function Gantt(props: { rows: Row[]; days: string[]; selected?: string; onPick?:
                   return <td key={d} className={cls} style={on ? { background: r.done ? "#94a3b8" : r.color } : undefined} />;
                 })}
               </tr>
-              {r.id === props.selected && props.expand && (
-                <tr className="x"><td className="x" colSpan={days.length + 1}><div className="wk-gantt-x">{props.expand}</div></td></tr>
-              )}
+              {r.id === props.selected && props.expand}
             </Fragment>
           ))}
         </tbody>
@@ -87,14 +85,13 @@ function QtyCell(props: { value: number | undefined; label: string; onKeep: (n: 
 }
 
 /**
- * Quantity table of an event, as in the build plan sheet: a row per stage (SPK Assy, Lower Assy, Function, OQC, ...)
- * with its total, and a column per day to type the quantity of that day. Rows can be added, renamed, moved and deleted;
- * cells copied from Excel can be pasted from the cell clicked.
+ * Quantity plan of an event, as rows of the calendar under it so each day lines up with the day above: a row per stage
+ * (SPK Assy, Lower Assy, Function, OQC, ...) with its total, and the quantity of a day typed in its cell. Rows can be
+ * added, renamed, moved and deleted; cells copied from Excel can be pasted from the cell clicked.
  */
-function QtyTable(props: { ev: PlanEvent; onRows: (rows: QtyRow[]) => void }) {
-  const { ev } = props;
+function QtyRows(props: { ev: PlanEvent; days: string[]; onRows: (rows: QtyRow[]) => void }) {
+  const { ev, days } = props;
   const today = localToday();
-  const days = useMemo(() => qtyDays(ev), [ev]);
   const span = eventSpan(ev);
   const rows = ev.rows;
   const setRow = (r: QtyRow) => props.onRows(rows.map((x) => (x.id === r.id ? r : x)));
@@ -128,51 +125,45 @@ function QtyTable(props: { ev: PlanEvent; onRows: (rows: QtyRow[]) => void }) {
     props.onRows(list);
     return true;
   };
-  const dayCls = (d: string) => (d === today ? " today" : "") + (weekday(d) === 6 ? " sat" : weekday(d) === 0 ? " sun" : "") + (inSpan(d, span) ? " in" : "");
+  const dayCls = (d: string) => (d === today ? " today" : weekday(d) % 6 === 0 ? " we" : "") + (inSpan(d, span) ? " in" : "");
+  const total = rows.reduce((a, r) => a + rowTotal(r), 0);
   return (
-    <div className="wk-qty">
-      {days.length ? (
-        <div className="wk-qty-wrap">
-          <table className="wk-qty-t">
-            <thead>
-              <tr>
-                <th className="nm">Item</th>
-                <th className="tot">Total</th>
-                {days.map((d) => (
-                  <th key={d} className={"day" + dayCls(d)} title={d} style={inSpan(d, span) ? { boxShadow: `inset 0 -3px 0 ${ev.color}` } : undefined}>
-                    {Number(d.slice(5, 7))}/{Number(d.slice(8))}<small>{WEEKDAYS[weekday(d)]}</small>
-                  </th>
-                ))}
-                <th className="act"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, ri) => (
-                <tr key={r.id}>
-                  <td className="nm">
-                    <input className="wk-qty-name" value={r.name} placeholder="Item, e.g. SPK Assy" aria-label="Item name"
-                      onChange={(x) => setRow({ ...r, name: x.target.value })} />
-                  </td>
-                  <td className="tot">{rowTotal(r) ? num(rowTotal(r)) : ""}</td>
-                  {days.map((d, di) => (
-                    <td key={d} className={"c" + dayCls(d) + (r.qty[d] ? " has" : "")}>
-                      <QtyCell value={r.qty[d]} label={`${r.name} ${d}`} onKeep={(n) => setRow(setQty(r, d, n))} onPaste={(t) => paste(ri, di, t)} />
-                    </td>
-                  ))}
-                  <td className="act">
-                    <button className="wk-link" onClick={() => move(ri, -1)} disabled={ri === 0} aria-label="Move up">↑</button>
-                    <button className="wk-link" onClick={() => move(ri, 1)} disabled={ri === rows.length - 1} aria-label="Move down">↓</button>
-                    <button className="wk-link bad" onClick={() => remove(r)} aria-label={`Delete ${r.name}`}>×</button>
-                  </td>
-                </tr>
-              ))}
-              {!rows.length && <tr><td colSpan={days.length + 3} className="wk-it-empty">No item yet. Add the items to plan (SPK Assy, Lower Assy, …) with + Row.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      ) : <div className="muted small">Give the event dates to plan quantities by day.</div>}
-      <button className="btn sm wk-dp-add" onClick={() => props.onRows([...rows, blankRow()])}>+ Row</button>
-    </div>
+    <>
+      <tr className="qh">
+        <td className="nm">
+          <div className="wk-qn">
+            <b>Quantity plan</b>
+            <span className="muted">{rows.length} row(s){total ? ` · ${num(total)}` : ""}</span>
+            <button className="btn sm" onClick={() => props.onRows([...rows, blankRow()])}>+ Row</button>
+          </div>
+        </td>
+        {rows.length
+          ? days.map((d) => {
+            const sum = rows.reduce((a, r) => a + (r.qty[d] ?? 0), 0);
+            return <td key={d} className={"q" + dayCls(d)} title={`${d} total`}>{sum ? num(sum) : ""}</td>;
+          })
+          : <td className="q hint" colSpan={days.length}>No item yet. Add the items to plan (SPK Assy, Lower Assy, …) with + Row.</td>}
+      </tr>
+      {rows.map((r, ri) => (
+        <tr key={r.id} className="qr">
+          <td className="nm"><div className="wk-qn">
+            <input className="wk-qty-name" value={r.name} placeholder="Item, e.g. SPK Assy" aria-label="Item name"
+              onChange={(x) => setRow({ ...r, name: x.target.value })} />
+            <span className="tot" title="Total">{rowTotal(r) ? num(rowTotal(r)) : ""}</span>
+            <span className="act">
+              <button className="wk-link" onClick={() => move(ri, -1)} disabled={ri === 0} aria-label="Move up">↑</button>
+              <button className="wk-link" onClick={() => move(ri, 1)} disabled={ri === rows.length - 1} aria-label="Move down">↓</button>
+              <button className="wk-link bad" onClick={() => remove(r)} aria-label={`Delete ${r.name}`}>×</button>
+            </span>
+          </div></td>
+          {days.map((d, di) => (
+            <td key={d} className={"q" + dayCls(d) + (r.qty[d] ? " has" : "")}>
+              <QtyCell value={r.qty[d]} label={`${r.name} ${d}`} onKeep={(n) => setRow(setQty(r, d, n))} onPaste={(t) => paste(ri, di, t)} />
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
   );
 }
 
@@ -247,7 +238,7 @@ export default function DevPlan(props: {
 
   const events = plan.events;
   const ev = events.find((e) => e.id === selected) ?? null;
-  const days = useMemo(() => calendarDays(events.map(eventSpan)), [events]);
+  const days = useMemo(() => planDays(events), [events]);
   const evDays = useMemo(() => (ev ? calendarDays([eventSpan(ev), ...ev.tasks.map(taskSpan)], 1) : []), [ev]);
 
   const setEvents = (list: PlanEvent[]) => setPlan({ ...plan, events: list });
@@ -297,15 +288,7 @@ export default function DevPlan(props: {
     setSelected(id);
     setEditTask(null);
   };
-  const qty = ev && showQty && (
-    <>
-      <div className="wk-qty-h static">
-        Quantity plan · {ev.name}
-        <span className="muted small"> · {ev.rows.length} row(s){ev.rows.length ? ` · total ${num(ev.rows.reduce((a, r) => a + rowTotal(r), 0))}` : ""}</span>
-      </div>
-      <QtyTable key={ev.id} ev={ev} onRows={setRows} />
-    </>
-  );
+  const qty = ev && showQty && <QtyRows key={ev.id} ev={ev} days={days} onRows={setRows} />;
 
   return (
     <section className="card pi-sec">
@@ -325,10 +308,7 @@ export default function DevPlan(props: {
           ? <Gantt rows={rows} days={days} selected={selected} onPick={pick} expand={qty || undefined} />
           : <div className="muted">Give the events (or their tasks) dates to see them on the calendar.</div>)}
         {events.length > 0 && !days.length && (
-          <>
-            <div className="wk-dp-chips">{events.map((e) => <button key={e.id} className={"wk-chip" + (e.id === selected ? " on" : "")} onClick={() => pick(e.id)}>{e.name}</button>)}</div>
-            {qty}
-          </>
+          <div className="wk-dp-chips">{events.map((e) => <button key={e.id} className={"wk-chip" + (e.id === selected ? " on" : "")} onClick={() => pick(e.id)}>{e.name}</button>)}</div>
         )}
 
         {ev && (
