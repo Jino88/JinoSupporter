@@ -319,3 +319,29 @@ table.wk-dp-tasks .inp.sm { width: 100%; }
 table.wk-dp-tasks .inp.sm[type="date"] { width: 132px; }
 table.wk-dp-tasks .wk-dp-owner { width: 90px; }
 .wk-dp-add { margin-top: 8px; }
+/* Dev Plan: quantity table of an event (a row per item, a column per day) */
+.wk-qty-h { display: block; margin: 4px 0 6px; padding: 0; border: 0; background: none; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink-2); cursor: pointer; text-align: left; }
+.wk-qty-h.static { cursor: default; margin-top: 14px; }
+.wk-qty-h .tw { display: inline-block; width: 12px; color: var(--muted); }
+.wk-qty { margin-bottom: 6px; }
+.wk-qty-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+table.wk-qty-t { border-collapse: separate; border-spacing: 0; font-size: 12px; }
+table.wk-qty-t th, table.wk-qty-t td { padding: 0; border-bottom: 1px solid #eef2f7; border-right: 1px solid #eef2f7; }
+table.wk-qty-t thead th { background: #eef2fb; color: var(--ink-2); font-weight: 600; padding: 3px 4px; }
+table.wk-qty-t th.nm, table.wk-qty-t td.nm { position: sticky; left: 0; z-index: 1; width: 170px; min-width: 170px; text-align: left; background: #fff; }
+table.wk-qty-t thead th.nm { background: #eef2fb; padding-left: 8px; }
+table.wk-qty-t th.tot, table.wk-qty-t td.tot { position: sticky; left: 170px; z-index: 1; width: 64px; min-width: 64px; text-align: right; padding: 3px 8px; border-right: 1px solid var(--line); }
+table.wk-qty-t td.tot { background: #fff; font-weight: 700; }
+table.wk-qty-t thead th.tot { background: #eef2fb; }
+table.wk-qty-t th.day { width: 56px; min-width: 56px; text-align: center; }
+table.wk-qty-t th.day small { display: block; font-size: 9.5px; font-weight: 500; opacity: .8; }
+table.wk-qty-t th.sat { color: #2563eb; }
+table.wk-qty-t th.sun { color: #dc2626; }
+table.wk-qty-t td.sat, table.wk-qty-t td.sun { background: #fafbfc; }
+table.wk-qty-t th.today { box-shadow: inset 0 0 0 1px #ef4444; }
+table.wk-qty-t td.has { background: #fef3c7; }
+table.wk-qty-t td.act { white-space: nowrap; padding: 0 6px; }
+table.wk-qty-t td.act .wk-link { margin-left: 4px; }
+.wk-qty-name { width: 100%; box-sizing: border-box; border: 0; background: transparent; padding: 5px 8px; font: inherit; color: var(--ink); }
+.wk-qty-in { width: 100%; box-sizing: border-box; border: 0; background: transparent; padding: 5px 6px; font: inherit; text-align: right; color: var(--ink); }
+.wk-qty-name:focus, .wk-qty-in:focus { outline: 2px solid var(--accent, #4f46e5); outline-offset: -2px; background: #fff; }

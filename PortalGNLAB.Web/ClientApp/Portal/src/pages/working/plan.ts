@@ -13,6 +13,14 @@ export interface PlanTask {
   note: string;
 }
 
+/** A row of the quantity table of an event (SPK Assy, Lower Assy, ...): the quantity planned on each day. */
+export interface QtyRow {
+  id: string;
+  name: string;
+  /** yyyy-MM-dd -> quantity; days without a quantity are left out. */
+  qty: Record<string, number>;
+}
+
 export interface PlanEvent {
   id: string;
   name: string;
@@ -21,6 +29,7 @@ export interface PlanEvent {
   end: string;
   color: string;
   tasks: PlanTask[];
+  rows: QtyRow[];
 }
 
 export interface DevPlan {
@@ -34,7 +43,8 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const isDate = (s: string) => DATE.test(s);
 
 export const blankEvent = (index: number): PlanEvent =>
-  ({ id: newId(), name: "", start: "", end: "", color: COLORS[index % COLORS.length], tasks: [] });
+  ({ id: newId(), name: "", start: "", end: "", color: COLORS[index % COLORS.length], tasks: [], rows: [] });
+export const blankRow = (name = ""): QtyRow => ({ id: newId(), name, qty: {} });
 export const blankTask = (): PlanTask => ({ id: newId(), name: "", start: "", end: "", owner: "", done: false, note: "" });
 
 /** First and last day of something with a start and an end; a missing end is the start and the other way round. */
@@ -91,6 +101,33 @@ export function planProblem(x: { name: string; start: string; end: string }): st
 /** Tasks done out of all, for the event row. */
 export const progress = (ev: PlanEvent) => [ev.tasks.filter((t) => t.done).length, ev.tasks.length] as const;
 
+/** A quantity typed in a cell: "" (or 0) clears the day, commas are allowed; null when it is not a number. */
+export function readQty(text: string): number | null | undefined {
+  const t = text.replace(/,/g, "").trim();
+  if (!t) return undefined;
+  const n = Number(t);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+/** The row with the quantity of a day set, or cleared when undefined or 0; days kept in order. */
+export function setQty(row: QtyRow, day: string, n: number | undefined): QtyRow {
+  const qty: Record<string, number> = { ...row.qty };
+  if (n) qty[day] = n;
+  else delete qty[day];
+  return { ...row, qty: Object.fromEntries(Object.entries(qty).sort(([a], [b]) => a.localeCompare(b))) };
+}
+
+export const rowTotal = (row: QtyRow) => Object.values(row.qty).reduce((a, b) => a + b, 0);
+
+/** The days of the quantity table: the event (and its tasks) with a week before and 2 days after, and every day with a quantity. */
+export function qtyDays(ev: PlanEvent): string[] {
+  const filled = ev.rows.flatMap((r) => Object.keys(r.qty)).map((d): [string, string] => [d, d]);
+  const span = eventSpan(ev);
+  if (!span && !filled.length) return [];
+  const pad: ([string, string] | null)[] = span ? [[addDays(span[0], -7), addDays(span[1], 2)]] : [];
+  return calendarDays([...pad, ...ev.tasks.map(taskSpan), ...filled], 0);
+}
+
 /** A saved plan read leniently (older or hand-edited JSON). */
 export function readDevPlan(v: unknown): DevPlan {
   const p = (v && typeof v === "object" ? v : {}) as { events?: unknown };
@@ -106,6 +143,12 @@ export function readDevPlan(v: unknown): DevPlan {
       tasks: list(e.tasks).filter((t) => t && typeof t === "object").map((t) => ({
         id: str(t.id) || newId(), name: str(t.name), start: str(t.start), end: str(t.end),
         owner: str(t.owner), done: t.done === true, note: str(t.note),
+      })),
+      rows: list(e.rows).filter((r) => r && typeof r === "object").map((r) => ({
+        id: str(r.id) || newId(),
+        name: str(r.name),
+        qty: Object.fromEntries(Object.entries((r.qty && typeof r.qty === "object" ? r.qty : {}) as Record<string, unknown>)
+          .filter((x): x is [string, number] => isDate(x[0]) && typeof x[1] === "number" && Number.isFinite(x[1]) && x[1] > 0).sort(([a], [b]) => a.localeCompare(b))),
       })),
     })),
   };

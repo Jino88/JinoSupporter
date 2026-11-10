@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { WEEKDAYS, localToday, weekday } from "../productionInput/logic";
 import { workingApi } from "./api";
 import {
-  COLORS, blankEvent, blankTask, calendarDays, eventSpan, inSpan, monthRuns, planProblem, progress, readDevPlan, taskSpan,
+  COLORS, blankEvent, blankRow, blankTask, calendarDays, eventSpan, inSpan, monthRuns, planProblem, progress, qtyDays, readDevPlan,
+  readQty, rowTotal, setQty, taskSpan,
 } from "./plan";
-import type { DevPlan as Plan, PlanEvent, PlanTask } from "./plan";
+import type { DevPlan as Plan, PlanEvent, PlanTask, QtyRow } from "./plan";
 import type { WorkingModel } from "./types";
 
 interface Row { id: string; label: string; sub: string; span: [string, string] | null; color: string; done?: boolean }
@@ -51,6 +52,116 @@ function Gantt(props: { rows: Row[]; days: string[]; selected?: string; onPick?:
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+const num = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 3 });
+
+/** One day of a quantity row: typed freely, kept when it leaves the cell (Enter or Tab), put back when not a number. */
+function QtyCell(props: { value: number | undefined; label: string; onKeep: (n: number | undefined) => void; onPaste: (text: string) => boolean }) {
+  const shown = props.value ? String(props.value) : "";
+  const [text, setText] = useState(shown);
+  useEffect(() => setText(shown), [shown]);
+  const keep = () => {
+    const n = readQty(text);
+    if (n === null) setText(shown);
+    else if (n !== props.value) props.onKeep(n);
+  };
+  return (
+    <input className="wk-qty-in" value={text} inputMode="decimal" aria-label={props.label}
+      onChange={(x) => setText(x.target.value)} onBlur={keep}
+      onKeyDown={(x) => { if (x.key === "Enter") x.currentTarget.blur(); if (x.key === "Escape") { setText(shown); } }}
+      onPaste={(x) => { if (props.onPaste(x.clipboardData.getData("text"))) x.preventDefault(); }} />
+  );
+}
+
+/**
+ * Quantity table of an event, as in the build plan sheet: a row per stage (SPK Assy, Lower Assy, Function, OQC, ...)
+ * with its total, and a column per day to type the quantity of that day. Rows can be added, renamed, moved and deleted;
+ * cells copied from Excel can be pasted from the cell clicked.
+ */
+function QtyTable(props: { ev: PlanEvent; onRows: (rows: QtyRow[]) => void }) {
+  const { ev } = props;
+  const today = localToday();
+  const days = useMemo(() => qtyDays(ev), [ev]);
+  const span = eventSpan(ev);
+  const rows = ev.rows;
+  const setRow = (r: QtyRow) => props.onRows(rows.map((x) => (x.id === r.id ? r : x)));
+  const move = (i: number, by: -1 | 1) => {
+    const j = i + by;
+    if (j < 0 || j >= rows.length) return;
+    const list = [...rows];
+    [list[i], list[j]] = [list[j], list[i]];
+    props.onRows(list);
+  };
+  const remove = (r: QtyRow) => {
+    if (Object.keys(r.qty).length && !window.confirm(`Delete the row ${r.name || "(no name)"} and its quantities?`)) return;
+    props.onRows(rows.filter((x) => x.id !== r.id));
+  };
+  /** Cells copied from Excel (more than one) go to the right and down from the cell; numbers only, blanks clear. */
+  const paste = (ri: number, di: number, text: string) => {
+    const grid = text.replace(/\r?\n$/, "").split(/\r?\n/).map((l) => l.split("\t"));
+    if (grid.length === 1 && grid[0].length === 1) return false;
+    const list = [...rows];
+    grid.forEach((line, y) => {
+      const r = list[ri + y];
+      if (!r) return;
+      let next = r;
+      line.forEach((cell, x) => {
+        const d = days[di + x];
+        const n = readQty(cell);
+        if (d && n !== null) next = setQty(next, d, n);
+      });
+      list[ri + y] = next;
+    });
+    props.onRows(list);
+    return true;
+  };
+  const dayCls = (d: string) => (d === today ? " today" : "") + (weekday(d) === 6 ? " sat" : weekday(d) === 0 ? " sun" : "") + (inSpan(d, span) ? " in" : "");
+  return (
+    <div className="wk-qty">
+      {days.length ? (
+        <div className="wk-qty-wrap">
+          <table className="wk-qty-t">
+            <thead>
+              <tr>
+                <th className="nm">Item</th>
+                <th className="tot">Total</th>
+                {days.map((d) => (
+                  <th key={d} className={"day" + dayCls(d)} title={d} style={inSpan(d, span) ? { boxShadow: `inset 0 -3px 0 ${ev.color}` } : undefined}>
+                    {Number(d.slice(5, 7))}/{Number(d.slice(8))}<small>{WEEKDAYS[weekday(d)]}</small>
+                  </th>
+                ))}
+                <th className="act"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, ri) => (
+                <tr key={r.id}>
+                  <td className="nm">
+                    <input className="wk-qty-name" value={r.name} placeholder="Item, e.g. SPK Assy" aria-label="Item name"
+                      onChange={(x) => setRow({ ...r, name: x.target.value })} />
+                  </td>
+                  <td className="tot">{rowTotal(r) ? num(rowTotal(r)) : ""}</td>
+                  {days.map((d, di) => (
+                    <td key={d} className={"c" + dayCls(d) + (r.qty[d] ? " has" : "")}>
+                      <QtyCell value={r.qty[d]} label={`${r.name} ${d}`} onKeep={(n) => setRow(setQty(r, d, n))} onPaste={(t) => paste(ri, di, t)} />
+                    </td>
+                  ))}
+                  <td className="act">
+                    <button className="wk-link" onClick={() => move(ri, -1)} disabled={ri === 0} aria-label="Move up">↑</button>
+                    <button className="wk-link" onClick={() => move(ri, 1)} disabled={ri === rows.length - 1} aria-label="Move down">↓</button>
+                    <button className="wk-link bad" onClick={() => remove(r)} aria-label={`Delete ${r.name}`}>×</button>
+                  </td>
+                </tr>
+              ))}
+              {!rows.length && <tr><td colSpan={days.length + 3} className="wk-it-empty">No item yet. Add the items to plan (SPK Assy, Lower Assy, …) with + Row.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      ) : <div className="muted small">Give the event dates to plan quantities by day.</div>}
+      <button className="btn sm wk-dp-add" onClick={() => props.onRows([...rows, blankRow()])}>+ Row</button>
     </div>
   );
 }
@@ -118,6 +229,7 @@ export default function DevPlan(props: {
   const [selected, setSelected] = useState(savedPlan.events[0]?.id ?? "");
   const [editEvent, setEditEvent] = useState<PlanEvent | null>(null);
   const [editTask, setEditTask] = useState<PlanTask | null>(null);
+  const [showQty, setShowQty] = useState(true);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const dirty = JSON.stringify(plan) !== JSON.stringify(savedPlan);
@@ -146,6 +258,7 @@ export default function DevPlan(props: {
     [list[i], list[j]] = [list[j], list[i]];
     setEvents(list);
   };
+  const setRows = (rows: QtyRow[]) => ev && setEvents(events.map((x) => (x.id === ev.id ? { ...x, rows } : x)));
   const setTasks = (tasks: PlanTask[]) => ev && setEvents(events.map((x) => (x.id === ev.id ? { ...x, tasks } : x)));
   const keepTask = (t: PlanTask) => {
     if (!ev) return;
@@ -203,6 +316,12 @@ export default function DevPlan(props: {
                 <button className="wk-link bad" onClick={() => removeEvent(ev)}>Delete event</button>
               </span>
             </div>
+            <button className="wk-qty-h" onClick={() => setShowQty(!showQty)} aria-expanded={showQty}>
+              <span className="tw">{showQty ? "▾" : "▸"}</span> Quantity plan
+              <span className="muted small"> · {ev.rows.length} row(s){ev.rows.length ? ` · total ${num(ev.rows.reduce((a, r) => a + rowTotal(r), 0))}` : ""}</span>
+            </button>
+            {showQty && <QtyTable key={ev.id} ev={ev} onRows={setRows} />}
+            <div className="wk-qty-h static">Detailed schedule</div>
             {evDays.length > 0 && ev.tasks.length > 0 && (
               <Gantt days={evDays} rows={ev.tasks.map((t) => ({ id: t.id, label: t.name, sub: dates(taskSpan(t)) + (t.owner ? " · " + t.owner : ""), span: taskSpan(t), color: ev.color, done: t.done }))} />
             )}
