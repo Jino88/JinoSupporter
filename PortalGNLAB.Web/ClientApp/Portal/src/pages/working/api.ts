@@ -1,5 +1,6 @@
 import { loginUrl } from "../../api";
 import { getJson, toolPath, toolSend } from "../../toolsApi";
+import type { ManualGroup } from "./manual";
 import type { Entry, EntryFields, EntryLog, GroupsResponse, LogFields, ModelInfo, WorkingImage, WorkingModel } from "./types";
 
 const base = "working";
@@ -51,5 +52,8 @@ export const workingApi = {
   },
   deleteImage: (name: string, entryId: string, imageId: string) =>
     toolSend<void>(`${entry(name, entryId)}/images/${encodeURIComponent(imageId)}`, undefined, "DELETE"),
+  /** The hand-entered process table changed by AI as the request says (not saved; Save keeps it). */
+  manualAi: (name: string, request: string, group: ManualGroup, signal?: AbortSignal) =>
+    toolSend<{ group: unknown; note: string; model: string }>(`${model(name)}/manual/ai`, { request, group }, "POST", signal),
   imageUrl: (imageId: string) => toolPath(`${base}/images/${encodeURIComponent(imageId)}`),
 };

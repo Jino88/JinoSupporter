@@ -77,15 +77,17 @@ export const deleteMaterial = (g: ManualGroup, name: string): ManualGroup => ({
 /** How many processes use each material. */
 export const usage = (g: ManualGroup, name: string) => g.processes.filter((p) => p.materials.some((u) => key(u.material) === key(name))).length;
 
-/** A listed material put into a process (dragged onto it) at 1 per unit; unchanged if the process already uses it. */
-export function putMaterial(g: ManualGroup, processId: string, name: string): ManualGroup {
-  const m = g.materials.find((x) => key(x) === key(name));
-  if (!m) return g;
-  return {
-    ...g,
-    processes: g.processes.map((p) =>
-      p.id !== processId || p.materials.some((u) => key(u.material) === key(m)) ? p : { ...p, materials: [...p.materials, { material: m, qtyPerUnit: 1 }] }),
-  };
+/**
+ * Listed materials put into a process (dragged onto it) at 1 per unit, in list order; a material the process already
+ * uses is skipped, and the group is unchanged if nothing was added.
+ */
+export function putMaterial(g: ManualGroup, processId: string, names: string[]): ManualGroup {
+  const p = g.processes.find((x) => x.id === processId);
+  if (!p) return g;
+  const add = g.materials.filter((m) => names.some((n) => key(n) === key(m)) && !p.materials.some((u) => key(u.material) === key(m)));
+  if (!add.length) return g;
+  const next = { ...p, materials: [...p.materials, ...add.map((material) => ({ material, qtyPerUnit: 1 }))] };
+  return { ...g, processes: g.processes.map((x) => (x.id === processId ? next : x)) };
 }
 
 export function saveProcess(g: ManualGroup, p: ManualProcess): ManualGroup {
@@ -113,6 +115,26 @@ export const fromProductionInput = (s: ModelSetup): ManualGroup => ({
     ngItems: p.ngItems.map((n) => n.name), materials: p.materials.map((u) => ({ material: u.material, qtyPerUnit: u.qtyPerUnit })),
   })),
 });
+
+/**
+ * The group AI answered, read leniently, with the names of the processes it added (no id of the current group) and
+ * removed. A material a process uses but the list does not have is added to the list.
+ */
+export function aiAnswer(g: ManualGroup, answer: unknown): { group: ManualGroup; added: string[]; removed: string[] } {
+  const next = readManual(answer);
+  const materials = [...next.materials];
+  for (const u of next.processes.flatMap((p) => p.materials)) {
+    if (u.material.trim() && !materials.some((m) => key(m) === key(u.material))) materials.push(u.material.trim());
+  }
+  const processes = next.processes.map(cleanProcess);
+  const was = new Set(g.processes.map((p) => p.id));
+  const now = new Set(processes.map((p) => p.id));
+  return {
+    group: { materials, processes },
+    added: processes.filter((p) => !was.has(p.id)).map((p) => p.name),
+    removed: g.processes.filter((p) => !now.has(p.id)).map((p) => p.name),
+  };
+}
 
 /** A saved group read leniently (older or hand-edited JSON). */
 export function readManual(v: unknown): ManualGroup {
