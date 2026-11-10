@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { matchingModels } from "./PlanView";
 import {
   blankEntry, blankLog, buildTree, fieldsOf, byMonth, countByKind, entryProblem, filterTree, firstModel, isLate, isLogLate, isOpenIssue, issueFields,
   issuesBySeq, issuesOfStage, issueTree, logProblem, mediaKind, notesInOrder, pastedImages, pathOf, replaceSome, sortEntries, suggestions,
@@ -80,15 +79,6 @@ describe("entries", () => {
     expect(entryProblem({ ...f, title: "x" })).toBe("");
     expect(entryProblem({ ...f, title: "x", date: "11/09" })).toBe("Date must be yyyy-MM-dd.");
     expect(entryProblem({ ...f, title: "x".repeat(201) })).toMatch(/200/);
-  });
-});
-
-describe("matchingModels", () => {
-  it("matches the Production Input model by name, ignoring case and spaces", () => {
-    const m = (id: string, name: string, build: string) =>
-      ({ id, name, build, processCount: 0, materialCount: 0, revision: 1, updatedAt: "", updatedBy: "" });
-    const list = [m("1", "MSM-X316B", "PV2"), m("2", "msm-x316b ", "MP1"), m("3", "MSM-X316", "PV2")];
-    expect(matchingModels(list, "MSM-X316B").map((x) => x.id)).toEqual(["1", "2"]);
   });
 });
 

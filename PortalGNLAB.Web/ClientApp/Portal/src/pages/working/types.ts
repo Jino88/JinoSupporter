@@ -36,6 +36,8 @@ export interface ModelInfo {
   bmesMaterial?: string;
   /** Processes, NG items and materials entered by hand when BMES has no model group for the model (manual.ts). */
   manualGroup?: unknown;
+  /** Development plan: events and their detailed schedule (plan.ts). */
+  devPlan?: unknown;
 }
 
 export interface WorkingModel {

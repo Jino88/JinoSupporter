@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { localToday } from "./productionInput/logic";
 import { workingApi } from "./working/api";
+import DevPlan from "./working/DevPlan";
 import EntryList from "./working/EntryList";
 import InfoTab from "./working/InfoTab";
 import IssueTable from "./working/IssueTable";
 import {
   buildTree, countByKind, filterTree, firstModel, isOpenIssue, issuesOfStage, pathOf, replaceSome, sortEntries, type GroupNode, type IssueStage,
 } from "./working/logic";
-import PlanView from "./working/PlanView";
 import SetupPlan from "./working/SetupPlan";
 import { hideModels, treeApi, withAdded, type TreeSettings } from "./working/tree";
 import TreeManager from "./working/TreeManager";
@@ -94,7 +94,7 @@ export default function Working() {
 
   const pick = (name: string) => {
     if (name === selected) return;
-    if (infoDirty && !window.confirm("Discard the unsaved model info?")) return;
+    if (infoDirty && !window.confirm("Discard the unsaved changes?")) return;
     setSelected(name);
   };
   const toggle = (id: string) => setClosed((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -106,7 +106,7 @@ export default function Working() {
   const openIn = (stage: IssueStage) => issuesOfStage(entries, stage).filter(isOpenIssue).length;
   const go = (k: Tab) => {
     if (k === tab) return;
-    if (infoDirty && !window.confirm("Discard the unsaved model info?")) return;
+    if (infoDirty && !window.confirm("Discard the unsaved changes?")) return;
     setInfoDirty(false);
     setTab(k);
   };
@@ -217,7 +217,10 @@ export default function Working() {
                     <InfoTab key={selected} model={model} onDirty={setInfoDirty}
                       onSaved={(m) => { setModel(m); setInfoDirty(false); }} onError={fail} />
                   )}
-                  {tab === "plan" && <PlanView key={selected} modelName={selected} />}
+                  {tab === "plan" && (
+                    <DevPlan key={selected} model={model} onDirty={setInfoDirty}
+                      onSaved={(m) => { setModel(m); setInfoDirty(false); }} onError={fail} />
+                  )}
                   {tab === "setup" && (
                     <SetupPlan key={selected} modelName={selected} modelPhase={modelPhase}
                       entries={entries} today={today} onChanged={onChanged} onError={fail} />
