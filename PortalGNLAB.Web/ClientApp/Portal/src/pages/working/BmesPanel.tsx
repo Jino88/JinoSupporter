@@ -104,6 +104,13 @@ function BomTable(props: { product: string; onError: (e: unknown) => void }) {
   );
 }
 
+/** Shift groups in columns. */
+const Shifts = (props: { list: string[] }) => (
+  <div className="wk-bg-shifts">
+    {props.list.map((ls) => <div key={ls} className="wk-bg-shift"><span className="wk-bg-sbadge">Shift Group</span>{ls}</div>)}
+  </div>
+);
+
 /** One sub-group as BMES > Make Model Group shows it: its name, how many line shifts, the shift groups, the sub-groups under it. */
 function SubGroupCard(props: { node: SubGroupNode }) {
   const n = props.node;
@@ -113,8 +120,8 @@ function SubGroupCard(props: { node: SubGroupNode }) {
         <span className="wk-bg-badge">Sub Group {n.depth}</span><b>{n.name}</b>
         <span className="muted small wk-bg-count">{shiftCount(n)} shifts</span>
       </div>
-      {n.lineShifts.map((ls) => <div key={ls} className="wk-bg-shift"><span className="wk-bg-sbadge">Shift Group</span>{ls}</div>)}
-      {n.children.map((c) => <SubGroupCard key={c.name} node={c} />)}
+      {n.lineShifts.length > 0 && <Shifts list={n.lineShifts} />}
+      {n.children.length > 0 && <div className="wk-bg-subs">{n.children.map((c) => <SubGroupCard key={c.name} node={c} />)}</div>}
     </div>
   );
 }
@@ -130,8 +137,8 @@ function LinkedGroup(props: { m: BmesMaterial }) {
         <span className="wk-chip on">{m.group}</span>
         <span className="muted small wk-bg-count">{tree.nodes.length} sub groups · {m.subGroups.reduce((s, x) => s + x.lineShifts.length, 0)} shifts</span>
       </div>
-      {tree.direct.map((ls) => <div key={ls} className="wk-bg-shift"><span className="wk-bg-sbadge">Shift Group</span>{ls}</div>)}
-      {tree.nodes.map((n) => <SubGroupCard key={n.name} node={n} />)}
+      {tree.direct.length > 0 && <Shifts list={tree.direct} />}
+      <div className="wk-bg-subs">{tree.nodes.map((n) => <SubGroupCard key={n.name} node={n} />)}</div>
       {!m.subGroups.length && <div className="muted small">No line shift in this model.</div>}
     </div>
   );
@@ -152,7 +159,7 @@ function GroupPicker(props: {
     <div key={x.group + "/" + x.material} className={"wk-bg-pick" + (x.material === props.current ? " on" : "")}>
       <span className="wk-bg-badge model">Model</span><b>{x.material}</b>
       <span className="muted small">{subGroupTree(x.subGroups).nodes.length} sub groups · {x.subGroups.reduce((s, y) => s + y.lineShifts.length, 0)} shifts</span>
-      <button className="btn sm primary" onClick={() => props.onLink(x.material)}>Link</button>
+      <button className="btn xs primary" onClick={() => props.onLink(x.material)}>Link</button>
     </div>
   );
   return (
@@ -170,12 +177,14 @@ function GroupPicker(props: {
         {groups.map((g) => <button key={g} className={"wk-chip" + (g === group ? " on" : "")} onClick={() => setGroup(g)}>{g}</button>)}
         <input className="inp sm" placeholder="Search model…" value={query} aria-label="Search BMES models" onChange={(e) => setQuery(e.target.value)} />
       </div>
-      {groups.filter((g) => list.some((x) => x.group === g)).map((g) => (
-        <div key={g} className="wk-bg-group">
-          <div className="wk-bg-gname">{g}</div>
-          {list.filter((x) => x.group === g).map(row)}
-        </div>
-      ))}
+      <div className="wk-bg-groups">
+        {groups.filter((g) => list.some((x) => x.group === g)).map((g) => (
+          <div key={g} className="wk-bg-group">
+            <div className="wk-bg-gname">{g}</div>
+            {list.filter((x) => x.group === g).map(row)}
+          </div>
+        ))}
+      </div>
       {!list.length && <div className="muted">No BMES model matches.</div>}
       <div className="wk-bg-foot">
         {props.onCancel && <button className="btn sm" onClick={props.onCancel}>Cancel</button>}
