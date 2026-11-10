@@ -262,6 +262,11 @@ table.wk-bom-t tr.lv1 td { font-weight: 700; }
 .wk-man-use .inp.sm { display: inline-block; width: auto; min-width: 120px; }
 .wk-man-use .inp.sm.wk-man-qty { width: 64px; min-width: 64px; }
 .wk-man-add { margin-top: 8px; }
+.wk-man-hb { display: flex; gap: 6px; flex-shrink: 0; }
+.wk-man-paste { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; margin-bottom: 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fbfcfe; }
+.wk-man-paste textarea.inp.sm { height: auto; width: 100%; font-family: ui-monospace, Consolas, monospace; }
+.wk-man-paste-list { max-height: 320px; overflow: auto; }
+.wk-man-paste-b { display: flex; justify-content: flex-end; gap: 6px; }
 .wk-man-newmat { display: flex; gap: 6px; margin-top: 8px; }
 .wk-man-newmat .inp { flex: 1; }
 @media (max-width: 1100px) { .wk-man-body { grid-template-columns: 1fr; } }

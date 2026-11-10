@@ -4,6 +4,56 @@ import {
   MANUAL_TYPES, addMaterial, blankProcess, deleteMaterial, deleteProcess, fromProductionInput, moveProcess, processProblem, saveProcess, usage,
 } from "./manual";
 import type { ManualGroup as Group, ManualProcess, ManualType } from "./manual";
+import { mergeSheet, parseNgHeader } from "./ngSheet";
+
+/** The header rows of a Daily NG Rate sheet pasted here: the processes and NG items read from them, put into the table. */
+function SheetPaste(props: { value: Group; onApply: (g: Group) => void; onClose: () => void }) {
+  const [text, setText] = useState("");
+  const sheet = text.trim() ? parseNgHeader(text) : null;
+  const merged = sheet && !sheet.problem ? mergeSheet(props.value, sheet.processes) : null;
+  const apply = () => {
+    if (!merged) return;
+    if (merged.dropped.length && !window.confirm(`These processes are not in the sheet and will be removed:\n${merged.dropped.join(", ")}`)) return;
+    props.onApply(merged.group);
+  };
+  return (
+    <div className="wk-man-paste">
+      <div className="muted small">
+        Copy the process row and the Input / NG / NG rate (%) row of the Daily NG Rate sheet in Excel together and paste them here.
+        Processes with the same name keep their type and materials; the material list stays.
+      </div>
+      <textarea className="inp sm wk-ta" rows={4} value={text} autoFocus placeholder="Paste the header rows here (Ctrl+V)"
+        onChange={(e) => setText(e.target.value)} />
+      {sheet?.problem && <div className="pi-dirty small">{sheet.problem}</div>}
+      {merged && (
+        <>
+          <div className="small"><b>{sheet!.processes.length} processes</b>
+            {merged.dropped.length > 0 && <span className="pi-dirty"> · removes {merged.dropped.join(", ")}</span>}
+          </div>
+          {sheet!.warnings.map((w) => <div key={w} className="pi-dirty small">{w}</div>)}
+          <div className="pi-wrap wk-man-paste-list">
+            <table className="wk-it">
+              <thead><tr><th className="fit">#</th><th className="l">Process name</th><th className="l">NG items</th></tr></thead>
+              <tbody>
+                {sheet!.processes.map((p, i) => (
+                  <tr key={i}>
+                    <td className="n">{i + 1}</td>
+                    <td className="l"><b>{p.name}</b>{p.localName && <div className="muted small">{p.localName}</div>}</td>
+                    <td className="l wk-man-list">{p.ngItems.join(" | ") || <span className="muted">—</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+      <div className="wk-man-paste-b">
+        <button className="btn sm" onClick={props.onClose}>Cancel</button>
+        <button className="btn sm primary" disabled={!merged} onClick={apply}>Put into the table</button>
+      </div>
+    </div>
+  );
+}
 
 /** One process being added or changed: type, names, NG items (one per line) and the materials it uses per unit. */
 function ProcessEdit(props: { no: number; value: ManualProcess; materials: string[]; onSave: (p: ManualProcess) => void; onCancel: () => void }) {
@@ -64,6 +114,7 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
   const [editing, setEditing] = useState<ManualProcess | null>(null);
   const [newMat, setNewMat] = useState("");
   const [source, setSource] = useState<{ id: string; name: string; build: string } | null>(null);
+  const [pasting, setPasting] = useState(false);
 
   // a Production Input model with the same name can be copied in
   useEffect(() => {
@@ -98,8 +149,12 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
     <div className="wk-man">
       <div className="wk-man-h">
         <span className="muted small">Entered here because BMES has no model group for this model. Save the model information to keep changes.</span>
-        {source && <button className="btn sm" onClick={copy}>Copy from Production Input {source.name} ({source.build})</button>}
+        <span className="wk-man-hb">
+          <button className="btn sm" disabled={pasting || !!editing} onClick={() => setPasting(true)}>Paste NG Rate header</button>
+          {source && <button className="btn sm" onClick={copy}>Copy from Production Input {source.name} ({source.build})</button>}
+        </span>
       </div>
+      {pasting && <SheetPaste value={g} onClose={() => setPasting(false)} onApply={(next) => { props.onChange(next); setPasting(false); setEditing(null); }} />}
       <div className="wk-man-body">
         <div className="pi-wrap wk-man-procs">
           <table className="wk-it wk-man-t">
