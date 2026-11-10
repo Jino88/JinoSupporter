@@ -282,27 +282,27 @@ table.wk-bom-t tr.lv1 td { font-weight: 700; }
 .wk-gantt-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; }
 table.wk-gantt { border-collapse: separate; border-spacing: 0; font-size: 11px; }
 table.wk-gantt.fill { width: 100%; table-layout: fixed; }
-table.wk-gantt.fill th.nm { width: 230px; }
-table.wk-gantt.fill th.day { width: auto; }
-table.wk-gantt th, table.wk-gantt td { padding: 0; border-bottom: 1px solid #eef2f7; }
-table.wk-gantt th.nm, table.wk-gantt td.nm { position: sticky; left: 0; z-index: 1; min-width: 210px; max-width: 260px; padding: 4px 10px; background: #fff; border-right: 1px solid var(--line); text-align: left; }
-table.wk-gantt th.mon { padding: 3px 6px; text-align: left; font-weight: 700; color: var(--ink-2); background: #f8fafc; border-left: 1px solid var(--line); }
-table.wk-gantt th.day { width: 22px; min-width: 22px; padding: 2px 0; text-align: center; font-weight: 600; color: var(--muted); background: #f8fafc; }
-table.wk-gantt th.day small { display: block; font-size: 9px; font-weight: 500; opacity: .75; }
-table.wk-gantt .we { background: #f8fafc; }
-table.wk-gantt th.today, table.wk-gantt td.today { box-shadow: inset 1px 0 0 #ef4444, inset -1px 0 0 #ef4444; }
-table.wk-gantt th.today { color: #ef4444; }
-table.wk-gantt td.c { height: 26px; }
-table.wk-gantt td.c.on { opacity: .9; }
-table.wk-gantt td.c.on.s { border-top-left-radius: 5px; border-bottom-left-radius: 5px; }
-table.wk-gantt td.c.on.e { border-top-right-radius: 5px; border-bottom-right-radius: 5px; }
-table.wk-gantt td.nm .dot, .wk-dp-dh .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
-table.wk-gantt td.nm b { font-size: 12px; }
-table.wk-gantt td.nm b.done { text-decoration: line-through; color: var(--muted); }
-table.wk-gantt td.nm small { display: block; margin-left: 15px; color: var(--muted); font-size: 10.5px; }
-table.wk-gantt tr.pick { cursor: pointer; }
-table.wk-gantt tr.pick:hover td.nm { background: #f8fafc; }
-table.wk-gantt tr.on td.nm { background: var(--accent-soft, #eef2ff); box-shadow: inset 3px 0 0 var(--accent, #4f46e5); }
+table.wk-gantt.fill > * > tr > th.nm { width: 230px; }
+table.wk-gantt.fill > * > tr > th.day { width: auto; }
+table.wk-gantt > * > tr > th, table.wk-gantt > * > tr > td { padding: 0; border-bottom: 1px solid #eef2f7; }
+table.wk-gantt > * > tr > th.nm, table.wk-gantt > * > tr > td.nm { position: sticky; left: 0; z-index: 1; min-width: 210px; max-width: 260px; padding: 4px 10px; background: #fff; border-right: 1px solid var(--line); text-align: left; }
+table.wk-gantt > * > tr > th.mon { padding: 3px 6px; text-align: left; font-weight: 700; color: var(--ink-2); background: #f8fafc; border-left: 1px solid var(--line); }
+table.wk-gantt > * > tr > th.day { width: 22px; min-width: 22px; padding: 2px 0; text-align: center; font-weight: 600; color: var(--muted); background: #f8fafc; }
+table.wk-gantt > * > tr > th.day small { display: block; font-size: 9px; font-weight: 500; opacity: .75; }
+table.wk-gantt > * > tr > .we { background: #f8fafc; }
+table.wk-gantt > * > tr > th.today, table.wk-gantt > * > tr > td.today { box-shadow: inset 1px 0 0 #ef4444, inset -1px 0 0 #ef4444; }
+table.wk-gantt > * > tr > th.today { color: #ef4444; }
+table.wk-gantt > * > tr > td.c { height: 26px; }
+table.wk-gantt > * > tr > td.c.on { opacity: .9; }
+table.wk-gantt > * > tr > td.c.on.s { border-top-left-radius: 5px; border-bottom-left-radius: 5px; }
+table.wk-gantt > * > tr > td.c.on.e { border-top-right-radius: 5px; border-bottom-right-radius: 5px; }
+table.wk-gantt > * > tr > td.nm .dot, .wk-dp-dh .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+table.wk-gantt > * > tr > td.nm b { font-size: 12px; }
+table.wk-gantt > * > tr > td.nm b.done { text-decoration: line-through; color: var(--muted); }
+table.wk-gantt > * > tr > td.nm small { display: block; margin-left: 15px; color: var(--muted); font-size: 10.5px; }
+table.wk-gantt > * > tr.pick { cursor: pointer; }
+table.wk-gantt > * > tr.pick:hover > td.nm { background: #f8fafc; }
+table.wk-gantt > * > tr.on > td.nm { background: var(--accent-soft, #eef2ff); box-shadow: inset 3px 0 0 var(--accent, #4f46e5); }
 .wk-dp-form { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; }
 .wk-dp-form .inp:first-child { min-width: 220px; }
 .wk-dp-colors { display: inline-flex; gap: 3px; }
@@ -320,6 +320,15 @@ table.wk-dp-tasks .inp.sm[type="date"] { width: 132px; }
 table.wk-dp-tasks .wk-dp-owner { width: 90px; }
 .wk-dp-add { margin-top: 8px; }
 /* Dev Plan: quantity table of an event (a row per item, a column per day) */
+/* the quantity plan of the event clicked, opened right under its row; kept in view while the calendar scrolls */
+.wk-gantt-wrap { container-type: inline-size; }
+table.wk-gantt > * > tr > td.nm .tw { display: inline-block; width: 11px; margin-left: -4px; color: var(--muted); font-size: 10px; }
+table.wk-gantt > * > tr.open > td { border-bottom-color: transparent; }
+table.wk-gantt > * > tr.x > td.x { padding: 0; background: #fbfcfe; border-bottom: 1px solid var(--line); }
+.wk-gantt-x { position: sticky; left: 0; box-sizing: border-box; width: 100cqi; padding: 6px 12px 10px; font-size: 12px; }
+.wk-gantt-x .wk-qty-h.static { margin-top: 0; }
+table.wk-gantt > * > tr > td.nm .tw ~ small { margin-left: 22px; }
+.wk-gantt-x .wk-qty-wrap { background: #fff; }
 .wk-qty-h { display: block; margin: 4px 0 6px; padding: 0; border: 0; background: none; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink-2); cursor: pointer; text-align: left; }
 .wk-qty-h.static { cursor: default; margin-top: 14px; }
 .wk-qty-h .tw { display: inline-block; width: 12px; color: var(--muted); }
