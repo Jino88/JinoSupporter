@@ -119,13 +119,10 @@ export function setQty(row: QtyRow, day: string, n: number | undefined): QtyRow 
 
 export const rowTotal = (row: QtyRow) => Object.values(row.qty).reduce((a, b) => a + b, 0);
 
-/** The days of the quantity table: the event (and its tasks) with a week before and 2 days after, and every day with a quantity. */
-export function qtyDays(ev: PlanEvent): string[] {
-  const filled = ev.rows.flatMap((r) => Object.keys(r.qty)).map((d): [string, string] => [d, d]);
-  const span = eventSpan(ev);
-  if (!span && !filled.length) return [];
-  const pad: ([string, string] | null)[] = span ? [[addDays(span[0], -7), addDays(span[1], 2)]] : [];
-  return calendarDays([...pad, ...ev.tasks.map(taskSpan), ...filled], 0);
+/** The days of the plan calendar: the events with 2 days on each side, and every day with a quantity (so none is hidden). */
+export function planDays(events: PlanEvent[]): string[] {
+  const filled = events.flatMap((e) => e.rows.flatMap((r) => Object.keys(r.qty))).map((d): [string, string] => [d, d]);
+  return calendarDays([...events.map(eventSpan), ...filled]);
 }
 
 /** A saved plan read leniently (older or hand-edited JSON). */

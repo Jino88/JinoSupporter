@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  blankEvent, blankRow, blankTask, calendarDays, eventSpan, inSpan, monthRuns, planProblem, progress, qtyDays, readDevPlan, readQty, rowTotal, setQty,
+  blankEvent, blankRow, blankTask, calendarDays, eventSpan, inSpan, monthRuns, planProblem, progress, planDays, readDevPlan, readQty, rowTotal, setQty,
 } from "./plan";
 import type { PlanEvent, PlanTask } from "./plan";
 
@@ -51,12 +51,12 @@ describe("development plan", () => {
     expect([readQty("1,200"), readQty(" "), readQty("abc"), readQty("-5"), readQty("2.5")]).toEqual([1200, undefined, null, null, 2.5]);
   });
 
-  it("lays the quantity table from a week before the event to 2 days after, with every day that has a quantity", () => {
+  it("lays the plan calendar over the events with 2 days on each side, and every day that has a quantity", () => {
     const e = { ...ev("2026-11-18", "2026-11-20"), rows: [setQty(blankRow("OQC"), "2026-11-25", 450)] };
-    const days = qtyDays(e);
-    expect([days[0], days.at(-1), days.length]).toEqual(["2026-11-11", "2026-11-25", 15]);
-    expect(qtyDays(ev("", ""))).toEqual([]);
-    expect(qtyDays({ ...ev("", ""), rows: [setQty(blankRow("a"), "2026-11-03", 1)] })).toEqual(["2026-11-03"]);
+    const days = planDays([e]);
+    expect([days[0], days.at(-1), days.length]).toEqual(["2026-11-16", "2026-11-27", 12]);
+    expect(planDays([ev("", "")])).toEqual([]);
+    expect(planDays([{ ...ev("", ""), rows: [setQty(blankRow("a"), "2026-11-03", 1)] }])).toEqual(["2026-11-01", "2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05"]);
   });
 
   it("reads the quantity rows of a saved event leniently", () => {
