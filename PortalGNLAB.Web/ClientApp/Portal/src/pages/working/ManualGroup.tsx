@@ -1,7 +1,8 @@
 import { Fragment, useEffect, useState } from "react";
 import { productionApi } from "../productionInput/api";
+import { workingApi } from "./api";
 import {
-  MANUAL_TYPES, addMaterial, blankProcess, deleteMaterial, deleteProcess, fromProductionInput, moveProcess, processProblem, putMaterial, saveProcess, usage,
+  MANUAL_TYPES, addMaterial, aiAnswer, blankProcess, deleteMaterial, deleteProcess, fromProductionInput, moveProcess, processProblem, putMaterial, saveProcess, usage,
 } from "./manual";
 import type { ManualGroup as Group, ManualProcess, ManualType } from "./manual";
 import { mergeSheet, parseNgHeader } from "./ngSheet";
@@ -50,6 +51,81 @@ function SheetPaste(props: { value: Group; onApply: (g: Group) => void; onClose:
       <div className="wk-man-paste-b">
         <button className="btn sm" onClick={props.onClose}>Cancel</button>
         <button className="btn sm primary" disabled={!merged} onClick={apply}>Put into the table</button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A request typed for AI (with cells copied from Excel if wanted), e.g. "fill the table from this header" or "put LOWER
+ * into processes 3 to 6". The changed table it answers is shown first and goes into the table only when asked.
+ */
+function AiRequest(props: { modelName: string; value: Group; onApply: (g: Group) => void }) {
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState<AbortController | null>(null);
+  const [error, setError] = useState("");
+  const [answer, setAnswer] = useState<(ReturnType<typeof aiAnswer> & { note: string; model: string; asked: Group }) | null>(null);
+  const send = async () => {
+    if (!text.trim() || busy) return;
+    const ctl = new AbortController();
+    setBusy(ctl); setError(""); setAnswer(null);
+    try {
+      const r = await workingApi.manualAi(props.modelName, text, props.value, ctl.signal);
+      setAnswer({ ...aiAnswer(props.value, r.group), note: r.note, model: r.model, asked: props.value });
+    } catch (e) {
+      if (!ctl.signal.aborted) setError(e instanceof Error ? e.message : String(e));
+    } finally { setBusy(null); }
+  };
+  const apply = () => {
+    if (!answer) return;
+    if (answer.asked !== props.value && !window.confirm("The table changed after the request. Put the answer in anyway (those changes are replaced)?")) return;
+    if (answer.removed.length && !window.confirm(`The answer removes these processes:\n${answer.removed.join(", ")}`)) return;
+    props.onApply(answer.group);
+    setAnswer(null); setText("");
+  };
+  return (
+    <div className="wk-man-paste">
+      <div className="muted small">
+        Ask AI to change the table: type what to do and paste cells copied from Excel if needed
+        (e.g. "Fill the processes and NG items from this header", "Put LOWER into processes 3 to 6"). Ctrl+Enter sends.
+      </div>
+      <textarea className="inp sm wk-ta" rows={3} value={text} placeholder="What should change in the table?" disabled={!!busy}
+        onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void send(); } }} />
+      {error && <div className="pi-dirty small">{error}</div>}
+      {answer && (
+        <>
+          <div className="small">
+            {answer.note && <div>{answer.note}</div>}
+            <b>{answer.group.processes.length} processes</b> · {answer.group.materials.length} materials
+            {answer.added.length > 0 && <span> · adds {answer.added.join(", ")}</span>}
+            {answer.removed.length > 0 && <span className="pi-dirty"> · removes {answer.removed.join(", ")}</span>}
+            <span className="muted"> · {answer.model}</span>
+          </div>
+          <div className="pi-wrap wk-man-paste-list">
+            <table className="wk-it">
+              <thead><tr><th className="fit">#</th><th className="fit">Type</th><th className="l">Process name</th><th className="l">NG items</th><th className="l">Materials</th></tr></thead>
+              <tbody>
+                {answer.group.processes.map((p, i) => (
+                  <tr key={p.id}>
+                    <td className="n">{i + 1}</td>
+                    <td><span className={"wk-man-type t-" + p.type.toLowerCase()}>{p.type}</span></td>
+                    <td className="l"><b>{p.name}</b>{p.localName && <div className="muted small">{p.localName}</div>}</td>
+                    <td className="l wk-man-list">{p.ngItems.join(" | ") || <span className="muted">—</span>}</td>
+                    <td className="l wk-man-list">{p.materials.map((u) => `${u.material} × ${u.qtyPerUnit}`).join(", ") || <span className="muted">—</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+      <div className="wk-man-paste-b">
+        {busy && <span className="muted small">Asking AI…</span>}
+        {busy && <button className="btn sm" onClick={() => busy.abort()}>Stop</button>}
+        {answer && <button className="btn sm" onClick={() => setAnswer(null)}>Discard</button>}
+        {answer
+          ? <button className="btn sm primary" onClick={apply}>Put into the table</button>
+          : <button className="btn sm primary" disabled={!text.trim() || !!busy} onClick={() => void send()}>Ask AI</button>}
       </div>
     </div>
   );
@@ -115,8 +191,9 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
   const [newMat, setNewMat] = useState("");
   const [source, setSource] = useState<{ id: string; name: string; build: string } | null>(null);
   const [pasting, setPasting] = useState(false);
-  // a material dragged from the list onto a process row, and the row it is over
-  const [drag, setDrag] = useState<string | null>(null);
+  // materials picked in the list (Ctrl+click for several), the ones dragged onto a process row, and the row they are over
+  const [picked, setPicked] = useState<string[]>([]);
+  const [drag, setDrag] = useState<string[] | null>(null);
   const [over, setOver] = useState<string | null>(null);
 
   // a Production Input model with the same name can be copied in
@@ -146,7 +223,10 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
     if (window.confirm(`Delete process ${p.name}?`)) props.onChange(deleteProcess(g, p.id));
   };
   const keep = (p: ManualProcess) => { props.onChange(saveProcess(g, p)); setEditing(null); };
-  const takes = (p: ManualProcess) => !!drag && !p.materials.some((u) => u.material.toLowerCase() === drag.toLowerCase());
+  const sel = g.materials.filter((m) => picked.includes(m));
+  const pick = (m: string, more: boolean) =>
+    setPicked(more ? (sel.includes(m) ? sel.filter((x) => x !== m) : [...sel, m]) : (sel.length === 1 && sel[0] === m ? [] : [m]));
+  const takes = (p: ManualProcess) => !!drag?.some((m) => !p.materials.some((u) => u.material.toLowerCase() === m.toLowerCase()));
   const drop = (p: ManualProcess) => { if (drag) props.onChange(putMaterial(g, p.id, drag)); setDrag(null); setOver(null); };
   const isNew = editing && !g.processes.some((p) => p.id === editing.id);
 
@@ -159,6 +239,7 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
           {source && <button className="btn sm" onClick={copy}>Copy from Production Input {source.name} ({source.build})</button>}
         </span>
       </div>
+      <AiRequest modelName={props.modelName} value={g} onApply={(next) => { props.onChange(next); setEditing(null); }} />
       {pasting && <SheetPaste value={g} onClose={() => setPasting(false)} onApply={(next) => { props.onChange(next); setPasting(false); setEditing(null); }} />}
       <div className="wk-man-body">
         <div className="pi-wrap wk-man-procs">
@@ -212,18 +293,27 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
             <thead><tr><th className="l">Material</th><th className="fit">Used in</th><th className="fit"></th></tr></thead>
             <tbody>
               {g.materials.map((m) => (
-                <tr key={m} className="wk-man-drag" draggable title="Drag onto a process to add it"
-                  onDragStart={(e) => { e.dataTransfer.setData("text/plain", m); e.dataTransfer.effectAllowed = "copy"; setDrag(m); }}
+                <tr key={m} className={"wk-man-drag" + (sel.includes(m) ? " wk-man-picked" : "")} draggable
+                  title="Drag onto a process to add it; Ctrl+click to pick several" onClick={(e) => pick(m, e.ctrlKey || e.metaKey)}
+                  onDragStart={(e) => {
+                    const list = sel.includes(m) ? sel : [m];
+                    e.dataTransfer.setData("text/plain", list.join("\n")); e.dataTransfer.effectAllowed = "copy"; setDrag(list);
+                  }}
                   onDragEnd={() => { setDrag(null); setOver(null); }}>
                   <td className="l"><b>{m}</b></td>
                   <td className="muted">{usage(g, m)} proc</td>
-                  <td className="act"><button className="wk-link bad" onClick={() => removeMat(m)} aria-label={`Remove ${m}`}>✕</button></td>
+                  <td className="act"><button className="wk-link bad" onClick={(e) => { e.stopPropagation(); removeMat(m); }} aria-label={`Remove ${m}`}>✕</button></td>
                 </tr>
               ))}
               {!g.materials.length && <tr><td colSpan={3} className="wk-it-empty">No material yet.</td></tr>}
             </tbody>
           </table>
-          {g.materials.length > 0 && <div className="muted small wk-man-hint">Drag a material onto a process to add it (1 per unit; change the qty with Edit).</div>}
+          {g.materials.length > 0 && (
+            <div className="muted small wk-man-hint">
+              {sel.length > 1 && <><b>{sel.length} picked</b> · <button className="wk-link" onClick={() => setPicked([])}>Clear</button><br /></>}
+              Drag a material onto a process to add it; Ctrl+click to pick several and drag them together (1 per unit; change the qty with Edit).
+            </div>
+          )}
           <div className="wk-man-newmat">
             <input className="inp sm" value={newMat} placeholder="New material name" onChange={(e) => setNewMat(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") addMat(); }} />

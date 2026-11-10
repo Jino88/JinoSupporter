@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  addMaterial, blankProcess, deleteMaterial, emptyManual, fromProductionInput, moveProcess, ngFromText, processProblem, putMaterial, readManual,
+  addMaterial, aiAnswer, blankProcess, deleteMaterial, emptyManual, fromProductionInput, moveProcess, ngFromText, processProblem, putMaterial, readManual,
   saveProcess, usage,
 } from "./manual";
 import type { ManualProcess } from "./manual";
@@ -24,16 +24,37 @@ describe("model group entered by hand", () => {
     expect([after.materials, after.processes.map((p) => p.materials.map((u) => u.material))]).toEqual([["SPK 201507"], [[], ["SPK 201507"]]]);
   });
 
-  it("puts a material dragged onto a process at 1 per unit, once", () => {
+  it("puts the materials dragged onto a process at 1 per unit, each once, in list order", () => {
     const keep = proc("AOI 1", { materials: [{ material: "UPPER", qtyPerUnit: 2 }] });
     const other = proc("SPK Assy");
-    const g = { materials: ["UPPER", "SPK 201507"], processes: [keep, other] };
-    const once = putMaterial(g, other.id, "spk 201507");
+    const g = { materials: ["UPPER", "SPK 201507", "LOWER"], processes: [keep, other] };
+    const once = putMaterial(g, other.id, ["spk 201507"]);
     expect(once.processes[1].materials).toEqual([{ material: "SPK 201507", qtyPerUnit: 1 }]);
     expect(once.processes[0]).toBe(keep);
-    expect(putMaterial(once, other.id, "SPK 201507")).toEqual(once);
-    expect(putMaterial(g, keep.id, "upper").processes[0].materials).toEqual([{ material: "UPPER", qtyPerUnit: 2 }]);
-    expect(putMaterial(g, other.id, "LOWER")).toBe(g);
+    expect(putMaterial(once, other.id, ["SPK 201507"])).toBe(once);
+    expect(putMaterial(g, keep.id, ["upper"])).toBe(g);
+    expect(putMaterial(g, other.id, ["NOT LISTED"])).toBe(g);
+    // several picked with Ctrl+click: the ones the process lacks, in list order
+    expect(putMaterial(g, keep.id, ["LOWER", "UPPER", "SPK 201507"]).processes[0].materials).toEqual([
+      { material: "UPPER", qtyPerUnit: 2 }, { material: "SPK 201507", qtyPerUnit: 1 }, { material: "LOWER", qtyPerUnit: 1 },
+    ]);
+  });
+
+  it("reads the table AI answered: what it added and removed, and materials missing from the list", () => {
+    const a = proc("AOI 1"), b = proc("Old step");
+    const g = { materials: ["UPPER"], processes: [a, b] };
+    const r = aiAnswer(g, {
+      materials: ["UPPER"],
+      processes: [
+        { ...a, ngItems: ["NG", " ng ", ""], materials: [{ material: "LOWER", qtyPerUnit: 2 }] },
+        { id: "", type: "ODD", name: " New ", localName: "", ngItems: ["NG"], materials: [] },
+      ],
+    });
+    expect(r.group.materials).toEqual(["UPPER", "LOWER"]);
+    expect(r.group.processes[0]).toMatchObject({ id: a.id, name: "AOI 1", ngItems: ["NG"], materials: [{ material: "LOWER", qtyPerUnit: 2 }] });
+    expect(r.group.processes[1]).toMatchObject({ type: "SUB", name: "New" });
+    expect(r.group.processes[1].id).not.toBe("");
+    expect([r.added, r.removed]).toEqual([["New"], ["Old step"]]);
   });
 
   it("checks a process: a name, listed materials once each, qty above 0", () => {
