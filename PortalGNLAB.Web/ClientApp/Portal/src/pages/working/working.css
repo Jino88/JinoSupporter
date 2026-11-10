@@ -267,7 +267,9 @@ table.wk-bom-t tr.lv1 td { font-weight: 700; }
 .wk-man-paste textarea.inp.sm { height: auto; width: 100%; font-family: ui-monospace, Consolas, monospace; }
 .wk-man-paste-list { max-height: 320px; overflow: auto; }
 .wk-man-paste-b { display: flex; justify-content: flex-end; gap: 6px; }
-.wk-man-mats { position: sticky; top: 8px; }
+/* clip, not hidden: .pi-sec hides overflow, which would stop the material list from following the scroll */
+.pi-sec.wk-info-sec { overflow: clip; }
+.wk-man-mats { position: sticky; top: 8px; max-height: calc(100vh - 40px); overflow-y: auto; }
 .wk-man-drag { user-select: none; }
 .wk-man-drag td:first-child { cursor: grab; }
 .wk-man-picked td { background: #e0e7ff; }

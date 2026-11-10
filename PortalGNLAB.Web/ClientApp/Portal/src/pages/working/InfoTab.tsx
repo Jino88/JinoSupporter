@@ -45,7 +45,7 @@ export default function InfoTab(props: {
 
   return (
     <>
-      <section className="card pi-sec">
+      <section className="card pi-sec wk-info-sec">
         <div className="pi-sec-h">
           <div className="wk-info-h">
             <h2>Model information</h2>
