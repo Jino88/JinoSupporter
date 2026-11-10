@@ -50,6 +50,13 @@ public static class WorkingEndpoints
             svc.DeleteTreeGroup(id) ? Results.NoContent() : Results.NotFound());
 
         api.MapGet("/models/{name}", (string name, WorkingService svc) => Results.Ok(svc.GetModel(ModelName(name))));
+        // hand-entered process table: AI turns a free-form request into the changed table (nothing is saved here)
+        api.MapPost("/models/{name}/manual/ai", async (string name, ManualAiRequest body, WorkingManualAiService ai, HttpContext http) =>
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(http.RequestAborted);
+            cts.CancelAfter(TimeSpan.FromMinutes(3));
+            return Results.Ok(await ai.EditAsync(ModelName(name), body, cts.Token));
+        });
         api.MapPut("/models/{name}", (string name, WorkingModelSave body, WorkingService svc, ClaimsPrincipal user) =>
             Results.Ok(svc.SaveModel(ModelName(name), body, User(user))));
 

@@ -160,6 +160,7 @@ builder.Services.AddSingleton<TeamMemoService>();
 builder.Services.AddScoped<TeamMemoAiSummaryService>();
 // Review report writer (Codex API): notes + pictures -> report laid out for WorkHub normalization.
 builder.Services.AddScoped<ReviewReportService>();
+builder.Services.AddScoped<WorkingManualAiService>();
 builder.Services.AddSingleton(new ProductionInputService());
 // Working: per-model info and work history (dev / issue / review) plus read-only model groups.
 builder.Services.AddSingleton(new WorkingService());
