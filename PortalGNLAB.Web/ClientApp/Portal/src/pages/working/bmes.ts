@@ -56,6 +56,46 @@ export function matchMaterial(model: string, materials: BmesMaterial[], saved = 
   return near ? { material: near, by: "name" } : { material: null, by: "" };
 }
 
+/**
+ * BMES materials that look like the model when the name does not match: they share a number of 3 or more digits with it
+ * (TIM-338 → ASSY 338 RA1, ASSY REAR-TAPE-338).
+ */
+export function suggestMaterials(model: string, materials: BmesMaterial[]): BmesMaterial[] {
+  const nums = new Set(model.match(/\d{3,}/g) ?? []);
+  if (!nums.size) return [];
+  return materials.filter((m) => (m.material.match(/\d{3,}/g) ?? []).some((n) => nums.has(n)));
+}
+
+/** A sub-group of a BMES material as BMES > Make Model Group shows it: its name, depth (1 = Sub Group 1), line shifts. */
+export interface SubGroupNode {
+  name: string;
+  depth: number;
+  lineShifts: string[];
+  children: SubGroupNode[];
+}
+
+/** The sub-groups ("A › B" paths) as the tree of Make Model Group; a path left empty puts its line shifts on the model. */
+export function subGroupTree(subGroups: BmesMaterial["subGroups"]): { direct: string[]; nodes: SubGroupNode[] } {
+  const direct: string[] = [];
+  const nodes: SubGroupNode[] = [];
+  for (const s of subGroups) {
+    const parts = s.path.split(" › ").map((p) => p.trim()).filter(Boolean);
+    if (!parts.length) { direct.push(...s.lineShifts); continue; }
+    let level = nodes;
+    let node: SubGroupNode | undefined;
+    parts.forEach((name, i) => {
+      node = level.find((n) => n.name === name);
+      if (!node) { node = { name, depth: i + 1, lineShifts: [], children: [] }; level.push(node); }
+      level = node.children;
+    });
+    node!.lineShifts.push(...s.lineShifts);
+  }
+  return { direct, nodes };
+}
+
+/** Line shifts of a sub-group and every sub-group under it. */
+export const shiftCount = (n: SubGroupNode): number => n.lineShifts.length + n.children.reduce((s, c) => s + shiftCount(c), 0);
+
 /** 1000.000000 → 1000, 0.250000 → 0.25 (BMES keeps six decimals); no quantity → "". */
 export function qty(v: string | number | null): string {
   if (v === null) return "";
