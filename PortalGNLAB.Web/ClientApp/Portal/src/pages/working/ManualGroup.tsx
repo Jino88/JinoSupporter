@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState } from "react";
 import { productionApi } from "../productionInput/api";
 import {
-  MANUAL_TYPES, addMaterial, blankProcess, deleteMaterial, deleteProcess, fromProductionInput, moveProcess, processProblem, saveProcess, usage,
+  MANUAL_TYPES, addMaterial, blankProcess, deleteMaterial, deleteProcess, fromProductionInput, moveProcess, processProblem, putMaterial, saveProcess, usage,
 } from "./manual";
 import type { ManualGroup as Group, ManualProcess, ManualType } from "./manual";
 import { mergeSheet, parseNgHeader } from "./ngSheet";
@@ -115,6 +115,9 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
   const [newMat, setNewMat] = useState("");
   const [source, setSource] = useState<{ id: string; name: string; build: string } | null>(null);
   const [pasting, setPasting] = useState(false);
+  // a material dragged from the list onto a process row, and the row it is over
+  const [drag, setDrag] = useState<string | null>(null);
+  const [over, setOver] = useState<string | null>(null);
 
   // a Production Input model with the same name can be copied in
   useEffect(() => {
@@ -143,6 +146,8 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
     if (window.confirm(`Delete process ${p.name}?`)) props.onChange(deleteProcess(g, p.id));
   };
   const keep = (p: ManualProcess) => { props.onChange(saveProcess(g, p)); setEditing(null); };
+  const takes = (p: ManualProcess) => !!drag && !p.materials.some((u) => u.material.toLowerCase() === drag.toLowerCase());
+  const drop = (p: ManualProcess) => { if (drag) props.onChange(putMaterial(g, p.id, drag)); setDrag(null); setOver(null); };
   const isNew = editing && !g.processes.some((p) => p.id === editing.id);
 
   return (
@@ -170,7 +175,10 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
                   {editing?.id === p.id ? (
                     <ProcessEdit key={editing.id} no={i + 1} value={editing} materials={g.materials} onSave={keep} onCancel={() => setEditing(null)} />
                   ) : (
-                    <tr>
+                    <tr className={over === p.id ? "wk-man-over" : undefined}
+                      onDragOver={(e) => { if (!takes(p)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; setOver(p.id); }}
+                      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver((o) => (o === p.id ? null : o)); }}
+                      onDrop={(e) => { e.preventDefault(); drop(p); }}>
                       <td className="n">{i + 1}</td>
                       <td><span className={"wk-man-type t-" + p.type.toLowerCase()}>{p.type}</span></td>
                       <td className="l"><b>{p.name}</b>{p.localName && <div className="muted small">{p.localName}</div>}</td>
@@ -204,7 +212,9 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
             <thead><tr><th className="l">Material</th><th className="fit">Used in</th><th className="fit"></th></tr></thead>
             <tbody>
               {g.materials.map((m) => (
-                <tr key={m}>
+                <tr key={m} className="wk-man-drag" draggable title="Drag onto a process to add it"
+                  onDragStart={(e) => { e.dataTransfer.setData("text/plain", m); e.dataTransfer.effectAllowed = "copy"; setDrag(m); }}
+                  onDragEnd={() => { setDrag(null); setOver(null); }}>
                   <td className="l"><b>{m}</b></td>
                   <td className="muted">{usage(g, m)} proc</td>
                   <td className="act"><button className="wk-link bad" onClick={() => removeMat(m)} aria-label={`Remove ${m}`}>✕</button></td>
@@ -213,6 +223,7 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
               {!g.materials.length && <tr><td colSpan={3} className="wk-it-empty">No material yet.</td></tr>}
             </tbody>
           </table>
+          {g.materials.length > 0 && <div className="muted small wk-man-hint">Drag a material onto a process to add it (1 per unit; change the qty with Edit).</div>}
           <div className="wk-man-newmat">
             <input className="inp sm" value={newMat} placeholder="New material name" onChange={(e) => setNewMat(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") addMat(); }} />

@@ -77,6 +77,17 @@ export const deleteMaterial = (g: ManualGroup, name: string): ManualGroup => ({
 /** How many processes use each material. */
 export const usage = (g: ManualGroup, name: string) => g.processes.filter((p) => p.materials.some((u) => key(u.material) === key(name))).length;
 
+/** A listed material put into a process (dragged onto it) at 1 per unit; unchanged if the process already uses it. */
+export function putMaterial(g: ManualGroup, processId: string, name: string): ManualGroup {
+  const m = g.materials.find((x) => key(x) === key(name));
+  if (!m) return g;
+  return {
+    ...g,
+    processes: g.processes.map((p) =>
+      p.id !== processId || p.materials.some((u) => key(u.material) === key(m)) ? p : { ...p, materials: [...p.materials, { material: m, qtyPerUnit: 1 }] }),
+  };
+}
+
 export function saveProcess(g: ManualGroup, p: ManualProcess): ManualGroup {
   const clean = cleanProcess(p);
   const at = g.processes.findIndex((x) => x.id === p.id);
