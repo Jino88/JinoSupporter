@@ -39,9 +39,8 @@ public static class WorkingEndpoints
             Results.Ok(svc.AddTreeModel(body.Name, body.GroupId, User(user))));
         api.MapDelete("/tree/models/{name}", (string name, WorkingService svc) =>
             svc.DeleteTreeModel(ModelName(name)) ? Results.NoContent() : Results.NotFound());
-        api.MapPut("/tree/models/{name}/group", (string name, WorkingTreeMoveSave body, WorkingService svc, WebRepository repo, ClaimsPrincipal user) =>
-            svc.MoveTreeModel(ModelName(name), body.GroupId, User(user),
-                WorkingBmesService.BuildMaterials(repo.GetModelGroups()).Select(m => m.Material)) is { } moved ? Results.Ok(moved) : Results.NotFound());
+        api.MapPut("/tree/models/{name}/group", (string name, WorkingTreeMoveSave body, WorkingService svc, ClaimsPrincipal user) =>
+            svc.MoveTreeModel(ModelName(name), body.GroupId, User(user)) is { } moved ? Results.Ok(moved) : Results.NotFound());
         // sub-groups made in Manage
         api.MapPost("/tree/groups", (WorkingTreeGroupSave body, WorkingService svc, ClaimsPrincipal user) =>
             Results.Ok(svc.AddTreeGroup(body.Name, body.ParentId, User(user))));

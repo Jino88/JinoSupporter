@@ -69,46 +69,10 @@ const key = (s: string) => s.trim().toLowerCase();
 /** Id of the group the models added without a group are listed under. */
 export const ADDED_GROUP = "__added";
 
-/** Same model whatever the case, spaces or a -ZZ ending (TIU-C11-20 and TIU-C11-20-ZZ). */
-const sameModel = (s: string) => s.toUpperCase().replace(/\s+/g, "").replace(/-?ZZ$/, "");
-/** BMES group names that are a Company Glossary group under another name. */
-const GROUP_ALIAS: Record<string, string> = { spk: "speaker" };
-/** Id prefix of a group made for a BMES group the Glossary has no group for. */
-export const BMES_GROUP = "bmes:";
-
-/**
- * The Glossary groups with the models of BMES > Make Model Group put in as they are: each BMES model goes into the
- * top Glossary group of the same name (SPK = SPEAKER), or a group of its own when there is none. A model the tree
- * already has (Glossary or added here; case, spaces and -ZZ ignored) is not listed twice. Returns the groups and the
- * BMES models that were put in.
- */
-export function withBmes(groups: ModelGroup[], bmes: { group: string; material: string }[], added: AddedModel[] = []):
-  { groups: ModelGroup[]; bmesModels: string[] } {
-  const all = groups.map((g) => ({ ...g, models: [...g.models] }));
-  const have = new Set([...groups.flatMap((g) => g.models), ...added.map((a) => a.name)].map(sameModel));
-  const tops = all.filter((g) => !g.parentId);
-  const bmesModels: string[] = [];
-  let sort = Math.max(0, ...all.map((g) => g.sort)) + 1;
-  for (const b of bmes) {
-    const name = b.material.trim();
-    if (!name || have.has(sameModel(name))) continue;
-    have.add(sameModel(name));
-    const wanted = GROUP_ALIAS[key(b.group)] ?? key(b.group);
-    let to = tops.find((g) => key(g.name) === wanted) ?? all.find((g) => g.id === BMES_GROUP + key(b.group));
-    if (!to) {
-      to = { id: BMES_GROUP + key(b.group), name: b.group.trim() || "BMES", parentId: null, models: [], sort: sort++, position: 0 };
-      all.push(to);
-    }
-    to.models.push(name);
-    bmesModels.push(name);
-  }
-  return { groups: all, bmesModels };
-}
-
 /**
  * The Glossary groups with what Manage changed: its sub-groups (after the Glossary groups beside them), the Glossary
  * models moved into another group, and the added models in their group; an added model without a (known) group goes to
- * an "Added" group at the end. A move to a group that is gone is ignored.
+ * an "Added" group at the end. A move to a group that is gone, or of a model the groups do not list, is ignored.
  */
 export function withAdded(groups: ModelGroup[], added: AddedModel[], userGroups: UserGroup[] = [], placed: PlacedModel[] = []): ModelGroup[] {
   const all: ModelGroup[] = [
@@ -118,8 +82,9 @@ export function withAdded(groups: ModelGroup[], added: AddedModel[], userGroups:
   const byId = new Map(all.map((g) => [g.id, g]));
   for (const pm of placed) {
     const to = byId.get(pm.groupId);
-    if (!to) continue;
     const k = key(pm.name);
+    // a move of a model the groups no longer list (dropped from the Glossary) is ignored too
+    if (!to || !all.some((g) => g.models.some((m) => key(m) === k))) continue;
     for (const g of all) g.models = g.models.filter((m) => key(m) !== k);
     to.models.push(pm.name);
   }
@@ -151,7 +116,5 @@ export const allModels = (nodes: GroupNode[]): string[] => nodes.flatMap((n) => 
 
 /** Groups as indented choices for "Add to group": [id, "MODULE › MSM"]. */
 export function groupChoices(nodes: GroupNode[], trail: string[] = []): [string, string][] {
-  // the Added group and groups made for a BMES group are not kept on the server, so nothing can be put in them
-  return nodes.flatMap((n) => n.id === ADDED_GROUP || n.id.startsWith(BMES_GROUP) ? []
-    : [[n.id, [...trail, n.name].join(" › ")] as [string, string], ...groupChoices(n.children, [...trail, n.name])]);
+  return nodes.flatMap((n) => n.id === ADDED_GROUP ? [] : [[n.id, [...trail, n.name].join(" › ")] as [string, string], ...groupChoices(n.children, [...trail, n.name])]);
 }
