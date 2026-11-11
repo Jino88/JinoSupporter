@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { barAt, devPlans, modelRow, planBrief, timelineMonths, timelineRange, treeModels, type ModelLoad } from "./homeSummary";
+import { barAt, devPlans, labelSide, modelRow, planBrief, timelineMonths, timelineRange, treeModels, type ModelLoad } from "./homeSummary";
 import type { Entry, ModelInfo } from "./types";
 
 const today = "2026-11-11";
@@ -57,6 +57,13 @@ describe("Home summary", () => {
     expect(barAt(["2026-11-20", "2026-12-05"], range)).toEqual({ left: (9 / 25) * 100, width: (16 / 25) * 100 });
     expect(timelineMonths(range).map(([m, , w]) => [m, Math.round((w * 25) / 100)])).toEqual([["2026-11", 20], ["2026-12", 5]]);
     expect(timelineRange([planBrief("N", [], { devPlan: plan({ name: "B" }) }, today)], today)).toBeNull();
+  });
+
+  it("writes the days of a short bar beside it, on its left near the right edge, so they are not cut", () => {
+    expect(labelSide({ left: 10, width: 30 })).toBe("in");
+    expect(labelSide({ left: 14, width: 4 })).toBe("right");
+    expect(labelSide({ left: 60, width: 1 })).toBe("right");
+    expect(labelSide({ left: 80, width: 2 })).toBe("left");
   });
 
   it("counts the open development and mass production issues and the late ones of a model", () => {
