@@ -262,14 +262,26 @@ table.wk-bom-t tr.lv1 td { font-weight: 700; }
 .wk-man-type.t-main { background: #ecfeff; color: #0e7490; }
 .wk-man-type.t-function { background: #fef3c7; color: #92400e; }
 .wk-man-type.t-visual { background: #f0fdf4; color: #15803d; }
-.wk-man-edit td { background: #fbfcfe; }
-.wk-man-edit .inp.sm { display: block; width: 100%; min-width: 140px; }
-.wk-man-edit select.inp.sm { min-width: 96px; }
-.wk-man-edit textarea.inp.sm { height: auto; min-height: 64px; }
-.wk-man-edit .wk-man-local { margin-top: 4px; }
-.wk-man-use { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-.wk-man-use .inp.sm { display: inline-block; width: auto; min-width: 120px; }
-.wk-man-use .inp.sm.wk-man-qty { width: 64px; min-width: 64px; }
+/* process cells changed in place: plain text until hovered or focused */
+.wk-man-in { display: block; width: 100%; min-width: 0; box-sizing: border-box; margin: 0; padding: 1px 4px; border: 1px solid transparent; border-radius: 4px;
+  font: inherit; line-height: 1.6; }
+.wk-man-in:not(.wk-man-type) { background: transparent; color: inherit; }
+.wk-man-in:hover { border-color: #e2e8f0; }
+.wk-man-in:focus { outline: none; border-color: #818cf8; box-shadow: 0 0 0 2px #e0e7ff; }
+.wk-man-in:not(.wk-man-type):hover, .wk-man-in:not(.wk-man-type):focus { background: #fff; }
+.wk-man-in.bad { border-color: #fca5a5; }
+.wk-man-in::placeholder { color: #cbd5e1; }
+select.wk-man-in { cursor: pointer; }
+select.wk-man-in.wk-man-type { width: auto; field-sizing: content; appearance: none; -webkit-appearance: none; padding: 1px 7px; border-radius: 5px; line-height: 1.4; font-size: 10.5px; font-weight: 700; }
+.wk-man-in.wk-man-name { font-weight: 700; }
+.wk-man-in.wk-man-local { font-size: 12px; color: var(--muted, #64748b); }
+textarea.wk-man-in.wk-man-ng { resize: none; overflow: hidden; height: auto; field-sizing: content; min-height: 1.6em; white-space: pre; }
+.wk-man-use { display: flex; align-items: center; gap: 4px; }
+.wk-man-use select.wk-man-umat { flex: 0 1 auto; width: auto; min-width: 0; field-sizing: content; appearance: none; -webkit-appearance: none; text-overflow: ellipsis; }
+.wk-man-use .wk-man-in.wk-man-qty { width: auto; min-width: 3ch; field-sizing: content; flex: none; }
+.wk-man-t tr:not(:hover):not(:focus-within) .wk-man-use ~ .wk-man-addmat { visibility: hidden; }
+.wk-man-use .wk-man-x { visibility: hidden; }
+.wk-man-use:hover .wk-man-x { visibility: visible; }
 .wk-man-add { margin-top: 8px; }
 .wk-man-hb { display: flex; gap: 6px; flex-shrink: 0; }
 .wk-man-paste { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; margin-bottom: 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fbfcfe; }

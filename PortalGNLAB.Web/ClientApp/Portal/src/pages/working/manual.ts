@@ -114,7 +114,11 @@ export function saveProcess(g: ManualGroup, p: ManualProcess): ManualGroup {
   return { ...g, processes: at < 0 ? [...g.processes, clean] : g.processes.map((x) => (x.id === p.id ? clean : x)) };
 }
 
-export const deleteProcess = (g: ManualGroup, id: string): ManualGroup => ({ ...g, processes: g.processes.filter((p) => p.id !== id) });
+/** A process changed in place in the table, kept as typed (not trimmed) so typing is not disturbed; other processes stay. */
+export const editProcess = (g: ManualGroup, p: ManualProcess): ManualGroup =>
+  ({ ...g, processes: g.processes.map((x) => (x.id === p.id ? p : x)) });
+
+export const deleteProcess =(g: ManualGroup, id: string): ManualGroup => ({ ...g, processes: g.processes.filter((p) => p.id !== id) });
 
 export function moveProcess(g: ManualGroup, id: string, by: -1 | 1): ManualGroup {
   const i = g.processes.findIndex((p) => p.id === id);
