@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  blankEvent, blankRow, blankTask, addBomRows, bomRowNames, calendarDays, eventSpan, inSpan, monthDayText, monthRuns, moveInGroup, moveTo, planProblem, progress, planDays, readDevPlan, readMonthDay, readQty, rowTotal, setQty,
+  blankEvent, blankRow, blankTask, addBomRows, bomRowNames, calendarDays, eventSpan, inSpan, monthDayText, monthRuns, moveInGroup, moveTo, planProblem, progress, planDays, readDevPlan, readMonthDay, readQty, readYearMonthDay, rowTotal, setQty,
 } from "./plan";
 import type { PlanEvent, PlanTask } from "./plan";
 
@@ -79,6 +79,12 @@ describe("development plan", () => {
     for (const bad of ["2/29", "13/01", "11/31", "0/5", "11/", "2026-11-28", "ab"]) expect(readMonthDay(bad, 2026)).toBeNull();
     expect(monthDayText("2026-11-28")).toBe("11/28");
     expect(monthDayText("")).toBe("");
+    // the year typed in its own box
+    expect(readYearMonthDay("2027", "1/5")).toBe("2027-01-05");
+    expect(readYearMonthDay(" 2028 ", "2/29")).toBe("2028-02-29");
+    expect(readYearMonthDay("2027", "2/29")).toBeNull();
+    for (const bad of ["", "27", "20271", "abcd"]) expect(readYearMonthDay(bad, "1/5")).toBeNull();
+    expect(readYearMonthDay("", " ")).toBe("");
   });
 
   it("moves a dragged task after the one dropped on going down and before it going up", () => {

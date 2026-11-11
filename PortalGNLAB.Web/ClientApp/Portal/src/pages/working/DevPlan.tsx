@@ -6,7 +6,7 @@ import { bmesApi } from "./bmes";
 import type { BomRow } from "./bmes";
 import {
   COLORS, QTY_GROUPS, addBomRows, blankEvent, blankRow, blankTask, calendarDays, eventSpan, inSpan, bomRowNames, monthDayText, monthRuns, moveInGroup, moveTo, planDays, planProblem,
-  progress, readDevPlan, readMonthDay, readQty, rowTotal, setQty, taskSpan,
+  progress, readDevPlan, readQty, readYearMonthDay, rowTotal, setQty, taskSpan,
 } from "./plan";
 import type { DevPlan as Plan, PlanEvent, PlanTask, QtyGroup, QtyRow } from "./plan";
 import type { WorkingModel } from "./types";
@@ -240,17 +240,20 @@ export function EventEdit(props: { value: PlanEvent; onKeep: (e: PlanEvent) => v
 }
 
 /**
- * Date box of an event or task as yyyy/mm/dd: the year is fixed (this year, or the year of a date already set) and only the month
- * and day are typed. Something that is not a day is passed on as typed, so the task shows it must be a date.
+ * Date box of an event or task as yyyy/mm/dd: a year box (this year, or the year of a date already set) and a month/day
+ * box. Something that is not a day is passed on as typed, so the event or task shows it must be a date.
  */
 function DayInput(props: { value: string; label: string; onChange: (v: string) => void }) {
-  const year = /^\d{4}-/.test(props.value) ? Number(props.value.slice(0, 4)) : Number(localToday().slice(0, 4));
+  const [year, setYear] = useState(/^\d{4}-/.test(props.value) ? props.value.slice(0, 4) : localToday().slice(0, 4));
   const [text, setText] = useState(monthDayText(props.value));
+  const change = (y: string, md: string) => props.onChange(readYearMonthDay(y, md) ?? `${y}/${md}`);
   return (
     <span className="wk-dp-day">
-      <span className="y">{year}/</span>
+      <input className="inp sm yr" value={year} inputMode="numeric" maxLength={4} aria-label={props.label + " year"}
+        onChange={(x) => { setYear(x.target.value); change(x.target.value, text); }} />
+      <span className="y">/</span>
       <input className="inp sm" value={text} placeholder="mm/dd" inputMode="numeric" maxLength={5} aria-label={props.label}
-        onChange={(x) => { setText(x.target.value); props.onChange(readMonthDay(x.target.value, year) ?? x.target.value); }} />
+        onChange={(x) => { setText(x.target.value); change(year, x.target.value); }} />
     </span>
   );
 }
