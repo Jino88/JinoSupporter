@@ -108,7 +108,7 @@ export function planProblem(x: { name: string; start: string; end: string }): st
   return "";
 }
 
-/** The month and day of a yyyy-MM-dd date as "MM/dd" for the task date box (the year is shown fixed beside it). */
+/** The month and day of a yyyy-MM-dd date as "MM/dd" for the date box (the year has its own box beside it). */
 export const monthDayText = (date: string) => (isDate(date) ? `${date.slice(5, 7)}/${date.slice(8, 10)}` : date);
 
 /**
@@ -124,6 +124,16 @@ export function readMonthDay(text: string, year: number): string | null {
   const day = new Date(Date.UTC(year, mo - 1, d));
   if (mo < 1 || mo > 12 || d < 1 || day.getUTCMonth() !== mo - 1) return null;
   return `${year}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+/**
+ * The year and the month/day typed in the two boxes of a date as yyyy-MM-dd.
+ * Output: "" when no month/day is typed, null when the year is not 4 digits or the month/day is not a day of that year.
+ */
+export function readYearMonthDay(year: string, monthDay: string): string | null {
+  if (!monthDay.trim()) return "";
+  const y = year.trim();
+  return /^\d{4}$/.test(y) ? readMonthDay(monthDay, Number(y)) : null;
 }
 
 /** The list with one item (dragged) moved to the place of another (dropped on): after it going down, before it going up. */
