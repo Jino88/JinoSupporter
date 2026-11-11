@@ -115,27 +115,28 @@ public static class WorkingEndpoints
                 ? WorkingBmesService.ToBom(name, "cache", entry)
                 : WorkingBmesService.Empty(name));
         });
-        api.MapPost("/bmes/bom", async (WorkingBmesBomRequest body, BmesFcostActualService fcostActual,
-            BmesBomCacheService cache, AppPathsService paths) =>
+        // read from the BMES BOM screen (MES071050), the same tree the screen shows
+        api.MapPost("/bmes/bom", async (WorkingBmesBomRequest body, NgRateSettingsService settings,
+            BmesBomCacheService cache, CancellationToken ct) =>
         {
             string name = (body.Product ?? "").Trim();
             if (name.Length == 0) return Results.BadRequest(new { error = "product is required." });
-            var connection = BmesReportEndpoints.BuildNetworkDbConnection(paths);
-            if (string.IsNullOrWhiteSpace(connection.Server) || string.IsNullOrWhiteSpace(connection.UserId))
-                return Results.Ok(WorkingBmesService.Empty(name, "The BMES network DB connection is not configured."));
+            if (!settings.IsCredentialsConfigured)
+                return Results.Ok(WorkingBmesService.Empty(name, "The BMES login is not configured in Setting."));
             try
             {
+                var opened = await BmesWebSession.OpenAsync(settings.LoginId, settings.Password, new BmesWebSessionOptions
+                {
+                    Timeout = TimeSpan.FromSeconds(120),
+                    AutomaticDecompression = System.Net.DecompressionMethods.All,
+                }, cancellationToken: ct);
+                if (opened.Session is not { } session)
+                    return Results.Ok(WorkingBmesService.Empty(name, "BMES login failed: " + opened.Diagnostic));
+                using var _ = session;
+                var (rows, error) = await BmesGateway.FetchBomAsync(session, WorkingBmesService.Plant, name, cancellationToken: ct);
+                if (rows is null) return Results.Ok(WorkingBmesService.Empty(name, error));
                 var query = new BmesBomCacheQuery(name, WorkingBmesService.Plant, DateTime.Today,
                     WorkingBmesService.MaxDepth, WorkingBmesService.MaxRows);
-                var rows = await fcostActual.FetchBomTreeAsync(new BmesBomMaterialQuery
-                {
-                    Connection = connection,
-                    ModelName = name,
-                    Plant = query.Plant,
-                    MaxRows = query.MaxRows,
-                    MaxDepth = query.MaxDepth,
-                    WorkDate = query.WorkDate,
-                });
                 cache.Save(query, rows);
                 return Results.Ok(cache.TryLoad(query) is { } saved
                     ? WorkingBmesService.ToBom(name, "server", saved)
