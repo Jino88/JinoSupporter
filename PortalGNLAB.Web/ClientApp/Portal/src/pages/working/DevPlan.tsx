@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import { WEEKDAYS, localToday, weekday } from "../productionInput/logic";
 import { workingApi } from "./api";
 import {
-  COLORS, blankEvent, blankRow, blankTask, calendarDays, eventSpan, inSpan, monthRuns, planDays, planProblem, progress, readDevPlan,
-  readQty, rowTotal, setQty, taskSpan,
+  COLORS, blankEvent, blankRow, blankTask, calendarDays, eventSpan, inSpan, monthDayText, monthRuns, moveTo, planDays, planProblem,
+  progress, readDevPlan, readMonthDay, readQty, rowTotal, setQty, taskSpan,
 } from "./plan";
 import type { DevPlan as Plan, PlanEvent, PlanTask, QtyRow } from "./plan";
 import type { WorkingModel } from "./types";
@@ -192,6 +192,22 @@ function EventEdit(props: { value: PlanEvent; onKeep: (e: PlanEvent) => void; on
   );
 }
 
+/**
+ * Date box of a task as yyyy/mm/dd: the year is fixed (this year, or the year of a date already set) and only the month
+ * and day are typed. Something that is not a day is passed on as typed, so the task shows it must be a date.
+ */
+function DayInput(props: { value: string; label: string; onChange: (v: string) => void }) {
+  const year = /^\d{4}-/.test(props.value) ? Number(props.value.slice(0, 4)) : Number(localToday().slice(0, 4));
+  const [text, setText] = useState(monthDayText(props.value));
+  return (
+    <span className="wk-dp-day">
+      <span className="y">{year}/</span>
+      <input className="inp sm" value={text} placeholder="mm/dd" inputMode="numeric" maxLength={5} aria-label={props.label}
+        onChange={(x) => { setText(x.target.value); props.onChange(readMonthDay(x.target.value, year) ?? x.target.value); }} />
+    </span>
+  );
+}
+
 /** One task of the detailed schedule being added or changed. */
 function TaskEdit(props: { value: PlanTask; onKeep: (t: PlanTask) => void; onCancel: () => void }) {
   const [t, setT] = useState(props.value);
@@ -199,10 +215,11 @@ function TaskEdit(props: { value: PlanTask; onKeep: (t: PlanTask) => void; onCan
   const set = (f: Partial<PlanTask>) => setT({ ...t, ...f });
   return (
     <tr className="wk-dp-edit">
+      <td></td>
       <td><input type="checkbox" checked={t.done} aria-label="Done" onChange={(x) => set({ done: x.target.checked })} /></td>
       <td className="l"><input className="inp sm" value={t.name} placeholder="Task" autoFocus onChange={(x) => set({ name: x.target.value })} /></td>
-      <td><input className="inp sm" type="date" value={t.start} aria-label="Start" onChange={(x) => set({ start: x.target.value })} /></td>
-      <td><input className="inp sm" type="date" value={t.end} aria-label="End" onChange={(x) => set({ end: x.target.value })} /></td>
+      <td><DayInput value={t.start} label="Start" onChange={(start) => set({ start })} /></td>
+      <td><DayInput value={t.end} label="End" onChange={(end) => set({ end })} /></td>
       <td><input className="inp sm wk-dp-owner" value={t.owner} placeholder="Owner" onChange={(x) => set({ owner: x.target.value })} /></td>
       <td className="l"><input className="inp sm" value={t.note} placeholder="Note" onChange={(x) => set({ note: x.target.value })} /></td>
       <td className="act">
@@ -231,6 +248,9 @@ export default function DevPlan(props: {
   const [editEvent, setEditEvent] = useState<PlanEvent | null>(null);
   const [editTask, setEditTask] = useState<PlanTask | null>(null);
   const [showQty, setShowQty] = useState(false);
+  const [dragTask, setDragTask] = useState("");
+  const [dropOn, setDropOn] = useState("");
+  const endDrag = () => { setDragTask(""); setDropOn(""); };
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const dirty = JSON.stringify(plan) !== JSON.stringify(savedPlan);
@@ -330,13 +350,18 @@ export default function DevPlan(props: {
             )}
             <table className="wk-it wk-dp-tasks">
               <thead>
-                <tr><th className="fit">Done</th><th className="l">Task</th><th className="fit">Start</th><th className="fit">End</th><th className="fit">Owner</th><th className="l">Note</th><th className="fit"></th></tr>
+                <tr><th className="fit"></th><th className="fit">Done</th><th className="l">Task</th><th className="fit">Start</th><th className="fit">End</th><th className="fit">Owner</th><th className="l">Note</th><th className="fit"></th></tr>
               </thead>
               <tbody>
                 {ev.tasks.map((t) => (editTask?.id === t.id
                   ? <TaskEdit key={t.id} value={editTask} onKeep={keepTask} onCancel={() => setEditTask(null)} />
                   : (
-                    <tr key={t.id} className={t.done ? "done" : ""}>
+                    <tr key={t.id} className={(t.done ? "done" : "") + (dropOn === t.id && dragTask ? (ev.tasks.findIndex((y) => y.id === dragTask) < ev.tasks.indexOf(t) ? " drop-below" : " drop-above") : "")}
+                      draggable={!editTask} onDragStart={(x) => { x.dataTransfer.effectAllowed = "move"; x.dataTransfer.setData("text/plain", t.name); setDragTask(t.id); }}
+                      onDragOver={(x) => { if (!dragTask) return; x.preventDefault(); setDropOn(t.id); }}
+                      onDrop={(x) => { x.preventDefault(); if (dragTask) setTasks(moveTo(ev.tasks, dragTask, t.id)); endDrag(); }}
+                      onDragEnd={endDrag}>
+                      <td className="wk-dp-grip" title="Drag to move">⠿</td>
                       <td><input type="checkbox" checked={t.done} aria-label={`${t.name} done`} onChange={(x) => setTasks(ev.tasks.map((y) => (y.id === t.id ? { ...y, done: x.target.checked } : y)))} /></td>
                       <td className="l"><b>{t.name}</b></td>
                       <td>{t.start || "—"}</td>
@@ -350,7 +375,7 @@ export default function DevPlan(props: {
                     </tr>
                   )))}
                 {newTask && <TaskEdit key={editTask!.id} value={editTask!} onKeep={keepTask} onCancel={() => setEditTask(null)} />}
-                {!ev.tasks.length && !newTask && <tr><td colSpan={7} className="wk-it-empty">No detailed schedule yet.</td></tr>}
+                {!ev.tasks.length && !newTask && <tr><td colSpan={8} className="wk-it-empty">No detailed schedule yet.</td></tr>}
               </tbody>
             </table>
             {!editTask && <button className="btn sm wk-dp-add" onClick={() => setEditTask(blankTask())}>+ Task</button>}

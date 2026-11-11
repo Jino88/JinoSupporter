@@ -98,6 +98,34 @@ export function planProblem(x: { name: string; start: string; end: string }): st
   return "";
 }
 
+/** The month and day of a yyyy-MM-dd date as "MM/dd" for the task date box (the year is shown fixed beside it). */
+export const monthDayText = (date: string) => (isDate(date) ? `${date.slice(5, 7)}/${date.slice(8, 10)}` : date);
+
+/**
+ * A month and day typed in the task date box ("11/28", "1/5", "1128", "11-28", "11.28") as a date of that year.
+ * Output: yyyy-MM-dd, "" when nothing is typed, null when it is not a day of that year.
+ */
+export function readMonthDay(text: string, year: number): string | null {
+  const t = text.trim();
+  if (!t) return "";
+  const m = /^(\d{1,2})\s*[/.-]\s*(\d{1,2})$/.exec(t) ?? /^(\d{2})(\d{2})$/.exec(t);
+  if (!m) return null;
+  const mo = Number(m[1]), d = Number(m[2]);
+  const day = new Date(Date.UTC(year, mo - 1, d));
+  if (mo < 1 || mo > 12 || d < 1 || day.getUTCMonth() !== mo - 1) return null;
+  return `${year}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+/** The list with one item (dragged) moved to the place of another (dropped on): after it going down, before it going up. */
+export function moveTo<T extends { id: string }>(list: T[], fromId: string, toId: string): T[] {
+  const i = list.findIndex((x) => x.id === fromId), j = list.findIndex((x) => x.id === toId);
+  if (i < 0 || j < 0 || i === j) return list;
+  const out = [...list];
+  const [item] = out.splice(i, 1);
+  out.splice(j, 0, item);
+  return out;
+}
+
 /** Tasks done out of all, for the event row. */
 export const progress = (ev: PlanEvent) => [ev.tasks.filter((t) => t.done).length, ev.tasks.length] as const;
 

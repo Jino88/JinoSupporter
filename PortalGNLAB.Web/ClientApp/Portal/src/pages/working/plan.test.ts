@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  blankEvent, blankRow, blankTask, calendarDays, eventSpan, inSpan, monthRuns, planProblem, progress, planDays, readDevPlan, readQty, rowTotal, setQty,
+  blankEvent, blankRow, blankTask, calendarDays, eventSpan, inSpan, monthDayText, monthRuns, moveTo, planProblem, progress, planDays, readDevPlan, readMonthDay, readQty, rowTotal, setQty,
 } from "./plan";
 import type { PlanEvent, PlanTask } from "./plan";
 
@@ -63,5 +63,27 @@ describe("development plan", () => {
     const p = readDevPlan({ events: [{ name: "LPR", rows: [{ id: "r", name: "SPK Assy", qty: { "2026-11-19": 600, "2026-11-18": 300, bad: 1, "2026-11-20": "x", "2026-11-21": 0 } }, 7] }, { name: "MP" }] });
     expect(p.events[0].rows).toEqual([{ id: "r", name: "SPK Assy", qty: { "2026-11-18": 300, "2026-11-19": 600 } }]);
     expect(p.events[1].rows).toEqual([]);
+  });
+
+  it("reads a task date typed as month and day of the fixed year", () => {
+    expect(readMonthDay("11/28", 2026)).toBe("2026-11-28");
+    expect(readMonthDay(" 1/5 ", 2026)).toBe("2026-01-05");
+    expect(readMonthDay("1128", 2026)).toBe("2026-11-28");
+    expect(readMonthDay("12-03", 2026)).toBe("2026-12-03");
+    expect(readMonthDay("2.29", 2028)).toBe("2028-02-29");
+    expect(readMonthDay("", 2026)).toBe("");
+    for (const bad of ["2/29", "13/01", "11/31", "0/5", "11/", "2026-11-28", "ab"]) expect(readMonthDay(bad, 2026)).toBeNull();
+    expect(monthDayText("2026-11-28")).toBe("11/28");
+    expect(monthDayText("")).toBe("");
+  });
+
+  it("moves a dragged task after the one dropped on going down and before it going up", () => {
+    const l = ["a", "b", "c", "d"].map((id) => ({ id }));
+    const ids = (x: { id: string }[]) => x.map((y) => y.id).join("");
+    expect(ids(moveTo(l, "a", "c"))).toBe("bcad");
+    expect(ids(moveTo(l, "d", "b"))).toBe("adbc");
+    expect(ids(moveTo(l, "b", "b"))).toBe("abcd");
+    expect(moveTo(l, "x", "b")).toBe(l);
+    expect(ids(l)).toBe("abcd");
   });
 });

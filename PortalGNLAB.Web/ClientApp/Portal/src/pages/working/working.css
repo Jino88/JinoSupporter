@@ -323,7 +323,14 @@ table.wk-dp-tasks tr.done td { color: var(--muted); }
 table.wk-dp-tasks tr.done b { text-decoration: line-through; }
 table.wk-dp-tasks .inp.sm { width: 100%; }
 table.wk-dp-tasks .inp.sm[type="date"] { width: 132px; }
-table.wk-dp-tasks .wk-dp-owner { width: 90px; }
+table.wk-dp-tasks .inp.sm.wk-dp-owner { width: 90px; }
+.wk-dp-day { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
+.wk-dp-day .y { color: var(--muted); font-variant-numeric: tabular-nums; }
+table.wk-dp-tasks .wk-dp-day .inp.sm { width: 62px; font-variant-numeric: tabular-nums; }
+table.wk-dp-tasks td.wk-dp-grip { width: 14px; padding-right: 0; color: var(--faint); cursor: grab; user-select: none; }
+table.wk-dp-tasks tr[draggable="true"]:hover td.wk-dp-grip { color: var(--muted); }
+table.wk-dp-tasks tr.drop-above > td { box-shadow: inset 0 2px 0 var(--accent); }
+table.wk-dp-tasks tr.drop-below > td { box-shadow: inset 0 -2px 0 var(--accent); }
 .wk-dp-add { margin-top: 8px; }
 /* Dev Plan: quantity plan of the event clicked, as rows of the calendar right under its row so each day lines up */
 table.wk-gantt > * > tr > td.nm .tw { display: inline-block; width: 11px; margin-left: -4px; color: var(--muted); font-size: 10px; }
