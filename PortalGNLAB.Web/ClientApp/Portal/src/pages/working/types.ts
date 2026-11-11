@@ -38,6 +38,8 @@ export interface ModelInfo {
   manualGroup?: unknown;
   /** Model › Sub Group › Shift Group made by hand for a model BMES does not have yet (tempGroup.ts). */
   tempGroup?: unknown;
+  /** Processes, NG items and materials of each sub-group of tempGroup, by sub-group id (manual.ts readSubManual). */
+  subManual?: unknown;
   /** Development plan: events and their detailed schedule (plan.ts). */
   devPlan?: unknown;
 }

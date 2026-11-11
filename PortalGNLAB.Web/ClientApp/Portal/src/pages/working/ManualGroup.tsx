@@ -272,7 +272,12 @@ function ProcessRow(props: {
  * Model group typed in Model Info for a model BMES > Make Model Group does not have: a table of the processes with
  * their NG items and the materials each uses per unit, and the material list. Kept with the model information (Save).
  */
-export default function ManualGroup(props: { modelName: string; value: Group; onChange: (g: Group) => void; onError: (e: unknown) => void }) {
+export default function ManualGroup(props: {
+  modelName: string;
+  /** Product the BOM is read from first (the sub-group's name for a sub-group's table); the model name when unset. */
+  product?: string;
+  value: Group; onChange: (g: Group) => void; onError: (e: unknown) => void;
+}) {
   const g = props.value;
   // the process just added, whose name box gets the cursor
   const [added, setAdded] = useState<string | null>(null);
@@ -387,7 +392,7 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
               onKeyDown={(e) => { if (e.key === "Enter") addMat(); }} />
             <button className="btn sm" disabled={!newMat.trim()} onClick={addMat}>+ Add</button>
           </div>
-          <BomImport modelName={props.modelName} value={g} onApply={props.onChange} />
+          <BomImport modelName={props.product ?? props.modelName} value={g} onApply={props.onChange} />
         </div>
       </div>
     </div>

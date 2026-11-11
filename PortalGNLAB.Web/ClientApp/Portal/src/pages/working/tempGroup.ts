@@ -37,6 +37,13 @@ export function tempCounts(g: TempGroup): { subs: number; shifts: number } {
 
 export const hasTempGroup = (g: TempGroup) => !!g.group.trim() || tempCounts(g).subs > 0 || g.lineShifts.length > 0;
 
+/** Every sub-group top to bottom (each before the ones under it), named from the top one down ("TOP › LEFT"). */
+export function subPaths(g: TempGroup): { id: string; path: string }[] {
+  const walk = (list: TempSub[], up: string): { id: string; path: string }[] =>
+    list.flatMap((s) => { const path = up ? `${up} › ${s.name}` : s.name; return [{ id: s.id, path }, ...walk(s.children, path)]; });
+  return walk(g.subGroups, "");
+}
+
 /** Shift groups of a sub-group and every sub-group under it. */
 export const subShiftCount = (s: TempSub): number => s.lineShifts.length + s.children.reduce((n, c) => n + subShiftCount(c), 0);
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  addShift, addSub, allShifts, emptyTempGroup, hasTempGroup, readTempGroup, removeShift, removeSub, renameSub, subShiftCount, tempCounts,
+  addShift, addSub, allShifts, emptyTempGroup, hasTempGroup, readTempGroup, removeShift, removeSub, renameSub, subPaths, subShiftCount, tempCounts,
 } from "./tempGroup";
 
 describe("temporary model group", () => {
@@ -47,6 +47,14 @@ describe("temporary model group", () => {
     expect(gone.subGroups).toEqual([]);
     expect(allShifts(gone)).toEqual(["L2_B"]);
     expect(g.subGroups[0].children).toHaveLength(1); // the input is not changed
+  });
+
+  it("lists every sub group top to bottom, named from the top one down", () => {
+    let g = addSub(addSub(emptyTempGroup(), null, "TOP"), null, "BOTTOM");
+    g = addSub(g, g.subGroups[0].id, "LEFT");
+    expect(subPaths(g).map((s) => s.path)).toEqual(["TOP", "TOP › LEFT", "BOTTOM"]);
+    expect(subPaths(g).map((s) => s.id)).toEqual([g.subGroups[0].id, g.subGroups[0].children[0].id, g.subGroups[1].id]);
+    expect(subPaths(emptyTempGroup())).toEqual([]);
   });
 
   it("reads a saved group leniently", () => {
