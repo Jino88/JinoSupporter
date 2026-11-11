@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   addMaterial, addMaterials, aiAnswer, blankProcess, bomMaterials, deleteMaterial, emptyManual, fromProductionInput, moveProcess, ngFromText, processProblem, putMaterial, readManual,
-  saveProcess, usage,
+  editProcess, saveProcess, usage,
 } from "./manual";
 import type { ManualProcess } from "./manual";
 
@@ -97,6 +97,15 @@ describe("model group entered by hand", () => {
     expect(g.processes.map((p) => [p.type, p.name, p.localName, p.ngItems, p.materials])).toEqual([
       ["SUB", "Bonding", "Bôi keo", ["NG", "Glue overflow"], [{ material: "UPPER", qtyPerUnit: 1 }]],
     ]);
+  });
+
+  it("puts a process changed in place into the table as typed, the others unchanged", () => {
+    const a = proc("AOI 1"), b = proc("SPK Assy");
+    const g = { materials: [], processes: [a, b] };
+    const next = editProcess(g, { ...b, name: "SPK Assy ", localName: " Tổ hợp" });
+    expect(next.processes.map((p) => [p.name, p.localName])).toEqual([["AOI 1", ""], ["SPK Assy ", " Tổ hợp"]]);
+    expect(next.processes[0]).toBe(a);
+    expect(editProcess(g, proc("Other"))).toEqual(g);
   });
 
   it("reads a saved group leniently", () => {

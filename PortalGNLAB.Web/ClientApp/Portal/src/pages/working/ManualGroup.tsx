@@ -1,11 +1,11 @@
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState, type DragEvent } from "react";
 import { productionApi } from "../productionInput/api";
 import { workingApi } from "./api";
 import { bmesApi } from "./bmes";
 import {
-  MANUAL_TYPES, addMaterial, addMaterials, aiAnswer, bomMaterials, blankProcess, deleteMaterial, deleteProcess, fromProductionInput, moveProcess, processProblem, putMaterial, saveProcess, usage,
+  MANUAL_TYPES, addMaterial, addMaterials, aiAnswer, bomMaterials, blankProcess, deleteMaterial, deleteProcess, editProcess, fromProductionInput, moveProcess, ngFromText, putMaterial, saveProcess, usage,
 } from "./manual";
-import type { ManualGroup as Group, ManualProcess, ManualType } from "./manual";
+import type { ManualGroup as Group, ManualProcess, ManualType, ManualUse } from "./manual";
 import { mergeSheet, parseNgHeader } from "./ngSheet";
 
 /** The header rows of a Daily NG Rate sheet pasted here: the processes and NG items read from them, put into the table. */
@@ -192,51 +192,77 @@ function BomImport(props: { modelName: string; value: Group; onApply: (g: Group)
   );
 }
 
-/** One process being added or changed: type, names, NG items (one per line) and the materials it uses per unit. */
-function ProcessEdit(props: { no: number; value: ManualProcess; materials: string[]; onSave: (p: ManualProcess) => void; onCancel: () => void }) {
-  const [p, setP] = useState(props.value);
-  const [ng, setNg] = useState(props.value.ngItems.join("\n"));
-  const draft = { ...p, ngItems: ng.split("\n") };
-  const problem = processProblem(draft, props.materials);
-  const unused = props.materials.filter((m) => !p.materials.some((u) => u.material.toLowerCase() === m.toLowerCase()));
-  const setUse = (i: number, f: Partial<{ material: string; qtyPerUnit: number }>) =>
-    setP((cur) => ({ ...cur, materials: cur.materials.map((u, j) => (j === i ? { ...u, ...f } : u)) }));
+/** A qty per unit typed in place: kept as typed while it is not a number above 0, put into the process when it is. */
+function QtyCell(props: { value: number; onChange: (n: number) => void }) {
+  const [text, setText] = useState(String(props.value));
+  useEffect(() => { setText((cur) => (Number(cur) === props.value ? cur : String(props.value))); }, [props.value]);
+  const ok = Number(text) > 0;
   return (
-    <tr className="wk-man-edit">
+    <input className={"wk-man-in wk-man-qty" + (ok ? "" : " bad")} type="number" min={0} step="any" value={text} aria-label="Qty per unit"
+      onChange={(e) => { setText(e.target.value); if (Number(e.target.value) > 0) props.onChange(Number(e.target.value)); }}
+      onBlur={() => { if (!ok) setText(String(props.value)); }} />
+  );
+}
+
+/**
+ * One process changed in place, each change put into the table as it is made: type, names, NG items (one per line)
+ * and the materials it uses per unit. Materials can also be dragged onto the row from the material list.
+ */
+function ProcessRow(props: {
+  no: number; count: number; value: ManualProcess; materials: string[]; focus: boolean; over: boolean;
+  onChange: (p: ManualProcess) => void; onMove: (by: -1 | 1) => void; onDelete: () => void;
+  onDragOver: (e: DragEvent) => void; onDragLeave: (e: DragEvent) => void; onDrop: () => void;
+}) {
+  const p = props.value;
+  const set = (f: Partial<ManualProcess>) => props.onChange({ ...p, ...f });
+  // the NG items as typed (blank lines while typing); the process gets them cleaned
+  const [ng, setNg] = useState(p.ngItems.join("\n"));
+  const ngNow = p.ngItems.join("\n");
+  useEffect(() => { setNg((cur) => (ngFromText(cur).join("\n") === ngNow ? cur : ngNow)); }, [ngNow]);
+  const unused = props.materials.filter((m) => !p.materials.some((u) => u.material.toLowerCase() === m.toLowerCase()));
+  const setUse = (i: number, f: Partial<ManualUse>) => set({ materials: p.materials.map((u, j) => (j === i ? { ...u, ...f } : u)) });
+  const trim = (f: "name" | "localName") => { if (p[f] !== p[f].trim()) set({ [f]: p[f].trim() }); };
+  return (
+    <tr className={props.over ? "wk-man-over" : undefined} onDragOver={props.onDragOver} onDragLeave={props.onDragLeave}
+      onDrop={(e) => { e.preventDefault(); props.onDrop(); }}>
       <td className="n">{props.no}</td>
       <td>
-        <select className="inp sm" value={p.type} onChange={(e) => setP({ ...p, type: e.target.value as ManualType })}>
+        <select className={"wk-man-in wk-man-type t-" + p.type.toLowerCase()} value={p.type} aria-label="Type"
+          onChange={(e) => set({ type: e.target.value as ManualType })}>
           {MANUAL_TYPES.map((t) => <option key={t}>{t}</option>)}
         </select>
       </td>
       <td className="l">
-        <input className="inp sm" value={p.name} placeholder="Process name" autoFocus onChange={(e) => setP({ ...p, name: e.target.value })} />
-        <input className="inp sm wk-man-local" value={p.localName} placeholder="Local name (optional)" onChange={(e) => setP({ ...p, localName: e.target.value })} />
+        <input className={"wk-man-in wk-man-name" + (p.name.trim() ? "" : " bad")} value={p.name} placeholder="Process name" autoFocus={props.focus}
+          onChange={(e) => set({ name: e.target.value })} onBlur={() => trim("name")} />
+        <input className="wk-man-in wk-man-local" value={p.localName} placeholder="Local name"
+          onChange={(e) => set({ localName: e.target.value })} onBlur={() => trim("localName")} />
       </td>
       <td className="l">
-        <textarea className="inp sm wk-ta" rows={Math.max(3, ng.split("\n").length)} value={ng} placeholder={"One NG item per line\nGlue overflow\nMisalign"}
-          onChange={(e) => setNg(e.target.value)} />
+        <textarea className="wk-man-in wk-man-ng" rows={Math.max(1, ng.split("\n").length)} value={ng} placeholder="NG items, one per line"
+          onChange={(e) => { setNg(e.target.value); set({ ngItems: ngFromText(e.target.value) }); }}
+          onBlur={() => setNg(ngNow)} />
       </td>
       <td className="l">
         {p.materials.map((u, i) => (
-          <div className="wk-man-use" key={i}>
-            <select className="inp sm" value={u.material} onChange={(e) => setUse(i, { material: e.target.value })}>
+          <div className="wk-man-use" key={u.material + i}>
+            <select className="wk-man-in wk-man-umat" value={u.material} aria-label="Material" onChange={(e) => setUse(i, { material: e.target.value })}>
               {[u.material, ...unused].filter(Boolean).map((m) => <option key={m}>{m}</option>)}
             </select>
-            <input className="inp sm wk-man-qty" type="number" min={0} step="any" value={u.qtyPerUnit} aria-label="Qty per unit"
-              onChange={(e) => setUse(i, { qtyPerUnit: Number(e.target.value) })} />
-            <span className="muted small">/ unit</span>
-            <button className="wk-link bad" onClick={() => setP({ ...p, materials: p.materials.filter((_, j) => j !== i) })}>✕</button>
+            <span className="muted">×</span>
+            <QtyCell value={u.qtyPerUnit} onChange={(n) => setUse(i, { qtyPerUnit: n })} />
+            <button className="wk-link bad wk-man-x" onClick={() => set({ materials: p.materials.filter((_, j) => j !== i) })}
+              aria-label={`Remove ${u.material}`}>✕</button>
           </div>
         ))}
         {unused.length > 0
-          ? <button className="wk-link" onClick={() => setP({ ...p, materials: [...p.materials, { material: unused[0], qtyPerUnit: 1 }] })}>+ Material</button>
+          ? <button className="wk-link small wk-man-addmat" onClick={() => set({ materials: [...p.materials, { material: unused[0], qtyPerUnit: 1 }] })}>+ Material</button>
           : !props.materials.length && <span className="muted small">Add materials to the list first.</span>}
       </td>
       <td className="act">
-        {problem && p.name.trim() && <div className="pi-dirty small">{problem}</div>}
-        <button className="btn sm" onClick={props.onCancel}>Cancel</button>{" "}
-        <button className="btn sm primary" disabled={!!problem} onClick={() => props.onSave(draft)}>Keep</button>
+        <button className="wk-link" disabled={props.no === 1} onClick={() => props.onMove(-1)} aria-label="Move up">↑</button>
+        <button className="wk-link" disabled={props.no === props.count} onClick={() => props.onMove(1)} aria-label="Move down">↓</button>
+        <button className="wk-link bad" onClick={props.onDelete}>Delete</button>
       </td>
     </tr>
   );
@@ -248,7 +274,8 @@ function ProcessEdit(props: { no: number; value: ManualProcess; materials: strin
  */
 export default function ManualGroup(props: { modelName: string; value: Group; onChange: (g: Group) => void; onError: (e: unknown) => void }) {
   const g = props.value;
-  const [editing, setEditing] = useState<ManualProcess | null>(null);
+  // the process just added, whose name box gets the cursor
+  const [added, setAdded] = useState<string | null>(null);
   const [newMat, setNewMat] = useState("");
   const [source, setSource] = useState<{ id: string; name: string; build: string } | null>(null);
   const [pasting, setPasting] = useState(false);
@@ -270,7 +297,7 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
     if (!source) return;
     if ((g.processes.length || g.materials.length)
       && !window.confirm(`Replace the processes and materials below with the ones of Production Input ${source.name} (${source.build})?`)) return;
-    try { props.onChange(fromProductionInput((await productionApi.model(source.id)).setup)); setEditing(null); } catch (e) { props.onError(e); }
+    try { props.onChange(fromProductionInput((await productionApi.model(source.id)).setup)); } catch (e) { props.onError(e); }
   };
   const addMat = () => {
     try { props.onChange(addMaterial(g, newMat)); setNewMat(""); } catch (e) { props.onError(e); }
@@ -283,25 +310,29 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
   const removeProc = (p: ManualProcess) => {
     if (window.confirm(`Delete process ${p.name}?`)) props.onChange(deleteProcess(g, p.id));
   };
-  const keep = (p: ManualProcess) => { props.onChange(saveProcess(g, p)); setEditing(null); };
+  // a change is put into the table as typed; names are trimmed when the box is left
+  const change = (p: ManualProcess) => props.onChange(editProcess(g, p));
+  const add = () => {
+    const p = blankProcess(g.processes.length ? g.processes[g.processes.length - 1].type : "SUB");
+    props.onChange(saveProcess(g, p)); setAdded(p.id);
+  };
   const sel = g.materials.filter((m) => picked.includes(m));
   const pick = (m: string, more: boolean) =>
     setPicked(more ? (sel.includes(m) ? sel.filter((x) => x !== m) : [...sel, m]) : (sel.length === 1 && sel[0] === m ? [] : [m]));
   const takes = (p: ManualProcess) => !!drag?.some((m) => !p.materials.some((u) => u.material.toLowerCase() === m.toLowerCase()));
   const drop = (p: ManualProcess) => { if (drag) props.onChange(putMaterial(g, p.id, drag)); setDrag(null); setOver(null); };
-  const isNew = editing && !g.processes.some((p) => p.id === editing.id);
 
   return (
     <div className="wk-man">
       <div className="wk-man-h">
         <span className="muted small">Entered here because BMES has no model group for this model. Save the model information to keep changes.</span>
         <span className="wk-man-hb">
-          <button className="btn sm" disabled={pasting || !!editing} onClick={() => setPasting(true)}>Paste NG Rate header</button>
+          <button className="btn sm" disabled={pasting} onClick={() => setPasting(true)}>Paste NG Rate header</button>
           {source && <button className="btn sm" onClick={copy}>Copy from Production Input {source.name} ({source.build})</button>}
         </span>
       </div>
-      <AiRequest modelName={props.modelName} value={g} onApply={(next) => { props.onChange(next); setEditing(null); }} />
-      {pasting && <SheetPaste value={g} onClose={() => setPasting(false)} onApply={(next) => { props.onChange(next); setPasting(false); setEditing(null); }} />}
+      <AiRequest modelName={props.modelName} value={g} onApply={props.onChange} />
+      {pasting && <SheetPaste value={g} onClose={() => setPasting(false)} onApply={(next) => { props.onChange(next); setPasting(false); }} />}
       <div className="wk-man-body">
         <div className="pi-wrap wk-man-procs">
           <table className="wk-it wk-man-t">
@@ -313,41 +344,17 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
             </thead>
             <tbody>
               {g.processes.map((p, i) => (
-                <Fragment key={p.id}>
-                  {editing?.id === p.id ? (
-                    <ProcessEdit key={editing.id} no={i + 1} value={editing} materials={g.materials} onSave={keep} onCancel={() => setEditing(null)} />
-                  ) : (
-                    <tr className={over === p.id ? "wk-man-over" : undefined}
-                      onDragOver={(e) => { if (!takes(p)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; setOver(p.id); }}
-                      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver((o) => (o === p.id ? null : o)); }}
-                      onDrop={(e) => { e.preventDefault(); drop(p); }}>
-                      <td className="n">{i + 1}</td>
-                      <td><span className={"wk-man-type t-" + p.type.toLowerCase()}>{p.type}</span></td>
-                      <td className="l"><b>{p.name}</b>{p.localName && <div className="muted small">{p.localName}</div>}</td>
-                      <td className="l wk-man-list">{p.ngItems.length ? p.ngItems.map((n) => <div key={n}>{n}</div>) : <span className="muted">—</span>}</td>
-                      <td className="l wk-man-list">
-                        {p.materials.length
-                          ? p.materials.map((u) => <div key={u.material}>{u.material} <span className="muted">× {u.qtyPerUnit}</span></div>)
-                          : <span className="muted">—</span>}
-                      </td>
-                      <td className="act">
-                        <button className="wk-link" disabled={i === 0} onClick={() => props.onChange(moveProcess(g, p.id, -1))} aria-label="Move up">↑</button>
-                        <button className="wk-link" disabled={i === g.processes.length - 1} onClick={() => props.onChange(moveProcess(g, p.id, 1))} aria-label="Move down">↓</button>
-                        <button className="wk-link" disabled={!!editing} onClick={() => setEditing(p)}>Edit</button>
-                        <button className="wk-link bad" disabled={!!editing} onClick={() => removeProc(p)}>Delete</button>
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
+                <ProcessRow key={p.id} no={i + 1} count={g.processes.length} value={p} materials={g.materials}
+                  focus={added === p.id} over={over === p.id}
+                  onChange={change} onMove={(by) => props.onChange(moveProcess(g, p.id, by))} onDelete={() => removeProc(p)}
+                  onDragOver={(e) => { if (!takes(p)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; setOver(p.id); }}
+                  onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver((o) => (o === p.id ? null : o)); }}
+                  onDrop={() => drop(p)} />
               ))}
-              {isNew && <ProcessEdit key={editing!.id} no={g.processes.length + 1} value={editing!} materials={g.materials} onSave={keep} onCancel={() => setEditing(null)} />}
-              {!g.processes.length && !isNew && <tr><td colSpan={6} className="wk-it-empty">No process yet.</td></tr>}
+              {!g.processes.length && <tr><td colSpan={6} className="wk-it-empty">No process yet.</td></tr>}
             </tbody>
           </table>
-          {!editing && (
-            <button className="btn sm wk-man-add"
-              onClick={() => setEditing(blankProcess(g.processes.length ? g.processes[g.processes.length - 1].type : "SUB"))}>+ Add process</button>
-          )}
+          <button className="btn sm wk-man-add" onClick={add}>+ Add process</button>
         </div>
         <div className="wk-man-mats">
           <table className="wk-it">
@@ -372,7 +379,7 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
           {g.materials.length > 0 && (
             <div className="muted small wk-man-hint">
               {sel.length > 1 && <><b>{sel.length} picked</b> · <button className="wk-link" onClick={() => setPicked([])}>Clear</button><br /></>}
-              Drag a material onto a process to add it; Ctrl+click to pick several and drag them together (1 per unit; change the qty with Edit).
+              Drag a material onto a process to add it; Ctrl+click to pick several and drag them together (1 per unit; change the qty in the row).
             </div>
           )}
           <div className="wk-man-newmat">
