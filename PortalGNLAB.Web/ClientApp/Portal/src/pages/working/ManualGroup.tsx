@@ -1,8 +1,9 @@
 import { Fragment, useEffect, useState } from "react";
 import { productionApi } from "../productionInput/api";
 import { workingApi } from "./api";
+import { bmesApi } from "./bmes";
 import {
-  MANUAL_TYPES, addMaterial, aiAnswer, blankProcess, deleteMaterial, deleteProcess, fromProductionInput, moveProcess, processProblem, putMaterial, saveProcess, usage,
+  MANUAL_TYPES, addMaterial, addMaterials, aiAnswer, bomMaterials, blankProcess, deleteMaterial, deleteProcess, fromProductionInput, moveProcess, processProblem, putMaterial, saveProcess, usage,
 } from "./manual";
 import type { ManualGroup as Group, ManualProcess, ManualType } from "./manual";
 import { mergeSheet, parseNgHeader } from "./ngSheet";
@@ -127,6 +128,66 @@ function AiRequest(props: { modelName: string; value: Group; onApply: (g: Group)
           ? <button className="btn sm primary" onClick={apply}>Put into the table</button>
           : <button className="btn sm primary" disabled={!text.trim() || !!busy} onClick={() => void send()}>Ask AI</button>}
       </div>
+    </div>
+  );
+}
+
+/**
+ * The product's direct materials (BOM level 1) put into the material list: read from the local BOM cache, or from BMES
+ * when the cache has none or when asked. The new ones are listed with a check box first and added on Add.
+ */
+function BomImport(props: { modelName: string; value: Group; onApply: (g: Group) => void }) {
+  const [product, setProduct] = useState(props.modelName);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [found, setFound] = useState<{ names: string[]; level1: number; from: string } | null>(null);
+  const [off, setOff] = useState<string[]>([]);
+  const load = async (fromBmes: boolean) => {
+    const name = product.trim();
+    if (!name || busy) return;
+    setBusy(true); setError(""); setFound(null); setOff([]);
+    try {
+      let bom = fromBmes ? null : await bmesApi.bom(name);
+      if (!bom?.rows.length) bom = await bmesApi.fetchBom(name);
+      if (!bom.rows.length) { setError(bom.error || `No BOM found for ${name}.`); return; }
+      setFound({
+        names: bomMaterials(props.value, bom.rows),
+        level1: bom.rows.filter((r) => r.level === 1).length,
+        from: bom.source === "server" ? "BMES" : "the local BOM cache",
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally { setBusy(false); }
+  };
+  const take = found ? found.names.filter((n) => !off.includes(n)) : [];
+  const apply = () => { props.onApply(addMaterials(props.value, take)); setFound(null); };
+  return (
+    <div className="wk-man-bom">
+      <div className="small"><b>Load from BOM</b> <span className="muted">(direct materials, depth 1)</span></div>
+      <div className="wk-man-newmat">
+        <input className="inp sm" value={product} placeholder="Product name in BMES" disabled={busy}
+          onChange={(e) => setProduct(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void load(false); }} />
+        <button className="btn sm" disabled={!product.trim() || busy} onClick={() => void load(false)}>{busy ? "Loading…" : "Load"}</button>
+      </div>
+      {error && <div className="pi-dirty small">{error}</div>}
+      {found && (
+        <>
+          <div className="muted small">
+            {found.level1} direct materials from {found.from} · {found.names.length ? `${found.names.length} not in the list` : "all already in the list"}
+            {found.from !== "BMES" && <> · <button className="wk-link" onClick={() => void load(true)}>Read from BMES again</button></>}
+          </div>
+          {found.names.map((n) => (
+            <label key={n} className="wk-man-bomi small">
+              <input type="checkbox" checked={!off.includes(n)}
+                onChange={(e) => setOff(e.target.checked ? off.filter((x) => x !== n) : [...off, n])} /> {n}
+            </label>
+          ))}
+          <div className="wk-man-paste-b">
+            <button className="btn sm" onClick={() => setFound(null)}>Cancel</button>
+            {found.names.length > 0 && <button className="btn sm primary" disabled={!take.length} onClick={apply}>Add {take.length}</button>}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -300,7 +361,7 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
                     e.dataTransfer.setData("text/plain", list.join("\n")); e.dataTransfer.effectAllowed = "copy"; setDrag(list);
                   }}
                   onDragEnd={() => { setDrag(null); setOver(null); }}>
-                  <td className="l"><b>{m}</b></td>
+                  <td className="l wk-man-mat"><b>{m}</b></td>
                   <td className="muted">{usage(g, m)} proc</td>
                   <td className="act"><button className="wk-link bad" onClick={(e) => { e.stopPropagation(); removeMat(m); }} aria-label={`Remove ${m}`}>✕</button></td>
                 </tr>
@@ -319,6 +380,7 @@ export default function ManualGroup(props: { modelName: string; value: Group; on
               onKeyDown={(e) => { if (e.key === "Enter") addMat(); }} />
             <button className="btn sm" disabled={!newMat.trim()} onClick={addMat}>+ Add</button>
           </div>
+          <BomImport modelName={props.modelName} value={g} onApply={props.onChange} />
         </div>
       </div>
     </div>

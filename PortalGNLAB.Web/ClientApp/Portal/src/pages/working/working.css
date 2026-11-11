@@ -246,7 +246,7 @@ table.wk-bom-t tr.lv1 td { font-weight: 700; }
 
 /* model group entered by hand (ManualGroup.tsx): process table on the left, material list on the right */
 .wk-man-h { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
-.wk-man-body { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 16px; align-items: start; }
+.wk-man-body { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
 .wk-man-t td { vertical-align: top; }
 .wk-man-list { white-space: normal !important; line-height: 1.6; }
 .wk-man-type { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 5px; background: #eef2ff; color: #4338ca; }
@@ -269,14 +269,20 @@ table.wk-bom-t tr.lv1 td { font-weight: 700; }
 .wk-man-paste-b { display: flex; justify-content: flex-end; gap: 6px; }
 /* clip, not hidden: .pi-sec hides overflow, which would stop the material list from following the scroll */
 .pi-sec.wk-info-sec { overflow: clip; }
-.wk-man-mats { position: sticky; top: 8px; max-height: calc(100vh - 40px); overflow-y: auto; }
+.wk-man-mats { position: sticky; top: 8px; max-height: calc(100vh - 40px); overflow-y: auto; overflow-x: hidden; }
+/* long names wrap so the table stays inside the panel and the ✕ column stays visible */
+.wk-man-mats table.wk-it td.wk-man-mat { white-space: normal; overflow-wrap: anywhere; }
+.wk-man-mats table.wk-it td.act { padding-left: 4px; padding-right: 6px; }
 .wk-man-drag { user-select: none; }
 .wk-man-drag td:first-child { cursor: grab; }
 .wk-man-picked td { background: #e0e7ff; }
 .wk-man-over td { background: #eef2ff; }
 .wk-man-hint { margin-top: 6px; }
 .wk-man-newmat { display: flex; gap: 6px; margin-top: 8px; }
-.wk-man-newmat .inp { flex: 1; }
+.wk-man-newmat .inp { flex: 1; min-width: 0; }
+.wk-man-bom { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line-soft); }
+.wk-man-bom .wk-man-newmat { margin-top: 0; }
+.wk-man-bomi { display: flex; align-items: flex-start; gap: 6px; overflow-wrap: anywhere; }
 @media (max-width: 1100px) { .wk-man-body { grid-template-columns: 1fr; } }
 /* Dev Plan (DevPlan.tsx): the events on a horizontal calendar, a day per column, and the detailed schedule of the one clicked */
 .wk-gantt-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; }

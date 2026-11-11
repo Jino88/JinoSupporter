@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  addMaterial, aiAnswer, blankProcess, deleteMaterial, emptyManual, fromProductionInput, moveProcess, ngFromText, processProblem, putMaterial, readManual,
+  addMaterial, addMaterials, aiAnswer, blankProcess, bomMaterials, deleteMaterial, emptyManual, fromProductionInput, moveProcess, ngFromText, processProblem, putMaterial, readManual,
   saveProcess, usage,
 } from "./manual";
 import type { ManualProcess } from "./manual";
@@ -22,6 +22,16 @@ describe("model group entered by hand", () => {
     expect([usage(g, "UPPER"), usage(g, "SPK 201507")]).toEqual([2, 1]);
     const after = deleteMaterial(g, "Upper");
     expect([after.materials, after.processes.map((p) => p.materials.map((u) => u.material))]).toEqual([["SPK 201507"], [[], ["SPK 201507"]]]);
+  });
+
+  it("takes the BOM's direct materials (depth 1) the list lacks, each once, and adds them", () => {
+    const row = (level: number, materialName: string, materialCode = "") => ({ level, materialName, materialCode });
+    const g = { materials: ["ENCLOSURE UPPER"], processes: [] };
+    const rows = [row(1, "enclosure upper"), row(1, " PLATE 778 "), row(2, "SCREW M2"), row(1, "plate 778"), row(1, "", "Z-CODE-1"), row(3, "DEEP")];
+    const names = bomMaterials(g, rows);
+    expect(names).toEqual(["PLATE 778", "Z-CODE-1"]);
+    expect(addMaterials(g, names).materials).toEqual(["ENCLOSURE UPPER", "PLATE 778", "Z-CODE-1"]);
+    expect(addMaterials(g, ["Enclosure Upper", " "])).toBe(g);
   });
 
   it("puts the materials dragged onto a process at 1 per unit, each once, in list order", () => {
