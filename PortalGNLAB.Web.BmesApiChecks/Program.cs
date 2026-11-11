@@ -194,6 +194,36 @@ BmesApiResult Load(string name) => BmesToolRows.ParseExecuteResponse(Fixture(nam
         "Routing: code master parameters (KTSCH with ZCODE so ZCODE gets its process name)");
 }
 
+// -- MES071050 BOM screen (web; fixtures are real answers of 2026-11-11, trimmed) ----
+{
+    var headers = BmesGateway.BomHeadersFromLookup(Fixture("bom_lookup_071050.json"));
+    Check(headers.Count == 5 && headers[0] == new BmesBomHeader("3200", "01", "1", "P-M-250001100", "MSM-X626B-BOTTOM"), "BOM: lookup rows -> headers");
+    Check(BmesGateway.PickBomHeader(headers, "msm-x626b-bottom")?.Code == "P-M-250001100", "BOM: name matches P- code, not the Z- item of the same name");
+    Check(BmesGateway.PickBomHeader(headers, "S-MSM-X626B-BOTTOM")?.Code == "S-M-250001200", "BOM: S- code picked by its name");
+    Check(BmesGateway.PickBomHeader(headers.Where(h => !h.Code.StartsWith("P-") && !h.Code.StartsWith("S-")), "MSM-X626B-BOTTOM") is null,
+        "BOM: only Z- / T- items -> no header");
+    Check(BmesGateway.PickBomHeader(headers, "MSM-X626B") is null, "BOM: no exact name and two P-/S- items -> no header");
+    Check(BmesGateway.PickBomHeader(headers.Where(h => h.Code != "S-M-250001200"), "MSM-X626B")?.Code == "P-M-250001100", "BOM: only one P-/S- item -> that one");
+
+    var rows = BmesGateway.BomRowsFromList(Fixture("bom_list_071050.json"));
+    Check(rows.Count == 7, "BOM: 8 tree rows -> 7 materials (product row left out)");
+    Check(rows.All(r => r.ProductCode == "P-M-250001100" && r.ProductName == "MSM-X626B-BOTTOM"), "BOM: product on every row");
+    Check(rows[0].BomLevel == 1 && rows[0].MaterialCode == "M-P-005009700" && rows[0].UsageQty == 3.2m && rows[0].UsageUnit == "PC"
+          && rows[0].ParentMaterialCode == "P-M-250001100" && !rows[0].HasChildren, "BOM: first material at level 1 under the product");
+    Check(rows[3].BomLevel == 3 && rows[3].ParentMaterialName == "PLATE-X626B-BOTTOM-BP" && rows[3].UsageQty == 2.797m && rows[3].UsageUnit == "KG"
+          && rows[3].BomPath == "P-M-250001100>R-S-033155200>M-P-044022600>M-P-042021300"
+          && rows[3].BomPathText == "MSM-X626B-BOTTOM > PLATE-X626B-BOTTOM > PLATE-X626B-BOTTOM-BP > SPCC 0.35T(Recycled)*35mm",
+        "BOM: level 4 row -> level 3 with parent and path");
+    Check(rows[1].HasChildren && rows[2].HasChildren && !rows[3].HasChildren, "BOM: has-children from the next row's level");
+    Check(rows[4].BomLevel == 1 && rows[4].ParentMaterialCode == "P-M-250001100" && rows[5].ParentMaterialCode == "R-S-033155300",
+        "BOM: back up to level 1 after a deep branch");
+    bool threw = false;
+    try { BmesGateway.BomRowsFromList("{\"result\":false,\"message\":\"No BOM\",\"data\":null}"); } catch (InvalidOperationException e) { threw = e.Message == "No BOM"; }
+    Check(threw, "BOM: result false -> error with the BMES message");
+    Check(BmesGateway.BomHeadersFromLookup("{\"result\":false,\"message\":\"[IVDT_M_018] No result found\",\"data\":null}").Count == 0,
+        "BOM: lookup 'No result found' (answered for an unknown model) -> no headers, not an error");
+}
+
 // -- shared helpers -----------------------------------------------------------
 {
     // Boundary measured on the API: 2026-07-28..2026-10-27 passes, from 2026-07-27 it is MSG0001207.

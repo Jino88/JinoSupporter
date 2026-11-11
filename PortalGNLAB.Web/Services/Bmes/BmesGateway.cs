@@ -26,13 +26,14 @@ namespace PortalGNLAB.Web.Services;
 ///   MES073010   Routing + occurred NG codes   api  AI_TOOL_00055 view R   BmesRoutingScrapeService
 ///               (replaces MES020240 routing        + AI_TOOL_00056 names  (Routing / Reason Table)
 ///                master; KTSCH = VLSCH, ZLRTP = LGUBN)
+///   MES071050   BOM (forward, one product)    web  (no Tool)              Working Model Info BOM
 ///   MES073300   Drawing / spec (PDM)          web  (no Tool)              BmesPdmScrapeService
 ///   MES073260   LPA audit list                api  AI_TOOL_00027 view C   BmesLpaScrapeService
 ///   MES073261   LPA checklist                 api  AI_TOOL_00027 view D   BmesLpaScrapeService
 ///   MES073261   LPA photos (GetImage)         web  (anonymous download)   BmesLpaImageService
 ///
 /// Not here yet: the read-only SQL queries against the BMES database in <see cref="BmesFcostActualService"/>
-/// (BOM MAST/BOMC, MATE, unit prices INFR / STBI, exchange rates TCURR) — no API Tool offers them.
+/// (BOM MAST/BOMC for BOM &amp; Drawing, MATE, unit prices INFR / STBI, exchange rates TCURR) — no API Tool offers them.
 /// </summary>
 public static partial class BmesGateway
 {
