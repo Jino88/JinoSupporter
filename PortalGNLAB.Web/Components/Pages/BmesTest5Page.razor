@@ -8,9 +8,11 @@
 @inject BmesBomCacheService BomCache
 @inject BmesPdmScrapeService Pdm
 @inject AppPathsService AppPaths
+@inject NgRateSettingsService BmesSettings
 @inject WebRepository Repo
 @inject AppActivityLogger Activity
 @inject IJSRuntime JS
+@implements IDisposable
 
 <PageTitle>BOM &amp; Drawing</PageTitle>
 
@@ -50,6 +52,13 @@
                         Synchronizing model names from BMES once...
                     </span>
                 }
+                @if (_bmesLookupBusy)
+                {
+                    <span class="t5-suggestion-status">
+                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                        Searching BMES…
+                    </span>
+                }
                 @foreach (var candidate in _modelCandidates)
                 {
                     <button type="button"
@@ -71,9 +80,13 @@
                         {
                             <span class="badge bg-primary">local</span>
                         }
+                        else if (candidate.Source == "bmes")
+                        {
+                            <span class="badge bg-info text-dark">BMES</span>
+                        }
                     </button>
                 }
-                @if (!_modelSearchBusy && _modelCandidates.Count == 0)
+                @if (!_modelSearchBusy && !_bmesLookupBusy && _modelCandidates.Count == 0)
                 {
                     <span class="t5-suggestion-status @(string.IsNullOrWhiteSpace(_modelSearchError) ? "" : "text-danger")">
                         @(string.IsNullOrWhiteSpace(_modelSearchError)
@@ -568,7 +581,7 @@ else if (!string.IsNullOrWhiteSpace(_costError))
 
     /// <summary>One model name, plus the model groups it appears in (kept only as a hint).</summary>
     private sealed record ModelEntry(string Name, string Groups);
-    private sealed record ModelSuggestion(string Name, string ProductCode, string Source, string Hint);
+    public sealed record ModelSuggestion(string Name, string ProductCode, string Source, string Hint);
 
     private List<ModelEntry> _allModels = new();
     private List<ModelEntry> _cachedModelEntries = new();
@@ -582,6 +595,8 @@ else if (!string.IsNullOrWhiteSpace(_costError))
     private bool _modelSearchHasRun;
     private string _modelSearchError = string.Empty;
     private bool _suppressModelSuggestions;
+    private bool _bmesLookupBusy;
+    private CancellationTokenSource? _bmesLookupCts;
 
     private Dictionary<string, BmesPdmRow> _pdmByPart = new(StringComparer.OrdinalIgnoreCase);
     private int _pdmMatched;
@@ -901,7 +916,7 @@ else if (!string.IsNullOrWhiteSpace(_costError))
             .ToList();
     }
 
-    private void OnModelSearchInput(ChangeEventArgs args)
+    private async Task OnModelSearchInput(ChangeEventArgs args)
     {
         _modelFilter = args.Value?.ToString() ?? string.Empty;
         _suppressModelSuggestions = false;
@@ -909,6 +924,82 @@ else if (!string.IsNullOrWhiteSpace(_costError))
         string searchText = _modelFilter.Trim();
         _modelSearchHasRun = searchText.Length >= 2;
         _modelCandidates = LocalModelSuggestions(searchText);
+        await LookupBmesModelsAsync(searchText);
+    }
+
+    /// <summary>
+    /// The P- / S- items BMES has for the typed text (BOM screen MES071050 item lookup), mixed into the
+    /// suggestions, so a model the synced local names lack is found too. Waits for typing to pause.
+    /// </summary>
+    private async Task LookupBmesModelsAsync(string searchText)
+    {
+        _bmesLookupCts?.Cancel();
+        _bmesLookupCts?.Dispose();
+        _bmesLookupCts = null;
+        _bmesLookupBusy = false;
+        if (searchText.Length < 3)
+            return;
+
+        var cts = new CancellationTokenSource();
+        _bmesLookupCts = cts;
+        try
+        {
+            await Task.Delay(500, cts.Token);
+            _bmesLookupBusy = true;
+            StateHasChanged();
+            using var session = await BmesGateway.OpenBomSessionAsync(BmesSettings, cts.Token);
+            string plant = string.IsNullOrWhiteSpace(_plant) ? "3200" : _plant.Trim();
+            var headers = await BmesGateway.LookupBomHeadersAsync(session, plant, searchText, cts.Token);
+            if (cts.IsCancellationRequested || !string.Equals(_modelFilter.Trim(), searchText, StringComparison.Ordinal))
+                return;
+            _modelCandidates = WithBmesSuggestions(searchText, _modelCandidates, BmesGateway.BomProducts(headers));
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception ex)
+        {
+            _modelSearchError = "BMES lookup failed: " + ex.Message;
+        }
+        finally
+        {
+            if (ReferenceEquals(_bmesLookupCts, cts))
+                _bmesLookupBusy = false;
+        }
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// The local suggestions with the BMES items mixed in, best match first (the exact name on top); the
+    /// same name once, a local one kept; at most 12.
+    /// </summary>
+    public static List<ModelSuggestion> WithBmesSuggestions(
+        string searchText, IEnumerable<ModelSuggestion> local, IEnumerable<BmesBomHeader> bmes)
+    {
+        string want = searchText.Trim();
+        var fromBmes = bmes
+            .Where(h => !string.IsNullOrWhiteSpace(h.Name))
+            .Select(h => new ModelSuggestion(h.Name, h.Code, "bmes", $"BMES BOM screen: {h.Code}"));
+        return local.Concat(fromBmes)
+            .Where(candidate => !string.IsNullOrWhiteSpace(candidate.Name))
+            .Select((candidate, index) => (Candidate: candidate, Index: index,
+                Score: string.Equals(candidate.Name, want, StringComparison.OrdinalIgnoreCase)
+                    ? int.MinValue
+                    : ModelCatalogMatchScore(searchText, candidate.Name + " " + candidate.ProductCode)))
+            .OrderBy(item => item.Score)
+            .ThenBy(item => item.Index)
+            .Select(item => item.Candidate)
+            .GroupBy(candidate => candidate.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .Take(12)
+            .ToList();
+    }
+
+    public void Dispose()
+    {
+        _bmesLookupCts?.Cancel();
+        _bmesLookupCts?.Dispose();
     }
 
     private List<ModelSuggestion> LocalModelSuggestions(string searchText)
@@ -1015,6 +1106,8 @@ else if (!string.IsNullOrWhiteSpace(_costError))
         _modelSearchHasRun = false;
         _modelCandidates = [];
         _suppressModelSuggestions = true;
+        _bmesLookupCts?.Cancel();
+        _bmesLookupBusy = false;
         _selectedModels.Clear();
         _selectedModels.Add(candidate.Name);
         await LoadBomAsync();
@@ -1287,7 +1380,7 @@ else if (!string.IsNullOrWhiteSpace(_costError))
         if (models.Count == 0)
             return;
 
-        var connection = BuildNetworkDbConnection();
+        BmesWebSession? session = null;
 
         _busy = true;
         _errorMessage = string.Empty;
@@ -1339,25 +1432,27 @@ else if (!string.IsNullOrWhiteSpace(_costError))
                         }
                     }
 
-                    if (string.IsNullOrWhiteSpace(connection.Server) || string.IsNullOrWhiteSpace(connection.UserId))
+                    if (!BmesSettings.IsCredentialsConfigured)
                     {
                         results.Add(new ModelBomResult
                         {
                             Model = model,
-                            Error = "No local cache and the network DB connection is not configured.",
+                            Error = "No local cache and the BMES login is not configured in Setting.",
                         });
                         continue;
                     }
 
-                    var rows = await FCostActual.FetchBomTreeAsync(new BmesBomMaterialQuery
+                    // the BMES BOM screen (MES071050) gives the whole current tree; Depth cuts it here
+                    session ??= await BmesGateway.OpenBomSessionAsync(BmesSettings);
+                    var (tree, treeError) = await BmesGateway.FetchBomAsync(
+                        session, string.IsNullOrWhiteSpace(_plant) ? "3200" : _plant.Trim(), model);
+                    if (tree is null)
                     {
-                        Connection = connection,
-                        ModelName = model,
-                        Plant = _plant.Trim(),
-                        MaxRows = MaxRowsPerModel,
-                        MaxDepth = Math.Clamp(_maxDepth, 1, 12),
-                        WorkDate = _workDate,
-                    });
+                        results.Add(new ModelBomResult { Model = model, Error = treeError });
+                        continue;
+                    }
+                    int depth = Math.Clamp(_maxDepth, 1, 12);
+                    var rows = tree.Where(r => r.BomLevel <= depth).Take(MaxRowsPerModel).ToList();
 
                     try
                     {
@@ -1407,6 +1502,7 @@ else if (!string.IsNullOrWhiteSpace(_costError))
         }
         finally
         {
+            session?.Dispose();
             _busy = false;
             StateHasChanged();
         }
