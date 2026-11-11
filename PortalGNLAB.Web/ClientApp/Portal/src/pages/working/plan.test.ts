@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  blankEvent, blankRow, blankTask, calendarDays, eventSpan, inSpan, monthDayText, monthRuns, moveTo, planProblem, progress, planDays, readDevPlan, readMonthDay, readQty, rowTotal, setQty,
+  blankEvent, blankRow, blankTask, addBomRows, bomRowNames, calendarDays, eventSpan, inSpan, monthDayText, monthRuns, moveInGroup, moveTo, planProblem, progress, planDays, readDevPlan, readMonthDay, readQty, rowTotal, setQty,
 } from "./plan";
 import type { PlanEvent, PlanTask } from "./plan";
 
@@ -61,8 +61,12 @@ describe("development plan", () => {
 
   it("reads the quantity rows of a saved event leniently", () => {
     const p = readDevPlan({ events: [{ name: "LPR", rows: [{ id: "r", name: "SPK Assy", qty: { "2026-11-19": 600, "2026-11-18": 300, bad: 1, "2026-11-20": "x", "2026-11-21": 0 } }, 7] }, { name: "MP" }] });
-    expect(p.events[0].rows).toEqual([{ id: "r", name: "SPK Assy", qty: { "2026-11-18": 300, "2026-11-19": 600 } }]);
+    expect(p.events[0].rows).toEqual([{ id: "r", name: "SPK Assy", group: "making", qty: { "2026-11-18": 300, "2026-11-19": 600 } }]);
     expect(p.events[1].rows).toEqual([]);
+    expect(p.events[1].bomFrom).toBe("");
+    const m = readDevPlan({ events: [{ name: "LPR", bomFrom: "MSM-G778B", rows: [{ id: "a", name: "MOTOR", group: "material", qty: {} }, { id: "b", name: "x", group: "odd", qty: {} }] }] });
+    expect(m.events[0].bomFrom).toBe("MSM-G778B");
+    expect(m.events[0].rows.map((r) => r.group)).toEqual(["material", "making"]);
   });
 
   it("reads a task date typed as month and day of the fixed year", () => {
@@ -85,5 +89,30 @@ describe("development plan", () => {
     expect(ids(moveTo(l, "b", "b"))).toBe("abcd");
     expect(moveTo(l, "x", "b")).toBe(l);
     expect(ids(l)).toBe("abcd");
+  });
+
+  it("puts the BOM's direct materials into the Material Plan once, skipping ones it has", () => {
+    const bom = [
+      { level: 1, materialName: "Enclosure Upper", materialCode: "P-1" },
+      { level: 2, materialName: "Screw", materialCode: "S-9" },
+      { level: 1, materialName: "MOTOR", materialCode: "P-2" },
+      { level: 1, materialName: "motor", materialCode: "P-2" },
+      { level: 1, materialName: "", materialCode: "P-3" },
+      { level: 1, materialName: "SPK Assy", materialCode: "P-4" },
+    ];
+    const rows = [blankRow("Motor", "material"), blankRow("SPK Assy")];
+    expect(bomRowNames(rows, bom)).toEqual(["Enclosure Upper", "P-3", "SPK Assy"]);
+    const e = addBomRows({ ...ev("", ""), rows }, ["Enclosure Upper"], "MSM-G778B");
+    expect(e.bomFrom).toBe("MSM-G778B");
+    expect(e.rows.map((r) => [r.name, r.group])).toEqual([["Motor", "material"], ["SPK Assy", "making"], ["Enclosure Upper", "material"]]);
+  });
+
+  it("moves a quantity row past the next row of its own group", () => {
+    const r = [blankRow("m1", "material"), blankRow("k1"), blankRow("m2", "material"), blankRow("k2")];
+    const names = (x: { name: string }[]) => x.map((y) => y.name).join(",");
+    expect(names(moveInGroup(r, r[0].id, 1))).toBe("m2,k1,m1,k2");
+    expect(names(moveInGroup(r, r[3].id, -1))).toBe("m1,k2,m2,k1");
+    expect(moveInGroup(r, r[2].id, 1)).toBe(r);
+    expect(moveInGroup(r, r[1].id, -1)).toBe(r);
   });
 });
