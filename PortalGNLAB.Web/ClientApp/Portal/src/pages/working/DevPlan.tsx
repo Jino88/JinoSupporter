@@ -215,16 +215,16 @@ function QtyRows(props: {
 }
 
 /** Name, dates and color of an event being added or changed. */
-function EventEdit(props: { value: PlanEvent; onKeep: (e: PlanEvent) => void; onCancel: () => void }) {
+export function EventEdit(props: { value: PlanEvent; onKeep: (e: PlanEvent) => void; onCancel: () => void }) {
   const [e, setE] = useState(props.value);
   const problem = planProblem(e);
   return (
     <div className="wk-dp-form">
       <input className="inp sm" value={e.name} placeholder="Event, e.g. DR build" autoFocus aria-label="Event name"
         onChange={(x) => setE({ ...e, name: x.target.value })} />
-      <input className="inp sm" type="date" value={e.start} aria-label="Start" onChange={(x) => setE({ ...e, start: x.target.value })} />
+      <DayInput value={e.start} label="Start" onChange={(start) => setE({ ...e, start })} />
       <span className="muted">–</span>
-      <input className="inp sm" type="date" value={e.end} aria-label="End" onChange={(x) => setE({ ...e, end: x.target.value })} />
+      <DayInput value={e.end} label="End" onChange={(end) => setE({ ...e, end })} />
       <span className="wk-dp-colors">
         {COLORS.map((c) => (
           <button key={c} className={"sw" + (c === e.color ? " on" : "")} style={{ background: c }} aria-label={"Color " + c}
@@ -240,7 +240,7 @@ function EventEdit(props: { value: PlanEvent; onKeep: (e: PlanEvent) => void; on
 }
 
 /**
- * Date box of a task as yyyy/mm/dd: the year is fixed (this year, or the year of a date already set) and only the month
+ * Date box of an event or task as yyyy/mm/dd: the year is fixed (this year, or the year of a date already set) and only the month
  * and day are typed. Something that is not a day is passed on as typed, so the task shows it must be a date.
  */
 function DayInput(props: { value: string; label: string; onChange: (v: string) => void }) {
