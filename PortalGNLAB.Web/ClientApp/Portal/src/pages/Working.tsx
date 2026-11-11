@@ -3,10 +3,12 @@ import { localToday } from "./productionInput/logic";
 import { workingApi } from "./working/api";
 import DevPlan from "./working/DevPlan";
 import EntryList from "./working/EntryList";
+import Home from "./working/Home";
+import { treeModels } from "./working/homeSummary";
 import InfoTab from "./working/InfoTab";
 import IssueTable from "./working/IssueTable";
 import {
-  buildTree, countByKind, filterTree, firstModel, isOpenIssue, issuesOfStage, pathOf, replaceSome, sortEntries, type GroupNode, type IssueStage,
+  buildTree, countByKind, filterTree, isOpenIssue, issuesOfStage, pathOf, replaceSome, sortEntries, type GroupNode, type IssueStage,
 } from "./working/logic";
 import SetupPlan from "./working/SetupPlan";
 import { hideModels, treeApi, withAdded, type TreeSettings } from "./working/tree";
@@ -26,11 +28,11 @@ const isTab = (v: string | null): v is Tab => CATEGORIES.some((c) => c.tabs.some
 /** The issue list of a tab: Dev Issue (development) or Issues (mass production). */
 const stageOf = (tab: Tab): IssueStage | null => (tab === "devissue" ? "dev" : tab === "issue" ? "mp" : null);
 
-/** Keeps ?model=&tab= in the address so a model page can be linked and survives reload. */
-function writeQuery(model: string | null, tab: Tab) {
+/** Keeps ?model=&tab= (or ?view=home) in the address so a model page or Home can be linked and survives reload. */
+function writeQuery(home: boolean, model: string | null, tab: Tab) {
   const q = new URLSearchParams(window.location.search);
-  if (model) q.set("model", model); else q.delete("model");
-  q.set("tab", tab);
+  if (model && !home) q.set("model", model); else q.delete("model");
+  if (home) { q.set("view", "home"); q.delete("tab"); } else { q.delete("view"); q.set("tab", tab); }
   window.history.replaceState(null, "", `${window.location.pathname}?${q}`);
 }
 
@@ -41,7 +43,9 @@ export default function Working() {
   const [managing, setManaging] = useState(false);
   const [filter, setFilter] = useState("");
   const [closed, setClosed] = useState<Set<string>>(new Set());
-  const [selected, setSelected] = useState<string | null>(query.get("model"));
+  // Home opens when asked for or when no model is in the address
+  const [home, setHome] = useState(query.get("view") === "home" || !query.get("model"));
+  const [selected, setSelected] = useState<string | null>(home ? null : query.get("model"));
   const [tab, setTab] = useState<Tab>(isTab(query.get("tab")) ? (query.get("tab") as Tab) : "info");
   const [model, setModel] = useState<WorkingModel | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -55,6 +59,7 @@ export default function Working() {
     () => buildTree(withAdded(groups?.groups ?? [], treeSettings.added, treeSettings.groups, treeSettings.placed)), [groups, treeSettings]);
   const tree = useMemo(() => hideModels(fullTree, treeSettings.hidden), [fullTree, treeSettings.hidden]);
   const shown = useMemo(() => filterTree(tree, filter), [tree, filter]);
+  const homeModels = useMemo(() => (groups ? treeModels(tree) : null), [groups, tree]);
   const fail = (e: unknown) => setError((e as Error).message);
 
   useEffect(() => {
@@ -64,7 +69,6 @@ export default function Working() {
       .then(([g, t]) => {
         setGroups(g);
         setTreeSettings(t);
-        setSelected((cur) => cur ?? firstModel(hideModels(buildTree(withAdded(g.groups, t.added, t.groups, t.placed)), t.hidden)));
       })
       .catch(fail);
   }, []);
@@ -82,8 +86,8 @@ export default function Working() {
   }, []);
 
   useEffect(() => {
-    writeQuery(selected, tab);
-  }, [selected, tab]);
+    writeQuery(home, selected, tab);
+  }, [home, selected, tab]);
 
   useEffect(() => {
     setModel(null);
@@ -93,8 +97,21 @@ export default function Working() {
   }, [selected, reload]);
 
   const pick = (name: string) => {
-    if (name === selected) return;
+    if (name === selected && !home) return;
     if (infoDirty && !window.confirm("Discard the unsaved changes?")) return;
+    setHome(false);
+    setSelected(name);
+  };
+  const goHome = () => {
+    if (home) return;
+    if (infoDirty && !window.confirm("Discard the unsaved changes?")) return;
+    setHome(true);
+    setSelected(null);
+  };
+  /** A model opened from Home, on the tab asked for. */
+  const openFromHome = (name: string, k: Tab) => {
+    setTab(k);
+    setHome(false);
     setSelected(name);
   };
   const toggle = (id: string) => setClosed((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -135,7 +152,9 @@ export default function Working() {
     <div className="tools-page pi-page wk-page">
       <header className="page-head">
         <h1>Working</h1>
-        <p className="muted">Everything about one model in one place: model info, the development plan from Production Input, and the development, issue and review history.</p>
+        <nav className="wk-menu" aria-label="Working">
+          <button className={home ? "on" : ""} aria-current={home ? "page" : undefined} onClick={goHome}>Home</button>
+        </nav>
       </header>
       {error && <div className="alert" role="alert">{error}</div>}
 
@@ -168,7 +187,9 @@ export default function Working() {
         )}
 
         <section className="wk-main">
-          {!selected ? (
+          {home ? (
+            <Home models={homeModels} today={today} onOpen={openFromHome} />
+          ) : !selected ? (
             <div className="card pi-empty">Pick a model on the left.</div>
           ) : (
             <>

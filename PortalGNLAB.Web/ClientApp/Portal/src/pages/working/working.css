@@ -386,3 +386,38 @@ table.wk-gantt .wk-qty-in { padding: 4px 3px; font-size: 11px; }
 .wk-qty-name { width: 100%; box-sizing: border-box; border: 0; background: transparent; padding: 5px 8px; font: inherit; color: var(--ink); }
 .wk-qty-in { width: 100%; box-sizing: border-box; border: 0; background: transparent; padding: 5px 6px; font: inherit; text-align: right; color: var(--ink); }
 .wk-qty-name:focus, .wk-qty-in:focus { outline: 2px solid var(--accent, #4f46e5); outline-offset: -2px; background: #fff; }
+
+/* Menu under the page title, and Home: the development plans on one timeline, then every model */
+.wk-menu { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+.wk-menu button { border: 0; background: none; padding: 7px 14px; font: inherit; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.wk-menu button.on { color: var(--accent-ink); border-bottom-color: var(--accent); }
+.wk-home { display: grid; gap: 14px; }
+.wk-hm-link { border: 0; background: none; padding: 0; font: inherit; font-weight: 700; color: var(--accent-ink); cursor: pointer; text-align: left; }
+.wk-hm-link:hover { text-decoration: underline; }
+.wk-hm-plan { display: grid; }
+.wk-hm-row { display: grid; grid-template-columns: 230px minmax(0, 1fr); align-items: center; min-height: 24px; }
+.wk-hm-row.head { position: sticky; top: 0; z-index: 2; background: #fff; border-bottom: 1px solid var(--line); min-height: 34px; }
+.wk-hm-model { border-bottom: 1px solid var(--line); padding: 8px 0 6px; }
+.wk-hm-model .wk-hm-row:first-child .wk-hm-label { gap: 8px; }
+.wk-hm-label { display: flex; align-items: center; gap: 6px; min-width: 0; padding-right: 10px; font-size: 12px; }
+.wk-hm-row.ev .wk-hm-label { padding-left: 12px; }
+.wk-hm-sum { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; font-size: 12px; color: var(--muted); }
+.wk-hm-sum b { color: var(--ink-2); }
+.wk-hm-dot { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.wk-hm-ev { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
+.wk-hm-st { margin-left: auto; flex: none; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: #f1f5f9; color: var(--muted); }
+.wk-hm-st.now { background: var(--accent-soft); color: var(--accent-ink); }
+.wk-hm-st.late { background: var(--warn-soft); color: var(--warn); }
+.wk-hm-track { position: relative; height: 24px; }
+.wk-hm-row.head .wk-hm-track { height: 34px; }
+.wk-hm-grid { position: absolute; top: 0; bottom: 0; border-left: 1px solid #eef2f7; }
+.wk-hm-month { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; padding-left: 6px; border-left: 1px solid var(--line); font-size: 11px; font-weight: 700; color: var(--muted); overflow: hidden; white-space: nowrap; box-sizing: border-box; }
+.wk-hm-today { position: absolute; top: 0; bottom: 0; border-left: 2px solid #ef4444; z-index: 1; }
+.wk-hm-today-l { position: absolute; bottom: 1px; transform: translateX(-50%); font-size: 9.5px; font-weight: 700; color: #ef4444; background: #fff; padding: 0 3px; }
+.wk-hm-bar { position: absolute; top: 4px; height: 16px; border-radius: 4px; min-width: 4px; padding: 0 6px; box-sizing: border-box; color: #fff; font-size: 10.5px; font-weight: 600; line-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 1; }
+.wk-hm-bar.done { opacity: .45; }
+.wk-hm-bar.late { outline: 2px solid var(--warn); outline-offset: 1px; }
+.wk-hm-noplan { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+.wk-hm-models { overflow-x: auto; }
+.wk-hm-models th.num, .wk-hm-models td.num { text-align: right; }
+.wk-hm-models td { white-space: nowrap; }
