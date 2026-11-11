@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { workingApi } from "./api";
 import {
-  barAt, devPlans, modelRow, slashDate, timelineMonths, timelineRange, type EventBrief, type ModelLoad, type PlanBrief,
+  barAt, devPlans, labelSide, modelRow, slashDate, timelineMonths, timelineRange, type EventBrief, type ModelLoad, type PlanBrief,
 } from "./homeSummary";
 
 const STATE_LABEL: Record<EventBrief["state"], string> = { done: "Done", now: "Now", upcoming: "Next", late: "Late", undated: "No date" };
@@ -119,6 +119,22 @@ export default function Home(props: {
   );
 }
 
+/** An event's bar with its days and tasks done, written in the bar or beside it when the bar is too short for them. */
+function EventBar({ e, bar }: { e: EventBrief; bar: { left: number; width: number } }) {
+  const text = `${spanText(e)}${e.total > 0 ? ` · tasks ${e.done}/${e.total}` : ""}`;
+  const side = labelSide(bar);
+  const title = `${e.name}: ${spanText(e)}${e.total ? ` · ${e.done}/${e.total} tasks done` : ""}`;
+  return (
+    <>
+      <span className={"wk-hm-bar " + e.state} style={{ left: `${bar.left}%`, width: `${bar.width}%`, background: e.color }} title={title}>
+        {side === "in" && text}
+      </span>
+      {side === "right" && <span className="wk-hm-blabel" style={{ left: `calc(${bar.left + bar.width}% + 5px)` }} title={title}>{text}</span>}
+      {side === "left" && <span className="wk-hm-blabel" style={{ right: `calc(${100 - bar.left}% + 5px)` }} title={title}>{text}</span>}
+    </>
+  );
+}
+
 /** The plans on one timeline: a line per model with what is under way and next, a bar per event under it, today marked. */
 function PlanTimeline(props: { plans: PlanBrief[]; today: string; onOpen: (model: string, tab: "plan") => void }) {
   const range = timelineRange(props.plans, props.today);
@@ -165,12 +181,7 @@ function PlanTimeline(props: { plans: PlanBrief[]; today: string; onOpen: (model
                   <span className="wk-hm-ev" title={e.name}>{e.name}</span>
                   <span className={"wk-hm-st " + e.state}>{STATE_LABEL[e.state]}</span>
                 </div>
-                {track(bar && (
-                  <span className={"wk-hm-bar " + e.state} style={{ left: `${bar.left}%`, width: `${bar.width}%`, background: e.color }}
-                    title={`${e.name}: ${spanText(e)}${e.total ? ` · ${e.done}/${e.total} tasks done` : ""}`}>
-                    {spanText(e)}{e.total > 0 && ` · tasks ${e.done}/${e.total}`}
-                  </span>
-                ))}
+                {track(bar && <EventBar e={e} bar={bar} />)}
               </div>
             );
           })}

@@ -29,6 +29,16 @@ describe("Working Home", () => {
     expect(table).toContain("<td>Acme</td>");
   });
 
+  it("writes the days of a short event beside its bar, not cut inside it", () => {
+    const html = renderToStaticMarkup(<Home models={[]} today="2026-11-11" onOpen={() => {}} initial={[
+      load("MSM-G778B", { phase: "PV", devPlan: { events: [event("LPR", "2026-11-18", "2026-11-20"), event("MP", "2027-01-20", "2027-01-20"), event("Long", "2026-11-12", "2027-01-10")] } }),
+    ]} />);
+    expect(html).toMatch(/class="wk-hm-blabel" style="left:calc\([\d.]+% \+ 5px\)"[^>]*>2026\/11\/18 – 11\/20</);
+    expect(html).toMatch(/class="wk-hm-blabel" style="right:calc\([\d.]+% \+ 5px\)"[^>]*>2027\/01\/20</);
+    expect(html).toMatch(/class="wk-hm-bar upcoming"[^>]*>2026\/11\/12 – 01\/10</);
+    expect(html).not.toMatch(/class="wk-hm-bar[^"]*"[^>]*>2026\/11\/18/);
+  });
+
   it("says no model in development has a plan yet", () => {
     const html = renderToStaticMarkup(<Home models={[]} today="2026-11-11" onOpen={() => {}} initial={[load("A", { phase: "DR" })]} />);
     expect(html).toContain("No model in development has a Dev Plan yet");
