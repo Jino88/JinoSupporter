@@ -191,7 +191,7 @@ function QtyRows(props: {
             {list.map((r, ri) => (
               <tr key={r.id} className="qr">
                 <td className="nm"><div className="wk-qn">
-                  <input className="wk-qty-name" value={r.name} placeholder={g === "material" ? "Material name" : "Item, e.g. SPK Assy"}
+                  <input className="wk-qty-name" value={r.name} title={r.name} placeholder={g === "material" ? "Material name" : "Item, e.g. SPK Assy"}
                     aria-label={g === "material" ? "Material name" : "Item name"} onChange={(x) => setRow({ ...r, name: x.target.value })} />
                   <span className="tot" title="Total">{rowTotal(r) ? num(rowTotal(r)) : ""}</span>
                   <span className="act">
