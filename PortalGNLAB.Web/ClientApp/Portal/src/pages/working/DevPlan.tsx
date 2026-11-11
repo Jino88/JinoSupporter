@@ -2,11 +2,13 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { WEEKDAYS, localToday, weekday } from "../productionInput/logic";
 import { workingApi } from "./api";
+import { bmesApi } from "./bmes";
+import type { BomRow } from "./bmes";
 import {
-  COLORS, blankEvent, blankRow, blankTask, calendarDays, eventSpan, inSpan, monthDayText, monthRuns, moveTo, planDays, planProblem,
+  COLORS, QTY_GROUPS, addBomRows, blankEvent, blankRow, blankTask, calendarDays, eventSpan, inSpan, bomRowNames, monthDayText, monthRuns, moveInGroup, moveTo, planDays, planProblem,
   progress, readDevPlan, readMonthDay, readQty, rowTotal, setQty, taskSpan,
 } from "./plan";
-import type { DevPlan as Plan, PlanEvent, PlanTask, QtyRow } from "./plan";
+import type { DevPlan as Plan, PlanEvent, PlanTask, QtyGroup, QtyRow } from "./plan";
 import type { WorkingModel } from "./types";
 
 interface Row { id: string; label: string; sub: string; span: [string, string] | null; color: string; done?: boolean }
@@ -85,32 +87,58 @@ function QtyCell(props: { value: number | undefined; label: string; onKeep: (n: 
 }
 
 /**
- * Quantity plan of an event, as rows of the calendar under it so each day lines up with the day above: a row per stage
- * (SPK Assy, Lower Assy, Function, OQC, ...) with its total, and the quantity of a day typed in its cell. Rows can be
- * added, renamed, moved and deleted; cells copied from Excel can be pasted from the cell clicked.
+ * Quantity plan of an event, as rows of the calendar under it so each day lines up with the day above, in two groups:
+ * Material Plan (the materials to get in; the BOM's direct materials are put here the first time it opens) and Making
+ * Plan (SPK Assy, Lower Assy, Function, OQC, ...). Each row has its total and the quantity of a day typed in its cell;
+ * rows can be added, renamed, moved within their group and deleted (a material deleted is not put back unless From BOM
+ * is pressed); cells copied from Excel can be pasted from the cell clicked.
  */
-function QtyRows(props: { ev: PlanEvent; days: string[]; onRows: (rows: QtyRow[]) => void }) {
-  const { ev, days } = props;
+function QtyRows(props: {
+  ev: PlanEvent; days: string[];
+  /** Product whose BOM fills the Material Plan (the model name). */
+  product: string;
+  onRows: (rows: QtyRow[]) => void;
+  onBom: (bom: BomRow[], product: string) => void;
+}) {
+  const { ev, days, product } = props;
   const today = localToday();
   const span = eventSpan(ev);
   const rows = ev.rows;
-  const setRow = (r: QtyRow) => props.onRows(rows.map((x) => (x.id === r.id ? r : x)));
-  const move = (i: number, by: -1 | 1) => {
-    const j = i + by;
-    if (j < 0 || j >= rows.length) return;
-    const list = [...rows];
-    [list[i], list[j]] = [list[j], list[i]];
-    props.onRows(list);
+  const [busy, setBusy] = useState(false);
+  const [bomMsg, setBomMsg] = useState("");
+
+  /** The BOM of the product (local cache, else read from BMES) put into the Material Plan, ones it has left out. */
+  const loadBom = async () => {
+    if (!product.trim()) return;
+    setBusy(true);
+    setBomMsg("");
+    try {
+      let bom = await bmesApi.bom(product);
+      if (!bom.rows.length) bom = await bmesApi.fetchBom(product);
+      if (!bom.rows.length) { setBomMsg(bom.error || `No BOM found for ${product}. Add the materials with + Row.`); return; }
+      const n = bomRowNames(rows, bom.rows).length;
+      props.onBom(bom.rows, product);
+      setBomMsg(n ? `${n} material(s) added from the BOM of ${product}.` : `Every direct material of the ${product} BOM is already here.`);
+    } catch (e) {
+      setBomMsg("BOM could not be read: " + (e instanceof Error ? e.message : String(e)));
+    } finally { setBusy(false); }
   };
+  // the first time the plan of this event opens, its materials come from the BOM
+  useEffect(() => {
+    if (!ev.bomFrom) void loadBom();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ev.id]);
+
+  const setRow = (r: QtyRow) => props.onRows(rows.map((x) => (x.id === r.id ? r : x)));
   const remove = (r: QtyRow) => {
     if (Object.keys(r.qty).length && !window.confirm(`Delete the row ${r.name || "(no name)"} and its quantities?`)) return;
     props.onRows(rows.filter((x) => x.id !== r.id));
   };
-  /** Cells copied from Excel (more than one) go to the right and down from the cell; numbers only, blanks clear. */
-  const paste = (ri: number, di: number, text: string) => {
+  /** Cells copied from Excel (more than one) go to the right and down from the cell within its group; numbers only, blanks clear. */
+  const paste = (list: QtyRow[], ri: number, di: number, text: string) => {
     const grid = text.replace(/\r?\n$/, "").split(/\r?\n/).map((l) => l.split("\t"));
     if (grid.length === 1 && grid[0].length === 1) return false;
-    const list = [...rows];
+    const changed = new Map<string, QtyRow>();
     grid.forEach((line, y) => {
       const r = list[ri + y];
       if (!r) return;
@@ -120,49 +148,68 @@ function QtyRows(props: { ev: PlanEvent; days: string[]; onRows: (rows: QtyRow[]
         const n = readQty(cell);
         if (d && n !== null) next = setQty(next, d, n);
       });
-      list[ri + y] = next;
+      changed.set(r.id, next);
     });
-    props.onRows(list);
+    props.onRows(rows.map((r) => changed.get(r.id) ?? r));
     return true;
   };
   const dayCls = (d: string) => (d === today ? " today" : weekday(d) % 6 === 0 ? " we" : "") + (inSpan(d, span) ? " in" : "");
-  const total = rows.reduce((a, r) => a + rowTotal(r), 0);
+  const hint = (g: QtyGroup) => (g === "material"
+    ? (busy ? `Reading the BOM of ${product}…` : bomMsg || "No material yet. From BOM puts the BOM's direct materials here; + Row adds one.")
+    : "No item yet. Add the stages to make (SPK Assy, Lower Assy, …) with + Row.");
   return (
     <>
-      <tr className="qh">
-        <td className="nm">
-          <div className="wk-qn">
-            <b>Quantity plan</b>
-            <span className="muted">{rows.length} row(s){total ? ` · ${num(total)}` : ""}</span>
-            <button className="btn sm" onClick={() => props.onRows([...rows, blankRow()])}>+ Row</button>
-          </div>
-        </td>
-        {rows.length
-          ? days.map((d) => {
-            const sum = rows.reduce((a, r) => a + (r.qty[d] ?? 0), 0);
-            return <td key={d} className={"q" + dayCls(d)} title={`${d} total`}>{sum ? num(sum) : ""}</td>;
-          })
-          : <td className="q hint" colSpan={days.length}>No item yet. Add the items to plan (SPK Assy, Lower Assy, …) with + Row.</td>}
-      </tr>
-      {rows.map((r, ri) => (
-        <tr key={r.id} className="qr">
-          <td className="nm"><div className="wk-qn">
-            <input className="wk-qty-name" value={r.name} placeholder="Item, e.g. SPK Assy" aria-label="Item name"
-              onChange={(x) => setRow({ ...r, name: x.target.value })} />
-            <span className="tot" title="Total">{rowTotal(r) ? num(rowTotal(r)) : ""}</span>
-            <span className="act">
-              <button className="wk-link" onClick={() => move(ri, -1)} disabled={ri === 0} aria-label="Move up">↑</button>
-              <button className="wk-link" onClick={() => move(ri, 1)} disabled={ri === rows.length - 1} aria-label="Move down">↓</button>
-              <button className="wk-link bad" onClick={() => remove(r)} aria-label={`Delete ${r.name}`}>×</button>
-            </span>
-          </div></td>
-          {days.map((d, di) => (
-            <td key={d} className={"q" + dayCls(d) + (r.qty[d] ? " has" : "")}>
-              <QtyCell value={r.qty[d]} label={`${r.name} ${d}`} onKeep={(n) => setRow(setQty(r, d, n))} onPaste={(t) => paste(ri, di, t)} />
-            </td>
-          ))}
-        </tr>
-      ))}
+      {QTY_GROUPS.map(({ key: g, label }) => {
+        const list = rows.filter((r) => r.group === g);
+        const total = list.reduce((a, r) => a + rowTotal(r), 0);
+        return (
+          <Fragment key={g}>
+            <tr className={"qh " + g}>
+              <td className="nm">
+                <div className="wk-qn">
+                  <b>{label}</b>
+                  <span className="muted">{list.length} row(s){total ? ` · ${num(total)}` : ""}</span>
+                  {g === "material" && (
+                    <button className="btn sm" disabled={busy || !product.trim()} onClick={() => void loadBom()}
+                      title={`Add the direct materials (depth 1) of the ${product} BOM that are not here (local BOM cache, else read from BMES)`}>
+                      {busy ? "Loading…" : "From BOM"}
+                    </button>
+                  )}
+                  <button className="btn sm" onClick={() => props.onRows([...rows, blankRow("", g)])}>+ Row</button>
+                </div>
+              </td>
+              {list.length
+                ? days.map((d) => {
+                  const sum = list.reduce((a, r) => a + (r.qty[d] ?? 0), 0);
+                  return <td key={d} className={"q" + dayCls(d)} title={`${d} total`}>{sum ? num(sum) : ""}</td>;
+                })
+                : <td className="q hint" colSpan={days.length}>{hint(g)}</td>}
+            </tr>
+            {g === "material" && list.length > 0 && (busy || bomMsg) && (
+              <tr className="qh"><td className="nm" /><td className="q hint" colSpan={days.length}>{hint(g)}</td></tr>
+            )}
+            {list.map((r, ri) => (
+              <tr key={r.id} className="qr">
+                <td className="nm"><div className="wk-qn">
+                  <input className="wk-qty-name" value={r.name} placeholder={g === "material" ? "Material name" : "Item, e.g. SPK Assy"}
+                    aria-label={g === "material" ? "Material name" : "Item name"} onChange={(x) => setRow({ ...r, name: x.target.value })} />
+                  <span className="tot" title="Total">{rowTotal(r) ? num(rowTotal(r)) : ""}</span>
+                  <span className="act">
+                    <button className="wk-link" onClick={() => props.onRows(moveInGroup(rows, r.id, -1))} disabled={ri === 0} aria-label="Move up">↑</button>
+                    <button className="wk-link" onClick={() => props.onRows(moveInGroup(rows, r.id, 1))} disabled={ri === list.length - 1} aria-label="Move down">↓</button>
+                    <button className="wk-link bad" onClick={() => remove(r)} aria-label={`Delete ${r.name}`}>×</button>
+                  </span>
+                </div></td>
+                {days.map((d, di) => (
+                  <td key={d} className={"q" + dayCls(d) + (r.qty[d] ? " has" : "")}>
+                    <QtyCell value={r.qty[d]} label={`${r.name} ${d}`} onKeep={(n) => setRow(setQty(r, d, n))} onPaste={(t) => paste(list, ri, di, t)} />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </Fragment>
+        );
+      })}
     </>
   );
 }
@@ -280,6 +327,9 @@ export default function DevPlan(props: {
     setEvents(list);
   };
   const setRows = (rows: QtyRow[]) => ev && setEvents(events.map((x) => (x.id === ev.id ? { ...x, rows } : x)));
+  // BOM materials arrive later: put them into the event as it is then, ones it has by then left out
+  const fillBom = (evId: string, bom: BomRow[], product: string) =>
+    setPlan((p) => ({ ...p, events: p.events.map((e) => (e.id === evId ? addBomRows(e, bomRowNames(e.rows, bom), product) : e)) }));
   const setTasks = (tasks: PlanTask[]) => ev && setEvents(events.map((x) => (x.id === ev.id ? { ...x, tasks } : x)));
   const keepTask = (t: PlanTask) => {
     if (!ev) return;
@@ -308,7 +358,7 @@ export default function DevPlan(props: {
     setSelected(id);
     setEditTask(null);
   };
-  const qty = ev && showQty && <QtyRows key={ev.id} ev={ev} days={days} onRows={setRows} />;
+  const qty = ev && showQty && <QtyRows key={ev.id} ev={ev} days={days} product={model.name} onRows={setRows} onBom={(b, p) => fillBom(ev.id, b, p)} />;
 
   return (
     <section className="card pi-sec">

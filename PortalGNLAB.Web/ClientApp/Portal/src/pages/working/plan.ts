@@ -13,10 +13,18 @@ export interface PlanTask {
   note: string;
 }
 
-/** A row of the quantity table of an event (SPK Assy, Lower Assy, ...): the quantity planned on each day. */
+/** Group of a quantity row: the materials to get in (from the BOM) or the stages to make (SPK Assy, Function, ...). */
+export type QtyGroup = "material" | "making";
+export const QTY_GROUPS: { key: QtyGroup; label: string }[] = [
+  { key: "material", label: "Material Plan" },
+  { key: "making", label: "Making Plan" },
+];
+
+/** A row of the quantity table of an event (a material, or SPK Assy, Lower Assy, ...): the quantity planned on each day. */
 export interface QtyRow {
   id: string;
   name: string;
+  group: QtyGroup;
   /** yyyy-MM-dd -> quantity; days without a quantity are left out. */
   qty: Record<string, number>;
 }
@@ -30,6 +38,8 @@ export interface PlanEvent {
   color: string;
   tasks: PlanTask[];
   rows: QtyRow[];
+  /** Product whose BOM materials were put into the Material Plan once ("" = not yet), so rows deleted stay deleted. */
+  bomFrom: string;
 }
 
 export interface DevPlan {
@@ -43,8 +53,8 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const isDate = (s: string) => DATE.test(s);
 
 export const blankEvent = (index: number): PlanEvent =>
-  ({ id: newId(), name: "", start: "", end: "", color: COLORS[index % COLORS.length], tasks: [], rows: [] });
-export const blankRow = (name = ""): QtyRow => ({ id: newId(), name, qty: {} });
+  ({ id: newId(), name: "", start: "", end: "", color: COLORS[index % COLORS.length], tasks: [], rows: [], bomFrom: "" });
+export const blankRow = (name = "", group: QtyGroup = "making"): QtyRow => ({ id: newId(), name, group, qty: {} });
 export const blankTask = (): PlanTask => ({ id: newId(), name: "", start: "", end: "", owner: "", done: false, note: "" });
 
 /** First and last day of something with a start and an end; a missing end is the start and the other way round. */
@@ -147,6 +157,39 @@ export function setQty(row: QtyRow, day: string, n: number | undefined): QtyRow 
 
 export const rowTotal = (row: QtyRow) => Object.values(row.qty).reduce((a, b) => a + b, 0);
 
+/**
+ * The direct materials (level 1) of a BOM the Material Plan of the rows does not have yet, each once, in BOM order.
+ * Input: the rows of the event and the BOM rows. Output: the material names to add.
+ */
+export function bomRowNames(rows: QtyRow[], bom: { level: number; materialName: string; materialCode: string }[]): string[] {
+  const k = (s: string) => s.trim().toLowerCase();
+  const have = new Set(rows.filter((r) => r.group === "material").map((r) => k(r.name)));
+  const out: string[] = [];
+  for (const b of bom) {
+    const n = (b.materialName || b.materialCode).trim();
+    if (b.level !== 1 || !n || have.has(k(n))) continue;
+    have.add(k(n));
+    out.push(n);
+  }
+  return out;
+}
+
+/** The event with these materials added to its Material Plan and the product its BOM came from kept. */
+export const addBomRows = (ev: PlanEvent, names: string[], product: string): PlanEvent =>
+  ({ ...ev, bomFrom: product, rows: [...ev.rows, ...names.map((n) => blankRow(n, "material"))] });
+
+/** The rows with one moved up or down past the next row of the same group (rows of the other group stay where they are). */
+export function moveInGroup(rows: QtyRow[], id: string, by: -1 | 1): QtyRow[] {
+  const i = rows.findIndex((r) => r.id === id);
+  if (i < 0) return rows;
+  let j = i + by;
+  while (j >= 0 && j < rows.length && rows[j].group !== rows[i].group) j += by;
+  if (j < 0 || j >= rows.length) return rows;
+  const list = [...rows];
+  [list[i], list[j]] = [list[j], list[i]];
+  return list;
+}
+
 /** The days of the plan calendar: the events with 2 days on each side, and every day with a quantity (so none is hidden). */
 export function planDays(events: PlanEvent[]): string[] {
   const filled = events.flatMap((e) => e.rows.flatMap((r) => Object.keys(r.qty))).map((d): [string, string] => [d, d]);
@@ -165,6 +208,7 @@ export function readDevPlan(v: unknown): DevPlan {
       start: str(e.start),
       end: str(e.end),
       color: str(e.color) || COLORS[i % COLORS.length],
+      bomFrom: str(e.bomFrom),
       tasks: list(e.tasks).filter((t) => t && typeof t === "object").map((t) => ({
         id: str(t.id) || newId(), name: str(t.name), start: str(t.start), end: str(t.end),
         owner: str(t.owner), done: t.done === true, note: str(t.note),
@@ -172,6 +216,7 @@ export function readDevPlan(v: unknown): DevPlan {
       rows: list(e.rows).filter((r) => r && typeof r === "object").map((r) => ({
         id: str(r.id) || newId(),
         name: str(r.name),
+        group: (r.group === "material" ? "material" : "making") as QtyGroup,
         qty: Object.fromEntries(Object.entries((r.qty && typeof r.qty === "object" ? r.qty : {}) as Record<string, unknown>)
           .filter((x): x is [string, number] => isDate(x[0]) && typeof x[1] === "number" && Number.isFinite(x[1]) && x[1] > 0).sort(([a], [b]) => a.localeCompare(b))),
       })),
