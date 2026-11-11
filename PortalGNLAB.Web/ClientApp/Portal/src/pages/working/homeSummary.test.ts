@@ -33,6 +33,8 @@ describe("Home summary", () => {
     expect(p.next?.name).toBe("MP prep");
     expect(p.lateTasks).toBe(1);
     expect(p.events[1]).toMatchObject({ done: 1, total: 2, span: ["2026-10-20", "2026-11-05"] });
+    expect(p.events[1].tasks.map((x) => [x.span, x.done, x.late])).toEqual([[["2026-10-20", "2026-10-30"], false, true], [["2026-11-01", "2026-11-02"], true, false]]);
+    expect(p.events[5].tasks).toEqual([]);
   });
 
   it("shows the plans of the models in development, the ones under way first, and the ones in development without a plan", () => {
@@ -57,6 +59,9 @@ describe("Home summary", () => {
     expect(barAt(["2026-11-20", "2026-12-05"], range)).toEqual({ left: (9 / 25) * 100, width: (16 / 25) * 100 });
     expect(timelineMonths(range).map(([m, , w]) => [m, Math.round((w * 25) / 100)])).toEqual([["2026-11", 20], ["2026-12", 5]]);
     expect(timelineRange([planBrief("N", [], { devPlan: plan({ name: "B" }) }, today)], today)).toBeNull();
+    // a task outside its event's days is on the timeline too
+    const q = planBrief("M", [], { devPlan: plan({ name: "A", start: "2026-11-20", end: "2026-11-21", tasks: [task("2026-11-25", "2026-12-02")] }) }, today);
+    expect(timelineRange([q], today, 0)?.to).toBe("2026-12-02");
   });
 
   it("writes the days of a short bar beside it, on its left near the right edge, so they are not cut", () => {

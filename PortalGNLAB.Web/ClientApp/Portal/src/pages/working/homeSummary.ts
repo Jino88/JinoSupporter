@@ -29,6 +29,16 @@ export const slashDate = (d: string) => d.replace(/-/g, "/");
 /** Where an event is against today: finished, under way, coming, past its end with tasks open, or without dates. */
 export type EventState = "done" | "now" | "upcoming" | "late" | "undated";
 
+/** A task of an event: its days, done, late (not done and its last day before today) and owner. */
+export interface TaskBrief {
+  id: string;
+  name: string;
+  span: [string, string] | null;
+  done: boolean;
+  late: boolean;
+  owner: string;
+}
+
 export interface EventBrief {
   id: string;
   name: string;
@@ -39,6 +49,8 @@ export interface EventBrief {
   /** Tasks not done whose end (or start) is before today. */
   lateTasks: number;
   state: EventState;
+  /** Every task of the event, in the order of the plan. */
+  tasks: TaskBrief[];
 }
 
 export interface PlanBrief {
@@ -65,8 +77,12 @@ export function planBrief(name: string, path: string[], info: ModelInfo, today: 
   const events = readDevPlan(info.devPlan).events.map((ev): EventBrief => {
     const span = eventSpan(ev);
     const [done, total] = progress(ev);
-    const lateTasks = ev.tasks.filter((t) => { const s = taskSpan(t); return !t.done && !!s && s[1] < today; }).length;
-    return { id: ev.id, name: ev.name || "(no name)", color: ev.color, span, done, total, lateTasks, state: eventState(span, done, total, today) };
+    const tasks = ev.tasks.map((t): TaskBrief => {
+      const s = taskSpan(t);
+      return { id: t.id, name: t.name || "(no name)", span: s, done: t.done, late: !t.done && !!s && s[1] < today, owner: t.owner };
+    });
+    const lateTasks = tasks.filter((t) => t.late).length;
+    return { id: ev.id, name: ev.name || "(no name)", color: ev.color, span, done, total, lateTasks, state: eventState(span, done, total, today), tasks };
   });
   const upcoming = events.filter((e) => e.state === "upcoming").sort((a, b) => a.span![0].localeCompare(b.span![0]));
   return {
@@ -92,11 +108,11 @@ export function devPlans(loads: ModelLoad[], today: string): { plans: PlanBrief[
 }
 
 /**
- * The days the plan timeline shows: from the first day of the plans to the last, today always in, a few days on each side.
+ * The days the plan timeline shows: from the first day of the plans (events and tasks) to the last, today always in, a few days on each side.
  * Output: first and last day and the number of days, or null without any dated event.
  */
 export function timelineRange(plans: PlanBrief[], today: string, pad = 3): { from: string; to: string; days: number } | null {
-  const spans = plans.flatMap((p) => p.events.map((e) => e.span)).filter((s): s is [string, string] => !!s);
+  const spans = plans.flatMap((p) => p.events.flatMap((e) => [e.span, ...e.tasks.map((t) => t.span)])).filter((s): s is [string, string] => !!s);
   if (!spans.length) return null;
   const from = addDays([today, ...spans.map((s) => s[0])].sort()[0], -pad);
   const to = addDays([today, ...spans.map((s) => s[1])].sort().at(-1)!, pad);

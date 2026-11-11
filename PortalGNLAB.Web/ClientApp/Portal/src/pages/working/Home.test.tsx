@@ -20,8 +20,8 @@ describe("Working Home", () => {
     const plans = html.slice(0, html.indexOf(">Models<"));
     expect(plans).toContain(">MSM-A386B</button>");
     expect(plans).not.toContain(">MSM-OLD</button>");
-    expect(plans).toContain("Now: <b>PV build</b>");
-    expect(plans).toContain("Next: <b>MP 2026/12/01</b>");
+    expect(plans).toContain("<i>Now</i>PV build</span>");
+    expect(plans).toContain("<i>Next</i>MP · 2026/12/01</span>");
     expect(plans).toContain("2026/11/01 – 11/20");
     expect(plans).toMatch(/In development without a plan:.*>MSM-NEW<\/button>/);
     const table = html.slice(html.indexOf(">Models<"));
@@ -33,10 +33,28 @@ describe("Working Home", () => {
     const html = renderToStaticMarkup(<Home models={[]} today="2026-11-11" onOpen={() => {}} initial={[
       load("MSM-G778B", { phase: "PV", devPlan: { events: [event("LPR", "2026-11-18", "2026-11-20"), event("MP", "2027-01-20", "2027-01-20"), event("Long", "2026-11-12", "2027-01-10")] } }),
     ]} />);
-    expect(html).toMatch(/class="wk-hm-blabel" style="left:calc\([\d.]+% \+ 5px\)"[^>]*>2026\/11\/18 – 11\/20</);
-    expect(html).toMatch(/class="wk-hm-blabel" style="right:calc\([\d.]+% \+ 5px\)"[^>]*>2027\/01\/20</);
-    expect(html).toMatch(/class="wk-hm-bar upcoming"[^>]*>2026\/11\/12 – 01\/10</);
+    expect(html).toMatch(/class="wk-hm-blabel" style="left:calc\([\d.]+% \+ 6px\)"[^>]*>2026\/11\/18 – 11\/20</);
+    expect(html).toMatch(/class="wk-hm-blabel" style="right:calc\([\d.]+% \+ 6px\)"[^>]*>2027\/01\/20</);
+    expect(html).toMatch(/class="wk-hm-bar upcoming"[^>]*><span class="wk-hm-btext">2026\/11\/12 – 01\/10</);
     expect(html).not.toMatch(/class="wk-hm-bar[^"]*"[^>]*>2026\/11\/18/);
+  });
+
+  it("shows every task of an event under it: name, owner, done or late, and its days beside its bar", () => {
+    const task = (id: string, name: string, start: string, end: string, done = false, owner = "") => ({ id, name, start, end, owner, done, note: "" });
+    const html = renderToStaticMarkup(<Home models={[]} today="2026-11-11" onOpen={() => {}} initial={[
+      load("MSM-G778B", { phase: "PV", devPlan: { events: [{ ...event("LPR", "2026-11-18", "2026-11-21"), tasks: [
+        task("a", "Material in", "2026-11-05", "2026-11-09", true, "Kim"), task("b", "Jig ready", "2026-11-02", "2026-11-06", false, "Park"),
+        task("c", "Assy & test", "2026-11-20", "2026-12-30"), task("d", "Report", "", ""),
+      ] }] } }),
+    ]} />);
+    const rows = [...html.matchAll(/<div class="wk-hm-row task (\w+)">.*?class="wk-hm-task" title="[^"]*">([^<]+)<\/span>(?:<span class="wk-hm-owner"[^>]*>([^<]+)<)?/g)]
+      .map((m) => [m[2], m[1], m[3] ?? ""]);
+    expect(rows).toEqual([["Material in", "done", "Kim"], ["Jig ready", "late", "Park"], ["Assy &amp; test", "open", ""], ["Report", "open", ""]]);
+    expect(html).toMatch(/class="wk-hm-tbar done"[^>]*><\/span><span class="wk-hm-blabel"[^>]*>11\/05 – 11\/09</);
+    expect(html).toMatch(/class="wk-hm-tbar open"[^>]*><\/span><span class="wk-hm-blabel"[^>]*>11\/20 – 12\/30</);
+    expect(html).toContain('<span class="wk-hm-st undated">No date</span>');
+    expect(html).toContain('<i>Tasks</i>1/4');
+    expect(html).toContain("1 late task<");
   });
 
   it("says no model in development has a plan yet", () => {

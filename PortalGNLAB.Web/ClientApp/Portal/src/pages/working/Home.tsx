@@ -1,7 +1,7 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { workingApi } from "./api";
 import {
-  barAt, devPlans, labelSide, modelRow, slashDate, timelineMonths, timelineRange, type EventBrief, type ModelLoad, type PlanBrief,
+  barAt, devPlans, labelSide, modelRow, slashDate, timelineMonths, timelineRange, type EventBrief, type ModelLoad, type PlanBrief, type TaskBrief,
 } from "./homeSummary";
 
 const STATE_LABEL: Record<EventBrief["state"], string> = { done: "Done", now: "Now", upcoming: "Next", late: "Late", undated: "No date" };
@@ -119,31 +119,40 @@ export default function Home(props: {
   );
 }
 
-/** An event's bar with its days and tasks done, written in the bar or beside it when the bar is too short for them. */
-function EventBar({ e, bar }: { e: EventBrief; bar: { left: number; width: number } }) {
-  const text = `${spanText(e)}${e.total > 0 ? ` · tasks ${e.done}/${e.total}` : ""}`;
-  const side = labelSide(bar);
-  const title = `${e.name}: ${spanText(e)}${e.total ? ` · ${e.done}/${e.total} tasks done` : ""}`;
+/** A plan colour (#rrggbb) made see-through, for the light fill of task bars. */
+const tint = (color: string, alpha: string) => (/^#[0-9a-f]{6}$/i.test(color) ? color + alpha : color);
+const taskSpanText = (t: TaskBrief) => (t.span ? `${slashDate(t.span[0]).slice(5)}${t.span[1] !== t.span[0] ? ` – ${slashDate(t.span[1]).slice(5)}` : ""}` : "");
+
+/** A bar on the timeline with its text written in it, or beside it when the bar is too short for the text (or `beside`). */
+function Bar(props: {
+  className: string; bar: { left: number; width: number }; text: string; title: string; style: CSSProperties; beside?: boolean; children?: ReactNode;
+}) {
+  const { bar, text, title } = props;
+  const side = labelSide(bar, props.beside ? Infinity : undefined);
   return (
     <>
-      <span className={"wk-hm-bar " + e.state} style={{ left: `${bar.left}%`, width: `${bar.width}%`, background: e.color }} title={title}>
-        {side === "in" && text}
+      <span className={props.className} style={{ ...props.style, left: `${bar.left}%`, width: `${bar.width}%` }} title={title}>
+        {props.children}{side === "in" && <span className="wk-hm-btext">{text}</span>}
       </span>
-      {side === "right" && <span className="wk-hm-blabel" style={{ left: `calc(${bar.left + bar.width}% + 5px)` }} title={title}>{text}</span>}
-      {side === "left" && <span className="wk-hm-blabel" style={{ right: `calc(${100 - bar.left}% + 5px)` }} title={title}>{text}</span>}
+      {side === "right" && <span className="wk-hm-blabel" style={{ left: `calc(${bar.left + bar.width}% + 6px)` }} title={title}>{text}</span>}
+      {side === "left" && <span className="wk-hm-blabel" style={{ right: `calc(${100 - bar.left}% + 6px)` }} title={title}>{text}</span>}
     </>
   );
 }
 
-/** The plans on one timeline: a line per model with what is under way and next, a bar per event under it, today marked. */
+/**
+ * The plans on one timeline: a header line per model (what is under way, what is next, late tasks, tasks done), a bar per
+ * event with how much of it is done, and a thin bar per task under it; months shaded in turn and today marked.
+ */
 function PlanTimeline(props: { plans: PlanBrief[]; today: string; onOpen: (model: string, tab: "plan") => void }) {
   const range = timelineRange(props.plans, props.today);
   const months = range ? timelineMonths(range) : [];
   const todayAt = range ? barAt([props.today, props.today], range) : null;
+  const todayLeft = todayAt ? `${todayAt.left + todayAt.width / 2}%` : "";
   const track = (children?: ReactNode) => (
     <div className="wk-hm-track">
-      {months.map(([m, left, width]) => <span key={m} className="wk-hm-grid" style={{ left: `${left}%`, width: `${width}%` }} />)}
-      {todayAt && <span className="wk-hm-today" style={{ left: `${todayAt.left + todayAt.width / 2}%` }} />}
+      {months.map(([m, left, width], i) => <span key={m} className={"wk-hm-band" + (i % 2 ? " alt" : "")} style={{ left: `${left}%`, width: `${width}%` }} />)}
+      {todayAt && <span className="wk-hm-today" style={{ left: todayLeft }} />}
       {children}
     </div>
   );
@@ -151,42 +160,79 @@ function PlanTimeline(props: { plans: PlanBrief[]; today: string; onOpen: (model
   return (
     <div className="wk-hm-plan">
       <div className="wk-hm-row head">
-        <div className="wk-hm-label" />
+        <div className="wk-hm-label">Model · event · task</div>
         <div className="wk-hm-track">
-          {months.map(([m, left, width]) => (
-            <span key={m} className="wk-hm-month" style={{ left: `${left}%`, width: `${width}%` }}>{m.replace("-", "/")}</span>
+          {months.map(([m, left, width], i) => (
+            <span key={m} className={"wk-hm-month" + (i % 2 ? " alt" : "")} style={{ left: `${left}%`, width: `${width}%` }}>
+              {width >= 4 && m.replace("-", "/")}
+            </span>
           ))}
-          {todayAt && <span className="wk-hm-today-l" style={{ left: `${todayAt.left + todayAt.width / 2}%` }}>Today</span>}
+          {todayAt && <span className="wk-hm-today-l" style={{ left: todayLeft }}>Today {slashDate(props.today).slice(5)}</span>}
         </div>
       </div>
-      {props.plans.map((p) => (
-        <div key={p.name} className="wk-hm-model">
-          <div className="wk-hm-row">
-            <div className="wk-hm-label">
+      {props.plans.map((p) => {
+        const done = p.events.reduce((n, e) => n + e.done, 0), total = p.events.reduce((n, e) => n + e.total, 0);
+        return (
+          <div key={p.name} className="wk-hm-model">
+            <div className="wk-hm-mhead">
               <button className="wk-hm-link" onClick={() => props.onOpen(p.name, "plan")} title="Open the Dev Plan">{p.name}</button>
               {p.phase && <span className="wk-phase">{p.phase}</span>}
+              {p.path.length > 0 && <span className="wk-hm-path">{p.path.join(" › ")}</span>}
+              <span className="wk-hm-facts">
+                <span className="wk-hm-fact"><i>Now</i>{p.now.length ? p.now.map((e) => e.name).join(", ") : "—"}</span>
+                <span className="wk-hm-fact"><i>Next</i>{p.next ? `${p.next.name} · ${slashDate(p.next.span![0])}` : "—"}</span>
+                {total > 0 && (
+                  <span className="wk-hm-fact"><i>Tasks</i>{done}/{total}
+                    <span className="wk-hm-meter"><span style={{ width: `${(done / total) * 100}%` }} /></span>
+                  </span>
+                )}
+                {p.lateTasks > 0 && <span className="wk-open">{p.lateTasks} late task{p.lateTasks > 1 ? "s" : ""}</span>}
+              </span>
             </div>
-            <div className="wk-hm-sum">
-              <span>Now: <b>{p.now.length ? p.now.map((e) => e.name).join(", ") : "—"}</b></span>
-              <span>Next: <b>{p.next ? `${p.next.name} ${slashDate(p.next.span![0])}` : "—"}</b></span>
-              {p.lateTasks > 0 && <span className="wk-open">{p.lateTasks} late task{p.lateTasks > 1 ? "s" : ""}</span>}
-            </div>
-          </div>
-          {p.events.map((e) => {
-            const bar = e.span && range ? barAt(e.span, range) : null;
-            return (
-              <div key={e.id} className="wk-hm-row ev">
-                <div className="wk-hm-label">
-                  <span className="wk-hm-dot" style={{ background: e.color }} />
-                  <span className="wk-hm-ev" title={e.name}>{e.name}</span>
-                  <span className={"wk-hm-st " + e.state}>{STATE_LABEL[e.state]}</span>
+            {p.events.map((e) => {
+              const bar = e.span && range ? barAt(e.span, range) : null;
+              const title = `${e.name}: ${spanText(e)}${e.total ? ` · ${e.done}/${e.total} tasks done` : ""}`;
+              return (
+                <div key={e.id} className="wk-hm-event">
+                  <div className="wk-hm-row ev">
+                    <div className="wk-hm-label">
+                      <span className="wk-hm-dot" style={{ background: e.color }} />
+                      <span className="wk-hm-ev" title={e.name}>{e.name}</span>
+                      {e.total > 0 && <span className="wk-hm-count">{e.done}/{e.total}</span>}
+                      <span className={"wk-hm-st " + e.state}>{STATE_LABEL[e.state]}</span>
+                    </div>
+                    {track(bar && (
+                      <Bar className={"wk-hm-bar " + e.state} bar={bar} title={title} style={{ background: tint(e.color, "33"), borderColor: e.color }}
+                        text={`${spanText(e)}${e.total > 0 ? ` · ${e.done}/${e.total}` : ""}`}>
+                        {e.total > 0 && <span className="wk-hm-fill" style={{ width: `${(e.done / e.total) * 100}%`, background: e.color }} />}
+                      </Bar>
+                    ))}
+                  </div>
+                  {e.tasks.map((t) => {
+                    const tb = t.span && range ? barAt(t.span, range) : null;
+                    const state = t.done ? "done" : t.late ? "late" : "open";
+                    return (
+                      <div key={t.id} className={"wk-hm-row task " + state}>
+                        <div className="wk-hm-label">
+                          <span className={"wk-hm-check " + state}>{t.done ? "✓" : ""}</span>
+                          <span className="wk-hm-task" title={t.name}>{t.name}</span>
+                          {t.owner && <span className="wk-hm-owner" title="Owner">{t.owner}</span>}
+                          {t.late && <span className="wk-hm-st late">Late</span>}
+                          {!t.span && <span className="wk-hm-st undated">No date</span>}
+                        </div>
+                        {track(tb && (
+                          <Bar beside className={"wk-hm-tbar " + state} bar={tb} text={taskSpanText(t)} title={`${t.name}: ${taskSpanText(t)}${t.owner ? ` · ${t.owner}` : ""}${t.done ? " · done" : ""}`}
+                            style={t.done ? { background: e.color, borderColor: e.color } : { background: tint(e.color, "26"), borderColor: e.color }} />
+                        ))}
+                      </div>
+                    );
+                  })}
                 </div>
-                {track(bar && <EventBar e={e} bar={bar} />)}
-              </div>
-            );
-          })}
-        </div>
-      ))}
+              );
+            })}
+          </div>
+        );
+      })}
     </div>
   );
 }
