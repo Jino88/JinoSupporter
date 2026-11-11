@@ -125,14 +125,7 @@ public static class WorkingEndpoints
                 return Results.Ok(WorkingBmesService.Empty(name, "The BMES login is not configured in Setting."));
             try
             {
-                var opened = await BmesWebSession.OpenAsync(settings.LoginId, settings.Password, new BmesWebSessionOptions
-                {
-                    Timeout = TimeSpan.FromSeconds(120),
-                    AutomaticDecompression = System.Net.DecompressionMethods.All,
-                }, cancellationToken: ct);
-                if (opened.Session is not { } session)
-                    return Results.Ok(WorkingBmesService.Empty(name, "BMES login failed: " + opened.Diagnostic));
-                using var _ = session;
+                using var session = await BmesGateway.OpenBomSessionAsync(settings, ct);
                 var (rows, error) = await BmesGateway.FetchBomAsync(session, WorkingBmesService.Plant, name, cancellationToken: ct);
                 if (rows is null) return Results.Ok(WorkingBmesService.Empty(name, error));
                 var query = new BmesBomCacheQuery(name, WorkingBmesService.Plant, DateTime.Today,

@@ -222,6 +222,22 @@ BmesApiResult Load(string name) => BmesToolRows.ParseExecuteResponse(Fixture(nam
     Check(threw, "BOM: result false -> error with the BMES message");
     Check(BmesGateway.BomHeadersFromLookup("{\"result\":false,\"message\":\"[IVDT_M_018] No result found\",\"data\":null}").Count == 0,
         "BOM: lookup 'No result found' (answered for an unknown model) -> no headers, not an error");
+
+    // BOM & Drawing page: the model BMES found for the typed name comes before the fuzzy local names
+    var products = BmesGateway.BomProducts(headers);
+    Check(products.Select(h => h.Code).SequenceEqual(["P-M-250001100", "S-M-250001200"]), "BOM: only P- / S- items are offered as models");
+    var local = new List<PortalGNLAB.Web.Components.Pages.BmesTest5Page.ModelSuggestion>
+    {
+        new("MSM-S711B", "P-M-070056800", "catalog", ""),
+        new("MSM-X626B-TOP", "P-M-250001000", "catalog", ""),
+        new("msm-x626b-bottom", "", "cache", ""),
+    };
+    var merged = PortalGNLAB.Web.Components.Pages.BmesTest5Page.WithBmesSuggestions("MSM-X626B-BOTTOM", local, products);
+    Check(merged[0].Name == "msm-x626b-bottom" && merged.Count(m => m.Name.Equals("MSM-X626B-BOTTOM", StringComparison.OrdinalIgnoreCase)) == 1,
+        "BOM: exact name first, a local entry kept over the BMES one");
+    var mergedNew = PortalGNLAB.Web.Components.Pages.BmesTest5Page.WithBmesSuggestions("MSM-X626B-BOTTOM", local.Take(2), products);
+    Check(mergedNew[0] is { Name: "MSM-X626B-BOTTOM", ProductCode: "P-M-250001100", Source: "bmes" } && mergedNew.Any(m => m.Name == "S-MSM-X626B-BOTTOM"),
+        "BOM: a model only BMES has is offered on top");
 }
 
 // -- shared helpers -----------------------------------------------------------

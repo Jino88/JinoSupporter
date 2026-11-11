@@ -58,6 +58,29 @@ public static partial class BmesGateway
         return BomHeadersFromLookup(json);
     }
 
+    /// <summary>A BMES web session for the BOM screen with the Setting login; throws when it is not configured.</summary>
+    public static async Task<BmesWebSession> OpenBomSessionAsync(NgRateSettingsService settings, CancellationToken cancellationToken = default)
+    {
+        if (!settings.IsCredentialsConfigured)
+            throw new InvalidOperationException("The BMES login is not configured in Setting.");
+        var opened = await BmesWebSession.OpenAsync(settings.LoginId, settings.Password, new BmesWebSessionOptions
+        {
+            Timeout = TimeSpan.FromSeconds(120),
+            AutomaticDecompression = System.Net.DecompressionMethods.All,
+        }, cancellationToken: cancellationToken);
+        return opened.Session ?? throw new InvalidOperationException("BMES login failed: " + opened.Diagnostic);
+    }
+
+    /// <summary>
+    /// The P- / S- items of a lookup as (code, name), one per code, items without a name left out; at most
+    /// <paramref name="max"/>.
+    /// </summary>
+    public static List<BmesBomHeader> BomProducts(IEnumerable<BmesBomHeader> headers, int max = 50) => headers
+        .Where(h => IsBomProductCode(h.Code) && h.Name.Length > 0)
+        .DistinctBy(h => h.Code, StringComparer.OrdinalIgnoreCase)
+        .Take(max)
+        .ToList();
+
     /// <summary>P- (product) or S- (semi-product) SAP code: the only items a BOM is looked up for.</summary>
     public static bool IsBomProductCode(string code) =>
         code.StartsWith("P-", StringComparison.OrdinalIgnoreCase) || code.StartsWith("S-", StringComparison.OrdinalIgnoreCase);

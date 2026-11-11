@@ -141,17 +141,6 @@ public static class BmesReportEndpoints
         return group;
     }
 
-    /// <summary>A BMES web session for the BOM screen (MES071050) with the Setting login; throws when it cannot log in.</summary>
-    private static async Task<BmesWebSession> OpenBomSessionAsync(NgRateSettingsService settings, CancellationToken ct)
-    {
-        var opened = await BmesWebSession.OpenAsync(settings.LoginId, settings.Password, new BmesWebSessionOptions
-        {
-            Timeout = TimeSpan.FromSeconds(120),
-            AutomaticDecompression = System.Net.DecompressionMethods.All,
-        }, cancellationToken: ct);
-        return opened.Session ?? throw new InvalidOperationException("BMES login failed: " + opened.Diagnostic);
-    }
-
     private static IResult BadRequest(string message) => Results.Json(new { error = message }, statusCode: StatusCodes.Status400BadRequest);
 
     public static IEndpointRouteBuilder MapBmesReports(this IEndpointRouteBuilder app)
@@ -496,12 +485,9 @@ public static class BmesReportEndpoints
                 return Results.Ok(new { models = Array.Empty<object>(), error = "The BMES login is not configured in Setting." });
             try
             {
-                using var session = await OpenBomSessionAsync(settings, ct);
+                using var session = await BmesGateway.OpenBomSessionAsync(settings, ct);
                 var headers = await BmesGateway.LookupBomHeadersAsync(session, string.IsNullOrWhiteSpace(plant) ? "3200" : plant.Trim(), q, ct);
-                var models = headers
-                    .Where(h => BmesGateway.IsBomProductCode(h.Code) && h.Name.Length > 0)
-                    .DistinctBy(h => h.Code, StringComparer.OrdinalIgnoreCase)
-                    .Take(50)
+                var models = BmesGateway.BomProducts(headers)
                     .Select(h => new { productCode = h.Code, productName = h.Name })
                     .ToList();
                 return Results.Ok(new { models, error = "" });
@@ -565,7 +551,7 @@ public static class BmesReportEndpoints
                         }
 
                         // the BMES BOM screen (MES071050) gives the whole current tree; Depth cuts it here
-                        session ??= await OpenBomSessionAsync(settings, CancellationToken.None);
+                        session ??= await BmesGateway.OpenBomSessionAsync(settings);
                         var (tree, error) = await BmesGateway.FetchBomAsync(session, plant.Length > 0 ? plant : "3200", model);
                         if (tree is null)
                         {
