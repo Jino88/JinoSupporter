@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   addMaterial, addMaterials, aiAnswer, blankProcess, bomMaterials, deleteMaterial, emptyManual, fromProductionInput, moveProcess, ngFromText, processProblem, putMaterial, readManual,
-  editProcess, saveProcess, usage,
+  editProcess, keepSubTables, readSubManual, saveProcess, shownTable, usage,
 } from "./manual";
 import type { ManualProcess } from "./manual";
 
@@ -106,6 +106,32 @@ describe("model group entered by hand", () => {
     expect(next.processes.map((p) => [p.name, p.localName])).toEqual([["AOI 1", ""], ["SPK Assy ", " Tổ hợp"]]);
     expect(next.processes[0]).toBe(a);
     expect(editProcess(g, proc("Other"))).toEqual(g);
+  });
+
+  it("keeps a process table per sub group, read leniently, and drops the table of a removed sub group", () => {
+    const top = { materials: ["UPPER"], processes: [proc("Bonding")] };
+    const t = readSubManual({ top, bottom: { processes: [{ name: "AOI" }] }, junk: 3 });
+    expect(Object.keys(t)).toEqual(["top", "bottom", "junk"]);
+    expect(t.top).toEqual(top);
+    expect(t.bottom.processes.map((p) => p.name)).toEqual(["AOI"]);
+    expect(t.junk).toEqual(emptyManual());
+    expect(readSubManual(undefined)).toEqual({});
+    expect(readSubManual(["x"])).toEqual({});
+    expect(Object.keys(keepSubTables(t, ["bottom", "top"]))).toEqual(["top", "bottom"]);
+    expect(keepSubTables({ top, bottom: top }, ["top", "bottom"])).toEqual({ top, bottom: top });
+    const same = { top };
+    expect(keepSubTables(same, ["top"])).toBe(same);
+  });
+
+  it("shows the table of the sub group picked, the model's only while there is no sub group or it has something", () => {
+    const filled = { materials: ["MSU-L20S15-07"], processes: [] };
+    expect(shownTable(null, [], emptyManual())).toEqual({ at: "", model: true });
+    expect(shownTable(null, ["top", "bottom"], emptyManual())).toEqual({ at: "top", model: false });
+    expect(shownTable("bottom", ["top", "bottom"], emptyManual())).toEqual({ at: "bottom", model: false });
+    expect(shownTable("", ["top", "bottom"], emptyManual())).toEqual({ at: "top", model: false });
+    expect(shownTable("gone", ["top", "bottom"], emptyManual()).at).toBe("top");
+    expect(shownTable(null, ["top"], filled)).toEqual({ at: "", model: true });
+    expect(shownTable("top", ["top"], filled)).toEqual({ at: "top", model: true });
   });
 
   it("reads a saved group leniently", () => {

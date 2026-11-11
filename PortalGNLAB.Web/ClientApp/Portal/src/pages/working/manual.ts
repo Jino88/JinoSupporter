@@ -158,6 +158,32 @@ export function aiAnswer(g: ManualGroup, answer: unknown): { group: ManualGroup;
   };
 }
 
+export const isEmptyManual = (g: ManualGroup) => !g.processes.length && !g.materials.length;
+
+/** The process tables of the sub-groups of a temporary model group (info.subManual), by sub-group id, read leniently. */
+export function readSubManual(v: unknown): Record<string, ManualGroup> {
+  const out: Record<string, ManualGroup> = {};
+  if (v && typeof v === "object" && !Array.isArray(v)) for (const [id, g] of Object.entries(v)) out[id] = readManual(g);
+  return out;
+}
+
+/**
+ * Which process table is shown ("" = the model's, else a sub-group id). The model's table is offered while there is no
+ * sub-group or it already has something; the one picked is kept while it is offered, else the first offered.
+ */
+export function shownTable(picked: string | null, subIds: string[], modelTable: ManualGroup): { at: string; model: boolean } {
+  const model = !subIds.length || !isEmptyManual(modelTable);
+  const offered = [...(model ? [""] : []), ...subIds];
+  return { at: picked !== null && offered.includes(picked) ? picked : offered[0], model };
+}
+
+/** The tables of the sub-groups still there (a removed sub-group's table goes with it); the same object if none went. */
+export function keepSubTables(t: Record<string, ManualGroup>, ids: string[]): Record<string, ManualGroup> {
+  const gone = Object.keys(t).filter((id) => !ids.includes(id));
+  if (!gone.length) return t;
+  return Object.fromEntries(Object.entries(t).filter(([id]) => ids.includes(id)));
+}
+
 /** A saved group read leniently (older or hand-edited JSON). */
 export function readManual(v: unknown): ManualGroup {
   const g = (v && typeof v === "object" ? v : {}) as Partial<ManualGroup>;

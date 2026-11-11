@@ -50,7 +50,13 @@ function SubName(props: { value: string; onKeep: (name: string) => boolean }) {
  * Temporary model group of a model BMES > Make Model Group cannot make (not in BMES yet): the Model › Sub Group ›
  * Shift Group tree as that page shows it, made here by hand and saved with the model information.
  */
-export default function TempGroupEdit(props: { modelName: string; value: Group; onChange: (g: Group) => void; onError: (e: unknown) => void }) {
+export default function TempGroupEdit(props: {
+  modelName: string; value: Group; onChange: (g: Group) => void; onError: (e: unknown) => void;
+  /** Sub-group whose processes and materials are shown below ("" = none); clicking a sub-group picks it. */
+  selected?: string; onSelect?: (id: string) => void;
+  /** Processes in a sub-group's table, told before the sub-group is removed. */
+  processes?: (id: string) => number;
+}) {
   const g = props.value;
   const [known, setKnown] = useState<string[]>([]);
 
@@ -66,14 +72,17 @@ export default function TempGroupEdit(props: { modelName: string; value: Group; 
   };
   const dropSub = (s: TempSub) => {
     const n = subShiftCount(s);
-    if ((n || s.children.length) && !window.confirm(`Remove sub group ${s.name} with its ${n} shift group(s)${s.children.length ? " and sub groups" : ""}?`)) return;
+    const p = props.processes?.(s.id) ?? 0;
+    if ((n || s.children.length || p)
+      && !window.confirm(`Remove sub group ${s.name} with its ${n} shift group(s)${p ? `, ${p} process(es)` : ""}${s.children.length ? " and sub groups" : ""}?`)) return;
     apply(() => removeSub(g, s.id));
   };
   const counts = tempCounts(g);
   const used = new Set(allShifts(g).map((x) => x.toLowerCase()));
 
   const card = (s: TempSub, depth: number) => (
-    <div key={s.id} className="wk-bg-sub">
+    <div key={s.id} className={"wk-bg-sub" + (props.selected === s.id ? " on" : "")} title={props.onSelect ? "Click to show its processes and materials below" : undefined}
+      onClick={(e) => { e.stopPropagation(); props.onSelect?.(s.id); }}>
       <div className="wk-bg-row">
         <span className="wk-bg-badge">Sub Group {depth}</span>
         <SubName value={s.name} onKeep={(n) => apply(() => renameSub(g, s.id, n))} />

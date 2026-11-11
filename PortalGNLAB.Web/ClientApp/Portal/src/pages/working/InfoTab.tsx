@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { workingApi } from "./api";
 import BmesPanel from "./BmesPanel";
-import { readManual } from "./manual";
+import { readManual, readSubManual } from "./manual";
 import { readTempGroup } from "./tempGroup";
 import { PHASES, phaseName, type ModelInfo, type WorkingModel } from "./types";
 
@@ -85,6 +85,7 @@ export default function InfoTab(props: {
           <BmesPanel modelName={model.name} saved={info.bmesMaterial ?? ""} onError={props.onError}
             manual={readManual(info.manualGroup)} onManual={(g) => setInfo((cur) => ({ ...cur, manualGroup: g }))}
             temp={readTempGroup(info.tempGroup)} onTemp={(g) => setInfo((cur) => ({ ...cur, tempGroup: g }))}
+            subManual={readSubManual(info.subManual)} onSubManual={(t) => setInfo((cur) => ({ ...cur, subManual: t }))}
             onPick={(m) => setInfo(({ bmesMaterial: _old, ...rest }) => (m ? { ...rest, bmesMaterial: m } : rest))} />
         </div>
       </section>

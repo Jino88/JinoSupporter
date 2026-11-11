@@ -206,6 +206,10 @@ a.wk-dwg { display: inline-block; margin-right: 6px; font-family: ui-monospace, 
 .wk-tg-add .inp { flex: 1; min-width: 0; max-width: 420px; }
 .wk-tg .wk-bg-shift .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .wk-tg .wk-bg-shift .wk-tg-x, .wk-tg .wk-bg-row .wk-tg-x { padding: 0 2px; font-size: 11px; }
+.wk-tg .wk-bg-sub { cursor: pointer; }
+.wk-tg .wk-bg-sub:hover { border-color: #94a3b8; }
+.wk-tg .wk-bg-sub.on { border: 2px solid var(--accent); padding: 5px 7px; background: #f5f9ff; }
+.wk-tg-tables { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 0 2px; }
 .wk-bg-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 8px; align-items: start; }
 .wk-bg-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .wk-bg-filter .inp { margin-left: 8px; min-width: 200px; }
