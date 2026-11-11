@@ -3,6 +3,8 @@ import { bmesApi, drawingApi, drawingsByName, drawingsOf, matchMaterial, qty, sh
 import type { BmesMaterial, BomResult, PdmRow, SubGroupNode } from "./bmes";
 import ManualGroup from "./ManualGroup";
 import { MANUAL, type ManualGroup as ManualGroupData } from "./manual";
+import TempGroupEdit from "./TempGroupEdit";
+import { hasTempGroup, type TempGroup as TempGroupData } from "./tempGroup";
 
 /** Links to the drawings of a material (opened in a new tab), or a dash. */
 function Drawings(props: { list: PdmRow[] }) {
@@ -188,7 +190,7 @@ function GroupPicker(props: {
       {!list.length && <div className="muted">No BMES model matches.</div>}
       <div className="wk-bg-foot">
         {props.onCancel && <button className="btn sm" onClick={props.onCancel}>Cancel</button>}
-        <button className="wk-link" onClick={props.onManual}>Not in BMES Make Model Group? Enter the processes, NG items and materials by hand</button>
+        <button className="wk-link" onClick={props.onManual}>Not in BMES yet? Make a temporary model group here (sub groups, shift groups, processes, NG items, materials)</button>
       </div>
     </div>
   );
@@ -197,7 +199,8 @@ function GroupPicker(props: {
 /**
  * BMES model group of the model (BMES > Make Model Group), shown inside Model information as that page shows it: found
  * by the model name or picked from the Make Model Group list and saved with the model information, with its sub-groups,
- * shift groups and the BOM of each product. A model BMES does not have can get its group entered by hand.
+ * shift groups and the BOM of each product. A model BMES does not have yet gets a temporary group made here by hand
+ * (Model › Sub Group › Shift Group) with its processes, NG items and materials.
  */
 export default function BmesPanel(props: {
   modelName: string;
@@ -207,6 +210,9 @@ export default function BmesPanel(props: {
   /** Model group entered by hand (Model Info), shown when it is picked or BMES has no group for the model. */
   manual: ManualGroupData;
   onManual: (g: ManualGroupData) => void;
+  /** Model › Sub Group › Shift Group made by hand for a model BMES does not have yet. */
+  temp: TempGroupData;
+  onTemp: (g: TempGroupData) => void;
   onError: (e: unknown) => void;
 }) {
   const [materials, setMaterials] = useState<BmesMaterial[] | null>(null);
@@ -224,7 +230,7 @@ export default function BmesPanel(props: {
   const found = materials && !isManual ? matchMaterial(props.modelName, materials, props.saved) : null;
   const m = found?.material ?? null;
   const shown = m && m.products.includes(product) ? product : m?.products[0] ?? "";
-  const hasManual = props.manual.processes.length > 0 || props.manual.materials.length > 0;
+  const hasManual = props.manual.processes.length > 0 || props.manual.materials.length > 0 || hasTempGroup(props.temp);
   const link = (material: string) => { props.onPick(material); setPicking(false); };
 
   let body;
@@ -233,7 +239,12 @@ export default function BmesPanel(props: {
     body = <GroupPicker modelName={props.modelName} materials={materials} current={m?.material ?? ""} onLink={link}
       onManual={() => link(MANUAL)} onCancel={picking ? () => setPicking(false) : undefined} />;
   } else if (!m) {
-    body = <ManualGroup modelName={props.modelName} value={props.manual} onChange={props.onManual} onError={props.onError} />;
+    body = (
+      <>
+        <TempGroupEdit modelName={props.modelName} value={props.temp} onChange={props.onTemp} onError={props.onError} />
+        <ManualGroup modelName={props.modelName} value={props.manual} onChange={props.onManual} onError={props.onError} />
+      </>
+    );
   } else {
     body = (
       <>
@@ -255,7 +266,7 @@ export default function BmesPanel(props: {
         <h3>BMES model group</h3>
         {materials !== null && !picking && (m || isManual || hasManual) && (
           <span className="wk-bmes-pick">
-            {m ? <>{m.group} › <b>{m.material}</b> · {found?.by === "saved" ? "linked in Model Info" : "same name"}</> : "Entered by hand"}
+            {m ? <>{m.group} › <b>{m.material}</b> · {found?.by === "saved" ? "linked in Model Info" : "same name"}</> : "Temporary group, entered by hand"}
             <button className="btn sm" onClick={() => setPicking(true)}>Change link</button>
           </span>
         )}

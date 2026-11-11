@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { workingApi } from "./api";
 import BmesPanel from "./BmesPanel";
 import { readManual } from "./manual";
+import { readTempGroup } from "./tempGroup";
 import { PHASES, phaseName, type ModelInfo, type WorkingModel } from "./types";
 
 /** Model info with an old phase name (Proto, EVT …) shown as the current one; saving writes the new name. */
@@ -83,6 +84,7 @@ export default function InfoTab(props: {
           </div>
           <BmesPanel modelName={model.name} saved={info.bmesMaterial ?? ""} onError={props.onError}
             manual={readManual(info.manualGroup)} onManual={(g) => setInfo((cur) => ({ ...cur, manualGroup: g }))}
+            temp={readTempGroup(info.tempGroup)} onTemp={(g) => setInfo((cur) => ({ ...cur, tempGroup: g }))}
             onPick={(m) => setInfo(({ bmesMaterial: _old, ...rest }) => (m ? { ...rest, bmesMaterial: m } : rest))} />
         </div>
       </section>

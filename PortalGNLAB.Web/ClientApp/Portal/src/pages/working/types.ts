@@ -36,6 +36,8 @@ export interface ModelInfo {
   bmesMaterial?: string;
   /** Processes, NG items and materials entered by hand when BMES has no model group for the model (manual.ts). */
   manualGroup?: unknown;
+  /** Model › Sub Group › Shift Group made by hand for a model BMES does not have yet (tempGroup.ts). */
+  tempGroup?: unknown;
   /** Development plan: events and their detailed schedule (plan.ts). */
   devPlan?: unknown;
 }

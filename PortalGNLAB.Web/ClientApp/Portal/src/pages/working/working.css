@@ -197,6 +197,15 @@ a.wk-dwg { display: inline-block; margin-right: 6px; font-family: ui-monospace, 
 .wk-bg-subs { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 8px; margin-top: 6px; }
 .wk-bg-shifts { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1px 12px; padding: 4px 0 0 10px; }
 .wk-bg-picker { display: flex; flex-direction: column; gap: 8px; }
+.wk-tg { display: flex; flex-direction: column; gap: 6px; }
+.wk-tg .wk-bg-subs { margin-top: 0; }
+.wk-tg-tag { padding: 1px 7px; border-radius: 4px; background: #fffbeb; color: #b45309; font-size: 10.5px; font-weight: 700; }
+.wk-tg-grp { width: 190px; }
+.wk-tg-name { width: 180px; font-weight: 700; }
+.wk-tg-add { display: flex; gap: 6px; margin-top: 4px; }
+.wk-tg-add .inp { flex: 1; min-width: 0; max-width: 420px; }
+.wk-tg .wk-bg-shift .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.wk-tg .wk-bg-shift .wk-tg-x, .wk-tg .wk-bg-row .wk-tg-x { padding: 0 2px; font-size: 11px; }
 .wk-bg-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 8px; align-items: start; }
 .wk-bg-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .wk-bg-filter .inp { margin-left: 8px; min-width: 200px; }
