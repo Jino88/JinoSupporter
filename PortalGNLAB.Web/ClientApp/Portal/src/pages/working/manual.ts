@@ -68,6 +68,24 @@ export function addMaterial(g: ManualGroup, name: string): ManualGroup {
   return { ...g, materials: [...g.materials, n] };
 }
 
+/**
+ * The level-1 materials of a BOM (the product's direct materials) the list does not have yet, each once, in BOM order.
+ * Input: the list and the BOM rows (level 1 = direct material). Output: the names to add.
+ */
+export function bomMaterials(g: ManualGroup, rows: { level: number; materialName: string; materialCode: string }[]): string[] {
+  const out: string[] = [];
+  for (const r of rows) {
+    if (r.level !== 1) continue;
+    const n = (r.materialName || r.materialCode).trim();
+    if (n && !g.materials.some((m) => key(m) === key(n)) && !out.some((x) => key(x) === key(n))) out.push(n);
+  }
+  return out;
+}
+
+/** Adds these names to the end of the material list (ones already there left out). */
+export const addMaterials = (g: ManualGroup, names: string[]): ManualGroup =>
+  names.reduce((cur, n) => (n.trim() && !cur.materials.some((m) => key(m) === key(n)) ? { ...cur, materials: [...cur.materials, n.trim()] } : cur), g);
+
 /** Removes a material from the list and from every process that used it. */
 export const deleteMaterial = (g: ManualGroup, name: string): ManualGroup => ({
   materials: g.materials.filter((m) => key(m) !== key(name)),
