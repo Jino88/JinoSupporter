@@ -160,6 +160,8 @@ export const bmesReportApi = {
     state: (plant: string) => json<Test5State>("GET", "test5/state?plant=" + encodeURIComponent(plant)),
     catalog: (plant: string) => json<ModelCatalog>("GET", "test5/catalog?plant=" + encodeURIComponent(plant)),
     syncCatalog: (plant: string, workDate: string) => json<ModelCatalog>("POST", "test5/catalog/sync", { plant, workDate }),
+    lookup: (text: string, plant: string) =>
+      json<{ models: CatalogModel[]; error: string }>("GET", `test5/lookup?text=${encodeURIComponent(text)}&plant=${encodeURIComponent(plant)}`),
     loadBom: (
       body: { models: string[]; plant: string; workDate: string; maxDepth: number; fromServer: boolean },
       onProgress: (message: string) => void,
