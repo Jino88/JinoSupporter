@@ -7,7 +7,7 @@ const NOISE_PREFIXES = ["M-P", "C-S"];
 const SPLIT = /[ \-_/\\.]/;
 const INT_MAX = 2147483647;
 
-export interface Suggestion { name: string; productCode: string; source: "catalog" | "cache"; hint: string }
+export interface Suggestion { name: string; productCode: string; source: "catalog" | "cache" | "bmes"; hint: string }
 
 export const displayName = (row: BomRow) => (row.materialName.trim() ? row.materialName : row.materialCode);
 export const productLabel = (row: BomRow) => (row.productName.trim() ? row.productName : row.productCode);
@@ -105,6 +105,32 @@ export function localSuggestions(searchText: string, catalog: CatalogModel[], ca
     if (out.length === 10) break;
   }
   return out;
+}
+
+/**
+ * The local suggestions with the P- / S- items BMES found for the text (BOM screen lookup) mixed in, best match
+ * first: the same name once (a local one kept), at most 12.
+ */
+export function withBmesSuggestions(searchText: string, local: Suggestion[], bmes: CatalogModel[]): Suggestion[] {
+  const score = (s: Suggestion) => {
+    if (s.name.toUpperCase() === searchText.trim().toUpperCase()) return -INT_MAX;
+    return catalogMatchScore(searchText, s.name + " " + s.productCode);
+  };
+  const fromBmes = bmes
+    .filter((m) => m.productName.trim())
+    .map((m): Suggestion => ({ name: m.productName, productCode: m.productCode, source: "bmes", hint: `BMES BOM screen: ${m.productCode}` }));
+  const seen = new Set<string>();
+  return [...local, ...fromBmes]
+    .map((s, i) => ({ s, i, score: score(s) }))
+    .sort((a, b) => a.score - b.score || a.i - b.i)
+    .map((x) => x.s)
+    .filter((s) => {
+      const key = s.name.toUpperCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 12);
 }
 
 /** Cached models whose name contains the filter (FilteredCachedModels). */

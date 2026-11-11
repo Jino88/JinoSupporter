@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { BomResult, BomRow } from "../../bmesReportApi";
 import {
   buildStandaloneHtml, byProduct, catalogMatchScore, filterCachedModels, findPdm, formatUnitPrice, formatVnd, hasUsefulModelMatch,
-  isNoiseCode, levenshtein, localSuggestions, matchedProducts, modelMatchScore, normalizeModelSearch, pdmIndex, sanitize, visibleRows,
+  isNoiseCode, levenshtein, localSuggestions, matchedProducts, modelMatchScore, normalizeModelSearch, pdmIndex, sanitize, visibleRows, withBmesSuggestions,
 } from "./test5Logic";
 
 const row = (o: Partial<BomRow>): BomRow => ({
@@ -36,6 +36,20 @@ describe("model search", () => {
     );
     expect(s.map((x) => [x.name, x.source])).toEqual([["X526-L", "catalog"], ["X526-R", "cache"]]);
     expect(localSuggestions(" ", [], [])).toEqual([]);
+  });
+  it("puts the model BMES found for the typed name before the fuzzy local names", () => {
+    const local = localSuggestions("MSM-G778B", [{ productCode: "P-M-070056800", productName: "MSM-S711B" }, { productCode: "P-M-250001200", productName: "MSM-S931B" }], []);
+    const s = withBmesSuggestions("msm-g778b", local, [
+      { productCode: "S-M-250001300", productName: "S-MSM-G778B" },
+      { productCode: "P-M-250001300", productName: "MSM-G778B" },
+      { productCode: "P-M-250001201", productName: "msm-s931b" },
+      { productCode: "P-X", productName: " " },
+    ]);
+    expect(s[0]).toMatchObject({ name: "MSM-G778B", productCode: "P-M-250001300", source: "bmes" });
+    expect(s.filter((x) => x.name.toUpperCase() === "MSM-S931B").map((x) => x.source)).toEqual(["catalog"]);
+    expect(s.map((x) => x.name)).toContain("S-MSM-G778B");
+    expect(s.some((x) => !x.name.trim())).toBe(false);
+    expect(withBmesSuggestions("a", [], Array.from({ length: 20 }, (_, i) => ({ productCode: "P-" + i, productName: "A" + i })))).toHaveLength(12);
   });
   it("filters cached models by containment, case-insensitively", () => {
     expect(filterCachedModels([{ name: "ABC", groups: "" }, { name: "XYZ", groups: "" }], " b ").map((m) => m.name)).toEqual(["ABC"]);

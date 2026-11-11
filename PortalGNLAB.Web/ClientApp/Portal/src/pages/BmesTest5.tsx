@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  bmesReportApi, type BomResult, type CachedModel, type CostRow, type ModelCatalog, type PdmRow,
+  bmesReportApi, type BomResult, type CachedModel, type CatalogModel, type CostRow, type ModelCatalog, type PdmRow,
 } from "../bmesReportApi";
 import { downloadBlob } from "../toolsApi";
 import "../bmesReport.css";
 import { base64ToBlob, isoDate, n0, stamp } from "./bmesReport/format";
 import {
-  buildStandaloneHtml, byProduct, displayName, filterCachedModels, findPdm, formatUnitPrice, formatVnd, localSuggestions,
+  buildStandaloneHtml, byProduct, displayName, filterCachedModels, findPdm, formatUnitPrice, formatVnd, localSuggestions, withBmesSuggestions,
   matchedProducts, pdmIndex, sanitize, visibleRows, type Suggestion,
 } from "./bmesReport/test5Logic";
 
@@ -29,6 +29,8 @@ export default function BmesTest5() {
   const [suppress, setSuppress] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const [bmesFound, setBmesFound] = useState<{ text: string; models: CatalogModel[] }>({ text: "", models: [] });
+  const [looking, setLooking] = useState(false);
 
   const [maxDepth, setMaxDepth] = useState(6);
   const [plant, setPlant] = useState("3200");
@@ -57,6 +59,28 @@ export default function BmesTest5() {
   const shownModels = useMemo(() => filterCachedModels(cached, filter), [cached, filter]);
   const selectedList = useMemo(() => [...selected].sort((a, b) => a.toUpperCase() < b.toUpperCase() ? -1 : 1), [selected]);
   const visible = useMemo(() => results.map((r) => visibleRows(r.rows, hideNoise)), [results, hideNoise]);
+
+  // the P- / S- items BMES has for the typed text (BOM screen lookup), so a model the local names lack is found too
+  useEffect(() => {
+    const text = filter.trim();
+    if (text.length < 3 || suppress) return;
+    let live = true;
+    const timer = setTimeout(() => {
+      setLooking(true);
+      bmesReportApi.test5.lookup(text, plant)
+        .then((r) => {
+          if (!live) return;
+          setBmesFound({ text, models: r.models });
+          if (r.error) setSearchError(r.error);
+        })
+        .catch((e: Error) => { if (live) setSearchError("BMES lookup failed: " + e.message); })
+        .finally(() => { if (live) setLooking(false); });
+    }, 500);
+    return () => { live = false; clearTimeout(timer); };
+  }, [filter, plant, suppress]);
+  const shownSuggestions = useMemo(
+    () => (bmesFound.text === filter.trim() ? withBmesSuggestions(filter, suggestions, bmesFound.models) : suggestions),
+    [bmesFound, filter, suggestions]);
 
   useEffect(() => {
     bmesReportApi.test5.state(plant).then((s) => {
@@ -249,7 +273,7 @@ export default function BmesTest5() {
   const catalogTitle = catalog.models.length === 0
     ? "Fetch BOM-enabled P-S, P-M, P-N, and P-H product codes and model names from BMES, then search them locally."
     : `${n0(catalog.models.length)} local model names · synced ${catalog.syncedAt} · BOM date ${catalog.workDate}`;
-  const showSuggestions = !suppress && (syncing || suggestions.length > 0 || searchHasRun);
+  const showSuggestions = !suppress && (syncing || shownSuggestions.length > 0 || searchHasRun);
 
   return (
     <div className="br-page t5">
@@ -268,7 +292,8 @@ export default function BmesTest5() {
           {showSuggestions && (
             <span className="t5-suggestions">
               {syncing && <span className="t5-suggestion-status"><span className="br-spin" /> Synchronizing model names from BMES once...</span>}
-              {suggestions.map((s) => (
+              {looking && <span className="t5-suggestion-status"><span className="br-spin" /> Searching BMES…</span>}
+              {shownSuggestions.map((s) => (
                 <button key={s.source + s.name} type="button" className="t5-suggestion" title={s.hint} onClick={() => loadSuggested(s)}>
                   <span className="t5-suggestion-main">
                     <span>{s.name}</span>
@@ -276,15 +301,16 @@ export default function BmesTest5() {
                   </span>
                   {cachedNames.has(s.name.toUpperCase())
                     ? <span className="br-badge ok">cached</span>
-                    : s.source === "catalog" ? <span className="br-badge info">local</span> : null}
+                    : s.source === "catalog" ? <span className="br-badge info">local</span>
+                    : s.source === "bmes" ? <span className="br-badge info">BMES</span> : null}
                 </button>
               ))}
-              {!syncing && suggestions.length === 0 && (
+              {!syncing && !looking && shownSuggestions.length === 0 && (
                 <span className={"t5-suggestion-status" + (searchError ? " err" : "")}>
                   {searchError || (catalog.models.length === 0 ? "No local model-name cache. Click Sync model names." : "No cached model name matches.")}
                 </span>
               )}
-              {!syncing && suggestions.length > 0 && searchError && <span className="t5-suggestion-status err">{searchError}</span>}
+              {!syncing && shownSuggestions.length > 0 && searchError && <span className="t5-suggestion-status err">{searchError}</span>}
             </span>
           )}
         </div>

@@ -141,6 +141,17 @@ public static class BmesReportEndpoints
         return group;
     }
 
+    /// <summary>A BMES web session for the BOM screen (MES071050) with the Setting login; throws when it cannot log in.</summary>
+    private static async Task<BmesWebSession> OpenBomSessionAsync(NgRateSettingsService settings, CancellationToken ct)
+    {
+        var opened = await BmesWebSession.OpenAsync(settings.LoginId, settings.Password, new BmesWebSessionOptions
+        {
+            Timeout = TimeSpan.FromSeconds(120),
+            AutomaticDecompression = System.Net.DecompressionMethods.All,
+        }, cancellationToken: ct);
+        return opened.Session ?? throw new InvalidOperationException("BMES login failed: " + opened.Diagnostic);
+    }
+
     private static IResult BadRequest(string message) => Results.Json(new { error = message }, statusCode: StatusCodes.Status400BadRequest);
 
     public static IEndpointRouteBuilder MapBmesReports(this IEndpointRouteBuilder app)
@@ -476,8 +487,33 @@ public static class BmesReportEndpoints
             return Results.Ok(Catalog(bomCache, body.Plant ?? ""));
         });
 
+        // P- / S- items of BMES whose code or name contains the text, from the BOM screen (MES071050) item lookup
+        test5.MapGet("/lookup", async (string? text, string? plant, NgRateSettingsService settings, CancellationToken ct) =>
+        {
+            string q = (text ?? "").Trim();
+            if (q.Length < 2) return Results.Ok(new { models = Array.Empty<object>(), error = "" });
+            if (!settings.IsCredentialsConfigured)
+                return Results.Ok(new { models = Array.Empty<object>(), error = "The BMES login is not configured in Setting." });
+            try
+            {
+                using var session = await OpenBomSessionAsync(settings, ct);
+                var headers = await BmesGateway.LookupBomHeadersAsync(session, string.IsNullOrWhiteSpace(plant) ? "3200" : plant.Trim(), q, ct);
+                var models = headers
+                    .Where(h => BmesGateway.IsBomProductCode(h.Code) && h.Name.Length > 0)
+                    .DistinctBy(h => h.Code, StringComparer.OrdinalIgnoreCase)
+                    .Take(50)
+                    .Select(h => new { productCode = h.Code, productName = h.Name })
+                    .ToList();
+                return Results.Ok(new { models, error = "" });
+            }
+            catch (Exception ex)
+            {
+                return Results.Ok(new { models = Array.Empty<object>(), error = "BMES lookup failed: " + ex.Message });
+            }
+        });
+
         test5.MapPost("/bom", async (BomLoadRequest body, HttpContext ctx, WebRepository repo,
-            BmesFcostActualService fcostActual, BmesBomCacheService bomCache, AppPathsService paths, AppActivityLogger activity) =>
+            NgRateSettingsService settings, BmesBomCacheService bomCache, AppActivityLogger activity) =>
         {
             List<string> models = (body.Models ?? [])
                 .Where(m => !string.IsNullOrWhiteSpace(m))
@@ -488,7 +524,7 @@ public static class BmesReportEndpoints
 
             string plant = (body.Plant ?? "").Trim();
             int depth = Math.Clamp(body.MaxDepth, 1, 12);
-            var connection = BuildNetworkDbConnection(paths);
+            BmesWebSession? session = null;
 
             await Stream(ctx, async writer =>
             {
@@ -522,21 +558,21 @@ public static class BmesReportEndpoints
                             }
                         }
 
-                        if (string.IsNullOrWhiteSpace(connection.Server) || string.IsNullOrWhiteSpace(connection.UserId))
+                        if (!settings.IsCredentialsConfigured)
                         {
-                            results.Add(BomResult(model, [], "No local cache and the network DB connection is not configured.", "", "", ""));
+                            results.Add(BomResult(model, [], "No local cache and the BMES login is not configured in Setting.", "", "", ""));
                             continue;
                         }
 
-                        var rows = await fcostActual.FetchBomTreeAsync(new BmesBomMaterialQuery
+                        // the BMES BOM screen (MES071050) gives the whole current tree; Depth cuts it here
+                        session ??= await OpenBomSessionAsync(settings, CancellationToken.None);
+                        var (tree, error) = await BmesGateway.FetchBomAsync(session, plant.Length > 0 ? plant : "3200", model);
+                        if (tree is null)
                         {
-                            Connection = connection,
-                            ModelName = model,
-                            Plant = plant,
-                            MaxRows = MaxBomRowsPerModel,
-                            MaxDepth = depth,
-                            WorkDate = body.WorkDate,
-                        });
+                            results.Add(BomResult(model, [], error, "", "", ""));
+                            continue;
+                        }
+                        var rows = tree.Where(r => r.BomLevel <= depth).Take(MaxBomRowsPerModel).ToList();
 
                         try
                         {
@@ -558,6 +594,7 @@ public static class BmesReportEndpoints
                     }
                 }
 
+                session?.Dispose();
                 activity.Log("BOM & Drawing", $"BOM models={results.Count} cache={cacheLoads} server={serverLoads}");
                 return new { results, cacheLoads, serverLoads, cachedModels = CachedModelEntries(repo, bomCache) };
             });

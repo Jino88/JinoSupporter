@@ -27,9 +27,7 @@ public static partial class BmesGateway
             return (null, loginError);
 
         progress?.Report("Calling MES071050/SearchLOOKUP…");
-        string lookup = await PostJsonAsync(session, "/MES071050/SearchLOOKUP",
-            new { Condition = new { WERKS = plant, MATNR = product } }, cancellationToken);
-        BmesBomHeader? header = PickBomHeader(BomHeadersFromLookup(lookup), product);
+        BmesBomHeader? header = PickBomHeader(await LookupBomHeadersAsync(session, plant, product, cancellationToken), product);
         if (header is null)
             return (null, $"MES071050 has no P- or S- BOM for {product} in plant {plant}.");
 
@@ -44,6 +42,25 @@ public static partial class BmesGateway
         }, cancellationToken);
         return (BomRowsFromList(list), "");
     }
+
+    /// <summary>
+    /// MES071050/SearchLOOKUP — the BOM headers whose code or name contains <paramref name="text"/> (the screen's
+    /// item popup; BMES answers at most 1000). Session must be logged in (<see cref="FetchBomAsync"/>) or is
+    /// logged in here.
+    /// </summary>
+    public static async Task<List<BmesBomHeader>> LookupBomHeadersAsync(
+        BmesWebSession session, string plant, string text, CancellationToken cancellationToken = default)
+    {
+        if (await WebLoginErrorAsync(session, null, cancellationToken) is { } loginError)
+            throw new InvalidOperationException(loginError);
+        string json = await PostJsonAsync(session, "/MES071050/SearchLOOKUP",
+            new { Condition = new { WERKS = plant, MATNR = text } }, cancellationToken);
+        return BomHeadersFromLookup(json);
+    }
+
+    /// <summary>P- (product) or S- (semi-product) SAP code: the only items a BOM is looked up for.</summary>
+    public static bool IsBomProductCode(string code) =>
+        code.StartsWith("P-", StringComparison.OrdinalIgnoreCase) || code.StartsWith("S-", StringComparison.OrdinalIgnoreCase);
 
     private static async Task<string> PostJsonAsync(BmesWebSession session, string path, object body, CancellationToken cancellationToken)
     {
@@ -91,7 +108,7 @@ public static partial class BmesGateway
     {
         string want = product.Trim();
         var sap = headers
-            .Where(h => h.Code.StartsWith("P-", StringComparison.OrdinalIgnoreCase) || h.Code.StartsWith("S-", StringComparison.OrdinalIgnoreCase))
+            .Where(h => IsBomProductCode(h.Code))
             .OrderBy(h => h.Code.StartsWith("P-", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
             .ThenBy(h => h.Alternative, StringComparer.Ordinal)
             .ToList();
