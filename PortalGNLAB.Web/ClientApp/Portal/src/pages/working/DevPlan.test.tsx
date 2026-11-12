@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { EventEdit } from "./DevPlan";
+import { addDays } from "../productionInput/logic";
+import { EventEdit, Gantt } from "./DevPlan";
 import type { PlanEvent } from "./plan";
 
 const event = (f: Partial<PlanEvent>): PlanEvent =>
@@ -22,5 +23,17 @@ describe("event dates as yyyy/mm/dd", () => {
     const html = renderToStaticMarkup(<EventEdit value={event({})} onKeep={() => {}} onCancel={() => {}} />);
     const y = String(new Date().getFullYear());
     expect(years(html)).toEqual([`Start ${y}`, `End ${y}`]);
+  });
+});
+
+describe("calendar with an event's quantities open", () => {
+  const rows = [{ id: "a", label: "LPR", sub: "", color: "#4f46e5", span: ["2026-11-17", "2026-11-20"] as [string, string] }];
+  const days = Array.from({ length: 45 }, (_, i) => addDays("2026-11-09", i));
+  it("widens the day columns for quantities (scrolls) instead of fitting a short calendar to the width", () => {
+    const shut = renderToStaticMarkup(<Gantt rows={rows} days={days} />);
+    expect(shut).toContain('class="wk-gantt fill"');
+    const open = renderToStaticMarkup(<Gantt rows={rows} days={days} selected="a" expand={<tr><td>qty</td></tr>} />);
+    expect(open).toContain('class="wk-gantt qopen"');
+    expect(open).not.toContain(" fill");
   });
 });

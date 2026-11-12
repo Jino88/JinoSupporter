@@ -17,15 +17,16 @@ const dates = (span: [string, string] | null) => (span ? (span[0] === span[1] ? 
 
 /**
  * Horizontal calendar: a column per day, a row per item, the days of each item filled in its color. `expand` (rows of
- * the same day columns) opens right under the selected row.
+ * the same day columns) opens right under the selected row; its day columns are then wide enough for a quantity
+ * ("1,000"), so the calendar scrolls instead of fitting the width.
  */
-function Gantt(props: { rows: Row[]; days: string[]; selected?: string; onPick?: (id: string) => void; expand?: ReactNode }) {
+export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; onPick?: (id: string) => void; expand?: ReactNode }) {
   const today = localToday();
   const { rows, days } = props;
   return (
     <div className="wk-gantt-wrap">
-      {/* a short calendar fills the width; a long one scrolls */}
-      <table className={"wk-gantt" + (days.length <= 60 ? " fill" : "") + (props.expand ? " qopen" : "")}>
+      {/* a short calendar fills the width; a long one, or one with quantities open, scrolls */}
+      <table className={"wk-gantt" + (props.expand ? " qopen" : days.length <= 60 ? " fill" : "")}>
         <thead>
           <tr>
             <th className="nm" rowSpan={2}></th>
