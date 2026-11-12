@@ -1,5 +1,6 @@
 import { loginUrl } from "../../api";
 import { getJson, toolPath, toolSend } from "../../toolsApi";
+import type { placeRequest } from "./aiPlace";
 import type { ManualGroup } from "./manual";
 import type { Entry, EntryFields, EntryLog, GroupsResponse, LogFields, ModelInfo, WorkingImage, WorkingModel } from "./types";
 
@@ -55,5 +56,8 @@ export const workingApi = {
   /** The hand-entered process table changed by AI as the request says (not saved; Save keeps it). */
   manualAi: (name: string, request: string, group: ManualGroup, signal?: AbortSignal) =>
     toolSend<{ group: unknown; note: string; model: string }>(`${model(name)}/manual/ai`, { request, group }, "POST", signal),
+  /** Text placed by AI into Model Info, Dev Plan and new entries (aiPlace.ts); nothing is saved here. */
+  placeAi: (name: string, request: ReturnType<typeof placeRequest>, signal?: AbortSignal) =>
+    toolSend<unknown>(`${model(name)}/ai/place`, request, "POST", signal),
   imageUrl: (imageId: string) => toolPath(`${base}/images/${encodeURIComponent(imageId)}`),
 };

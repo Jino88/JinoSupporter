@@ -57,6 +57,13 @@ public static class WorkingEndpoints
             cts.CancelAfter(TimeSpan.FromMinutes(3));
             return Results.Ok(await ai.EditAsync(ModelName(name), body, cts.Token));
         });
+        // AI tab: AI decides where free text belongs (Model Info / Dev Plan / entries); nothing is saved here
+        api.MapPost("/models/{name}/ai/place", async (string name, PlaceAiRequest body, WorkingPlaceAiService ai, HttpContext http) =>
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(http.RequestAborted);
+            cts.CancelAfter(TimeSpan.FromMinutes(3));
+            return Results.Ok(await ai.PlaceAsync(ModelName(name), body, cts.Token));
+        }).WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(40L * 1024 * 1024)); // up to 6 pasted pictures as base64
         api.MapPut("/models/{name}", (string name, WorkingModelSave body, WorkingService svc, ClaimsPrincipal user) =>
             Results.Ok(svc.SaveModel(ModelName(name), body, User(user))));
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { localToday } from "./productionInput/logic";
+import AiTab from "./working/AiTab";
 import { workingApi } from "./working/api";
 import DevPlan from "./working/DevPlan";
 import EntryList from "./working/EntryList";
@@ -16,12 +17,13 @@ import TreeManager from "./working/TreeManager";
 import { phaseName, type Entry, type GroupsResponse, type WorkingModel } from "./working/types";
 import "./working/working.css";
 
-type Tab = "info" | "plan" | "devissue" | "dev" | "review" | "all" | "setup" | "issue";
-/** Categories of a model page and the tabs under each (Model Info has none). */
+type Tab = "info" | "plan" | "devissue" | "dev" | "review" | "all" | "setup" | "issue" | "ai";
+/** Categories of a model page and the tabs under each (Model Info and AI have none). */
 const CATEGORIES: { label: string; tabs: [Tab, string][] }[] = [
   { label: "Model Info", tabs: [["info", "Model Info"]] },
   { label: "Development", tabs: [["plan", "Dev Plan"], ["devissue", "Dev Issue"], ["dev", "Dev History"], ["review", "Reviews"], ["all", "Timeline"]] },
   { label: "Mass Production", tabs: [["setup", "Setup Plan"], ["issue", "Issues"]] },
+  { label: "AI", tabs: [["ai", "AI"]] },
 ];
 const categoryOf = (tab: Tab) => CATEGORIES.find((c) => c.tabs.some(([k]) => k === tab))!;
 const isTab = (v: string | null): v is Tab => CATEGORIES.some((c) => c.tabs.some(([k]) => k === v));
@@ -252,6 +254,11 @@ export default function Working() {
                       // a new issue starts in the model's phase when it belongs here, else in MP / no phase
                       newDefaults={{ phase: stage === "mp" ? "MP" : modelPhase === "MP" ? "" : modelPhase }}
                       entries={stageIssues} today={today} onChanged={(list) => onChanged(replaceSome(entries, stageIssues, list))} onError={fail} />
+                  )}
+                  {tab === "ai" && (
+                    <AiTab key={selected} model={model} entries={entries} today={today} onDirty={setInfoDirty}
+                      onSaved={setModel} onAdded={(list) => onChanged([...entries, ...list])}
+                      onOpen={(k) => { setInfoDirty(false); setTab(k); }} onError={fail} />
                   )}
                   {(tab === "dev" || tab === "review" || tab === "all") && (
                     <EntryList key={selected + tab} modelName={selected} kind={tab === "all" ? null : tab}
