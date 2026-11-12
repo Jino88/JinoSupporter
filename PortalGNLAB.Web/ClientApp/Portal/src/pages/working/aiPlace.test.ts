@@ -111,4 +111,56 @@ describe("AI placement answer", () => {
     expect(aiPictures([f("e.png", "image/png"), f("g.png", "image/png")], 5).problem).toBe("Up to 6 pictures can be sent.");
     expect(aiPictures([f("notes.txt", "text/plain")], 6)).toEqual({ files: [], problem: "" });
   });
+
+  it("puts quantities into the Material Plan and Making Plan of an event and takes out the tasks moved there", () => {
+    const lpr: ModelInfo = { devPlan: { events: [{
+      id: "lpr", name: "LPR", start: "2026-11-18", end: "2026-11-20", color: "#4f46e5", bomFrom: "",
+      tasks: [
+        { id: "tf", name: "F-PCB (Free) 720ea GN 입고", start: "2026-11-11", end: "2026-11-11", owner: "", done: false, note: "" },
+        { id: "ts", name: "SPK Assy 500", start: "2026-11-17", end: "2026-11-17", owner: "", done: false, note: "" },
+        { id: "tk", name: "Setup", start: "2026-11-16", end: "", owner: "", done: false, note: "" },
+      ],
+      rows: [
+        { id: "r1", name: "F-PCB-G778B", group: "material", qty: { "2026-11-05": 100 } },
+        { id: "r2", name: "TAPE-G778B", group: "material", qty: { "2026-11-12": 50 } },
+      ],
+    }] } };
+    const a = readPlaceAnswer({ events: [{
+      id: "lpr", name: "", start: "", end: "", tasks: [],
+      rows: [
+        { id: "r1", name: "F-PCB-G778B", group: "material", qty: { "2026-11-11": 720, "11/13": 5, "2026-11-14": -1, "2026-11-15": "9" } },
+        { id: "r2", name: "TAPE-G778B", group: "material", qty: { "2026-11-12": 50 } },
+        { id: "", name: "SPK Assy", group: "assy", qty: { "2026-11-17": 500 } },
+      ],
+      removeTasks: ["tf", "ts", "nope", "tf"],
+    }] });
+    expect(a.events[0].rows.map((r) => [r.group, r.qty])).toEqual([["material", { "2026-11-11": 720 }], ["material", { "2026-11-12": 50 }], ["making", { "2026-11-17": 500 }]]);
+    expect(a.events[0].removeTasks).toEqual(["tf", "ts", "nope"]);
+
+    const items = placeItems(a, lpr);
+    expect(items.map((i) => [i.key, i.title, i.detail, i.change, !!i.remove])).toEqual([
+      ["row.0.0", "Material Plan · F-PCB-G778B", "in LPR · 11/11: 720", true, false],
+      ["row.0.2", "Making Plan · SPK Assy", "in LPR · 11/17: 500", false, false],
+      ["remove.0.0", "F-PCB (Free) 720ea GN 입고", "in LPR · task taken out (2026-11-11)", true, true],
+      ["remove.0.1", "SPK Assy 500", "in LPR · task taken out (2026-11-17)", true, true],
+    ]);
+
+    const ev = readDevPlan(applyPlace(lpr, a, all(items), "2026-11-12").info!.devPlan).events[0];
+    expect(ev.rows.map((r) => [r.id === "r1" || r.id === "r2" ? r.id : "new", r.group, r.name, r.qty])).toEqual([
+      ["r1", "material", "F-PCB-G778B", { "2026-11-05": 100, "2026-11-11": 720 }],
+      ["r2", "material", "TAPE-G778B", { "2026-11-12": 50 }],
+      ["new", "making", "SPK Assy", { "2026-11-17": 500 }],
+    ]);
+    expect(ev.tasks.map((t) => t.name)).toEqual(["Setup"]);
+
+    // a task not picked to take out stays
+    const kept = readDevPlan(applyPlace(lpr, a, new Set(["row.0.0", "remove.0.0"]), "2026-11-12").info!.devPlan).events[0];
+    expect(kept.tasks.map((t) => t.name)).toEqual(["SPK Assy 500", "Setup"]);
+    expect(kept.rows.length).toBe(2);
+  });
+
+  it("sends the quantity plan rows of each event", () => {
+    const withRows: ModelInfo = { devPlan: { events: [{ id: "e", name: "LPR", rows: [{ id: "r", name: "PLATE", group: "material", qty: { "2026-11-11": 3 } }] }] } };
+    expect(placeRequest("", "2026-11-12", withRows, []).events[0].rows).toEqual([{ id: "r", name: "PLATE", group: "material", qty: { "2026-11-11": 3 } }]);
+  });
 });

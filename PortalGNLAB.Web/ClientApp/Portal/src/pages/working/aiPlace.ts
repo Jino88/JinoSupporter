@@ -1,8 +1,8 @@
 // AI tab of a Working model: text typed or pasted is placed by AI (WorkingPlaceAiService) into Model Info fields, Dev Plan
-// events and tasks, or new Dev History / Dev Issue / MP Issue / Review entries. The answer is shown item by item and only
+// events, their tasks and their quantity plans (Material Plan / Making Plan rows), or new Dev History / Dev Issue / MP Issue / Review entries. The answer is shown item by item and only
 // the items kept are saved, with the usual model and entry APIs.
 import { issuesOfStage } from "./logic";
-import { blankEvent, blankTask, readDevPlan, type PlanEvent } from "./plan";
+import { QTY_GROUPS, blankEvent, blankRow, blankTask, monthDayText, readDevPlan, setQty, type PlanEvent, type QtyGroup, type QtyRow } from "./plan";
 import { phaseName, type Entry, type EntryFields, type EntryKind, type ModelInfo } from "./types";
 
 export const INFO_KEYS = ["customer", "build", "phase", "owner", "line", "sopTarget", "note"] as const;
@@ -12,7 +12,13 @@ export const INFO_LABEL: Record<InfoKey, string> = {
 };
 
 export interface PlaceTask { id: string; name: string; start: string; end: string; owner: string; done: boolean }
-export interface PlaceEvent { id: string; name: string; start: string; end: string; tasks: PlaceTask[] }
+/** A Material Plan or Making Plan row of an event: the quantities of the days named (0 clears a day). */
+export interface PlaceRow { id: string; name: string; group: QtyGroup; qty: Record<string, number> }
+export interface PlaceEvent {
+  id: string; name: string; start: string; end: string; tasks: PlaceTask[]; rows: PlaceRow[];
+  /** Tasks of an existing event to take out (moved into its quantity plan). */
+  removeTasks: string[];
+}
 export interface PlaceEntry {
   kind: EntryKind;
   /** Issue: "dev" (Dev Issue) or "mp" (Mass Production Issues); "" for other kinds. */
@@ -40,6 +46,7 @@ export function placeRequest(text: string, today: string, info: ModelInfo, entri
     events: plan.events.map((e) => ({
       id: e.id, name: e.name, start: e.start, end: e.end,
       tasks: e.tasks.map((t) => ({ id: t.id, name: t.name, start: t.start, end: t.end, owner: t.owner, done: t.done })),
+      rows: e.rows.map((r) => ({ id: r.id, name: r.name, group: r.group, qty: r.qty })),
     })),
     entries: entries.map((e) => ({
       id: e.id, kind: e.kind, stage: e.kind === "issue" ? (mp.has(e.id) ? "mp" : "dev") : "", seq: e.seq, date: e.date, title: e.title, status: e.status,
@@ -50,6 +57,15 @@ export function placeRequest(text: string, today: string, info: ModelInfo, entri
 const str = (x: unknown) => (typeof x === "string" ? x.trim() : "");
 const list = (x: unknown) => (Array.isArray(x) ? x : []).filter((v): v is Record<string, unknown> => !!v && typeof v === "object");
 const KINDS: EntryKind[] = ["dev", "issue", "review"];
+const isDay = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d);
+
+/** Quantities read leniently: yyyy-MM-dd days with a number of 0 or more. */
+function readQtyMap(v: unknown): Record<string, number> {
+  const raw = (v && typeof v === "object" && !Array.isArray(v) ? v : {}) as Record<string, unknown>;
+  return Object.fromEntries(Object.entries(raw)
+    .filter((x): x is [string, number] => isDay(x[0]) && typeof x[1] === "number" && Number.isFinite(x[1]) && x[1] >= 0)
+    .sort(([a], [b]) => a.localeCompare(b)));
+}
 
 /** The server answer read leniently. */
 export function readPlaceAnswer(v: unknown): PlaceAnswer {
@@ -62,6 +78,8 @@ export function readPlaceAnswer(v: unknown): PlaceAnswer {
     events: list(a.events).map((e) => ({
       id: str(e.id), name: str(e.name), start: str(e.start), end: str(e.end),
       tasks: list(e.tasks).map((t) => ({ id: str(t.id), name: str(t.name), start: str(t.start), end: str(t.end), owner: str(t.owner), done: t.done === true })),
+      rows: list(e.rows).map((r) => ({ id: str(r.id), name: str(r.name), group: (r.group === "material" ? "material" : "making") as QtyGroup, qty: readQtyMap(r.qty) })),
+      removeTasks: [...new Set((Array.isArray(e.removeTasks) ? e.removeTasks : []).map(str).filter(Boolean))],
     })),
     entries: list(a.entries).filter((e) => KINDS.includes(e.kind as EntryKind) && str(e.title)).map((e) => ({
       kind: e.kind as EntryKind,
@@ -92,17 +110,24 @@ export interface PlaceItem {
   place: Place;
   /** New, or a change of something there already. */
   change: boolean;
+  /** Something there already that is taken out. */
+  remove?: boolean;
   title: string;
   detail: string;
   parent?: string;
 }
 
 const days = (start: string, end: string) => (start ? (end && end !== start ? `${start} – ${end}` : start) : end);
+const groupLabel = (g: QtyGroup) => QTY_GROUPS.find((x) => x.key === g)!.label;
+/** "11/11: 720 · 11/13: 450" (a day cleared shows "cleared"). */
+const qtyText = (qty: Record<string, number>) =>
+  Object.entries(qty).map(([d, n]) => `${monthDayText(d)}: ${n ? n.toLocaleString("en-US") : "cleared"}`).join(" · ");
 
 /**
  * Every item of the answer to show and pick: Model Info fields that change, Dev Plan events (new, or an existing one whose
- * name or days change) and their tasks (new or changed), and the new entries. An existing event with nothing of its own
- * changing has no item; its tasks stand alone.
+ * name or days change), their Material Plan / Making Plan rows (new, or quantities of a row there changed), their tasks
+ * (new or changed) and tasks taken out, and the new entries. An existing event with nothing of its own changing has no
+ * item; its rows and tasks stand alone.
  */
 export function placeItems(answer: PlaceAnswer, info: ModelInfo): PlaceItem[] {
   const out: PlaceItem[] = [];
@@ -126,13 +151,31 @@ export function placeItems(answer: PlaceAnswer, info: ModelInfo): PlaceItem[] {
       out.push({ key: evKey, place: "Dev Plan", change: true, title: e.name || had.name, detail: `${days(had.start, had.end) || "No date"} → ${days(e.start || had.start, e.end || had.end)}` });
       parent = evKey;
     }
+    const where = had ? `in ${had.name} · ` : "";
+    e.rows.forEach((r, j) => {
+      const old = had?.rows.find((x) => x.id && x.id === r.id);
+      if (!old && !r.name) return;
+      if (old && Object.entries(r.qty).every(([d, n]) => (old.qty[d] ?? 0) === n)) return;
+      out.push({
+        key: `row.${i}.${j}`, place: "Dev Plan", change: !!old, parent,
+        title: `${groupLabel(old?.group ?? r.group)} · ${old?.name ?? r.name}`, detail: `${where}${qtyText(r.qty) || "Row only"}`,
+      });
+    });
     e.tasks.forEach((t, j) => {
       if (!t.name) return;
       const old = had?.tasks.find((x) => x.id && x.id === t.id);
       const text = [days(t.start, t.end), t.owner, t.done ? "done" : ""].filter(Boolean).join(" · ");
       out.push({
         key: `task.${i}.${j}`, place: "Dev Plan", change: !!old, parent,
-        title: t.name, detail: `${had ? `in ${had.name} · ` : ""}${text || "No date"}`,
+        title: t.name, detail: `${where}${text || "No date"}`,
+      });
+    });
+    e.removeTasks.forEach((id, k) => {
+      const old = had?.tasks.find((x) => x.id === id);
+      if (!old) return;
+      out.push({
+        key: `remove.${i}.${k}`, place: "Dev Plan", change: true, remove: true,
+        title: old.name, detail: `${where}task taken out${days(old.start, old.end) ? ` (${days(old.start, old.end)})` : ""}`,
       });
     });
   });
@@ -145,8 +188,9 @@ export function placeItems(answer: PlaceAnswer, info: ModelInfo): PlaceItem[] {
 }
 
 /**
- * The model information and new entries with the picked items put in. A task is put in only with its event when the event
- * is new (a new event left out takes its tasks with it); an existing event keeps everything not named in the answer.
+ * The model information and new entries with the picked items put in. A task or row is put in only with its event when the
+ * event is new (a new event left out takes them with it); an existing event keeps everything not named in the answer, a
+ * row there gets the days named set (0 clears one), and the tasks picked to take out go.
  * Input: current info, the answer, the keys kept, today (date of an entry without one). Output: the info to save (or
  * null when it does not change), the entries to add and, for each, the pictures (by number) to save with it.
  */
@@ -167,12 +211,15 @@ export function applyPlace(info: ModelInfo, answer: PlaceAnswer, picked: Set<str
   let planChanged = false;
   answer.events.forEach((e, i) => {
     const tasks = e.tasks.filter((t, j) => t.name && picked.has(`task.${i}.${j}`));
+    const rows = e.rows.filter((_, j) => picked.has(`row.${i}.${j}`));
+    const filled = (r: QtyRow, qty: Record<string, number>) => Object.entries(qty).reduce((x, [d, n]) => setQty(x, d, n), r);
     const at = events.findIndex((x) => x.id && x.id === e.id);
     if (at < 0) {
       if (!e.name || !picked.has(`event.${i}`)) return;
       events = [...events, {
         ...blankEvent(events.length), name: e.name, start: e.start, end: e.end,
         tasks: tasks.map((t) => ({ ...blankTask(), name: t.name, start: t.start, end: t.end, owner: t.owner, done: t.done })),
+        rows: rows.filter((r) => r.name).map((r) => filled(blankRow(r.name, r.group), r.qty)),
       }];
       planChanged = true;
       return;
@@ -188,6 +235,14 @@ export function applyPlace(info: ModelInfo, answer: PlaceAnswer, picked: Set<str
       ev = { ...ev, tasks: ti < 0 ? [...ev.tasks, { ...blankTask(), ...fields }] : ev.tasks.map((x, n) => (n === ti ? { ...x, ...fields } : x)) };
       planChanged = true;
     }
+    for (const r of rows) {
+      const ri = ev.rows.findIndex((x) => x.id && x.id === r.id);
+      if (ri < 0 && !r.name) continue;
+      ev = { ...ev, rows: ri < 0 ? [...ev.rows, filled(blankRow(r.name, r.group), r.qty)] : ev.rows.map((x, n) => (n === ri ? filled(x, r.qty) : x)) };
+      planChanged = true;
+    }
+    const gone = new Set(e.removeTasks.filter((_, k) => picked.has(`remove.${i}.${k}`)));
+    if (ev.tasks.some((t) => gone.has(t.id))) { ev = { ...ev, tasks: ev.tasks.filter((t) => !gone.has(t.id)) }; planChanged = true; }
     events = events.map((x, n) => (n === at ? ev : x));
   });
   if (planChanged) { next = { ...next, devPlan: { ...plan, events } }; changed = true; }
