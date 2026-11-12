@@ -1,12 +1,13 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
+import DateBox from "./DateBox";
 import type { ReactNode } from "react";
 import { WEEKDAYS, localToday, weekday } from "../productionInput/logic";
 import { workingApi } from "./api";
 import { bmesApi } from "./bmes";
 import type { BomRow } from "./bmes";
 import {
-  COLORS, QTY_GROUPS, addBomRows, blankEvent, blankRow, blankTask, calendarDays, eventSpan, inSpan, bomRowNames, monthDayText, monthRuns, moveInGroup, moveTo, planDays, planProblem,
-  progress, readDevPlan, readQty, readYearMonthDay, rowTotal, setQty, taskSpan,
+  COLORS, QTY_GROUPS, addBomRows, blankEvent, blankRow, blankTask, calendarDays, eventSpan, inSpan, bomRowNames, monthRuns, moveInGroup, moveTo, planDays, planProblem,
+  progress, readDevPlan, readQty, rowTotal, setQty, taskSpan,
 } from "./plan";
 import type { DevPlan as Plan, PlanEvent, PlanTask, QtyGroup, QtyRow } from "./plan";
 import type { WorkingModel } from "./types";
@@ -17,15 +18,16 @@ const dates = (span: [string, string] | null) => (span ? (span[0] === span[1] ? 
 
 /**
  * Horizontal calendar: a column per day, a row per item, the days of each item filled in its color. `expand` (rows of
- * the same day columns) opens right under the selected row.
+ * the same day columns) opens right under the selected row; its day columns are then wide enough for a quantity
+ * ("1,000"), so the calendar scrolls instead of fitting the width.
  */
-function Gantt(props: { rows: Row[]; days: string[]; selected?: string; onPick?: (id: string) => void; expand?: ReactNode }) {
+export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; onPick?: (id: string) => void; expand?: ReactNode }) {
   const today = localToday();
   const { rows, days } = props;
   return (
     <div className="wk-gantt-wrap">
-      {/* a short calendar fills the width; a long one scrolls */}
-      <table className={"wk-gantt" + (days.length <= 60 ? " fill" : "") + (props.expand ? " qopen" : "")}>
+      {/* a short calendar fills the width; a long one, or one with quantities open, scrolls */}
+      <table className={"wk-gantt" + (props.expand ? " qopen" : days.length <= 60 ? " fill" : "")}>
         <thead>
           <tr>
             <th className="nm" rowSpan={2}></th>
@@ -222,9 +224,9 @@ export function EventEdit(props: { value: PlanEvent; onKeep: (e: PlanEvent) => v
     <div className="wk-dp-form">
       <input className="inp sm" value={e.name} placeholder="Event, e.g. DR build" autoFocus aria-label="Event name"
         onChange={(x) => setE({ ...e, name: x.target.value })} />
-      <DayInput value={e.start} label="Start" onChange={(start) => setE({ ...e, start })} />
+      <DateBox className="sm" value={e.start} label="Start" onChange={(start) => setE({ ...e, start })} />
       <span className="muted">–</span>
-      <DayInput value={e.end} label="End" onChange={(end) => setE({ ...e, end })} />
+      <DateBox className="sm" value={e.end} label="End" onChange={(end) => setE({ ...e, end })} />
       <span className="wk-dp-colors">
         {COLORS.map((c) => (
           <button key={c} className={"sw" + (c === e.color ? " on" : "")} style={{ background: c }} aria-label={"Color " + c}
@@ -239,25 +241,6 @@ export function EventEdit(props: { value: PlanEvent; onKeep: (e: PlanEvent) => v
   );
 }
 
-/**
- * Date box of an event or task as yyyy/mm/dd: a year box (this year, or the year of a date already set) and a month/day
- * box. Something that is not a day is passed on as typed, so the event or task shows it must be a date.
- */
-function DayInput(props: { value: string; label: string; onChange: (v: string) => void }) {
-  const [year, setYear] = useState(/^\d{4}-/.test(props.value) ? props.value.slice(0, 4) : localToday().slice(0, 4));
-  const [text, setText] = useState(monthDayText(props.value));
-  const change = (y: string, md: string) => props.onChange(readYearMonthDay(y, md) ?? `${y}/${md}`);
-  return (
-    <span className="wk-dp-day">
-      <input className="inp sm yr" value={year} inputMode="numeric" maxLength={4} aria-label={props.label + " year"}
-        onChange={(x) => { setYear(x.target.value); change(x.target.value, text); }} />
-      <span className="y">/</span>
-      <input className="inp sm" value={text} placeholder="mm/dd" inputMode="numeric" maxLength={5} aria-label={props.label}
-        onChange={(x) => { setText(x.target.value); change(year, x.target.value); }} />
-    </span>
-  );
-}
-
 /** One task of the detailed schedule being added or changed. */
 function TaskEdit(props: { value: PlanTask; onKeep: (t: PlanTask) => void; onCancel: () => void }) {
   const [t, setT] = useState(props.value);
@@ -268,8 +251,8 @@ function TaskEdit(props: { value: PlanTask; onKeep: (t: PlanTask) => void; onCan
       <td></td>
       <td><input type="checkbox" checked={t.done} aria-label="Done" onChange={(x) => set({ done: x.target.checked })} /></td>
       <td className="l"><input className="inp sm" value={t.name} placeholder="Task" autoFocus onChange={(x) => set({ name: x.target.value })} /></td>
-      <td><DayInput value={t.start} label="Start" onChange={(start) => set({ start })} /></td>
-      <td><DayInput value={t.end} label="End" onChange={(end) => set({ end })} /></td>
+      <td><DateBox className="sm" value={t.start} label="Start" onChange={(start) => set({ start })} /></td>
+      <td><DateBox className="sm" value={t.end} label="End" onChange={(end) => set({ end })} /></td>
       <td><input className="inp sm wk-dp-owner" value={t.owner} placeholder="Owner" onChange={(x) => set({ owner: x.target.value })} /></td>
       <td className="l"><input className="inp sm" value={t.note} placeholder="Note" onChange={(x) => set({ note: x.target.value })} /></td>
       <td className="act">

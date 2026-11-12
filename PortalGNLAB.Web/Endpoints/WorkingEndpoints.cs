@@ -30,6 +30,15 @@ public static class WorkingEndpoints
             catch (ArgumentException ex) { return Results.BadRequest(new { error = ex.Message }); }
         });
 
+        // English / Korean / Vietnamese: cached translations at once, what is missing is translated in the background
+        api.MapPost("/translations", (WorkingTranslationRequestBody body, WorkingTranslationService tr) =>
+            Results.Ok(tr.Translations(body.Lang, body.Texts)));
+        api.MapGet("/translations/status", (WorkingTranslationService tr) =>
+        {
+            var s = tr.Status();
+            return Results.Ok(new { running = s.Running, done = s.Done, total = s.Total, message = s.Message });
+        });
+
         api.MapGet("/groups", (WorkingService svc) => Results.Ok(svc.ListGroups()));
         // what the tree hides / adds (kept in PortalGNLAB.db; the Glossary DB is never written)
         api.MapGet("/tree", (WorkingService svc) => Results.Ok(svc.GetTree()));
@@ -207,6 +216,7 @@ public static class WorkingEndpoints
 
     public sealed record WorkingBmesBomRequest(string? Product);
     public sealed record WorkingHiddenSave(List<string?>? Hidden);
+    public sealed record WorkingTranslationRequestBody(string? Lang, List<string?>? Texts);
     public sealed record WorkingTreeModelSave(string? Name, string? GroupId);
     public sealed record WorkingTreeMoveSave(string? GroupId);
     public sealed record WorkingTreeGroupSave(string? Name, string? ParentId);

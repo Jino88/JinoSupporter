@@ -77,7 +77,7 @@ describe("entries", () => {
     expect(f.status).toBe("Open");
     expect(entryProblem(f)).toBe("Title is required.");
     expect(entryProblem({ ...f, title: "x" })).toBe("");
-    expect(entryProblem({ ...f, title: "x", date: "11/09" })).toBe("Date must be yyyy-MM-dd.");
+    expect(entryProblem({ ...f, title: "x", date: "11/09" })).toBe("Date must be a date (yyMMdd).");
     expect(entryProblem({ ...f, title: "x".repeat(201) })).toMatch(/200/);
   });
 });
@@ -97,7 +97,7 @@ describe("issue register", () => {
     expect(f.phase).toBe("DVT");
     expect(blankEntry("dev", "2026-11-09", "DVT").phase).toBe("");
     expect(entryProblem({ ...f, doneDate: "2026-11-01" })).toMatch(/before the registered date/);
-    expect(entryProblem({ ...f, doneDate: "11/10" })).toBe("Done date must be yyyy-MM-dd.");
+    expect(entryProblem({ ...f, doneDate: "11/10" })).toBe("Done date must be a date (yyMMdd).");
     expect(entryProblem({ ...f, doneDate: "2026-11-10" })).toBe("");
   });
   it("lists issues by number and merges used values into the suggestions", () => {
@@ -150,9 +150,9 @@ describe("issue register", () => {
   it("checks a daily note, its schedule and done date", () => {
     const f = { ...blankLog("2026-11-09"), text: "Checked 20 pcs, 2 NG" };
     expect(logProblem({ ...f, text: "  " })).toBe("Write what was done.");
-    expect(logProblem({ ...f, date: "2026/11/09" })).toBe("Date must be yyyy-MM-dd.");
+    expect(logProblem({ ...f, date: "2026/11/09" })).toBe("Date must be a date (yyMMdd).");
     expect(logProblem({ ...f, text: "x".repeat(5001) })).toMatch(/5000/);
-    expect(logProblem({ ...f, due: "11/12" })).toBe("Due must be yyyy-MM-dd.");
+    expect(logProblem({ ...f, due: "11/12" })).toBe("Due must be a date (yyMMdd).");
     expect(logProblem({ ...f, doneDate: "2026-11-08" })).toMatch(/before the note date/);
     expect(logProblem({ ...f, due: "2026-11-12", doneDate: "2026-11-10" })).toBe("");
     expect(isLogLate({ ...f, due: "2026-11-08" }, "2026-11-09")).toBe(true);

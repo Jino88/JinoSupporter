@@ -346,4 +346,12 @@ public sealed class WorkingPlaceAiServiceTests
         string text = WorkingPlaceAiService.BuildContent("M", RowsRequest(), [])[0]!["text"]!.GetValue<string>();
         Assert.Contains("\"rows\":[{\"id\":\"r1\",\"name\":\"F-PCB-G778B\",\"group\":\"material\",\"qty\":{\"2026-11-11\":100}}", text);
     }
+
+    [Fact]
+    public void Instructions_ArrivalMarkWithoutQuantityUsesTotalAndNeverDropsTheDate()
+    {
+        string text = string.Join(' ', WorkingPlaceAiService.Instructions.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        Assert.Contains("use the Total (합계) column of the same row", text);
+        Assert.Contains("Never drop an arrival date", text);
+    }
 }

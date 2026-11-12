@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from "react";
+import DateBox from "./DateBox";
 import { workingApi } from "./api";
 import IssueTable from "./IssueTable";
 import { blankEntry, isOpenIssue, issuesBySeq } from "./logic";
@@ -29,7 +30,7 @@ function SetupCells(props: { value: SetupFields; onChange: (f: SetupFields) => v
   const f = props.value;
   const set = <K extends keyof SetupFields>(k: K, v: SetupFields[K]) => props.onChange({ ...f, [k]: v });
   const date = (k: "machinePlan" | "setupPlan" | "setupFinish", label: string) => (
-    <td><input className="inp sm su-date" type="date" aria-label={label} value={f[k]} onChange={(e) => set(k, e.target.value)} /></td>
+    <td><DateBox className="sm su-date" label={label} value={f[k]} onChange={(v) => set(k, v)} /></td>
   );
   return (
     <>

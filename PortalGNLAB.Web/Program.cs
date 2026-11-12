@@ -165,11 +165,13 @@ builder.Services.AddScoped<WorkingPlaceAiService>();
 builder.Services.AddSingleton(new ProductionInputService());
 // Working: per-model info and work history (dev / issue / review) plus read-only model groups.
 builder.Services.AddSingleton(new WorkingService());
+builder.Services.AddSingleton<WorkingTranslationService>();
 // Team memo display translation (EN/KO/VI via Codex Luna, cached in the memo DB).
 builder.Services.AddScoped<TeamMemoTranslationService>();
 builder.Services.AddScoped<TeamMemoLanguageState>();
 // Team memo lives in the WorkHub memo DB; this moves old web memos in once and notices WorkHub saves.
 builder.Services.AddHostedService<TeamMemoBackgroundService>();
+builder.Services.AddHostedService<WorkingTranslationBackgroundService>();
 // DAILY REPORT dashboard: singleton so one cached snapshot + one background
 // refresh is shared by every connected user.
 builder.Services.AddSingleton<BmesDailyReportService>();

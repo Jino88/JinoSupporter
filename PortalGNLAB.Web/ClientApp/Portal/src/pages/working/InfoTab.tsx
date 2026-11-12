@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import DateBox from "./DateBox";
 import { workingApi } from "./api";
 import BmesPanel from "./BmesPanel";
 import { readManual, readSubManual } from "./manual";
@@ -13,7 +14,7 @@ const FIELDS: { key: "customer" | "build" | "owner" | "line" | "sopTarget"; labe
   { key: "build", label: "Build", placeholder: "PV2" },
   { key: "owner", label: "PM owner" },
   { key: "line", label: "Line" },
-  { key: "sopTarget", label: "SOP target", placeholder: "yyyy-MM-dd" },
+  { key: "sopTarget", label: "SOP target" },
 ];
 
 /** Model information form and the BMES model group of the model. */
@@ -73,8 +74,10 @@ export default function InfoTab(props: {
             {FIELDS.map((f) => (
               <div className="wk-f" key={f.key}>
                 <label htmlFor={"wk-" + f.key}>{f.label}</label>
-                <input id={"wk-" + f.key} className="inp sm" value={info[f.key] ?? ""} placeholder={f.placeholder}
-                  onChange={(e) => set(f.key, e.target.value)} />
+                {f.key === "sopTarget"
+                  ? <DateBox className="sm" label={f.label} value={info.sopTarget ?? ""} onChange={(v) => set("sopTarget", v)} />
+                  : <input id={"wk-" + f.key} className="inp sm" value={info[f.key] ?? ""} placeholder={f.placeholder}
+                    onChange={(e) => set(f.key, e.target.value)} />}
               </div>
             ))}
             <div className="wk-f wide">
