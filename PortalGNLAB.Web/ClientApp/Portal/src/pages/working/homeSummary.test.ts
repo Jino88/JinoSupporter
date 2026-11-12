@@ -64,11 +64,14 @@ describe("Home summary", () => {
     expect(timelineRange([q], today, 0)?.to).toBe("2026-12-02");
   });
 
-  it("writes the days of a short bar beside it, on its left near the right edge, so they are not cut", () => {
-    expect(labelSide({ left: 10, width: 30 })).toBe("in");
+  it("writes the days of every bar beside it, on its left near the right edge, inside only when no side has room", () => {
+    expect(labelSide({ left: 10, width: 30 })).toBe("right");
     expect(labelSide({ left: 14, width: 4 })).toBe("right");
     expect(labelSide({ left: 60, width: 1 })).toBe("right");
-    expect(labelSide({ left: 80, width: 2 })).toBe("left");
+    expect(labelSide({ left: 80, width: 12 })).toBe("left");
+    expect(labelSide({ left: 2, width: 88 })).toBe("right");
+    expect(labelSide({ left: 10, width: 87 })).toBe("left");
+    expect(labelSide({ left: 3, width: 94 })).toBe("in");
   });
 
   it("counts the open development and mass production issues and the late ones of a model", () => {

@@ -123,12 +123,12 @@ export default function Home(props: {
 const tint = (color: string, alpha: string) => (/^#[0-9a-f]{6}$/i.test(color) ? color + alpha : color);
 const taskSpanText = (t: TaskBrief) => (t.span ? `${slashDate(t.span[0]).slice(5)}${t.span[1] !== t.span[0] ? ` – ${slashDate(t.span[1]).slice(5)}` : ""}` : "");
 
-/** A bar on the timeline with its text written in it, or beside it when the bar is too short for the text (or `beside`). */
+/** A bar on the timeline with its days written beside it (labelSide). */
 function Bar(props: {
-  className: string; bar: { left: number; width: number }; text: string; title: string; style: CSSProperties; beside?: boolean; children?: ReactNode;
+  className: string; bar: { left: number; width: number }; text: string; title: string; style: CSSProperties; children?: ReactNode;
 }) {
   const { bar, text, title } = props;
-  const side = labelSide(bar, props.beside ? Infinity : undefined);
+  const side = labelSide(bar);
   return (
     <>
       <span className={props.className} style={{ ...props.style, left: `${bar.left}%`, width: `${bar.width}%` }} title={title}>
@@ -203,7 +203,7 @@ function PlanTimeline(props: { plans: PlanBrief[]; today: string; onOpen: (model
                     </div>
                     {track(bar && (
                       <Bar className={"wk-hm-bar " + e.state} bar={bar} title={title} style={{ background: tint(e.color, "33"), borderColor: e.color }}
-                        text={`${spanText(e)}${e.total > 0 ? ` · ${e.done}/${e.total}` : ""}`}>
+                        text={spanText(e)}>
                         {e.total > 0 && <span className="wk-hm-fill" style={{ width: `${(e.done / e.total) * 100}%`, background: e.color }} />}
                       </Bar>
                     ))}
@@ -221,7 +221,7 @@ function PlanTimeline(props: { plans: PlanBrief[]; today: string; onOpen: (model
                           {!t.span && <span className="wk-hm-st undated">No date</span>}
                         </div>
                         {track(tb && (
-                          <Bar beside className={"wk-hm-tbar " + state} bar={tb} text={taskSpanText(t)} title={`${t.name}: ${taskSpanText(t)}${t.owner ? ` · ${t.owner}` : ""}${t.done ? " · done" : ""}`}
+                          <Bar className={"wk-hm-tbar " + state} bar={tb} text={taskSpanText(t)} title={`${t.name}: ${taskSpanText(t)}${t.owner ? ` · ${t.owner}` : ""}${t.done ? " · done" : ""}`}
                             style={t.done ? { background: e.color, borderColor: e.color } : { background: tint(e.color, "26"), borderColor: e.color }} />
                         ))}
                       </div>

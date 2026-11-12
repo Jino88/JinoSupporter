@@ -131,12 +131,16 @@ export function barAt(span: [string, string], range: { from: string; days: numbe
 }
 
 /**
- * Where the days and tasks of a bar are written: in the bar when it is wide enough (in % of the timeline), else beside it,
- * on its right, or on its left when it ends near the right edge, so a bar of a few days is not cut to "2026/1…".
+ * Where the days of a bar are written: beside it, on its right when there is room there (<need> % of the timeline), else on
+ * its left when there is room there, else on the side with more room; only a bar leaving almost no room on either side
+ * (under 8 %) has them inside. Every bar alike, so none is cut to "2026/1…".
  */
-export function labelSide(bar: { left: number; width: number }, minInside = 22, rightEdge = 72): "in" | "right" | "left" {
-  if (bar.width >= minInside) return "in";
-  return bar.left + bar.width <= rightEdge ? "right" : "left";
+export function labelSide(bar: { left: number; width: number }, need = 14): "in" | "right" | "left" {
+  const right = 100 - bar.left - bar.width, left = bar.left;
+  if (right >= need) return "right";
+  if (left >= need) return "left";
+  if (Math.max(left, right) < 8) return "in";
+  return right >= left ? "right" : "left";
 }
 
 /** The months over the timeline: [yyyy-MM, left %, width %], for its header. */

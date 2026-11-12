@@ -35,7 +35,9 @@ describe("Working Home", () => {
     ]} />);
     expect(html).toMatch(/class="wk-hm-blabel" style="left:calc\([\d.]+% \+ 6px\)"[^>]*>2026\/11\/18 – 11\/20</);
     expect(html).toMatch(/class="wk-hm-blabel" style="right:calc\([\d.]+% \+ 6px\)"[^>]*>2027\/01\/20</);
-    expect(html).toMatch(/class="wk-hm-bar upcoming"[^>]*><span class="wk-hm-btext">2026\/11\/12 – 01\/10</);
+    // a long bar too: its days beside it, never inside
+    expect(html).toMatch(/class="wk-hm-bar upcoming"[^>]*><\/span><span class="wk-hm-blabel"[^>]*>2026\/11\/12 – 01\/10</);
+    expect(html).not.toContain("wk-hm-btext");
     expect(html).not.toMatch(/class="wk-hm-bar[^"]*"[^>]*>2026\/11\/18/);
   });
 
@@ -55,6 +57,8 @@ describe("Working Home", () => {
     expect(html).toContain('<span class="wk-hm-st undated">No date</span>');
     expect(html).toContain('<i>Tasks</i>1/4');
     expect(html).toContain("1 late task<");
+    // the event bar shows its days only, its task count is in the label column
+    expect(html).toMatch(/class="wk-hm-bar [a-z]+"[^>]*>.*?<\/span><span class="wk-hm-blabel"[^>]*>2026\/11\/18 – 11\/21<\/span>/);
   });
 
   it("says no model in development has a plan yet", () => {
