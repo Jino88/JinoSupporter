@@ -1,4 +1,4 @@
-/* Setup Plan (SetupPlan.tsx): line summary, O / X / Δ legend, process rows with their Issue (Problem) lists. */
+/* Plan of Mass Production (SetupPlan.tsx): lines on the calendar, O / X / Δ legend, process rows with their Issue (Problem) lists. */
 .su-top { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 28px; }
 table.su-sum { border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
 table.su-sum th, table.su-sum td { border: 1px solid #cbd5e1; padding: 3px 12px; text-align: center; white-space: nowrap; }
@@ -11,6 +11,8 @@ table.su-sum tr.tot th, table.su-sum tr.tot td { background: #fde047; font-weigh
 table.su-legend td:last-child { min-width: 120px; }
 table.su-legend tbody tr { cursor: default; }
 .su-filter { align-self: center; }
+.su-key { display: inline-flex; gap: 12px; font-size: 11.5px; color: var(--ink-2); }
+.su-key .su-st { font-size: 12px; }
 
 .su-st { font-weight: 700; font-size: 13px; }
 .su-st.ok { color: #15803d; }
