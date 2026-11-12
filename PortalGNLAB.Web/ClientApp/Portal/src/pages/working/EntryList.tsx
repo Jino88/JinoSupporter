@@ -1,5 +1,6 @@
 import { useState } from "react";
 import DateBox from "./DateBox";
+import { useTr } from "./i18n";
 import { workingApi } from "./api";
 import { blankEntry, byMonth, entryProblem, fieldsOf, isLate, isOpenIssue } from "./logic";
 import { KIND_LABEL, RESULTS, type Entry, type EntryFields, type EntryKind } from "./types";
@@ -69,6 +70,7 @@ export default function EntryList(props: {
   onError: (e: unknown) => void;
   onOpenIssues: (issue: Entry) => void;
 }) {
+  const tr = useTr();
   const { modelName, kind, entries, today } = props;
   const [editing, setEditing] = useState<string | null>(null); // entry id, "new" or null
   const [busy, setBusy] = useState(false);
@@ -94,7 +96,7 @@ export default function EntryList(props: {
   return (
     <section className="card pi-sec">
       <div className="pi-sec-h">
-        <h2>{kind ? TITLES[kind] : "Timeline"} <span className="cnt">{list.length}</span></h2>
+        <h2>{tr(kind ? TITLES[kind] : "Timeline")} <span className="cnt">{list.length}</span></h2>
         <div className="pi-legend">
           {kind === "issue" && (["open", "closed", "all"] as IssueFilter[]).map((v) => (
             <button key={v} className={"wk-chip" + (issueFilter === v ? " on" : "")} onClick={() => setIssueFilter(v)}>{v[0].toUpperCase() + v.slice(1)}</button>
@@ -121,8 +123,8 @@ export default function EntryList(props: {
                   <EntryForm value={fieldsOf(e)} kindFixed busy={busy} onSave={(f) => save(e, f)} onCancel={() => setEditing(null)} />
                 ) : (
                   <div className="wk-body">
-                    <div className="wk-title"><Badges e={e} today={today} /><b>{e.title}</b></div>
-                    {e.body && <div className="wk-text">{e.body}</div>}
+                    <div className="wk-title"><Badges e={e} today={today} /><b>{tr(e.title)}</b></div>
+                    {e.body && <div className="wk-text">{tr(e.body)}</div>}
                     <div className="wk-meta">
                       {e.owner && <span>{OWNER[e.kind]} {e.owner}</span>}
                       {e.kind === "issue" && e.due && <span>Due {e.due}</span>}

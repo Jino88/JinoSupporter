@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import DateBox from "./DateBox";
+import { useTr } from "./i18n";
 import { workingApi } from "./api";
 import IssueTable from "./IssueTable";
 import { blankEntry, isOpenIssue, issuesBySeq } from "./logic";
@@ -120,6 +121,7 @@ export default function SetupPlan(props: {
   onChanged: (list: Entry[]) => void;
   onError: (e: unknown) => void;
 }) {
+  const tr = useTr();
   const { modelName, entries, today } = props;
   const [rows, setRows] = useState<SetupRow[] | null>(null);
   const [editing, setEditing] = useState<string | null>(null); // id of the saved row being edited
@@ -250,9 +252,9 @@ export default function SetupPlan(props: {
           <thead>
             <tr>
               <th rowSpan={2}></th><th rowSpan={2}>No</th><th rowSpan={2}>No.<br />Layout</th><th rowSpan={2}>LINE</th>
-              <th rowSpan={2} className="l">Process Name</th>
+              <th rowSpan={2} className="l">{tr("Process Name")}</th>
               <th colSpan={3} className="grp">Machine Line</th><th colSpan={3} className="grp">SETUP</th>
-              <th rowSpan={2} className="l">Issue (Problem)</th><th rowSpan={2}></th>
+              <th rowSpan={2} className="l">{tr("Issue (Problem)")}</th><th rowSpan={2}></th>
             </tr>
             <tr><th>Plan</th><th>State</th><th>Note</th><th>Plan</th><th>Finish</th><th>Status</th></tr>
           </thead>
@@ -271,10 +273,10 @@ export default function SetupPlan(props: {
                     <td className="n">{r.no}</td>
                     <td>{r.layoutNo}</td>
                     <td className={"su-line-c" + (sameLine ? " same" : "")}>{r.line}</td>
-                    <td className="l su-proc-c">{r.processName}</td>
+                    <td className="l su-proc-c">{tr(r.processName)}</td>
                     <td className={late(r.machinePlan, r.machineState) ? "late" : ""} title={r.machinePlan}>{shortDate(r.machinePlan, today)}</td>
                     <td className={"su-st " + stateClass(r.machineState)}>{r.machineState}</td>
-                    <td>{r.machineNote}</td>
+                    <td>{tr(r.machineNote)}</td>
                     <td className={late(r.setupPlan, r.setupStatus) ? "late" : ""} title={r.setupPlan}>{shortDate(r.setupPlan, today)}</td>
                     <td title={r.setupFinish}>{shortDate(r.setupFinish, today)}</td>
                     <td className={"su-st " + stateClass(r.setupStatus)}>{r.setupStatus}</td>
