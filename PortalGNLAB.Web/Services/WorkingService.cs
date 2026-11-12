@@ -240,6 +240,27 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
     private static readonly object SchemaGate = new();
     private static readonly HashSet<string> SchemaReady = [];
 
+    /// <summary>Raised after a change to Working data was saved (the pre-translation waits for it to go quiet).</summary>
+    public event Action? Changed;
+
+    private void Commit(SqliteTransaction tx)
+    {
+        tx.Commit();
+        try { Changed?.Invoke(); } catch { }
+    }
+
+    /// <summary>Every model that has saved info, entries or setup rows.</summary>
+    public List<string> ListDataModels()
+    {
+        using SqliteConnection conn = Open();
+        using SqliteCommand cmd = Cmd(conn,
+            "SELECT ModelName FROM WorkingModels UNION SELECT ModelName FROM WorkingEntries UNION SELECT ModelName FROM WorkingSetupRows ORDER BY 1", null);
+        var list = new List<string>();
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read()) list.Add(r.GetString(0));
+        return list;
+    }
+
     private SqliteConnection Open()
     {
         SqliteConnection conn = dbPath is null ? PortalDb.Open() : PortalDb.Open(dbPath);
@@ -466,7 +487,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         using (SqliteCommand drop = Cmd(conn, "DELETE FROM WorkingTreeModels WHERE Added=0 AND Hidden=0 AND GroupId=''", tx))
             drop.ExecuteNonQuery();
         WorkingTree tree = ReadTree(conn, tx);
-        tx.Commit();
+        Commit(tx);
         return tree;
     }
 
@@ -495,7 +516,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             ("@n", n), ("@g", gid), ("@u", user), ("@t", now)))
             ins.ExecuteNonQuery();
         WorkingAddedModel added = ReadTree(conn, tx).Added.First(a => string.Equals(a.Name, n, StringComparison.OrdinalIgnoreCase));
-        tx.Commit();
+        Commit(tx);
         return added;
     }
 
@@ -561,7 +582,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             ("@id", id), ("@n", n), ("@p", parent), ("@u", user), ("@t", now)))
             ins.ExecuteNonQuery();
         WorkingUserGroup added = ReadTreeGroup(conn, tx, id)!;
-        tx.Commit();
+        Commit(tx);
         return added;
     }
 
@@ -578,7 +599,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             ("@n", n), ("@u", user), ("@t", Now()), ("@id", id)))
             upd.ExecuteNonQuery();
         WorkingUserGroup renamed = ReadTreeGroup(conn, tx, id)!;
-        tx.Commit();
+        Commit(tx);
         return renamed;
     }
 
@@ -603,7 +624,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         })
             using (SqliteCommand cmd = Cmd(conn, sql, tx, ("@id", id), ("@p", g.ParentId), ("@t", now)))
                 cmd.ExecuteNonQuery();
-        tx.Commit();
+        Commit(tx);
         return true;
     }
 
@@ -643,7 +664,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
                 drop.ExecuteNonQuery();
         }
         WorkingTree tree = ReadTree(conn, tx);
-        tx.Commit();
+        Commit(tx);
         return tree;
     }
 
@@ -696,7 +717,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             upd.ExecuteNonQuery();
         }
         WorkingModel saved = ReadModel(conn, name, tx)!;
-        tx.Commit();
+        Commit(tx);
         return saved;
     }
 
@@ -834,7 +855,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
              .. EntryArgs(e)]))
             ins.ExecuteNonQuery();
         WorkingEntry saved = ReadEntryRow(conn, model, id, tx)!;
-        tx.Commit();
+        Commit(tx);
         return saved;
     }
 
@@ -877,7 +898,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
                 ("@setup", setupRowId), ("@now", Now()), ("@id", id), ("@m", model)))
                 kids.ExecuteNonQuery();
         WorkingEntry saved = ReadEntryRow(conn, model, id, tx)!;
-        tx.Commit();
+        Commit(tx);
         return saved;
     }
 
@@ -898,7 +919,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             logs.ExecuteNonQuery();
         using (SqliteCommand pics = Cmd(conn, "DELETE FROM WorkingImages WHERE EntryId=@id", tx, ("@id", id)))
             pics.ExecuteNonQuery();
-        tx.Commit();
+        Commit(tx);
         return true;
     }
 
@@ -1026,7 +1047,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             ids.Add(id);
         }
         List<WorkingSetupRow> saved = ids.Select(id => ReadSetupRow(conn, tx, model, id)!).ToList();
-        tx.Commit();
+        Commit(tx);
         return saved;
     }
 
@@ -1048,7 +1069,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             [("@id", id), ("@m", model), ("@u", user), ("@now", Now()), .. SetupArgs(c with { No = c.No > 0 ? c.No : current.No })]))
             upd.ExecuteNonQuery();
         WorkingSetupRow saved = ReadSetupRow(conn, tx, model, id)!;
-        tx.Commit();
+        Commit(tx);
         return saved;
     }
 
@@ -1064,7 +1085,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             "UPDATE WorkingEntries SET SetupRowId='', Revision=Revision+1, UpdatedAt=@now WHERE SetupRowId=@id AND ModelName=@m", tx,
             ("@id", id), ("@m", model), ("@now", Now())))
             unlink.ExecuteNonQuery();
-        tx.Commit();
+        Commit(tx);
         return true;
     }
 
@@ -1114,7 +1135,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             [("@id", id), ("@e", entryId), ("@u", user), ("@now", now), .. LogArgs(log)]))
             ins.ExecuteNonQuery();
         WorkingEntryLog saved = ReadLogRow(conn, tx, entryId, id)!;
-        tx.Commit();
+        Commit(tx);
         return saved;
     }
 
@@ -1136,7 +1157,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             [("@id", logId), ("@e", entryId), ("@u", user), ("@now", Now()), .. LogArgs(log)]))
             upd.ExecuteNonQuery();
         WorkingEntryLog saved = ReadLogRow(conn, tx, entryId, logId)!;
-        tx.Commit();
+        Commit(tx);
         return saved;
     }
 
@@ -1153,7 +1174,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         if (removed)
             using (SqliteCommand pics = Cmd(conn, "DELETE FROM WorkingImages WHERE EntryId=@e AND LogId=@id", tx, ("@id", logId), ("@e", entryId)))
                 pics.ExecuteNonQuery();
-        tx.Commit();
+        Commit(tx);
         return removed;
     }
 
@@ -1264,7 +1285,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         }
         List<WorkingImage> saved = QueryImages(conn, tx, "i.EntryId=@e AND i.LogId=@l", ("@e", entryId), ("@l", logId))
             .Where(i => ids.Contains(i.Id)).ToList();
-        tx.Commit();
+        Commit(tx);
         return saved;
     }
 
@@ -1315,7 +1336,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         bool removed;
         using (SqliteCommand del = Cmd(conn, "DELETE FROM WorkingImages WHERE Id=@id AND EntryId=@e", tx, ("@id", imageId), ("@e", entryId)))
             removed = del.ExecuteNonQuery() > 0;
-        tx.Commit();
+        Commit(tx);
         return removed;
     }
 
