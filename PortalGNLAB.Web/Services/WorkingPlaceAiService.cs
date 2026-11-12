@@ -539,7 +539,7 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         return Phases.Contains(v) && (allowMp || v != "MP") ? v : "";
     }
 
-    private const string Instructions = """
+    internal const string Instructions = """
         You place free text into the Working page of one manufacturing model. The input is the model name, the
         current state as JSON ({"today":"yyyy-MM-dd","info":{"customer","build","phase","owner","line","sopTarget",
         "note"},"events":[{"id","name","start","end","tasks":[{"id","name","start","end","owner","done"}],
@@ -557,7 +557,16 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
           group "material" or "making", qty = {"yyyy-MM-dd": number}. A material arrival that has a date and a
           quantity goes to a Material Plan row: use the existing row whose name fits (e.g. "F-PCB (Free) 720ea
           arrives" -> the row F-PCB-G778B, that date, 720); the same material arriving several times on one day is
-          summed; if no row fits, add a new row (id ""). Making, inspection or shipping with a quantity goes to a
+          summed; if no row fits, add a new row (id ""). If a date cell only has an arrival mark (입고, GN입고,
+          도착, IN, ✓ ...) and no quantity, put the quantity of that row on that date: use the Total (합계) column
+          of the same row, else the planned quantity written in the row (S-code ...). When one row has several
+          dates but only one quantity, the quantity written in a date cell comes first and the remaining quantity
+          goes to the dates without one. Never drop an arrival date: only when the quantity is really unknown, put
+          1 and say in the note which material and date, e.g. "quantity unknown, 1 put in". Check every material
+          row of the table and answer all rows that have an arrival date; a row without a date (e.g. "잔여분
+          사용") is not put in. An Excel material name (e.g. "G778B UPPER (PV2)") that fits an existing row name
+          (e.g. ENCLOSURE-G778B-UPPER) uses that row id; read the category and name columns together
+          (ENCLOSURE + UPPER). Making, inspection or shipping with a quantity goes to a
           Making Plan row (e.g. "SPK Assy 500 11-17" -> the row SPK Assy, 11-17, 500). A task is only an activity
           without a quantity (set-up, meeting, business trip ...). If the user asks to move or split existing tasks
           into the quantity table, put the quantities in rows and the ids of the moved tasks in "removeTasks"
