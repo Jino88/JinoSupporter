@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import DateBox from "./DateBox";
 import { workingApi } from "./api";
 import BmesPanel from "./BmesPanel";
 import { readManual, readSubManual } from "./manual";
@@ -9,15 +8,10 @@ import { PHASES, phaseName, type ModelInfo, type WorkingModel } from "./types";
 /** Model info with an old phase name (Proto, EVT …) shown as the current one; saving writes the new name. */
 const current = (info: ModelInfo | undefined): ModelInfo => (info?.phase ? { ...info, phase: phaseName(info.phase) } : info ?? {});
 
-const FIELDS: { key: "customer" | "build" | "owner" | "line" | "sopTarget"; label: string; placeholder?: string }[] = [
-  { key: "customer", label: "Customer" },
-  { key: "build", label: "Build", placeholder: "PV2" },
-  { key: "owner", label: "PM owner" },
-  { key: "line", label: "Line" },
-  { key: "sopTarget", label: "SOP target" },
-];
-
-/** Model information form and the BMES model group of the model. */
+/**
+ * Model information: the model and its stage (saved as build) beside the BMES model group of the model. The customer,
+ * PM owner, line, SOP target and note are no longer edited here but are kept as they are saved.
+ */
 export default function InfoTab(props: {
   model: WorkingModel;
   onDirty: (dirty: boolean) => void;
@@ -69,27 +63,20 @@ export default function InfoTab(props: {
           </div>
         </div>
         <div className="pi-sec-b">
-          <div className="wk-form wk-info">
-            <div className="wk-f"><label>Model</label><div className="wk-ro sm">{model.name}</div></div>
-            {FIELDS.map((f) => (
-              <div className="wk-f" key={f.key}>
-                <label htmlFor={"wk-" + f.key}>{f.label}</label>
-                {f.key === "sopTarget"
-                  ? <DateBox className="sm" label={f.label} value={info.sopTarget ?? ""} onChange={(v) => set("sopTarget", v)} />
-                  : <input id={"wk-" + f.key} className="inp sm" value={info[f.key] ?? ""} placeholder={f.placeholder}
-                    onChange={(e) => set(f.key, e.target.value)} />}
+          <div className="wk-info-cols">
+            <div className="wk-form wk-info">
+              <div className="wk-f"><label>Model</label><div className="wk-ro sm">{model.name}</div></div>
+              <div className="wk-f">
+                <label htmlFor="wk-build">Stage</label>
+                <input id="wk-build" className="inp sm" value={info.build ?? ""} placeholder="PV2" onChange={(e) => set("build", e.target.value)} />
               </div>
-            ))}
-            <div className="wk-f wide">
-              <label htmlFor="wk-note">Note</label>
-              <textarea id="wk-note" className="inp wk-ta" rows={2} value={info.note ?? ""} onChange={(e) => set("note", e.target.value)} />
             </div>
+            <BmesPanel modelName={model.name} saved={info.bmesMaterial ?? ""} onError={props.onError}
+              manual={readManual(info.manualGroup)} onManual={(g) => setInfo((cur) => ({ ...cur, manualGroup: g }))}
+              temp={readTempGroup(info.tempGroup)} onTemp={(g) => setInfo((cur) => ({ ...cur, tempGroup: g }))}
+              subManual={readSubManual(info.subManual)} onSubManual={(t) => setInfo((cur) => ({ ...cur, subManual: t }))}
+              onPick={(m) => setInfo(({ bmesMaterial: _old, ...rest }) => (m ? { ...rest, bmesMaterial: m } : rest))} />
           </div>
-          <BmesPanel modelName={model.name} saved={info.bmesMaterial ?? ""} onError={props.onError}
-            manual={readManual(info.manualGroup)} onManual={(g) => setInfo((cur) => ({ ...cur, manualGroup: g }))}
-            temp={readTempGroup(info.tempGroup)} onTemp={(g) => setInfo((cur) => ({ ...cur, tempGroup: g }))}
-            subManual={readSubManual(info.subManual)} onSubManual={(t) => setInfo((cur) => ({ ...cur, subManual: t }))}
-            onPick={(m) => setInfo(({ bmesMaterial: _old, ...rest }) => (m ? { ...rest, bmesMaterial: m } : rest))} />
         </div>
       </section>
     </>
