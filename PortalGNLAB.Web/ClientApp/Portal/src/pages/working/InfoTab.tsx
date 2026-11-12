@@ -9,8 +9,8 @@ import { PHASES, phaseName, type ModelInfo, type WorkingModel } from "./types";
 const current = (info: ModelInfo | undefined): ModelInfo => (info?.phase ? { ...info, phase: phaseName(info.phase) } : info ?? {});
 
 /**
- * Model information: the model and its stage (saved as build) beside the BMES model group of the model. The customer,
- * PM owner, line, SOP target and note are no longer edited here but are kept as they are saved.
+ * Model information: the phase and the BMES model group of the model. The stage (build), customer, PM owner, line,
+ * SOP target and note are no longer edited here but are kept as they are saved.
  */
 export default function InfoTab(props: {
   model: WorkingModel;
@@ -63,20 +63,11 @@ export default function InfoTab(props: {
           </div>
         </div>
         <div className="pi-sec-b">
-          <div className="wk-info-cols">
-            <div className="wk-form wk-info">
-              <div className="wk-f"><label>Model</label><div className="wk-ro sm">{model.name}</div></div>
-              <div className="wk-f">
-                <label htmlFor="wk-build">Stage</label>
-                <input id="wk-build" className="inp sm" value={info.build ?? ""} placeholder="PV2" onChange={(e) => set("build", e.target.value)} />
-              </div>
-            </div>
-            <BmesPanel modelName={model.name} saved={info.bmesMaterial ?? ""} onError={props.onError}
-              manual={readManual(info.manualGroup)} onManual={(g) => setInfo((cur) => ({ ...cur, manualGroup: g }))}
-              temp={readTempGroup(info.tempGroup)} onTemp={(g) => setInfo((cur) => ({ ...cur, tempGroup: g }))}
-              subManual={readSubManual(info.subManual)} onSubManual={(t) => setInfo((cur) => ({ ...cur, subManual: t }))}
-              onPick={(m) => setInfo(({ bmesMaterial: _old, ...rest }) => (m ? { ...rest, bmesMaterial: m } : rest))} />
-          </div>
+          <BmesPanel modelName={model.name} saved={info.bmesMaterial ?? ""} onError={props.onError}
+            manual={readManual(info.manualGroup)} onManual={(g) => setInfo((cur) => ({ ...cur, manualGroup: g }))}
+            temp={readTempGroup(info.tempGroup)} onTemp={(g) => setInfo((cur) => ({ ...cur, tempGroup: g }))}
+            subManual={readSubManual(info.subManual)} onSubManual={(t) => setInfo((cur) => ({ ...cur, subManual: t }))}
+            onPick={(m) => setInfo(({ bmesMaterial: _old, ...rest }) => (m ? { ...rest, bmesMaterial: m } : rest))} />
         </div>
       </section>
     </>
