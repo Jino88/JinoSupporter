@@ -152,10 +152,105 @@ public sealed class WorkingPlaceAiServiceTests
     }
 
     [Fact]
-    public async Task PlaceAsync_EmptyTextIsRejected()
+    public async Task PlaceAsync_EmptyTextAndNoPictureIsRejected()
     {
         var svc = new WorkingPlaceAiService(null!);
         var ex = await Assert.ThrowsAsync<ArgumentException>(() => svc.PlaceAsync("M", new PlaceAiRequest { Text = "  " }));
         Assert.Equal("Type or paste what to put in.", ex.Message);
+    }
+
+    [Fact]
+    public async Task PlaceAsync_PictureOnlyPassesTheEmptyTextCheck()
+    {
+        // codex is null: reaching the Codex call (NullReferenceException) means the request itself was accepted
+        var svc = new WorkingPlaceAiService(null!);
+        await Assert.ThrowsAsync<NullReferenceException>(() => svc.PlaceAsync("M",
+            new PlaceAiRequest { Text = "", Images = [Pic("image/png", 10)] }));
+    }
+
+    private static PlaceAiImage Pic(string type, int bytes, string name = "a.png") =>
+        new() { Name = name, DataUrl = $"data:{type};base64,{Convert.ToBase64String(new byte[bytes])}" };
+
+    [Theory]
+    [InlineData("image/png")]
+    [InlineData("image/jpeg")]
+    [InlineData("image/gif")]
+    [InlineData("IMAGE/WEBP")]
+    public void ReadImages_AcceptsTheFourTypes(string type)
+    {
+        PlaceAiPicture p = Assert.Single(WorkingPlaceAiService.ReadImages([Pic(type, 100)]));
+        Assert.Equal(type.ToLowerInvariant(), p.MediaType);
+    }
+
+    [Theory]
+    [InlineData("data:image/bmp;base64,AAAA")]
+    [InlineData("data:application/pdf;base64,AAAA")]
+    [InlineData("not a data url")]
+    public void ReadImages_RejectsOtherTypes(string dataUrl)
+    {
+        var ex = Assert.Throws<ArgumentException>(() => WorkingPlaceAiService.ReadImages([new PlaceAiImage { DataUrl = dataUrl }]));
+        Assert.Equal("Only PNG, JPEG, GIF or WebP pictures can be read.", ex.Message);
+    }
+
+    [Fact]
+    public void ReadImages_RejectsBrokenBase64()
+    {
+        Assert.Throws<ArgumentException>(() => WorkingPlaceAiService.ReadImages(
+            [new PlaceAiImage { DataUrl = "data:image/png;base64,@@@@!!!" }]));
+    }
+
+    [Fact]
+    public void ReadImages_SizeLimitIs5MB()
+    {
+        Assert.Single(WorkingPlaceAiService.ReadImages([Pic("image/png", 5 * 1024 * 1024)]));
+        var ex = Assert.Throws<ArgumentException>(() => WorkingPlaceAiService.ReadImages([Pic("image/png", 5 * 1024 * 1024 + 1)]));
+        Assert.Equal("A picture is larger than 5 MB.", ex.Message);
+    }
+
+    [Fact]
+    public void ReadImages_CountLimitIs6()
+    {
+        Assert.Equal(6, WorkingPlaceAiService.ReadImages(Enumerable.Range(0, 6).Select(_ => Pic("image/png", 4)).ToList()).Count);
+        var ex = Assert.Throws<ArgumentException>(() => WorkingPlaceAiService.ReadImages(Enumerable.Range(0, 7).Select(_ => Pic("image/png", 4)).ToList()));
+        Assert.Equal("Up to 6 pictures can be sent.", ex.Message);
+    }
+
+    [Fact]
+    public void BuildContent_HasTextThenOneInputImagePerPicture()
+    {
+        var req = new PlaceAiRequest { Text = "see pictures", Today = "2026-11-12", Images = [Pic("image/png", 4, "one.png"), Pic("image/jpeg", 4, "two.jpg")] };
+        var content = WorkingPlaceAiService.BuildContent("M", req, WorkingPlaceAiService.ReadImages(req.Images));
+        Assert.Equal(3, content.Count);
+        Assert.Equal("input_text", (string?)content[0]!["type"]);
+        string text = (string)content[0]!["text"]!;
+        Assert.Contains("Picture 0: one.png", text);
+        Assert.Contains("Picture 1: two.jpg", text);
+        Assert.Equal(new[] { "input_image", "input_image" }, new[] { (string)content[1]!["type"]!, (string)content[2]!["type"]! });
+        Assert.StartsWith("data:image/png;base64,", (string?)content[1]!["image_url"]);
+        Assert.StartsWith("data:image/jpeg;base64,", (string?)content[2]!["image_url"]);
+
+        var none = WorkingPlaceAiService.BuildContent("M", new PlaceAiRequest { Text = "t" }, []);
+        Assert.Single(none);
+        Assert.DoesNotContain("PICTURES", (string)none[0]!["text"]!);
+    }
+
+    [Fact]
+    public void ParseAnswer_EntryImagesDropOutOfRangeDuplicatesAndNonNumbers()
+    {
+        var req = Request();
+        req.Images = [Pic("image/png", 4), Pic("image/png", 4), Pic("image/png", 4)];
+        const string answer = """
+            {"entries":[
+              {"kind":"issue","title":"Crack","images":[2,0,2,5,-1,"1",1.5,null,{"a":1},1]},
+              {"kind":"dev","title":"Note"}
+            ]}
+            """;
+        List<PlaceAiEntry> e = WorkingPlaceAiService.ParseAnswer(answer, req).Entries;
+        Assert.Equal([2, 0, 1], e[0].Images);
+        Assert.Empty(e[1].Images);
+
+        // no pictures in the request: every number is out of range
+        var noPics = WorkingPlaceAiService.ParseAnswer(answer, Request()).Entries;
+        Assert.Empty(noPics[0].Images);
     }
 }

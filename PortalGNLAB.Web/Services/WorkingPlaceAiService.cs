@@ -1,5 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Text.Json.Nodes;
 
 namespace PortalGNLAB.Web.Services;
@@ -60,6 +62,39 @@ public sealed class PlaceAiEntry
     public string Category { get; set; } = "";
     public string Process { get; set; } = "";
     public string Cause { get; set; } = "";
+    /// <summary>0-based numbers of the request pictures that are evidence for this entry.</summary>
+    [JsonConverter(typeof(PlaceAiIntListConverter))]
+    public List<int> Images { get; set; } = [];
+}
+
+/// <summary>A pasted picture: file name and a data URL (data:image/png;base64,...).</summary>
+public sealed class PlaceAiImage
+{
+    public string Name { get; set; } = "";
+    public string DataUrl { get; set; } = "";
+}
+
+/// <summary>Reads a JSON array of numbers and ignores everything in it that is not an integer.</summary>
+public sealed class PlaceAiIntListConverter : JsonConverter<List<int>>
+{
+    public override List<int> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var list = new List<int>();
+        if (reader.TokenType != JsonTokenType.StartArray) { reader.Skip(); return list; }
+        while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
+        {
+            if (reader.TokenType == JsonTokenType.Number && reader.TryGetInt32(out int n)) list.Add(n);
+            else reader.Skip();
+        }
+        return list;
+    }
+
+    public override void Write(Utf8JsonWriter writer, List<int> value, JsonSerializerOptions options)
+    {
+        writer.WriteStartArray();
+        foreach (int n in value) writer.WriteNumberValue(n);
+        writer.WriteEndArray();
+    }
 }
 
 public sealed class PlaceAiRequest
@@ -69,7 +104,11 @@ public sealed class PlaceAiRequest
     public PlaceAiInfo? Info { get; set; }
     public List<PlaceAiEvent>? Events { get; set; }
     public List<PlaceAiEntryContext>? Entries { get; set; }
+    public List<PlaceAiImage>? Images { get; set; }
 }
+
+/// <summary>A checked picture: its name, media type and base64 data.</summary>
+public sealed record PlaceAiPicture(string Name, string MediaType, string Base64);
 
 /// <summary>The placement plan: only the Model Info fields to change, the Dev Plan events/tasks and the entries to add.</summary>
 public sealed class PlaceAiPlan
@@ -91,6 +130,10 @@ public sealed record PlaceAiResult(
 public sealed class WorkingPlaceAiService(CodexApiService codex)
 {
     public const string Effort = "medium";
+    public const int MaxImages = 6;
+    public const int MaxImageBytes = 5 * 1024 * 1024;
+    private static readonly string[] ImageTypes = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+    private static readonly Regex DataUrl = new(@"^data:([^;,]+);base64,(.*)$", RegexOptions.Singleline | RegexOptions.IgnoreCase);
     private static readonly string[] InfoKeys = ["customer", "build", "phase", "owner", "line", "sopTarget", "note"];
     private static readonly string[] Phases = ["ER", "DR", "DV", "PV", "MP"];
     private static readonly string[] Kinds = ["dev", "issue", "review"];
@@ -109,13 +152,50 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
     public async Task<PlaceAiResult> PlaceAsync(string modelName, PlaceAiRequest body, CancellationToken ct = default)
     {
         string request = body.Text?.Trim() ?? "";
-        if (request.Length == 0) throw new ArgumentException("Type or paste what to put in.");
+        List<PlaceAiPicture> pictures = ReadImages(body.Images);
+        if (request.Length == 0 && pictures.Count == 0) throw new ArgumentException("Type or paste what to put in.");
         if (!codex.IsConfigured) throw new ArgumentException("Codex API is not configured. Set the API key in Setting.");
 
-        string today = TodayOf(body);
+        JsonArray content = BuildContent(modelName, body, pictures);
+
+        string model = codex.Model;
+        CodexTextResult result = await codex.GenerateAsync(Instructions, content, model, Effort, 16000, ct);
+        codex.RecordUsage(result.Usage);
+
+        PlaceAiPlan plan = ParseAnswer(result.Text, body);
+        return new PlaceAiResult(plan.Info, plan.Events, plan.Entries, plan.Note, $"{model} · {Effort}");
+    }
+
+    /// <summary>Checks the request pictures (count, type, base64, size) and returns them ready to send.</summary>
+    public static List<PlaceAiPicture> ReadImages(List<PlaceAiImage>? images)
+    {
+        var result = new List<PlaceAiPicture>();
+        if (images is null || images.Count == 0) return result;
+        if (images.Count > MaxImages) throw new ArgumentException("Up to 6 pictures can be sent.");
+        foreach (PlaceAiImage? img in images)
+        {
+            Match m = DataUrl.Match((img?.DataUrl ?? "").Trim());
+            string type = m.Success ? m.Groups[1].Value.Trim().ToLowerInvariant() : "";
+            if (!ImageTypes.Contains(type)) throw new ArgumentException("Only PNG, JPEG, GIF or WebP pictures can be read.");
+            string b64 = m.Groups[2].Value.Trim();
+            // the base64 length gives the decoded size, so a huge string is rejected before it is decoded
+            if (b64.Length / 4 * 3 > MaxImageBytes + 3) throw new ArgumentException("A picture is larger than 5 MB.");
+            byte[] bytes = new byte[b64.Length / 4 * 3 + 3];
+            if (!Convert.TryFromBase64String(b64, bytes, out int written) || written == 0)
+                throw new ArgumentException("A picture could not be read. Paste it again.");
+            if (written > MaxImageBytes) throw new ArgumentException("A picture is larger than 5 MB.");
+            string name = (img!.Name ?? "").Trim();
+            result.Add(new PlaceAiPicture(name.Length > 0 ? name : $"picture-{result.Count + 1}", type, b64));
+        }
+        return result;
+    }
+
+    /// <summary>The AI input: one text block (model, current state, picture list, user text) then each picture as input_image.</summary>
+    public static JsonArray BuildContent(string modelName, PlaceAiRequest body, IReadOnlyList<PlaceAiPicture> pictures)
+    {
         var context = new
         {
-            today,
+            today = TodayOf(body),
             info = body.Info ?? new PlaceAiInfo(),
             events = body.Events ?? [],
             entries = body.Entries ?? [],
@@ -126,16 +206,18 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         text.AppendLine("=== CURRENT STATE (JSON) ===");
         text.AppendLine(JsonSerializer.Serialize(context, Json));
         text.AppendLine();
+        if (pictures.Count > 0)
+        {
+            text.AppendLine("=== PICTURES (numbered from 0, in the order they follow) ===");
+            for (int i = 0; i < pictures.Count; i++) text.AppendLine($"Picture {i}: {pictures[i].Name}");
+            text.AppendLine();
+        }
         text.AppendLine("=== INPUT ===");
-        text.AppendLine(request);
+        text.AppendLine((body.Text ?? "").Trim());
         var content = new JsonArray { new JsonObject { ["type"] = "input_text", ["text"] = text.ToString() } };
-
-        string model = codex.Model;
-        CodexTextResult result = await codex.GenerateAsync(Instructions, content, model, Effort, 16000, ct);
-        codex.RecordUsage(result.Usage);
-
-        PlaceAiPlan plan = ParseAnswer(result.Text, body);
-        return new PlaceAiResult(plan.Info, plan.Events, plan.Entries, plan.Note, $"{model} · {Effort}");
+        foreach (PlaceAiPicture p in pictures)
+            content.Add(new JsonObject { ["type"] = "input_image", ["image_url"] = $"data:{p.MediaType};base64,{p.Base64}" });
+        return content;
     }
 
     /// <summary>Reads the AI answer leniently: strips code fences, takes the outermost {...}, then normalizes.</summary>
@@ -184,7 +266,7 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         {
             Info = NormalizeInfo(plan?.Info, current),
             Events = NormalizeEvents(plan?.Events, known),
-            Entries = NormalizeEntries(plan?.Entries, today),
+            Entries = NormalizeEntries(plan?.Entries, today, request?.Images?.Count ?? 0),
             Note = (plan?.Note ?? "").Trim(),
         };
     }
@@ -265,7 +347,7 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         return result;
     }
 
-    private static List<PlaceAiEntry> NormalizeEntries(List<PlaceAiEntry>? entries, string today)
+    private static List<PlaceAiEntry> NormalizeEntries(List<PlaceAiEntry>? entries, string today, int imageCount)
     {
         var result = new List<PlaceAiEntry>();
         foreach (PlaceAiEntry? e in entries ?? [])
@@ -286,6 +368,7 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
                 Body = (e.Body ?? "").Trim(),
                 Owner = (e.Owner ?? "").Trim(),
                 Result = "",
+                Images = (e.Images ?? []).Where(n => n >= 0 && n < imageCount).Distinct().ToList(),
             };
             if (kind == "issue")
             {
@@ -346,9 +429,13 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
 
         Answer ONLY one JSON object, no other text:
         {"info":{only the fields to change},"events":[{"id","name","start","end","tasks":[{"id","name","start","end","owner","done"}]}],
-        "entries":[{"kind","stage","date","title","body","owner","due","severity","result","phase","category","process","cause"}],
+        "entries":[{"kind","stage","date","title","body","owner","due","severity","result","phase","category","process","cause","images":[0]}],
         "note":"..."}
         - note: one to three English sentences saying what was put where, and why anything could not be placed.
+        - Pictures may be screenshots of a table, a schedule or a mail, or photos of a defect. Read the text and
+          tables in a picture like the typed text and place them the same way. When a picture is evidence for an
+          issue, a history record or a review, put its number (0 based, as listed under PICTURES) in that
+          entry's "images" array. "images" is [] when there is none.
         - Do not create entries that already exist in the current entries, and do not repeat unchanged info.
         - Dates are yyyy-MM-dd; a date without a year uses the year of today.
         - Keep the original language of the text; do not translate.
