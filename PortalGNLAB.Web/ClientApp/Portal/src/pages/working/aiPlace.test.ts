@@ -102,6 +102,23 @@ describe("AI placement answer", () => {
     expect(req.entries.map((e) => [e.id, e.stage])).toEqual([["a", "dev"], ["b", "mp"], ["c", ""]]);
   });
 
+  it("with a target, asks for it and lists only the items of its places", () => {
+    expect(placeRequest("t", "2026-11-12", info, [], [], "devissue").target).toBe("devissue");
+    expect("target" in placeRequest("t", "2026-11-12", info, [])).toBe(false);
+    const keys = (t?: Parameters<typeof placeItems>[2]) => placeItems(answer, info, t).map((i) => i.key);
+    expect(keys("plan")).toEqual(["task.0.0", "task.0.1", "event.1", "task.1.0"]);
+    expect(keys("devissue")).toEqual(["entry.0"]);
+    expect(keys("issue")).toEqual(["entry.1"]);
+    expect(keys("dev")).toEqual(["entry.2"]);
+    expect(keys("review")).toEqual(["entry.3"]);
+    expect(keys("entries")).toEqual(["entry.0", "entry.1", "entry.2", "entry.3"]);
+    expect(keys()).toHaveLength(11);
+    // only the items listed are put in: a Dev Issue target does not change Model Info or Dev Plan
+    const put = applyPlace(info, answer, all(placeItems(answer, info, "devissue")), "2026-11-12");
+    expect(put.info).toBeNull();
+    expect(put.entries.map((e) => e.title)).toEqual(["Buzz noise at 1 kHz"]);
+  });
+
   it("takes the pictures AI can read from what was pasted, refusing a type, a size or a count it cannot send", () => {
     const f = (name: string, type: string, size = 1000) => ({ name, type, size });
     expect(aiPictures([f("a.png", "image/png"), f("notes.txt", "text/plain"), f("b.jpg", "image/jpeg")], 0))

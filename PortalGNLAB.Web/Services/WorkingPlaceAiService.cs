@@ -175,6 +175,11 @@ public sealed class PlaceAiRequest
     public List<PlaceAiEvent>? Events { get; set; }
     public List<PlaceAiEntryContext>? Entries { get; set; }
     public List<PlaceAiImage>? Images { get; set; }
+    /// <summary>
+    /// The tab the AI input was opened on: plan (Dev Plan), devissue, dev (Dev History), review, issue (MP Issues) or
+    /// entries (Timeline); only that kind of data is answered. Empty or unknown: anywhere (AI tab).
+    /// </summary>
+    public string? Target { get; set; }
 }
 
 /// <summary>A checked picture: its name, media type and base64 data.</summary>
@@ -211,6 +216,17 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
     private static readonly string[] Results = ["Pass", "Conditional", "Fail"];
     private static readonly string[] DateFormats =
         ["yyyy-MM-dd", "yyyy/MM/dd", "yyyy.MM.dd", "yyyy-M-d", "yyyy/M/d", "yyyy.M.d"];
+
+    /// <summary>What the AI is told for each target (PlaceAiRequest.Target).</summary>
+    private static readonly Dictionary<string, string> Targets = new(StringComparer.Ordinal)
+    {
+        ["plan"] = "Dev Plan. Answer only events (with their tasks, rows and removeTasks); info is {} and entries is [].",
+        ["devissue"] = "Dev Issue. Answer only entries of kind \"issue\" with stage \"dev\" (phase ER, DR, DV, PV or \"\"); info is {} and events is [].",
+        ["dev"] = "Dev History. Answer only entries of kind \"dev\"; info is {} and events is [].",
+        ["review"] = "Reviews. Answer only entries of kind \"review\"; info is {} and events is [].",
+        ["issue"] = "MP Issues. Answer only entries of kind \"issue\" with stage \"mp\" and phase \"MP\"; info is {} and events is [].",
+        ["entries"] = "Timeline. Answer only entries (kind dev, issue or review); info is {} and events is [].",
+    };
 
     private static readonly JsonSerializerOptions Json = new()
     {
@@ -282,6 +298,12 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
             for (int i = 0; i < pictures.Count; i++) text.AppendLine($"Picture {i}: {pictures[i].Name}");
             text.AppendLine();
         }
+        if (Targets.TryGetValue(TargetOf(body), out string? target))
+        {
+            text.AppendLine("=== TARGET ===");
+            text.AppendLine($"The user opened AI input on {target} Make everything in the input into this form; leave out what does not fit and say so in the note.");
+            text.AppendLine();
+        }
         text.AppendLine("=== INPUT ===");
         text.AppendLine((body.Text ?? "").Trim());
         var content = new JsonArray { new JsonObject { ["type"] = "input_text", ["text"] = text.ToString() } };
@@ -332,13 +354,34 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         foreach (PlaceAiEvent? e in request?.Events ?? [])
             if (e is not null && !string.IsNullOrWhiteSpace(e.Id)) known[e.Id.Trim()] = e;
 
+        // a target keeps only its own kind of data; entries are made into the kind of the tab
+        string target = TargetOf(request);
+        List<PlaceAiEntry>? entries = plan?.Entries;
+        if (target is "devissue" or "dev" or "review" or "issue") entries = entries?.Select(e => Retarget(e, target)).ToList();
         return new PlaceAiPlan
         {
-            Info = NormalizeInfo(plan?.Info, current),
-            Events = NormalizeEvents(plan?.Events, known, today),
-            Entries = NormalizeEntries(plan?.Entries, today, request?.Images?.Count ?? 0),
+            Info = target.Length == 0 ? NormalizeInfo(plan?.Info, current) : [],
+            Events = target is "" or "plan" ? NormalizeEvents(plan?.Events, known, today) : [],
+            Entries = target == "plan" ? [] : NormalizeEntries(entries, today, request?.Images?.Count ?? 0),
             Note = (plan?.Note ?? "").Trim(),
         };
+    }
+
+    /// <summary>The target of a request when it is a known one, else "".</summary>
+    private static string TargetOf(PlaceAiRequest? request)
+    {
+        string t = (request?.Target ?? "").Trim().ToLowerInvariant();
+        return Targets.ContainsKey(t) ? t : "";
+    }
+
+    /// <summary>An entry made into the kind of a Dev Issue, Dev History, Reviews or MP Issues tab.</summary>
+    private static PlaceAiEntry? Retarget(PlaceAiEntry? e, string target)
+    {
+        if (e is null) return null;
+        e.Kind = target switch { "dev" => "dev", "review" => "review", _ => "issue" };
+        if (target == "issue") { e.Stage = "mp"; e.Phase = "MP"; }
+        else if (target == "devissue") { e.Stage = "dev"; e.Phase = PhaseOf(e.Phase, allowMp: false); }
+        return e;
     }
 
     private static Dictionary<string, string> NormalizeInfo(Dictionary<string, string>? info, PlaceAiInfo current)
