@@ -2,6 +2,7 @@
 // progress. A row's problems are ordinary issues whose setupRowId is the row.
 import { getJson, toolPath, toolSend } from "../../toolsApi";
 import { COLORS, type PlanEvent } from "./plan";
+import type { setupAiRequest } from "./setupAiRows";
 
 /** "" (not set), O (OK), X (not yet set up) or Δ (setting up now). */
 export type SetupState = "" | "O" | "X" | "Δ";
@@ -44,6 +45,9 @@ export const setupApi = {
   save: (name: string, row: SetupRow, f: SetupFields) =>
     toolSend<SetupRow>(`${setupPath(name)}/${encodeURIComponent(row.id)}`, { ...f, revision: row.revision }, "PUT"),
   remove: (name: string, id: string) => toolSend<void>(`${setupPath(name)}/${encodeURIComponent(id)}`, undefined, "DELETE"),
+  /** Rows made by AI from pasted text or pictures (setupAiRows.ts); nothing is saved here. */
+  ai: (name: string, request: ReturnType<typeof setupAiRequest>, signal?: AbortSignal) =>
+    toolSend<unknown>(`${setupPath(name)}/ai`, request, "POST", signal),
 };
 
 export const blankSetup = (line = ""): SetupFields => ({

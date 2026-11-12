@@ -96,6 +96,13 @@ public static class WorkingEndpoints
         api.MapGet("/models/{name}/setup", (string name, WorkingService svc) => Results.Ok(new { rows = svc.ListSetupRows(ModelName(name)) }));
         api.MapPost("/models/{name}/setup", (string name, WorkingSetupRowSave body, WorkingService svc, ClaimsPrincipal user) =>
             Results.Ok(svc.CreateSetupRow(ModelName(name), body, User(user))));
+        // Plan > AI input: AI turns free text into Setup Plan rows; nothing is saved here
+        api.MapPost("/models/{name}/setup/ai", async (string name, SetupAiRequest body, WorkingSetupAiService ai, HttpContext http) =>
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(http.RequestAborted);
+            cts.CancelAfter(TimeSpan.FromMinutes(3));
+            return Results.Ok(await ai.SetupAsync(ModelName(name), body, cts.Token));
+        }).WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(40L * 1024 * 1024)); // up to 6 pasted pictures as base64
         api.MapPost("/models/{name}/setup/import", (string name, WorkingSetupImport body, WorkingService svc, ClaimsPrincipal user) =>
             Results.Ok(new { rows = svc.ImportSetupRows(ModelName(name), body.Rows ?? [], User(user)) }));
         api.MapPut("/models/{name}/setup/{rowId}", (string name, string rowId, WorkingSetupRowSave body, WorkingService svc, ClaimsPrincipal user) =>

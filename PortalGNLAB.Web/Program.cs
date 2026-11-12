@@ -162,6 +162,7 @@ builder.Services.AddScoped<TeamMemoAiSummaryService>();
 builder.Services.AddScoped<ReviewReportService>();
 builder.Services.AddScoped<WorkingManualAiService>();
 builder.Services.AddScoped<WorkingPlaceAiService>();
+builder.Services.AddScoped<WorkingSetupAiService>();
 builder.Services.AddSingleton(new ProductionInputService());
 // Working: per-model info and work history (dev / issue / review) plus read-only model groups.
 builder.Services.AddSingleton(new WorkingService());
