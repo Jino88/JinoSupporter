@@ -253,4 +253,97 @@ public sealed class WorkingPlaceAiServiceTests
         var noPics = WorkingPlaceAiService.ParseAnswer(answer, Request()).Entries;
         Assert.Empty(noPics[0].Images);
     }
+
+    private static PlaceAiRequest RowsRequest() => new()
+    {
+        Text = "x",
+        Today = "2026-11-12",
+        Events =
+        [
+            new PlaceAiEvent
+            {
+                Id = "e1", Name = "LPR", Start = "2026-11-01", End = "2026-11-30",
+                Tasks = [new PlaceAiTask { Id = "t1", Name = "F-PCB 720ea GN" }, new PlaceAiTask { Id = "t2", Name = "SPK Assy 500" }],
+                Rows =
+                [
+                    new PlaceAiRow { Id = "r1", Name = "F-PCB-G778B", Group = "material", Qty = new() { ["2026-11-11"] = 100 } },
+                    new PlaceAiRow { Id = "r2", Name = "SPK Assy", Group = "making" },
+                ],
+            },
+        ],
+    };
+
+    private static List<PlaceAiEvent> Parse(string eventsJson) =>
+        WorkingPlaceAiService.ParseAnswer("{\"events\":" + eventsJson + "}", RowsRequest()).Events;
+
+    [Fact]
+    public void Rows_UnknownIdBecomesNewAndExistingRowKeepsGroup()
+    {
+        PlaceAiEvent e = Assert.Single(Parse("""
+            [{"id":"e1","rows":[
+              {"id":"r1","name":"other","group":"making","qty":{"2026-11-11":720}},
+              {"id":"zzz","name":"Lower Assy","group":"material","qty":{"2026-11-17":300}},
+              {"id":"","name":"OQC","group":"weird","qty":{}}]}]
+            """));
+        Assert.Equal(3, e.Rows.Count);
+        Assert.Equal(("r1", "F-PCB-G778B", "material"), (e.Rows[0].Id, e.Rows[0].Name, e.Rows[0].Group));
+        Assert.Equal(720, e.Rows[0].Qty["2026-11-11"]);
+        Assert.Equal(("", "Lower Assy", "material"), (e.Rows[1].Id, e.Rows[1].Name, e.Rows[1].Group));
+        Assert.Equal(("", "OQC", "making"), (e.Rows[2].Id, e.Rows[2].Name, e.Rows[2].Group));
+        Assert.Empty(e.Rows[2].Qty);
+    }
+
+    [Fact]
+    public void Rows_DateKeysQuantitiesAndBlankNames()
+    {
+        PlaceAiEvent e = Assert.Single(Parse("""
+            [{"id":"e1","rows":[
+              {"id":"r2","qty":{"2026/11/17":"1,200","11-18":5,"bad":3,"2026-11-19":-1,"2026-11-20":"x","2026-11-21":0}},
+              {"id":"","name":"  ","qty":{"2026-11-17":1}}]}]
+            """));
+        PlaceAiRow r = Assert.Single(e.Rows);
+        Assert.Equal("r2", r.Id);
+        Assert.Equal(
+            new SortedDictionary<string, double> { ["2026-11-17"] = 1200, ["2026-11-18"] = 5, ["2026-11-21"] = 0 },
+            new SortedDictionary<string, double>(r.Qty));
+    }
+
+    [Fact]
+    public void Rows_UnchangedExistingRowIsDropped()
+    {
+        // r1 already has 100 on 11-11; r2 has nothing, so 0 on a day is no change either
+        Assert.Empty(Parse("""
+            [{"id":"e1","rows":[{"id":"r1","qty":{"2026-11-11":100}},{"id":"r2","qty":{"2026-11-12":0}}]}]
+            """));
+    }
+
+    [Fact]
+    public void RemoveTasks_KnownIdsOnlyAndDeduplicated()
+    {
+        PlaceAiEvent e = Assert.Single(Parse("""[{"id":"e1","removeTasks":["t1","nope","t1"," t2 ",5]}]"""));
+        Assert.Equal(["t1", "t2"], e.RemoveTasks);
+    }
+
+    [Fact]
+    public void RemoveTasks_NewEventAlwaysEmpty()
+    {
+        PlaceAiEvent e = Assert.Single(Parse("""[{"id":"","name":"New","removeTasks":["t1"],"rows":[{"name":"A","qty":{"2026-11-01":1}}]}]"""));
+        Assert.Empty(e.RemoveTasks);
+        Assert.Single(e.Rows);
+    }
+
+    [Fact]
+    public void ExistingEvent_WithOnlyRowsOrRemoveTasksIsKept()
+    {
+        Assert.Single(Parse("""[{"id":"e1","rows":[{"id":"r2","qty":{"2026-11-17":500}}]}]"""));
+        Assert.Single(Parse("""[{"id":"e1","removeTasks":["t2"]}]"""));
+        Assert.Empty(Parse("""[{"id":"e1","removeTasks":["nope"],"rows":[]}]"""));
+    }
+
+    [Fact]
+    public void BuildContent_IncludesRequestRows()
+    {
+        string text = WorkingPlaceAiService.BuildContent("M", RowsRequest(), [])[0]!["text"]!.GetValue<string>();
+        Assert.Contains("\"rows\":[{\"id\":\"r1\",\"name\":\"F-PCB-G778B\",\"group\":\"material\",\"qty\":{\"2026-11-11\":100}}", text);
+    }
 }

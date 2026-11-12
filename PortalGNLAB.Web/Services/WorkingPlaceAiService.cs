@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -23,6 +24,75 @@ public sealed class PlaceAiEvent
     public string Start { get; set; } = "";
     public string End { get; set; } = "";
     public List<PlaceAiTask> Tasks { get; set; } = [];
+    /// <summary>Quantity table rows: in the request the current rows, in the answer the rows to add or change.</summary>
+    public List<PlaceAiRow> Rows { get; set; } = [];
+    /// <summary>Answer only: ids of existing tasks that moved to the quantity table.</summary>
+    [JsonConverter(typeof(PlaceAiStringListConverter))]
+    public List<string> RemoveTasks { get; set; } = [];
+}
+
+/// <summary>A Dev Plan quantity row: group "material" (Material Plan) or "making" (Making Plan), quantity per day.</summary>
+public sealed class PlaceAiRow
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Group { get; set; } = "";
+    [JsonConverter(typeof(PlaceAiQtyConverter))]
+    public Dictionary<string, double> Qty { get; set; } = [];
+}
+
+/// <summary>Reads a JSON array of strings; numbers become text and everything else is ignored.</summary>
+public sealed class PlaceAiStringListConverter : JsonConverter<List<string>>
+{
+    public override List<string> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var list = new List<string>();
+        if (reader.TokenType != JsonTokenType.StartArray) { reader.Skip(); return list; }
+        while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
+        {
+            if (reader.TokenType == JsonTokenType.String) list.Add(reader.GetString() ?? "");
+            else if (reader.TokenType == JsonTokenType.Number) list.Add(Encoding.UTF8.GetString(reader.ValueSpan));
+            else reader.Skip();
+        }
+        return list;
+    }
+
+    public override void Write(Utf8JsonWriter writer, List<string> value, JsonSerializerOptions options)
+    {
+        writer.WriteStartArray();
+        foreach (string v in value) writer.WriteStringValue(v);
+        writer.WriteEndArray();
+    }
+}
+
+/// <summary>Reads a JSON object of date → quantity; a quantity may be a number or text like "1,200", anything else is ignored.</summary>
+public sealed class PlaceAiQtyConverter : JsonConverter<Dictionary<string, double>>
+{
+    public override Dictionary<string, double> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var map = new Dictionary<string, double>(StringComparer.Ordinal);
+        if (reader.TokenType != JsonTokenType.StartObject) { reader.Skip(); return map; }
+        while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+        {
+            string key = reader.GetString() ?? "";
+            reader.Read();
+            double n = double.NaN;
+            if (reader.TokenType == JsonTokenType.Number) n = reader.GetDouble();
+            else if (reader.TokenType == JsonTokenType.String)
+                n = double.TryParse((reader.GetString() ?? "").Replace(",", "").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed)
+                    ? parsed : double.NaN;
+            else reader.Skip();
+            if (double.IsFinite(n)) map[key] = n;
+        }
+        return map;
+    }
+
+    public override void Write(Utf8JsonWriter writer, Dictionary<string, double> value, JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+        foreach ((string k, double v) in value) writer.WriteNumber(k, v);
+        writer.WriteEndObject();
+    }
 }
 
 public sealed class PlaceAiEntryContext
@@ -265,7 +335,7 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         return new PlaceAiPlan
         {
             Info = NormalizeInfo(plan?.Info, current),
-            Events = NormalizeEvents(plan?.Events, known),
+            Events = NormalizeEvents(plan?.Events, known, today),
             Entries = NormalizeEntries(plan?.Entries, today, request?.Images?.Count ?? 0),
             Note = (plan?.Note ?? "").Trim(),
         };
@@ -298,7 +368,7 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         return result;
     }
 
-    private static List<PlaceAiEvent> NormalizeEvents(List<PlaceAiEvent>? events, Dictionary<string, PlaceAiEvent> known)
+    private static List<PlaceAiEvent> NormalizeEvents(List<PlaceAiEvent>? events, Dictionary<string, PlaceAiEvent> known, string today)
     {
         var result = new List<PlaceAiEvent>();
         foreach (PlaceAiEvent? e in events ?? [])
@@ -338,13 +408,61 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
                 });
             }
 
-            if (existing is not null && tasks.Count == 0
+            var rows = NormalizeRows(e.Rows, existing, today);
+            var removeTasks = new List<string>();
+            if (existing is not null)
+                foreach (string? r in e.RemoveTasks ?? [])
+                {
+                    string rId = (r ?? "").Trim();
+                    if (taskIds.Contains(rId) && !removeTasks.Contains(rId)) removeTasks.Add(rId);
+                }
+
+            if (existing is not null && tasks.Count == 0 && rows.Count == 0 && removeTasks.Count == 0
                 && name == (existing.Name ?? "").Trim()
                 && start == DateOf(existing.Start)
                 && end == DateOf(existing.End)) continue;
-            result.Add(new PlaceAiEvent { Id = id, Name = name, Start = start, End = end, Tasks = tasks });
+            result.Add(new PlaceAiEvent { Id = id, Name = name, Start = start, End = end, Tasks = tasks, Rows = rows, RemoveTasks = removeTasks });
         }
         return result;
+    }
+
+    private static List<PlaceAiRow> NormalizeRows(List<PlaceAiRow>? rows, PlaceAiEvent? existing, string today)
+    {
+        var known = new Dictionary<string, PlaceAiRow>(StringComparer.Ordinal);
+        foreach (PlaceAiRow? r in existing?.Rows ?? [])
+            if (r is not null && !string.IsNullOrWhiteSpace(r.Id)) known[r.Id.Trim()] = r;
+
+        var result = new List<PlaceAiRow>();
+        foreach (PlaceAiRow? r in rows ?? [])
+        {
+            if (r is null) continue;
+            var qty = new Dictionary<string, double>(StringComparer.Ordinal);
+            foreach ((string rawDate, double v) in r.Qty ?? [])
+            {
+                string date = DateOf(rawDate, today);
+                if (date.Length > 0 && double.IsFinite(v) && v >= 0) qty[date] = v;
+            }
+            known.TryGetValue((r.Id ?? "").Trim(), out PlaceAiRow? old);
+            if (old is not null)
+            {
+                var before = DatesOf(old.Qty, today);
+                if (qty.All(q => before.GetValueOrDefault(q.Key) == q.Value)) continue;
+                result.Add(new PlaceAiRow { Id = old.Id.Trim(), Name = (old.Name ?? "").Trim(), Group = old.Group ?? "", Qty = qty });
+                continue;
+            }
+            string name = (r.Name ?? "").Trim();
+            if (name.Length == 0) continue;
+            string group = string.Equals((r.Group ?? "").Trim(), "material", StringComparison.OrdinalIgnoreCase) ? "material" : "making";
+            result.Add(new PlaceAiRow { Id = "", Name = name, Group = group, Qty = qty });
+        }
+        return result;
+    }
+
+    private static Dictionary<string, double> DatesOf(Dictionary<string, double>? qty, string today)
+    {
+        var map = new Dictionary<string, double>(StringComparer.Ordinal);
+        foreach ((string k, double v) in qty ?? []) { string d = DateOf(k, today); if (d.Length > 0) map[d] = v; }
+        return map;
     }
 
     private static List<PlaceAiEntry> NormalizeEntries(List<PlaceAiEntry>? entries, string today, int imageCount)
@@ -402,6 +520,18 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         DateTime.TryParseExact((value ?? "").Trim(), DateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime d)
             ? d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "";
 
+    /// <summary>Like DateOf, and also M-d / M/d / M.d (no year), which take the year of today.</summary>
+    private static string DateOf(string? value, string today)
+    {
+        string full = DateOf(value);
+        if (full.Length > 0) return full;
+        string v = (value ?? "").Trim();
+        if (v.Length == 0 || today.Length < 4) return "";
+        return v.Length <= 5 && DateTime.TryParseExact($"{today[..4]}-{v.Replace('/', '-').Replace('.', '-')}", "yyyy-M-d",
+            CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime d)
+            ? d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "";
+    }
+
     private static string PhaseOf(string? value, bool allowMp)
     {
         string v = (value ?? "").Trim().ToUpperInvariant();
@@ -412,7 +542,8 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
     private const string Instructions = """
         You place free text into the Working page of one manufacturing model. The input is the model name, the
         current state as JSON ({"today":"yyyy-MM-dd","info":{"customer","build","phase","owner","line","sopTarget",
-        "note"},"events":[{"id","name","start","end","tasks":[{"id","name","start","end","owner","done"}]}],
+        "note"},"events":[{"id","name","start","end","tasks":[{"id","name","start","end","owner","done"}],
+        "rows":[{"id","name","group","qty":{"yyyy-MM-dd":number}}]}],
         "entries":[{"id","kind","stage","seq","date","title","status"}]}) and the user's text. The text may contain
         cells copied from Excel (tab separated). Read it and put each piece of information in the most fitting place:
         - Model Info: customer, build, phase (ER, DR, DV, PV or MP), owner (the PM in charge), line, sopTarget
@@ -421,6 +552,16 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
           detailed tasks (start, end, owner, done). If an event is the same as an existing one, use its id and give
           only the tasks to add or change; if a task is the same as an existing one, use its id to change it.
           A new event has id "".
+          Each event also has a Material Plan (the materials that come in, with the quantity per day) and a Making
+          Plan (the making, inspection and shipping steps, with the quantity per day): the "rows" quantity table,
+          group "material" or "making", qty = {"yyyy-MM-dd": number}. A material arrival that has a date and a
+          quantity goes to a Material Plan row: use the existing row whose name fits (e.g. "F-PCB (Free) 720ea
+          arrives" -> the row F-PCB-G778B, that date, 720); the same material arriving several times on one day is
+          summed; if no row fits, add a new row (id ""). Making, inspection or shipping with a quantity goes to a
+          Making Plan row (e.g. "SPK Assy 500 11-17" -> the row SPK Assy, 11-17, 500). A task is only an activity
+          without a quantity (set-up, meeting, business trip ...). If the user asks to move or split existing tasks
+          into the quantity table, put the quantities in rows and the ids of the moved tasks in "removeTasks"
+          (do not keep a copy as a task). The date of a one-day task is the date of its quantity.
         - entries, kind "dev": a development history record or a decision.
         - entries, kind "issue": a problem. In development (stage "dev", phase ER/DR/DV/PV or "") a defect or design
           problem; in mass production (stage "mp", phase "MP") a mass-production problem.
@@ -428,9 +569,12 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         - entries, kind "review": the result of a review or meeting; result is Pass, Conditional or Fail.
 
         Answer ONLY one JSON object, no other text:
-        {"info":{only the fields to change},"events":[{"id","name","start","end","tasks":[{"id","name","start","end","owner","done"}]}],
+        {"info":{only the fields to change},"events":[{"id","name","start","end","tasks":[{"id","name","start","end","owner","done"}],
+        "rows":[{"id","name","group","qty":{"yyyy-MM-dd":number}}],"removeTasks":["task id"]}],
         "entries":[{"kind","stage","date","title","body","owner","due","severity","result","phase","category","process","cause","images":[0]}],
         "note":"..."}
+        - rows: the row id of an existing row (or "" for a new row), and in qty only the dates to set now (0 clears
+          that day). "removeTasks" is [] when no task moves.
         - note: one to three English sentences saying what was put where, and why anything could not be placed.
         - Pictures may be screenshots of a table, a schedule or a mail, or photos of a defect. Read the text and
           tables in a picture like the typed text and place them the same way. When a picture is evidence for an

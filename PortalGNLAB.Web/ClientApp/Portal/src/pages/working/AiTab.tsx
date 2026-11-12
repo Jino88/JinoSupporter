@@ -127,8 +127,8 @@ export default function AiTab(props: {
         <div className="muted small">
           Type or paste anything about {model.name} — meeting notes, a mail, a schedule, cells copied from Excel, or pictures
           (Ctrl+V a screenshot or a photo, or drop it here; up to 6). AI puts each
-          piece where it belongs: Model Info, Dev Plan events and tasks, Dev Issues, Dev History, Reviews or Mass Production
-          issues. You see every item first and keep the ones you want. Ctrl+Enter sends.
+          piece where it belongs: Model Info, Dev Plan events, tasks and quantities (Material Plan / Making Plan), Dev Issues,
+          Dev History, Reviews or Mass Production issues. You see every item first and keep the ones you want. Ctrl+Enter sends.
         </div>
         <textarea className="inp wk-ta wk-ai-text" rows={8} value={text} disabled={!!busy} aria-label="Text to place"
           placeholder={"e.g. DR build 11/20–11/25, jig ready by 11/21 (Park). Buzz noise found at 1 kHz, Major, fix by 11/30. SOP target 2027-03-01."}
@@ -165,7 +165,7 @@ export default function AiTab(props: {
                     {items.filter((i) => i.place === p).map((i) => (
                       <label key={i.key} className={"wk-ai-item" + (i.parent ? " sub" : "") + (off(i) ? " off" : "")}>
                         <input type="checkbox" checked={picked.has(i.key) && !off(i)} disabled={off(i)} onChange={() => flip(i.key)} />
-                        <span className={"wk-ai-tag" + (i.change ? " change" : "")}>{i.change ? "Change" : "New"}</span>
+                        <span className={"wk-ai-tag" + (i.remove ? " remove" : i.change ? " change" : "")}>{i.remove ? "Remove" : i.change ? "Change" : "New"}</span>
                         <span className="wk-ai-title">{i.title}</span>
                         {i.detail && <span className="wk-ai-detail">{i.detail}</span>}
                         {i.key.startsWith("entry.") && asked.answer.entries[Number(i.key.slice(6))].images.length > 0 && (
