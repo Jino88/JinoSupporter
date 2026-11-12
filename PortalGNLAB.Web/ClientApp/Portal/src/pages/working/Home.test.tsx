@@ -65,4 +65,23 @@ describe("Working Home", () => {
     const html = renderToStaticMarkup(<Home models={[]} today="2026-11-11" onOpen={() => {}} initial={[load("A", { phase: "DR" })]} />);
     expect(html).toContain("No model in development has a Dev Plan yet");
   });
+
+  it("shows the MP plans (Setup Plans by line and process) apart from the development plans", () => {
+    const setup = [{ id: "r1", no: 1, line: "L1", processName: "Bonding", machinePlan: "2026-11-01", setupPlan: "2026-11-03", setupStatus: "O", setupFinish: "",
+      layoutNo: "", machineState: "", machineNote: "", modelName: "MSM-MP", revision: 1, createdBy: "", createdAt: "", updatedBy: "", updatedAt: "" }] as never;
+    const html = renderToStaticMarkup(<Home models={[]} today="2026-11-11" onOpen={() => {}} initial={[
+      load("MSM-A386B", { phase: "PV", devPlan: { events: [event("PV build", "2026-11-01", "2026-11-20")] } }),
+      { ...load("MSM-MP", { phase: "MP" }), setup },
+    ]} />);
+    const dev = html.slice(html.indexOf("Development plans"), html.indexOf(">MP plans<"));
+    const mp = html.slice(html.indexOf(">MP plans<"), html.indexOf(">Models<"));
+    expect(html.indexOf(">MP plans<")).toBeGreaterThan(html.indexOf("Development plans"));
+    expect(dev).toContain("PV build");
+    expect(dev).not.toContain("MSM-MP");
+    expect(mp).toContain(">MSM-MP<");
+    expect(mp).toContain("Model · line · process");
+    expect(mp).toContain(">Bonding<");
+    expect(mp).toContain("<i>Setup done</i>1/1");
+    expect(mp).not.toContain("PV build");
+  });
 });

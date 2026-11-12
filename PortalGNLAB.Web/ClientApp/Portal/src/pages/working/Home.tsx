@@ -1,8 +1,9 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { workingApi } from "./api";
 import { useTr } from "./i18n";
+import { setupApi } from "./setup";
 import {
-  barAt, devPlans, labelSide, modelRow, slashDate, timelineMonths, timelineRange, type EventBrief, type ModelLoad, type PlanBrief, type TaskBrief,
+  barAt, devPlans, labelSide, modelRow, mpPlans, slashDate, timelineMonths, timelineRange, type EventBrief, type ModelLoad, type PlanBrief, type TaskBrief,
 } from "./homeSummary";
 
 const STATE_LABEL: Record<EventBrief["state"], string> = { done: "Done", now: "Now", upcoming: "Next", late: "Late", undated: "No date" };
@@ -20,8 +21,10 @@ async function loadAll(models: { name: string; path: string[] }[], onCount: (n: 
       const i = at++;
       const { name, path } = models[i];
       try {
-        const [model, entries] = await Promise.all([workingApi.model(name), workingApi.entries(name)]);
-        out[i] = { name, path, model, entries, error: "" };
+        const [model, entries, setup] = await Promise.all([
+          workingApi.model(name), workingApi.entries(name), setupApi.rows(name).catch(() => []),
+        ]);
+        out[i] = { name, path, model, entries, setup, error: "" };
       } catch (e) {
         out[i] = { name, path, model: null, entries: [], error: (e as Error).message };
       }
@@ -36,7 +39,7 @@ async function loadAll(models: { name: string; path: string[] }[], onCount: (n: 
 export default function Home(props: {
   models: { name: string; path: string[] }[] | null;
   today: string;
-  onOpen: (model: string, tab: "info" | "plan") => void;
+  onOpen: (model: string, tab: "info" | "plan" | "setup") => void;
   /** Already loaded (tests and the page reopening); loaded here when left out. */
   initial?: ModelLoad[];
 }) {
@@ -58,6 +61,7 @@ export default function Home(props: {
     return <div className="card pi-empty">{props.models ? `Loading models… ${count} / ${props.models.length}` : "Loading…"}</div>;
   }
   const { plans, noPlan } = devPlans(loads, props.today);
+  const mp = mpPlans(loads, props.today);
   const rows = loads.map((l) => modelRow(l, props.today));
   const failed = rows.filter((r) => r.error);
 
@@ -71,7 +75,7 @@ export default function Home(props: {
           </div>
         </div>
         <div className="pi-sec-b">
-          {plans.length ? <PlanTimeline plans={plans} today={props.today} onOpen={props.onOpen} /> : (
+          {plans.length ? <PlanTimeline kind="dev" plans={plans} today={props.today} onOpen={props.onOpen} /> : (
             <div className="muted small">{tr("No model in development has a Dev Plan yet. Add events in a model's Development › Dev Plan.")}</div>
           )}
           {noPlan.length > 0 && (
@@ -79,6 +83,20 @@ export default function Home(props: {
               <span className="muted small">{tr("In development without a plan:")}</span>
               {noPlan.map((m) => <button key={m} className="wk-chip" onClick={() => props.onOpen(m, "plan")}>{m}</button>)}
             </div>
+          )}
+        </div>
+      </section>
+
+      <section className="card pi-sec">
+        <div className="pi-sec-h">
+          <h2>{tr("MP plans")}<span className="cnt">{mp.length}</span></h2>
+          <div className="pi-legend">
+            <span>{tr("Setup Plan of each model: each process from its machine plan to its setup plan, by line")} · {tr("today")} {slashDate(props.today)}</span>
+          </div>
+        </div>
+        <div className="pi-sec-b">
+          {mp.length ? <PlanTimeline kind="mp" plans={mp} today={props.today} onOpen={props.onOpen} /> : (
+            <div className="muted small">{tr("No model has a Setup Plan yet. Add processes in a model's Mass Production › Setup Plan.")}</div>
           )}
         </div>
       </section>
@@ -147,7 +165,8 @@ function Bar(props: {
  * The plans on one timeline: a header line per model (what is under way, what is next, late tasks, tasks done), a bar per
  * event with how much of it is done, and a thin bar per task under it; months shaded in turn and today marked.
  */
-function PlanTimeline(props: { plans: PlanBrief[]; today: string; onOpen: (model: string, tab: "plan") => void }) {
+function PlanTimeline(props: { kind: "dev" | "mp"; plans: PlanBrief[]; today: string; onOpen: (model: string, tab: "plan" | "setup") => void }) {
+  const mp = props.kind === "mp";
   const tr = useTr();
   const range = timelineRange(props.plans, props.today);
   const months = range ? timelineMonths(range) : [];
@@ -164,7 +183,7 @@ function PlanTimeline(props: { plans: PlanBrief[]; today: string; onOpen: (model
   return (
     <div className="wk-hm-plan">
       <div className="wk-hm-row head">
-        <div className="wk-hm-label">{tr("Model · event · task")}</div>
+        <div className="wk-hm-label">{tr(mp ? "Model · line · process" : "Model · event · task")}</div>
         <div className="wk-hm-track">
           {months.map(([m, left, width], i) => (
             <span key={m} className={"wk-hm-month" + (i % 2 ? " alt" : "")} style={{ left: `${left}%`, width: `${width}%` }}>
@@ -179,18 +198,18 @@ function PlanTimeline(props: { plans: PlanBrief[]; today: string; onOpen: (model
         return (
           <div key={p.name} className="wk-hm-model">
             <div className="wk-hm-mhead">
-              <button className="wk-hm-link" onClick={() => props.onOpen(p.name, "plan")} title="Open the Dev Plan">{p.name}</button>
+              <button className="wk-hm-link" onClick={() => props.onOpen(p.name, mp ? "setup" : "plan")} title={mp ? "Open the Setup Plan" : "Open the Dev Plan"}>{p.name}</button>
               {p.phase && <span className="wk-phase">{p.phase}</span>}
               {p.path.length > 0 && <span className="wk-hm-path">{p.path.join(" › ")}</span>}
               <span className="wk-hm-facts">
                 <span className="wk-hm-fact"><i>{tr("Now")}</i>{p.now.length ? p.now.map((e) => tr(e.name)).join(", ") : "—"}</span>
                 <span className="wk-hm-fact"><i>{tr("Next")}</i>{p.next ? `${tr(p.next.name)} · ${slashDate(p.next.span![0])}` : "—"}</span>
                 {total > 0 && (
-                  <span className="wk-hm-fact"><i>{tr("Tasks")}</i>{done}/{total}
+                  <span className="wk-hm-fact"><i>{tr(mp ? "Setup done" : "Tasks")}</i>{done}/{total}
                     <span className="wk-hm-meter"><span style={{ width: `${(done / total) * 100}%` }} /></span>
                   </span>
                 )}
-                {p.lateTasks > 0 && <span className="wk-open">{p.lateTasks} {tr(p.lateTasks > 1 ? "late tasks" : "late task")}</span>}
+                {p.lateTasks > 0 && <span className="wk-open">{p.lateTasks} {tr(mp ? (p.lateTasks > 1 ? "late processes" : "late process") : p.lateTasks > 1 ? "late tasks" : "late task")}</span>}
               </span>
             </div>
             {p.events.map((e) => {

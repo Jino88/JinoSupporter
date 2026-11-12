@@ -1,7 +1,9 @@
-// Home of Working: a summary of every model, the development plans of the models in development first.
+// Home of Working: a summary of every model, the development plans of the models in development first, then the MP plans
+// (the Setup Plan of each model).
 import { addDays } from "../productionInput/logic";
 import { isLate, isOpenIssue, issuesOfStage, type GroupNode } from "./logic";
-import { eventSpan, progress, readDevPlan, taskSpan } from "./plan";
+import { COLORS, eventSpan, progress, readDevPlan, taskSpan } from "./plan";
+import { rowsInOrder, type SetupRow } from "./setup";
 import { phaseName, type Entry, type ModelInfo, type WorkingModel } from "./types";
 
 /** A model of the tree as Home loaded it: its information and entries, or the error it could not be loaded with. */
@@ -10,6 +12,8 @@ export interface ModelLoad {
   path: string[];
   model: WorkingModel | null;
   entries: Entry[];
+  /** Setup Plan rows (Mass Production); none when the model has no Setup Plan. */
+  setup?: SetupRow[];
   error: string;
 }
 
@@ -105,6 +109,31 @@ export function devPlans(loads: ModelLoad[], today: string): { plans: PlanBrief[
   const has = new Set(plans.map((p) => p.name));
   const noPlan = dev.filter((l) => !has.has(l.name) && !!phaseName(l.model!.info.phase)).map((l) => l.name);
   return { plans, noPlan };
+}
+
+/**
+ * The Setup Plan of a model as a plan: a line per event and its processes as tasks, each from its machine plan day to its
+ * setup plan day (one of them when only one is set), done when its setup is OK or has a finish day.
+ */
+export function setupPlanBrief(name: string, path: string[], phase: string, rows: SetupRow[], today: string): PlanBrief {
+  const lines: string[] = [];
+  for (const r of rowsInOrder(rows)) { const l = r.line.trim() || "(No line)"; if (!lines.includes(l)) lines.push(l); }
+  const events = lines.map((line, i) => ({
+    id: "line:" + line, name: line, start: "", end: "", color: COLORS[(i + 1) % COLORS.length], rows: [], bomFrom: "",
+    tasks: rowsInOrder(rows).filter((r) => (r.line.trim() || "(No line)") === line).map((r) => ({
+      id: r.id, name: r.processName || `No. ${r.no}`, owner: "", note: "",
+      start: r.machinePlan || r.setupPlan, end: r.setupPlan || r.machinePlan, done: r.setupStatus === "O" || !!r.setupFinish,
+    })),
+  }));
+  return planBrief(name, path, { phase, devPlan: { events } }, today);
+}
+
+/** The MP plans: every model with a Setup Plan, in the same order as the development plans. */
+export function mpPlans(loads: ModelLoad[], today: string): PlanBrief[] {
+  const plans = loads.filter((l) => l.model && l.setup?.length)
+    .map((l) => setupPlanBrief(l.name, l.path, phaseName(l.model!.info.phase), l.setup!, today));
+  const firstDay = (p: PlanBrief) => p.next?.span?.[0] ?? "9999";
+  return plans.sort((a, b) => Number(!a.now.length) - Number(!b.now.length) || firstDay(a).localeCompare(firstDay(b)) || a.name.localeCompare(b.name));
 }
 
 /**

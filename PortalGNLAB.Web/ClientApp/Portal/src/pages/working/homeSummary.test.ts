@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { barAt, devPlans, labelSide, modelRow, planBrief, timelineMonths, timelineRange, treeModels, type ModelLoad } from "./homeSummary";
+import { barAt, devPlans, labelSide, modelRow, mpPlans, planBrief, timelineMonths, timelineRange, treeModels, type ModelLoad } from "./homeSummary";
+import type { SetupRow } from "./setup";
 import type { Entry, ModelInfo } from "./types";
 
 const today = "2026-11-11";
@@ -81,5 +82,30 @@ describe("Home summary", () => {
       issue({ id: "5", setupRowId: "r" }), { id: "6", kind: "dev" },
     ]), today);
     expect(row).toMatchObject({ phase: "DV", customer: "C", sopTarget: "2027-03-01", devOpen: 2, mpOpen: 2, lateIssues: 1, events: 0 });
+  });
+
+  it("makes the MP plans from the Setup Plans: a line per event, each process from machine plan to setup plan", () => {
+    const row = (no: number, line: string, processName: string, machinePlan: string, setupPlan: string, setupStatus = "", setupFinish = "") =>
+      ({ id: "r" + no, no, line, processName, machinePlan, setupPlan, setupStatus, setupFinish, layoutNo: "", machineState: "", machineNote: "",
+         modelName: "M", revision: 1, createdBy: "", createdAt: "", updatedBy: "", updatedAt: "" }) as SetupRow;
+    const withSetup = (name: string, phase: string, setup: SetupRow[]): ModelLoad => ({ ...load(name, { phase }), setup });
+    const plans = mpPlans([
+      withSetup("MSM-MP", "MP", [
+        row(2, "L2", "Assy", "2026-11-05", "2026-11-09"), row(1, "L1", "Bonding", "2026-11-01", "2026-11-03", "O"),
+        row(3, "L1", "Aging", "", "2026-11-20"), row(4, "", "Packing", "2026-11-12", "", "", "2026-11-12"),
+      ]),
+      withSetup("MSM-DEV", "PV", []),
+      load("MSM-NONE", { phase: "MP" }),
+    ], today);
+    expect(plans.map((p) => p.name)).toEqual(["MSM-MP"]);
+    const [p] = plans;
+    expect(p.events.map((e) => [e.name, e.tasks.map((t) => [t.name, t.span, t.done, t.late])])).toEqual([
+      ["L1", [["Bonding", ["2026-11-01", "2026-11-03"], true, false], ["Aging", ["2026-11-20", "2026-11-20"], false, false]]],
+      ["L2", [["Assy", ["2026-11-05", "2026-11-09"], false, true]]],
+      ["(No line)", [["Packing", ["2026-11-12", "2026-11-12"], true, false]]],
+    ]);
+    expect(p.lateTasks).toBe(1);
+    // a model's Setup Plan does not show in its development plan
+    expect(devPlans([withSetup("MSM-DEV", "PV", [row(1, "L1", "X", "2026-11-01", "2026-11-02")])], today).plans).toEqual([]);
   });
 });
