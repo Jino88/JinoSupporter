@@ -30,7 +30,11 @@ function Thumbs(props: { files: File[]; onRemove?: (i: number) => void }) {
  * Body of the Plan "AI input" popup: notes, mails, cells copied from Excel or pictures are typed or pasted, AI makes Setup
  * Plan rows of them, and the rows kept are added (New) or put over the row they change (Change).
  */
-export default function SetupAi(props: { modelName: string; today: string; onDone: (savedCount: number) => void; onError: (e: unknown) => void }) {
+export default function SetupAi(props: {
+  modelName: string; today: string; onDone: (savedCount: number) => void; onError: (e: unknown) => void;
+  /** Something typed, pasted or answered would be lost on closing. */
+  onDirty?: (dirty: boolean) => void;
+}) {
   const { modelName } = props;
   const [rows, setRows] = useState<SetupRow[]>([]);
   const [text, setText] = useState("");
@@ -47,6 +51,8 @@ export default function SetupAi(props: { modelName: string; today: string; onDon
     setupApi.rows(modelName).then((r) => { if (live) setRows(r); }, (e) => { if (live) props.onError(e); });
     return () => { live = false; };
   }, [modelName]);
+
+  useEffect(() => props.onDirty?.(!!answer || !!text.trim() || pictures.length > 0), [answer, text, pictures]);
 
   const items = useMemo(() => (answer ? setupAiItems(answer, asked) : []), [answer, asked]);
   const kept = items.filter((i) => picked.has(i.key));
