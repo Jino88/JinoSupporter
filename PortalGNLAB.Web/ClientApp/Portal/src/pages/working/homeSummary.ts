@@ -216,3 +216,24 @@ export function modelRow(l: ModelLoad, today: string): ModelRow {
     updatedAt: l.model?.updatedAt ?? "", error: l.error,
   };
 }
+
+/** An MP issue of a model for the MP Issues list. */
+export interface MpIssueRow {
+  model: string;
+  path: string[];
+  issue: Entry;
+  open: boolean;
+  late: boolean;
+}
+
+/**
+ * The Mass Production issues of every model (raised in MP or on a Setup Plan row, with their sub-issues): open ones first,
+ * late ones first among them, then in the order of the models and by number.
+ */
+export function mpIssueRows(loads: ModelLoad[], today: string): MpIssueRow[] {
+  const rows = loads.flatMap((l, at) => issuesOfStage(l.entries, "mp").map((issue) => ({
+    model: l.name, path: l.path, issue, open: isOpenIssue(issue), late: isLate(issue, today), at,
+  })));
+  rows.sort((a, b) => Number(!a.open) - Number(!b.open) || Number(!a.late) - Number(!b.late) || a.at - b.at || a.issue.seq - b.issue.seq);
+  return rows.map(({ at: _at, ...r }) => r);
+}

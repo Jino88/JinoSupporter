@@ -3,7 +3,7 @@ import { workingApi } from "./api";
 import { useTr } from "./i18n";
 import { setupApi } from "./setup";
 import {
-  barAt, devPlans, labelSide, modelRow, mpPlans, slashDate, timelineMonths, timelineRange, type EventBrief, type ModelLoad, type PlanBrief, type TaskBrief,
+  barAt, devPlans, labelSide, modelRow, mpIssueRows, mpPlans, slashDate, timelineMonths, timelineRange, type EventBrief, type ModelLoad, type PlanBrief, type TaskBrief,
 } from "./homeSummary";
 
 const STATE_LABEL: Record<EventBrief["state"], string> = { done: "Done", now: "Now", upcoming: "Next", late: "Late", undated: "No date" };
@@ -39,7 +39,9 @@ async function loadAll(models: { name: string; path: string[] }[], onCount: (n: 
 export default function Home(props: {
   models: { name: string; path: string[] }[] | null;
   today: string;
-  onOpen: (model: string, tab: "info" | "plan" | "setup") => void;
+  onOpen: (model: string, tab: "info" | "plan" | "setup" | "issue") => void;
+  /** Home itself, or the MP issues of every model. */
+  view?: "home" | "mpissues";
   /** Already loaded (tests and the page reopening); loaded here when left out. */
   initial?: ModelLoad[];
 }) {
@@ -60,6 +62,7 @@ export default function Home(props: {
   if (!loads) {
     return <div className="card pi-empty">{props.models ? `Loading models… ${count} / ${props.models.length}` : "Loading…"}</div>;
   }
+  if (props.view === "mpissues") return <MpIssues loads={loads} today={props.today} onOpen={props.onOpen} />;
   const { plans, noPlan } = devPlans(loads, props.today);
   const mp = mpPlans(loads, props.today);
   const rows = loads.map((l) => modelRow(l, props.today));
@@ -137,6 +140,56 @@ export default function Home(props: {
         </div>
       </section>
     </div>
+  );
+}
+
+/** The Mass Production issues of every model in one list, the open ones first (or all of them). */
+function MpIssues(props: { loads: ModelLoad[]; today: string; onOpen: (model: string, tab: "issue") => void }) {
+  const tr = useTr();
+  const [all, setAll] = useState(false);
+  const rows = mpIssueRows(props.loads, props.today);
+  const open = rows.filter((r) => r.open);
+  const shown = all ? rows : open;
+  const late = open.filter((r) => r.late).length;
+  return (
+    <section className="card pi-sec">
+      <div className="pi-sec-h">
+        <h2>{tr("MP Issues")}<span className="cnt">{open.length}</span></h2>
+        <div className="pi-legend">
+          {late > 0 && <span className="wk-open">{late} {tr("late")}</span>}
+          <button className={"wk-chip" + (all ? "" : " on")} onClick={() => setAll(false)}>{tr("Open")} {open.length}</button>
+          <button className={"wk-chip" + (all ? " on" : "")} onClick={() => setAll(true)}>{tr("All")} {rows.length}</button>
+        </div>
+      </div>
+      <div className="pi-sec-b wk-hm-models">
+        {!shown.length ? <div className="muted small">{tr(all ? "No model has an MP issue yet." : "No open MP issue.")}</div> : (
+          <table className="grid wk-hm-issues">
+            <thead>
+              <tr>
+                {["Model", "No.", "Issue type", "Process", "Issue", "Owner", "Registered", "Due", "Done", "Final result", "Notes"].map((h) => <th key={h}>{tr(h)}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map(({ model, issue: e, open: isOpen, late: isLateNow }) => (
+                <tr key={model + e.id} className={isOpen ? undefined : "done"}>
+                  <td><button className="wk-hm-link" onClick={() => props.onOpen(model, "issue")} title="Open the model's Issues">{model}</button></td>
+                  <td className="num">{e.seq}</td>
+                  <td>{tr(e.category)}</td>
+                  <td>{tr(e.process)}</td>
+                  <td className="l"><b>{tr(e.title)}</b>{e.body && <div className="muted small">{tr(e.body).split("\n")[0]}</div>}</td>
+                  <td>{e.owner}</td>
+                  <td>{slashDate(e.date)}</td>
+                  <td className={isLateNow ? "late" : ""}>{e.due && slashDate(e.due)}{isLateNow && <span className="wk-late">{tr("Late")}</span>}</td>
+                  <td>{e.doneDate ? slashDate(e.doneDate) : ""}</td>
+                  <td className="l">{tr(e.finalResult)}</td>
+                  <td className="num">{e.logs?.length || ""}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </section>
   );
 }
 
