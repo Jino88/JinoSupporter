@@ -25,7 +25,7 @@ type Tab = "info" | "plan" | "devissue" | "dev" | "review" | "all" | "setup" | "
 const CATEGORIES: { label: string; tabs: [Tab, string][] }[] = [
   { label: "Model Info", tabs: [["info", "Model Info"]] },
   { label: "Development", tabs: [["plan", "Dev Plan"], ["devissue", "Dev Issue"], ["dev", "Dev History"], ["review", "Reviews"], ["all", "Timeline"]] },
-  { label: "Mass Production", tabs: [["setup", "Setup Plan"], ["issue", "Issues"]] },
+  { label: "Mass Production", tabs: [["setup", "Plan"], ["issue", "Issues"]] },
   { label: "AI", tabs: [["ai", "AI"]] },
 ];
 const categoryOf = (tab: Tab) => CATEGORIES.find((c) => c.tabs.some(([k]) => k === tab))!;

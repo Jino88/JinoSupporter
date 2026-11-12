@@ -1,6 +1,7 @@
 // Setup Plan of a model (Endpoints/WorkingEndpoints.cs, /setup): one row per process with its machine line and setup
 // progress. A row's problems are ordinary issues whose setupRowId is the row.
 import { getJson, toolPath, toolSend } from "../../toolsApi";
+import { COLORS, type PlanEvent } from "./plan";
 
 /** "" (not set), O (OK), X (not yet set up) or Δ (setting up now). */
 export type SetupState = "" | "O" | "X" | "Δ";
@@ -82,6 +83,26 @@ export function setupBatch(adding: SetupFields[]): { rows: SetupFields[]; proble
 
 export const rowsInOrder =(rows: SetupRow[]) =>
   [...rows].sort((a, b) => a.no - b.no || a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
+
+/** The line a row is on, "(No line)" when it has none. */
+export const lineOf = (r: { line: string }) => r.line.trim() || "(No line)";
+
+/**
+ * The rows as plan events, the way Dev Plan shows them: a line per event (in the order the lines first appear) and its
+ * processes as tasks, each from its machine plan day to its setup plan day (one of them when only one is set), done when
+ * its setup is OK or has a finish day.
+ */
+export function setupEvents(rows: SetupRow[]): PlanEvent[] {
+  const ordered = rowsInOrder(rows);
+  const lines = [...new Set(ordered.map(lineOf))];
+  return lines.map((line, i) => ({
+    id: "line:" + line, name: line, start: "", end: "", color: COLORS[(i + 1) % COLORS.length], rows: [], bomFrom: "",
+    tasks: ordered.filter((r) => lineOf(r) === line).map((r) => ({
+      id: r.id, name: r.processName || `No. ${r.no}`, owner: "", note: "",
+      start: r.machinePlan || r.setupPlan, end: r.setupPlan || r.machinePlan, done: r.setupStatus === "O" || !!r.setupFinish,
+    })),
+  }));
+}
 
 const ymd = /^\d{4}-\d{2}-\d{2}$/;
 

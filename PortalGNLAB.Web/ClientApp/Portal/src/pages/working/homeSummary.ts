@@ -2,8 +2,8 @@
 // (the Setup Plan of each model).
 import { addDays } from "../productionInput/logic";
 import { isLate, isOpenIssue, issuesOfStage, type GroupNode } from "./logic";
-import { COLORS, eventSpan, progress, readDevPlan, taskSpan } from "./plan";
-import { rowsInOrder, type SetupRow } from "./setup";
+import { eventSpan, progress, readDevPlan, taskSpan } from "./plan";
+import { setupEvents, type SetupRow } from "./setup";
 import { phaseName, type Entry, type ModelInfo, type WorkingModel } from "./types";
 
 /** A model of the tree as Home loaded it: its information and entries, or the error it could not be loaded with. */
@@ -116,16 +116,7 @@ export function devPlans(loads: ModelLoad[], today: string): { plans: PlanBrief[
  * setup plan day (one of them when only one is set), done when its setup is OK or has a finish day.
  */
 export function setupPlanBrief(name: string, path: string[], phase: string, rows: SetupRow[], today: string): PlanBrief {
-  const lines: string[] = [];
-  for (const r of rowsInOrder(rows)) { const l = r.line.trim() || "(No line)"; if (!lines.includes(l)) lines.push(l); }
-  const events = lines.map((line, i) => ({
-    id: "line:" + line, name: line, start: "", end: "", color: COLORS[(i + 1) % COLORS.length], rows: [], bomFrom: "",
-    tasks: rowsInOrder(rows).filter((r) => (r.line.trim() || "(No line)") === line).map((r) => ({
-      id: r.id, name: r.processName || `No. ${r.no}`, owner: "", note: "",
-      start: r.machinePlan || r.setupPlan, end: r.setupPlan || r.machinePlan, done: r.setupStatus === "O" || !!r.setupFinish,
-    })),
-  }));
-  return planBrief(name, path, { phase, devPlan: { events } }, today);
+  return planBrief(name, path, { phase, devPlan: { events: setupEvents(rows) } }, today);
 }
 
 /** The MP plans: every model with a Setup Plan, in the same order as the development plans. */

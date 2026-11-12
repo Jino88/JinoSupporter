@@ -15,7 +15,7 @@ import type { WorkingModel } from "./types";
 
 interface Row { id: string; label: string; sub: string; span: [string, string] | null; color: string; done?: boolean }
 
-const dates = (span: [string, string] | null) => (span ? (span[0] === span[1] ? span[0].slice(5) : `${span[0].slice(5)} – ${span[1].slice(5)}`) : "no date");
+export const dates = (span: [string, string] | null) => (span ? (span[0] === span[1] ? span[0].slice(5) : `${span[0].slice(5)} – ${span[1].slice(5)}`) : "no date");
 
 /**
  * Horizontal calendar: a column per day, a row per item, the days of each item filled in its color. `expand` (rows of

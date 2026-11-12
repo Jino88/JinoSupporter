@@ -94,12 +94,12 @@ export default function Home(props: {
         <div className="pi-sec-h">
           <h2>{tr("MP plans")}<span className="cnt">{mp.length}</span></h2>
           <div className="pi-legend">
-            <span>{tr("Setup Plan of each model: each process from its machine plan to its setup plan, by line")} · {tr("today")} {slashDate(props.today)}</span>
+            <span>{tr("Plan of each model: each process from its machine plan to its setup plan, by line")} · {tr("today")} {slashDate(props.today)}</span>
           </div>
         </div>
         <div className="pi-sec-b">
           {mp.length ? <PlanTimeline kind="mp" plans={mp} today={props.today} onOpen={props.onOpen} /> : (
-            <div className="muted small">{tr("No model has a Setup Plan yet. Add processes in a model's Mass Production › Setup Plan.")}</div>
+            <div className="muted small">{tr("No model has an MP plan yet. Add processes in a model's Mass Production › Plan.")}</div>
           )}
         </div>
       </section>
@@ -251,7 +251,7 @@ function PlanTimeline(props: { kind: "dev" | "mp"; plans: PlanBrief[]; today: st
         return (
           <div key={p.name} className="wk-hm-model">
             <div className="wk-hm-mhead">
-              <button className="wk-hm-link" onClick={() => props.onOpen(p.name, mp ? "setup" : "plan")} title={mp ? "Open the Setup Plan" : "Open the Dev Plan"}>{p.name}</button>
+              <button className="wk-hm-link" onClick={() => props.onOpen(p.name, mp ? "setup" : "plan")} title={mp ? "Open the Plan" : "Open the Dev Plan"}>{p.name}</button>
               {p.phase && <span className="wk-phase">{p.phase}</span>}
               {p.path.length > 0 && <span className="wk-hm-path">{p.path.join(" › ")}</span>}
               <span className="wk-hm-facts">

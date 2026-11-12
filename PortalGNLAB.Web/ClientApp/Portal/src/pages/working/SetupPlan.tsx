@@ -1,12 +1,15 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import DateBox from "./DateBox";
+import { Gantt, dates } from "./DevPlan";
 import { useTr } from "./i18n";
 import { workingApi } from "./api";
 import IssueTable from "./IssueTable";
 import { blankEntry, isOpenIssue, issuesBySeq } from "./logic";
 import {
-  issueProcessOf, newSetupRow, parseSetupPaste, rate, rowsInOrder, SETUP_STATES, setupApi, setupBatch, setupFieldsOf, setupProblem, setupSummary, shortDate, tableToTsv,
+  issueProcessOf, lineOf, newSetupRow, parseSetupPaste, rate, rowsInOrder, SETUP_STATES, setupApi, setupBatch, setupEvents, setupFieldsOf, setupProblem, setupSummary,
+  shortDate, tableToTsv,
 } from "./setup";
+import { calendarDays, eventSpan, planDays, progress, taskSpan } from "./plan";
 import type { PastedSetup, SetupFields, SetupRow, SetupState } from "./setup";
 import type { Entry } from "./types";
 import "./setup.css";
@@ -109,8 +112,9 @@ function PasteBox(props: { today: string; busy: boolean; onImport: (p: PastedSet
 }
 
 /**
- * Setup Plan: per process, the machine line plan / state and the setup plan / finish / status, summed per line at the top.
- * Each process opens into its Issue (Problem) list: issues of this model raised against the row, with the same columns,
+ * Plan of Mass Production, shown like Dev Plan: a line per row of the calendar (its processes from their machine plan to
+ * their setup plan), and under it the line picked: its processes on a calendar and in a table with the machine line plan /
+ * state and the setup plan / finish / status. Each process opens into its Issue (Problem) list: issues of this model raised against the row, with the same columns,
  * daily notes and pictures as in Issues (they are listed there too).
  */
 export default function SetupPlan(props: {
@@ -120,32 +124,41 @@ export default function SetupPlan(props: {
   today: string;
   onChanged: (list: Entry[]) => void;
   onError: (e: unknown) => void;
+  /** Rows to show instead of loading them (tests). */
+  initial?: SetupRow[];
 }) {
   const tr = useTr();
   const { modelName, entries, today } = props;
-  const [rows, setRows] = useState<SetupRow[] | null>(null);
+  const [rows, setRows] = useState<SetupRow[] | null>(props.initial ?? null);
   const [editing, setEditing] = useState<string | null>(null); // id of the saved row being edited
   const [adding, setAdding] = useState<{ key: number; f: SetupFields }[]>([]); // new rows, saved together
   const [addTried, setAddTried] = useState(false);
   const addKey = useRef(0);
   const [pasting, setPasting] = useState(false);
   const [open, setOpen] = useState<Set<string>>(new Set());
-  const [line, setLine] = useState("");
+  const [line, setLine] = useState(""); // the line picked (the first one until another is)
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    if (props.initial) return;
     let live = true;
     setupApi.rows(modelName).then((r) => { if (live) setRows(r); }).catch(props.onError);
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelName]);
 
-  if (rows === null) return <div className="muted">Loading the setup plan…</div>;
+  if (rows === null) return <div className="muted">Loading the plan…</div>;
 
   const ordered = rowsInOrder(rows);
   const summary = setupSummary(rows);
   const lines = summary.lines.map((l) => l.line).filter((l) => l !== "(No line)");
-  const shown = line ? ordered.filter((r) => (r.line.trim() || "(No line)") === line) : ordered;
+  // like Dev Plan: a line per event on the calendar, the processes of the line picked under it
+  const events = setupEvents(rows);
+  const ev = events.find((e) => e.name === line) ?? events[0] ?? null;
+  const shown = ev ? ordered.filter((r) => lineOf(r) === ev.name) : [];
+  const days = planDays(events);
+  const evDays = ev ? calendarDays([eventSpan(ev), ...ev.tasks.map(taskSpan)], 1) : [];
+  const stat = ev ? summary.lines.find((l) => l.line === ev.name) : undefined;
   const problemsOf = (r: SetupRow) => issuesBySeq(entries.filter((e) => e.setupRowId === r.id));
 
   const run = async (work: () => Promise<void>) => {
@@ -154,7 +167,7 @@ export default function SetupPlan(props: {
   };
   const addRow = () => {
     const key = ++addKey.current;
-    setAdding((a) => [...a, { key, f: newSetupRow(rows, a.map((x) => x.f), line) }]);
+    setAdding((a) => [...a, { key, f: newSetupRow(rows, a.map((x) => x.f), ev && ev.name !== "(No line)" ? ev.name : "") }]);
   };
   const setAdded = (key: number, f: SetupFields) => setAdding((a) => a.map((x) => (x.key === key ? { key, f } : x)));
   const dropAdded = (key: number) => setAdding((a) => a.filter((x) => x.key !== key));
@@ -203,140 +216,147 @@ export default function SetupPlan(props: {
 
   const toggle = (id: string) => setOpen((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const late = (date: string, state: SetupState) => !!date && date < today && state !== "O";
+  const pick = (id: string) => { setLine(events.find((e) => e.id === id)?.name ?? ""); setEditing(null); };
+  const byId = new Map(rows.map((r) => [r.id, r]));
 
   return (
     <section className="card pi-sec">
       <div className="pi-sec-h">
-        <h2>■ {modelName} Setup Plan <span className="cnt">{rows.length}</span></h2>
+        <h2>{tr("Plan")} <span className="cnt">{rows.length}</span></h2>
         <div className="pi-legend">
           <button className="btn sm" disabled={pasting} onClick={() => setPasting(true)}>Paste from Excel</button>
           <button className="btn sm primary" disabled={busy} onClick={addRow}>+ Add row</button>
         </div>
       </div>
 
-      <div className="pi-sec-b su-top">
-        <table className="su-sum">
-          <thead>
-            <tr><th rowSpan={2}>TYPE</th><th rowSpan={2}>Total<br />Process</th><th colSpan={3}>Machine Status</th><th colSpan={2}>Setup Status</th></tr>
-            <tr><th>Total</th><th>Finish</th><th>Rate</th><th>Finish</th><th>Rate</th></tr>
-          </thead>
-          <tbody>
-            {summary.lines.map((s) => (
-              <tr key={s.line} className={line === s.line ? "on" : ""} onClick={() => setLine(line === s.line ? "" : s.line)} title="Show only this line">
-                <th>{s.line}</th><td>{s.total}</td><td className="v">{s.total}</td><td className="v">{s.machineFinish}</td>
-                <td className="v">{rate(s.machineFinish, s.total)}</td><td className="v">{s.setupFinish}</td><td className="v">{rate(s.setupFinish, s.total)}</td>
-              </tr>
-            ))}
-            <tr className="tot">
-              <th>Total</th><td>{summary.total.total}</td><td>{summary.total.total}</td><td>{summary.total.machineFinish}</td>
-              <td>{rate(summary.total.machineFinish, summary.total.total)}</td><td>{summary.total.setupFinish}</td>
-              <td>{rate(summary.total.setupFinish, summary.total.total)}</td>
-            </tr>
-          </tbody>
-        </table>
-        <table className="su-sum su-legend">
-          <thead><tr><th colSpan={2}>Setup Status</th></tr></thead>
-          <tbody>{SETUP_STATES.map((s) => <tr key={s.value}><td className={"su-st " + stateClass(s.value)}>{s.value}</td><td>{s.label}</td></tr>)}</tbody>
-        </table>
-        {line && <button className="wk-chip on su-filter" onClick={() => setLine("")}>Line: {line} ×</button>}
-      </div>
+      <div className="pi-sec-b">
+        {pasting && <PasteBox today={today} busy={busy} onImport={importRows} onCancel={() => setPasting(false)} />}
+        {!rows.length && !adding.length && (
+          <div className="muted">{tr("No process yet. Add a row, or paste the rows of the plan sheet from Excel.")}</div>
+        )}
+        {events.length > 0 && (days.length
+          ? <Gantt rows={events.map((e) => {
+            const [done, all] = progress(e);
+            return { id: e.id, label: e.name, sub: `${dates(eventSpan(e))} · ${done}/${all}`, span: eventSpan(e), color: e.color, done: done === all };
+          })} days={days} selected={ev?.id} onPick={pick} />
+          : <div className="muted">{tr("Give the processes a machine plan or setup plan day to see them on the calendar.")}</div>)}
+        {events.length > 0 && !days.length && (
+          <div className="wk-dp-chips">{events.map((e) => <button key={e.id} className={"wk-chip" + (e.id === ev?.id ? " on" : "")} onClick={() => pick(e.id)}>{e.name}</button>)}</div>
+        )}
 
-      {pasting && (
-        <div className="pi-sec-b">
-          <PasteBox today={today} busy={busy} onImport={importRows} onCancel={() => setPasting(false)} />
-        </div>
-      )}
-
-      <div className="pi-wrap">
-        <table className="wk-it su-t">
-          <thead>
-            <tr>
-              <th rowSpan={2}></th><th rowSpan={2}>No</th><th rowSpan={2}>No.<br />Layout</th><th rowSpan={2}>LINE</th>
-              <th rowSpan={2} className="l">{tr("Process Name")}</th>
-              <th colSpan={3} className="grp">Machine Line</th><th colSpan={3} className="grp">SETUP</th>
-              <th rowSpan={2} className="l">{tr("Issue (Problem)")}</th><th rowSpan={2}></th>
-            </tr>
-            <tr><th>Plan</th><th>State</th><th>Note</th><th>Plan</th><th>Finish</th><th>Status</th></tr>
-          </thead>
-          <tbody>
-            {shown.map((r, i) => {
-              if (editing === r.id)
-                return <SetupEditRow key={r.id} value={setupFieldsOf(r)} busy={busy} onSave={(f) => save(r, f)} onCancel={() => setEditing(null)} />;
-              const problems = problemsOf(r);
-              const openOnes = problems.filter(isOpenIssue);
-              const isOpen = open.has(r.id);
-              const sameLine = i > 0 && shown[i - 1].line === r.line;
-              return (
-                <Fragment key={r.id}>
-                  <tr className={"wk-it-row su-row" + (isOpen ? " on" : "") + (r.setupStatus === "O" ? " ok" : "")} onClick={() => toggle(r.id)}>
-                    <td className="tog">{isOpen ? "▾" : "▸"}</td>
-                    <td className="n">{r.no}</td>
-                    <td>{r.layoutNo}</td>
-                    <td className={"su-line-c" + (sameLine ? " same" : "")}>{r.line}</td>
-                    <td className="l su-proc-c">{tr(r.processName)}</td>
-                    <td className={late(r.machinePlan, r.machineState) ? "late" : ""} title={r.machinePlan}>{shortDate(r.machinePlan, today)}</td>
-                    <td className={"su-st " + stateClass(r.machineState)}>{r.machineState}</td>
-                    <td>{tr(r.machineNote)}</td>
-                    <td className={late(r.setupPlan, r.setupStatus) ? "late" : ""} title={r.setupPlan}>{shortDate(r.setupPlan, today)}</td>
-                    <td title={r.setupFinish}>{shortDate(r.setupFinish, today)}</td>
-                    <td className={"su-st " + stateClass(r.setupStatus)}>{r.setupStatus}</td>
-                    <td className="l su-prob">
-                      {openOnes.slice(0, 3).map((p) => <div key={p.id} className="su-prob-open">- {p.title}</div>)}
-                      {openOnes.length > 3 && <div className="muted small">+{openOnes.length - 3} more open</div>}
-                      {problems.length > openOnes.length && (
-                        <div className="muted small">{problems.length - openOnes.length} closed</div>
-                      )}
-                    </td>
-                    <td className="act" onClick={(e) => e.stopPropagation()}>
-                      <button className="wk-link" onClick={() => setEditing(r.id)}>Edit</button>
-                      <button className="wk-link bad" onClick={() => remove(r)}>Delete</button>
-                    </td>
+        {(ev || adding.length > 0) && (
+          <div className={ev ? "wk-dp-detail" : undefined}>
+            {ev && (
+              <>
+                <div className="wk-dp-dh">
+                  <span className="dot" style={{ background: ev.color }} />
+                  <h3>{ev.name}</h3>
+                  <span className="muted small">
+                    {dates(eventSpan(ev))} · {progress(ev)[0]}/{progress(ev)[1]} done
+                    {stat && <> · Machine {stat.machineFinish}/{stat.total} ({rate(stat.machineFinish, stat.total)}) · Setup {stat.setupFinish}/{stat.total} ({rate(stat.setupFinish, stat.total)})</>}
+                  </span>
+                  <span className="wk-dp-act su-key">
+                    {SETUP_STATES.map((s) => <span key={s.value}><b className={"su-st " + stateClass(s.value)}>{s.value}</b> {s.label}</span>)}
+                  </span>
+                </div>
+                <div className="wk-qty-h static">{tr("Detailed schedule")}</div>
+                {evDays.length > 0 && (
+                  <Gantt days={evDays} rows={ev.tasks.map((t) => {
+                    const r = byId.get(t.id);
+                    return { id: t.id, label: t.name, sub: dates(taskSpan(t)) + (r?.setupStatus ? " · " + r.setupStatus : ""), span: taskSpan(t), color: ev.color, done: t.done };
+                  })} />
+                )}
+              </>
+            )}
+            <div className="pi-wrap">
+              <table className="wk-it su-t">
+                <thead>
+                  <tr>
+                    <th rowSpan={2}></th><th rowSpan={2}>No</th><th rowSpan={2}>No.<br />Layout</th><th rowSpan={2}>LINE</th>
+                    <th rowSpan={2} className="l">{tr("Process Name")}</th>
+                    <th colSpan={3} className="grp">Machine Line</th><th colSpan={3} className="grp">SETUP</th>
+                    <th rowSpan={2} className="l">{tr("Issue (Problem)")}</th><th rowSpan={2}></th>
                   </tr>
-                  {isOpen && (
-                    <tr className="su-sub">
+                  <tr><th>Plan</th><th>State</th><th>Note</th><th>Plan</th><th>Finish</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                  {shown.map((r) => {
+                    if (editing === r.id)
+                      return <SetupEditRow key={r.id} value={setupFieldsOf(r)} busy={busy} onSave={(f) => save(r, f)} onCancel={() => setEditing(null)} />;
+                    const problems = problemsOf(r);
+                    const openOnes = problems.filter(isOpenIssue);
+                    const isOpen = open.has(r.id);
+                    return (
+                      <Fragment key={r.id}>
+                        <tr className={"wk-it-row su-row" + (isOpen ? " on" : "") + (r.setupStatus === "O" ? " ok" : "")} onClick={() => toggle(r.id)}>
+                          <td className="tog">{isOpen ? "▾" : "▸"}</td>
+                          <td className="n">{r.no}</td>
+                          <td>{r.layoutNo}</td>
+                          <td className="su-line-c">{r.line}</td>
+                          <td className="l su-proc-c">{tr(r.processName)}</td>
+                          <td className={late(r.machinePlan, r.machineState) ? "late" : ""} title={r.machinePlan}>{shortDate(r.machinePlan, today)}</td>
+                          <td className={"su-st " + stateClass(r.machineState)}>{r.machineState}</td>
+                          <td>{tr(r.machineNote)}</td>
+                          <td className={late(r.setupPlan, r.setupStatus) ? "late" : ""} title={r.setupPlan}>{shortDate(r.setupPlan, today)}</td>
+                          <td title={r.setupFinish}>{shortDate(r.setupFinish, today)}</td>
+                          <td className={"su-st " + stateClass(r.setupStatus)}>{r.setupStatus}</td>
+                          <td className="l su-prob">
+                            {openOnes.slice(0, 3).map((p) => <div key={p.id} className="su-prob-open">- {p.title}</div>)}
+                            {openOnes.length > 3 && <div className="muted small">+{openOnes.length - 3} more open</div>}
+                            {problems.length > openOnes.length && (
+                              <div className="muted small">{problems.length - openOnes.length} closed</div>
+                            )}
+                          </td>
+                          <td className="act" onClick={(e) => e.stopPropagation()}>
+                            <button className="wk-link" onClick={() => setEditing(r.id)}>Edit</button>
+                            <button className="wk-link bad" onClick={() => remove(r)}>Delete</button>
+                          </td>
+                        </tr>
+                        {isOpen && (
+                          <tr className="su-sub">
+                            <td colSpan={COLS}>
+                              <IssueTable modelName={modelName} modelPhase={props.modelPhase} entries={problems} today={today}
+                                setupRowId={r.id} heading={`Issue (Problem) · No. ${r.no} ${r.processName}`} newDefaults={{ process: issueProcessOf(r) }}
+                                onChanged={(list) => {
+                                  const mine = new Set(problems.map((p) => p.id));
+                                  props.onChanged([...entries.filter((e) => !mine.has(e.id)), ...list]);
+                                }}
+                                onError={props.onError} />
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
+                  {adding.map((x, i) => {
+                    const problem = addTried ? setupProblem(x.f) : "";
+                    return (
+                      <tr key={x.key} className="su-edit su-new"
+                        onKeyDown={(e) => { if (e.key === "Enter" && e.target instanceof HTMLInputElement) saveAdded(); }}>
+                        <td className="tog">+</td>
+                        <SetupCells value={x.f} onChange={(f) => setAdded(x.key, f)} autoFocus={i === adding.length - 1} />
+                        <td className="l su-msg">{problem && <span className="su-err">{problem}</span>}</td>
+                        <td className="act"><button className="wk-link bad" title="Remove this new row" onClick={() => dropAdded(x.key)}>Remove</button></td>
+                      </tr>
+                    );
+                  })}
+                  {adding.length > 0 && (
+                    <tr className="su-add-f">
                       <td colSpan={COLS}>
-                        <IssueTable modelName={modelName} modelPhase={props.modelPhase} entries={problems} today={today}
-                          setupRowId={r.id} heading={`Issue (Problem) · No. ${r.no} ${r.processName}`} newDefaults={{ process: issueProcessOf(r) }}
-                          onChanged={(list) => {
-                            const mine = new Set(problems.map((p) => p.id));
-                            props.onChanged([...entries.filter((e) => !mine.has(e.id)), ...list]);
-                          }}
-                          onError={props.onError} />
+                        <button className="btn sm" disabled={busy} onClick={addRow}>+ Another row</button>
+                        <button className="btn sm primary" disabled={busy} onClick={saveAdded}>Add {adding.length} row{adding.length > 1 ? "s" : ""}</button>
+                        <button className="btn sm" disabled={busy} onClick={cancelAdding}>Cancel</button>
+                        {addTried && batch.problem ? <span className="su-err">{batch.problem}</span>
+                          : <span className="muted small">Enter adds them all. Problems are added once a row is saved.</span>}
                       </td>
                     </tr>
                   )}
-                </Fragment>
-              );
-            })}
-            {adding.map((x, i) => {
-              const problem = addTried ? setupProblem(x.f) : "";
-              return (
-                <tr key={x.key} className="su-edit su-new"
-                  onKeyDown={(e) => { if (e.key === "Enter" && e.target instanceof HTMLInputElement) saveAdded(); }}>
-                  <td className="tog">+</td>
-                  <SetupCells value={x.f} onChange={(f) => setAdded(x.key, f)} autoFocus={i === adding.length - 1} />
-                  <td className="l su-msg">{problem && <span className="su-err">{problem}</span>}</td>
-                  <td className="act"><button className="wk-link bad" title="Remove this new row" onClick={() => dropAdded(x.key)}>Remove</button></td>
-                </tr>
-              );
-            })}
-            {adding.length > 0 && (
-              <tr className="su-add-f">
-                <td colSpan={COLS}>
-                  <button className="btn sm" disabled={busy} onClick={addRow}>+ Another row</button>
-                  <button className="btn sm primary" disabled={busy} onClick={saveAdded}>Add {adding.length} row{adding.length > 1 ? "s" : ""}</button>
-                  <button className="btn sm" disabled={busy} onClick={cancelAdding}>Cancel</button>
-                  {addTried && batch.problem ? <span className="su-err">{batch.problem}</span>
-                    : <span className="muted small">Enter adds them all. Problems are added once a row is saved.</span>}
-                </td>
-              </tr>
-            )}
-            {!rows.length && !adding.length && (
-              <tr><td colSpan={COLS} className="wk-it-empty">No process yet. Add a row, or paste the rows of the Setup Plan sheet from Excel.</td></tr>
-            )}
-          </tbody>
-        </table>
-        <datalist id="su-lines">{lines.map((l) => <option key={l} value={l} />)}</datalist>
+                </tbody>
+              </table>
+              <datalist id="su-lines">{lines.map((l) => <option key={l} value={l} />)}</datalist>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
