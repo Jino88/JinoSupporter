@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState, type ClipboardEvent, type DragEvent, type ReactNode } from "react";
 import DateBox from "./DateBox";
+import { useTr } from "./i18n";
 import { workingApi } from "./api";
 import {
   blankEntry, blankLog, entryProblem, fieldsOf, isLate, isLogLate, isOpenIssue, issueFields, issuesBySeq, issueTree, logFieldsOf, logProblem,
@@ -170,13 +171,14 @@ const DoneCell = (props: { doneDate: string }) =>
 /** A progress note shown in the issue's columns: text + pictures under Issue, then owner and the dates. */
 function LogRow(props: { no: string; log: EntryLog; today: string; busy: boolean; onEdit: () => void; onDelete: () => void; onOpen: (i: WorkingImage) => void }) {
   const { log } = props;
+  const tr = useTr();
   const late = isLogLate(logFieldsOf(log), props.today);
   return (
     <tr className={"wk-it-log" + (log.doneDate ? " done" : "")}>
       <td className="tog">↳</td>
       <td className="n sub">{props.no}</td>
       <td colSpan={4}></td>
-      <td className="l wk-it-title"><div className="wk-text">{log.text}</div><Thumbs images={log.images ?? []} onOpen={props.onOpen} /></td>
+      <td className="l wk-it-title"><div className="wk-text">{tr(log.text)}</div><Thumbs images={log.images ?? []} onOpen={props.onOpen} /></td>
       <td>{log.owner || <span className="muted" title="Written by">{log.createdBy}</span>}</td>
       <td>{log.date}</td>
       <td className={late ? "late" : ""}>{log.due}{late && <span className="wk-late">Late</span>}</td>
@@ -259,6 +261,7 @@ export default function IssueTable(props: {
   /** Prefilled fields of a new issue. */
   newDefaults?: Partial<EntryFields>;
 }) {
+  const tr = useTr();
   const { modelName, entries, today } = props;
   const [filter, setFilter] = useState<Filter>("open");
   const [editing, setEditing] = useState<string | null>(null); // issue id, "new" or null
@@ -371,22 +374,22 @@ export default function IssueTable(props: {
           <td className="tog">{expanded ? "▾" : "▸"}</td>
           <td className={"n" + (sub ? " sub" : "")}>{no}</td>
           <td>{phaseName(e.phase) || "—"}</td>
-          <td>{e.category}</td>
-          <td>{e.process}</td>
-          <td>{e.cause}</td>
-          <td className="l wk-it-title" title={e.body || undefined}>
-            {sub ? <span className="wk-it-subt">{e.title}</span> : <b>{e.title}</b>}
+          <td>{tr(e.category)}</td>
+          <td>{tr(e.process)}</td>
+          <td>{tr(e.cause)}</td>
+          <td className="l wk-it-title" title={e.body ? tr(e.body) : undefined}>
+            {sub ? <span className="wk-it-subt">{tr(e.title)}</span> : <b>{tr(e.title)}</b>}
             {kids.length > 0 && !expanded && (
               <span className="wk-it-kids">{kids.length} sub-issue{kids.length > 1 ? "s" : ""}{openKids ? `, ${openKids} open` : ""}</span>
             )}
             <Thumbs images={e.images ?? []} onOpen={setViewer} />
-            {last && !expanded && <div className="muted small">{last.date.slice(5)} · {last.text.split("\n")[0]}</div>}
+            {last && !expanded && <div className="muted small">{last.date.slice(5)} · {tr(last.text).split("\n")[0]}</div>}
           </td>
           <td>{e.owner}</td>
           <td>{e.date}</td>
           <td className={isLate(e, today) ? "late" : ""}>{e.due}{isLate(e, today) && <span className="wk-late">Late</span>}</td>
           <td><DoneCell doneDate={e.doneDate} /></td>
-          <td className="l wk-it-final">{e.finalResult}</td>
+          <td className="l wk-it-final">{tr(e.finalResult)}</td>
           <td className="n">{notes.length}</td>
           <td className="act" onClick={(ev) => ev.stopPropagation()}>
             <button className="wk-link" onClick={() => setEditing(e.id)} disabled={busy}>Edit</button>
@@ -436,7 +439,7 @@ export default function IssueTable(props: {
   return (
     <section className="card pi-sec">
       <div className="pi-sec-h">
-        <h2>{props.heading ?? "Issues"} <span className="cnt">{shown.length}</span></h2>
+        <h2>{tr(props.heading ?? "Issues")} <span className="cnt">{shown.length}</span></h2>
         <div className="pi-legend">
           {(["open", "closed", "all"] as Filter[]).map((v) => (
             <button key={v} className={"wk-chip" + (filter === v ? " on" : "")} onClick={() => setFilter(v)}>
@@ -461,13 +464,13 @@ export default function IssueTable(props: {
         <table className="wk-it">
           <thead>
             <tr>
-              <th rowSpan={2} className="fit"></th><th rowSpan={2} className="fit">No.</th><th rowSpan={2} className="fit">Dev phase</th>
-              <th colSpan={3} className="grp">Classification</th>
-              <th rowSpan={2} className="l wide">Issue</th><th rowSpan={2} className="fit">Owner</th>
-              <th rowSpan={2} className="fit">Registered</th><th rowSpan={2} className="fit">Due</th><th rowSpan={2} className="fit">Done</th>
-              <th rowSpan={2} className="l final">Final result</th><th rowSpan={2} className="fit">Notes</th><th rowSpan={2} className="fit"></th>
+              <th rowSpan={2} className="fit"></th><th rowSpan={2} className="fit">No.</th><th rowSpan={2} className="fit">{tr("Dev phase")}</th>
+              <th colSpan={3} className="grp">{tr("Classification")}</th>
+              <th rowSpan={2} className="l wide">{tr("Issue")}</th><th rowSpan={2} className="fit">{tr("Owner")}</th>
+              <th rowSpan={2} className="fit">{tr("Registered")}</th><th rowSpan={2} className="fit">{tr("Due")}</th><th rowSpan={2} className="fit">{tr("Done")}</th>
+              <th rowSpan={2} className="l final">{tr("Final result")}</th><th rowSpan={2} className="fit">{tr("Notes")}</th><th rowSpan={2} className="fit"></th>
             </tr>
-            <tr><th className="fit">Issue type</th><th className="fit">Process</th><th className="fit">Cause group</th></tr>
+            <tr><th className="fit">{tr("Issue type")}</th><th className="fit">{tr("Process")}</th><th className="fit">{tr("Cause group")}</th></tr>
           </thead>
           <tbody>
             {!shown.length && (

@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import DateBox from "./DateBox";
+import { useTr } from "./i18n";
 import type { ReactNode } from "react";
 import { WEEKDAYS, localToday, weekday } from "../productionInput/logic";
 import { workingApi } from "./api";
@@ -22,6 +23,7 @@ const dates = (span: [string, string] | null) => (span ? (span[0] === span[1] ? 
  * ("1,000"), so the calendar scrolls instead of fitting the width.
  */
 export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; onPick?: (id: string) => void; expand?: ReactNode }) {
+  const tr = useTr();
   const today = localToday();
   const { rows, days } = props;
   return (
@@ -49,7 +51,7 @@ export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; o
                 <td className="nm">
                   {props.onPick && <span className="tw">{r.id === props.selected && props.expand ? "▾" : "▸"}</span>}
                   <span className="dot" style={{ background: r.color }} />
-                  <b className={r.done ? "done" : ""}>{r.label}</b>
+                  <b className={r.done ? "done" : ""}>{tr(r.label)}</b>
                   <small>{r.sub}</small>
                 </td>
                 {days.map((d) => {
@@ -102,6 +104,7 @@ function QtyRows(props: {
   onRows: (rows: QtyRow[]) => void;
   onBom: (bom: BomRow[], product: string) => void;
 }) {
+  const tr = useTr();
   const { ev, days, product } = props;
   const today = localToday();
   const span = eventSpan(ev);
@@ -169,7 +172,7 @@ function QtyRows(props: {
             <tr className={"qh " + g}>
               <td className="nm">
                 <div className="wk-qn">
-                  <b>{label}</b>
+                  <b>{tr(label)}</b>
                   <span className="muted">{list.length} row(s){total ? ` · ${num(total)}` : ""}</span>
                   {g === "material" && (
                     <button className="btn sm" disabled={busy || !product.trim()} onClick={() => void loadBom()}
@@ -274,6 +277,7 @@ export default function DevPlan(props: {
   onSaved: (model: WorkingModel) => void;
   onError: (e: unknown) => void;
 }) {
+  const tr = useTr();
   const { model } = props;
   const savedPlan = useMemo(() => readDevPlan(model.info.devPlan), [model]);
   const [plan, setPlan] = useState<Plan>(savedPlan);
@@ -349,7 +353,7 @@ export default function DevPlan(props: {
   return (
     <section className="card pi-sec">
       <div className="pi-sec-h">
-        <h2>Development plan <span className="cnt">{events.length}</span></h2>
+        <h2>{tr("Development plan")} <span className="cnt">{events.length}</span></h2>
         <div className="pi-legend">
           {dirty && <span className="pi-dirty">Unsaved</span>}
           {msg && <span className="pi-msg">{msg}</span>}
@@ -364,14 +368,14 @@ export default function DevPlan(props: {
           ? <Gantt rows={rows} days={days} selected={selected} onPick={pick} expand={qty || undefined} />
           : <div className="muted">Give the events (or their tasks) dates to see them on the calendar.</div>)}
         {events.length > 0 && !days.length && (
-          <div className="wk-dp-chips">{events.map((e) => <button key={e.id} className={"wk-chip" + (e.id === selected ? " on" : "")} onClick={() => pick(e.id)}>{e.name}</button>)}</div>
+          <div className="wk-dp-chips">{events.map((e) => <button key={e.id} className={"wk-chip" + (e.id === selected ? " on" : "")} onClick={() => pick(e.id)}>{tr(e.name)}</button>)}</div>
         )}
 
         {ev && (
           <div className="wk-dp-detail">
             <div className="wk-dp-dh">
               <span className="dot" style={{ background: ev.color }} />
-              <h3>{ev.name}</h3>
+              <h3>{tr(ev.name)}</h3>
               <span className="muted small">{dates(eventSpan(ev))} · {progress(ev)[0]}/{progress(ev)[1]} done</span>
               <span className="wk-dp-act">
                 <button className="wk-link" onClick={() => move(ev, -1)} disabled={events[0] === ev} aria-label="Move up">↑</button>
@@ -380,13 +384,13 @@ export default function DevPlan(props: {
                 <button className="wk-link bad" onClick={() => removeEvent(ev)}>Delete event</button>
               </span>
             </div>
-            <div className="wk-qty-h static">Detailed schedule</div>
+            <div className="wk-qty-h static">{tr("Detailed schedule")}</div>
             {evDays.length > 0 && ev.tasks.length > 0 && (
               <Gantt days={evDays} rows={ev.tasks.map((t) => ({ id: t.id, label: t.name, sub: dates(taskSpan(t)) + (t.owner ? " · " + t.owner : ""), span: taskSpan(t), color: ev.color, done: t.done }))} />
             )}
             <table className="wk-it wk-dp-tasks">
               <thead>
-                <tr><th className="fit"></th><th className="fit">Done</th><th className="l">Task</th><th className="fit">Start</th><th className="fit">End</th><th className="fit">Owner</th><th className="l">Note</th><th className="fit"></th></tr>
+                <tr><th className="fit"></th>{(["Done", "Task", "Start", "End", "Owner", "Note"] as const).map((h) => <th key={h} className={h === "Task" || h === "Note" ? "l" : "fit"}>{tr(h)}</th>)}<th className="fit"></th></tr>
               </thead>
               <tbody>
                 {ev.tasks.map((t) => (editTask?.id === t.id
@@ -399,11 +403,11 @@ export default function DevPlan(props: {
                       onDragEnd={endDrag}>
                       <td className="wk-dp-grip" title="Drag to move">⠿</td>
                       <td><input type="checkbox" checked={t.done} aria-label={`${t.name} done`} onChange={(x) => setTasks(ev.tasks.map((y) => (y.id === t.id ? { ...y, done: x.target.checked } : y)))} /></td>
-                      <td className="l"><b>{t.name}</b></td>
+                      <td className="l"><b>{tr(t.name)}</b></td>
                       <td>{t.start || "—"}</td>
                       <td>{t.end || "—"}</td>
                       <td>{t.owner || "—"}</td>
-                      <td className="l muted">{t.note}</td>
+                      <td className="l muted">{tr(t.note)}</td>
                       <td className="act">
                         <button className="wk-link" disabled={!!editTask} onClick={() => setEditTask(t)}>Edit</button>
                         <button className="wk-link bad" disabled={!!editTask} onClick={() => setTasks(ev.tasks.filter((y) => y.id !== t.id))}>Delete</button>

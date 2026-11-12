@@ -5,6 +5,7 @@ import { workingApi } from "./working/api";
 import DevPlan from "./working/DevPlan";
 import EntryList from "./working/EntryList";
 import Home from "./working/Home";
+import { LANGS, TranslationProvider, saveLang, savedLang, useTr, type Lang } from "./working/i18n";
 import { treeModels } from "./working/homeSummary";
 import InfoTab from "./working/InfoTab";
 import IssueTable from "./working/IssueTable";
@@ -38,7 +39,19 @@ function writeQuery(home: boolean, model: string | null, tab: Tab) {
   window.history.replaceState(null, "", `${window.location.pathname}?${q}`);
 }
 
+/** Working with the language its texts are shown in (kept in this browser). */
 export default function Working() {
+  const [lang, setLang] = useState<Lang>(savedLang());
+  const [waiting, setWaiting] = useState(0);
+  return (
+    <TranslationProvider lang={lang} onStatus={setWaiting}>
+      <WorkingPage lang={lang} waiting={waiting} onLang={(l) => { saveLang(l); setLang(l); }} />
+    </TranslationProvider>
+  );
+}
+
+function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) => void }) {
+  const tr = useTr();
   const query = new URLSearchParams(window.location.search);
   const [groups, setGroups] = useState<GroupsResponse | null>(null);
   const [treeSettings, setTreeSettings] = useState<TreeSettings>({ hidden: [], added: [] });
@@ -155,7 +168,13 @@ export default function Working() {
       <header className="page-head">
         <h1>Working</h1>
         <nav className="wk-menu" aria-label="Working">
-          <button className={home ? "on" : ""} aria-current={home ? "page" : undefined} onClick={goHome}>Home</button>
+          <button className={home ? "on" : ""} aria-current={home ? "page" : undefined} onClick={goHome}>{tr("Home")}</button>
+          <span className="wk-lang" role="group" aria-label="Language">
+            {props.lang && props.waiting > 0 && <span className="muted small" title="AI is translating the rest">Translating {props.waiting}…</span>}
+            {LANGS.map(([k, label]) => (
+              <button key={k || "orig"} className={props.lang === k ? "on" : ""} aria-pressed={props.lang === k} onClick={() => props.onLang(k)}>{label}</button>
+            ))}
+          </span>
         </nav>
       </header>
       {error && <div className="alert" role="alert">{error}</div>}
@@ -164,7 +183,7 @@ export default function Working() {
         <aside className="card wk-side">
           <div className="wk-side-h">
             <div className="wk-side-t">
-              <h2>Model groups</h2>
+              <h2>{tr("Model groups")}</h2>
               <button className="btn sm" disabled={!groups} onClick={() => setManaging(true)} title="Choose the models shown here and add models">Manage</button>
             </div>
             <input className="inp sm" placeholder="Search model…" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Search model" />
@@ -192,7 +211,7 @@ export default function Working() {
           {home ? (
             <Home models={homeModels} today={today} onOpen={openFromHome} />
           ) : !selected ? (
-            <div className="card pi-empty">Pick a model on the left.</div>
+            <div className="card pi-empty">{tr("Pick a model on the left.")}</div>
           ) : (
             <>
               <div className="wk-head">
@@ -215,7 +234,7 @@ export default function Working() {
                   return (
                     <button key={c.label} role="tab" aria-selected={c === category} className={c === category ? "on" : ""}
                       title={n ? `${n} open issue${n > 1 ? "s" : ""}` : undefined} onClick={() => go(c.tabs[0][0])}>
-                      {c.label}{n > 0 && <span className="cnt bad">{n}</span>}
+                      {tr(c.label)}{n > 0 && <span className="cnt bad">{n}</span>}
                     </button>
                   );
                 })}
@@ -227,7 +246,7 @@ export default function Working() {
                       : k === "all" ? entries.length : null;
                     return (
                       <button key={k} role="tab" aria-selected={tab === k} className={"wk-chip" + (tab === k ? " on" : "")} onClick={() => go(k)}>
-                        {label}{n != null && n > 0 && <span className="cnt">{n}</span>}
+                        {tr(label)}{n != null && n > 0 && <span className="cnt">{n}</span>}
                       </button>
                     );
                   })}

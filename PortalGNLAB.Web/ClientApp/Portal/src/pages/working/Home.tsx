@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { workingApi } from "./api";
+import { useTr } from "./i18n";
 import {
   barAt, devPlans, labelSide, modelRow, slashDate, timelineMonths, timelineRange, type EventBrief, type ModelLoad, type PlanBrief, type TaskBrief,
 } from "./homeSummary";
@@ -39,6 +40,7 @@ export default function Home(props: {
   /** Already loaded (tests and the page reopening); loaded here when left out. */
   initial?: ModelLoad[];
 }) {
+  const tr = useTr();
   const [loads, setLoads] = useState<ModelLoad[] | null>(props.initial ?? null);
   const [count, setCount] = useState(0);
   const key = props.models?.map((m) => m.name).join("\n");
@@ -63,18 +65,18 @@ export default function Home(props: {
     <div className="wk-home">
       <section className="card pi-sec">
         <div className="pi-sec-h">
-          <h2>Development plans<span className="cnt">{plans.length}</span></h2>
+          <h2>{tr("Development plans")}<span className="cnt">{plans.length}</span></h2>
           <div className="pi-legend">
-            <span>Models in development (not MP) with a Dev Plan · today {slashDate(props.today)}</span>
+            <span>{tr("Models in development (not MP) with a Dev Plan")} · {tr("today")} {slashDate(props.today)}</span>
           </div>
         </div>
         <div className="pi-sec-b">
           {plans.length ? <PlanTimeline plans={plans} today={props.today} onOpen={props.onOpen} /> : (
-            <div className="muted small">No model in development has a Dev Plan yet. Add events in a model's Development › Dev Plan.</div>
+            <div className="muted small">{tr("No model in development has a Dev Plan yet. Add events in a model's Development › Dev Plan.")}</div>
           )}
           {noPlan.length > 0 && (
             <div className="wk-hm-noplan">
-              <span className="muted small">In development without a plan:</span>
+              <span className="muted small">{tr("In development without a plan:")}</span>
               {noPlan.map((m) => <button key={m} className="wk-chip" onClick={() => props.onOpen(m, "plan")}>{m}</button>)}
             </div>
           )}
@@ -83,15 +85,16 @@ export default function Home(props: {
 
       <section className="card pi-sec">
         <div className="pi-sec-h">
-          <h2>Models<span className="cnt">{rows.length}</span></h2>
+          <h2>{tr("Models")}<span className="cnt">{rows.length}</span></h2>
           {failed.length > 0 && <div className="wk-warn">Could not load {failed.map((r) => r.name).join(", ")}.</div>}
         </div>
         <div className="pi-sec-b wk-hm-models">
           <table className="grid">
             <thead>
               <tr>
-                <th>Model</th><th>Group</th><th>Phase</th><th>Customer</th><th>Build</th><th>PM owner</th><th>SOP target</th>
-                <th className="num">Plan events</th><th className="num">Open dev issues</th><th className="num">Open MP issues</th><th className="num">Late issues</th><th>Updated</th>
+                {["Model", "Group", "Phase", "Customer", "Build", "PM owner", "SOP target"].map((h) => <th key={h}>{tr(h)}</th>)}
+                {["Plan events", "Open dev issues", "Open MP issues", "Late issues"].map((h) => <th key={h} className="num">{tr(h)}</th>)}
+                <th>{tr("Updated")}</th>
               </tr>
             </thead>
             <tbody>
@@ -145,6 +148,7 @@ function Bar(props: {
  * event with how much of it is done, and a thin bar per task under it; months shaded in turn and today marked.
  */
 function PlanTimeline(props: { plans: PlanBrief[]; today: string; onOpen: (model: string, tab: "plan") => void }) {
+  const tr = useTr();
   const range = timelineRange(props.plans, props.today);
   const months = range ? timelineMonths(range) : [];
   const todayAt = range ? barAt([props.today, props.today], range) : null;
@@ -160,14 +164,14 @@ function PlanTimeline(props: { plans: PlanBrief[]; today: string; onOpen: (model
   return (
     <div className="wk-hm-plan">
       <div className="wk-hm-row head">
-        <div className="wk-hm-label">Model · event · task</div>
+        <div className="wk-hm-label">{tr("Model · event · task")}</div>
         <div className="wk-hm-track">
           {months.map(([m, left, width], i) => (
             <span key={m} className={"wk-hm-month" + (i % 2 ? " alt" : "")} style={{ left: `${left}%`, width: `${width}%` }}>
               {width >= 4 && m.replace("-", "/")}
             </span>
           ))}
-          {todayAt && <span className="wk-hm-today-l" style={{ left: todayLeft }}>Today {slashDate(props.today).slice(5)}</span>}
+          {todayAt && <span className="wk-hm-today-l" style={{ left: todayLeft }}>{tr("Today")} {slashDate(props.today).slice(5)}</span>}
         </div>
       </div>
       {props.plans.map((p) => {
@@ -179,14 +183,14 @@ function PlanTimeline(props: { plans: PlanBrief[]; today: string; onOpen: (model
               {p.phase && <span className="wk-phase">{p.phase}</span>}
               {p.path.length > 0 && <span className="wk-hm-path">{p.path.join(" › ")}</span>}
               <span className="wk-hm-facts">
-                <span className="wk-hm-fact"><i>Now</i>{p.now.length ? p.now.map((e) => e.name).join(", ") : "—"}</span>
-                <span className="wk-hm-fact"><i>Next</i>{p.next ? `${p.next.name} · ${slashDate(p.next.span![0])}` : "—"}</span>
+                <span className="wk-hm-fact"><i>{tr("Now")}</i>{p.now.length ? p.now.map((e) => tr(e.name)).join(", ") : "—"}</span>
+                <span className="wk-hm-fact"><i>{tr("Next")}</i>{p.next ? `${tr(p.next.name)} · ${slashDate(p.next.span![0])}` : "—"}</span>
                 {total > 0 && (
-                  <span className="wk-hm-fact"><i>Tasks</i>{done}/{total}
+                  <span className="wk-hm-fact"><i>{tr("Tasks")}</i>{done}/{total}
                     <span className="wk-hm-meter"><span style={{ width: `${(done / total) * 100}%` }} /></span>
                   </span>
                 )}
-                {p.lateTasks > 0 && <span className="wk-open">{p.lateTasks} late task{p.lateTasks > 1 ? "s" : ""}</span>}
+                {p.lateTasks > 0 && <span className="wk-open">{p.lateTasks} {tr(p.lateTasks > 1 ? "late tasks" : "late task")}</span>}
               </span>
             </div>
             {p.events.map((e) => {
@@ -197,9 +201,9 @@ function PlanTimeline(props: { plans: PlanBrief[]; today: string; onOpen: (model
                   <div className="wk-hm-row ev">
                     <div className="wk-hm-label">
                       <span className="wk-hm-dot" style={{ background: e.color }} />
-                      <span className="wk-hm-ev" title={e.name}>{e.name}</span>
+                      <span className="wk-hm-ev" title={e.name}>{tr(e.name)}</span>
                       {e.total > 0 && <span className="wk-hm-count">{e.done}/{e.total}</span>}
-                      <span className={"wk-hm-st " + e.state}>{STATE_LABEL[e.state]}</span>
+                      <span className={"wk-hm-st " + e.state}>{tr(STATE_LABEL[e.state])}</span>
                     </div>
                     {track(bar && (
                       <Bar className={"wk-hm-bar " + e.state} bar={bar} title={title} style={{ background: tint(e.color, "33"), borderColor: e.color }}
@@ -215,10 +219,10 @@ function PlanTimeline(props: { plans: PlanBrief[]; today: string; onOpen: (model
                       <div key={t.id} className={"wk-hm-row task " + state}>
                         <div className="wk-hm-label">
                           <span className={"wk-hm-check " + state}>{t.done ? "✓" : ""}</span>
-                          <span className="wk-hm-task" title={t.name}>{t.name}</span>
+                          <span className="wk-hm-task" title={t.name}>{tr(t.name)}</span>
                           {t.owner && <span className="wk-hm-owner" title="Owner">{t.owner}</span>}
-                          {t.late && <span className="wk-hm-st late">Late</span>}
-                          {!t.span && <span className="wk-hm-st undated">No date</span>}
+                          {t.late && <span className="wk-hm-st late">{tr("Late")}</span>}
+                          {!t.span && <span className="wk-hm-st undated">{tr("No date")}</span>}
                         </div>
                         {track(tb && (
                           <Bar className={"wk-hm-tbar " + state} bar={tb} text={taskSpanText(t)} title={`${t.name}: ${taskSpanText(t)}${t.owner ? ` · ${t.owner}` : ""}${t.done ? " · done" : ""}`}

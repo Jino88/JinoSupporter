@@ -59,5 +59,8 @@ export const workingApi = {
   /** Text placed by AI into Model Info, Dev Plan and new entries (aiPlace.ts); nothing is saved here. */
   placeAi: (name: string, request: ReturnType<typeof placeRequest>, signal?: AbortSignal) =>
     toolSend<unknown>(`${model(name)}/ai/place`, request, "POST", signal),
+  /** Translations of texts ready on the server (en / ko / vi); the rest are translated there in the background. */
+  translations: (lang: string, texts: string[]) =>
+    toolSend<{ lang: string; translations: Record<string, string>; missing: number; running: boolean }>(`${base}/translations`, { lang, texts }),
   imageUrl: (imageId: string) => toolPath(`${base}/images/${encodeURIComponent(imageId)}`),
 };
