@@ -18,6 +18,8 @@ import TreeManager from "./working/TreeManager";
 import { phaseName, type Entry, type GroupsResponse, type WorkingModel } from "./working/types";
 import "./working/working.css";
 
+/** The pages of the top menu: Home and the MP issues of every model. */
+type HomeView = "home" | "mpissues";
 type Tab = "info" | "plan" | "devissue" | "dev" | "review" | "all" | "setup" | "issue" | "ai";
 /** Categories of a model page and the tabs under each (Model Info and AI have none). */
 const CATEGORIES: { label: string; tabs: [Tab, string][] }[] = [
@@ -32,10 +34,10 @@ const isTab = (v: string | null): v is Tab => CATEGORIES.some((c) => c.tabs.some
 const stageOf = (tab: Tab): IssueStage | null => (tab === "devissue" ? "dev" : tab === "issue" ? "mp" : null);
 
 /** Keeps ?model=&tab= (or ?view=home) in the address so a model page or Home can be linked and survives reload. */
-function writeQuery(home: boolean, model: string | null, tab: Tab) {
+function writeQuery(home: boolean, model: string | null, tab: Tab, view: HomeView = "home") {
   const q = new URLSearchParams(window.location.search);
   if (model && !home) q.set("model", model); else q.delete("model");
-  if (home) { q.set("view", "home"); q.delete("tab"); } else { q.delete("view"); q.set("tab", tab); }
+  if (home) { q.set("view", view); q.delete("tab"); } else { q.delete("view"); q.set("tab", tab); }
   window.history.replaceState(null, "", `${window.location.pathname}?${q}`);
 }
 
@@ -59,7 +61,8 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
   const [filter, setFilter] = useState("");
   const [closed, setClosed] = useState<Set<string>>(new Set());
   // Home opens when asked for or when no model is in the address
-  const [home, setHome] = useState(query.get("view") === "home" || !query.get("model"));
+  const [home, setHome] = useState(query.get("view") === "home" || query.get("view") === "mpissues" || !query.get("model"));
+  const [homeView, setHomeView] = useState<HomeView>(query.get("view") === "mpissues" ? "mpissues" : "home");
   const [selected, setSelected] = useState<string | null>(home ? null : query.get("model"));
   const [tab, setTab] = useState<Tab>(isTab(query.get("tab")) ? (query.get("tab") as Tab) : "info");
   const [model, setModel] = useState<WorkingModel | null>(null);
@@ -101,8 +104,8 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
   }, []);
 
   useEffect(() => {
-    writeQuery(home, selected, tab);
-  }, [home, selected, tab]);
+    writeQuery(home, selected, tab, homeView);
+  }, [home, selected, tab, homeView]);
 
   useEffect(() => {
     setModel(null);
@@ -117,10 +120,11 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
     setHome(false);
     setSelected(name);
   };
-  const goHome = () => {
-    if (home) return;
-    if (infoDirty && !window.confirm("Discard the unsaved changes?")) return;
+  const goHome = (v: HomeView = "home") => {
+    if (home && homeView === v) return;
+    if (!home && infoDirty && !window.confirm("Discard the unsaved changes?")) return;
     setHome(true);
+    setHomeView(v);
     setSelected(null);
   };
   /** A model opened from Home, on the tab asked for. */
@@ -168,7 +172,10 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
       <header className="page-head">
         <h1>Working</h1>
         <nav className="wk-menu" aria-label="Working">
-          <button className={home ? "on" : ""} aria-current={home ? "page" : undefined} onClick={goHome}>{tr("Home")}</button>
+          {([["home", "Home"], ["mpissues", "MP Issues"]] as [HomeView, string][]).map(([v, label]) => (
+            <button key={v} className={home && homeView === v ? "on" : ""} aria-current={home && homeView === v ? "page" : undefined}
+              onClick={() => goHome(v)}>{tr(label)}</button>
+          ))}
           <span className="wk-lang" role="group" aria-label="Language">
             {props.lang && props.waiting > 0 && <span className="muted small" title="AI is translating the rest">Translating {props.waiting}…</span>}
             {LANGS.map(([k, label]) => (
@@ -209,7 +216,7 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
 
         <section className="wk-main">
           {home ? (
-            <Home models={homeModels} today={today} onOpen={openFromHome} />
+            <Home models={homeModels} today={today} onOpen={openFromHome} view={homeView} />
           ) : !selected ? (
             <div className="card pi-empty">{tr("Pick a model on the left.")}</div>
           ) : (

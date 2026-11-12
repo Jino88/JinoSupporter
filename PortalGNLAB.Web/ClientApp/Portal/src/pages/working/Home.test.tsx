@@ -84,4 +84,19 @@ describe("Working Home", () => {
     expect(mp).toContain("<i>Setup done</i>1/1");
     expect(mp).not.toContain("PV build");
   });
+
+  it("shows the MP issues of every model as their own page, the open ones until All is picked", () => {
+    const issue = (id: string, seq: number, title: string, x: object = {}) => ({ id, seq, title, kind: "issue", status: "Open", doneDate: "", due: "", phase: "MP",
+      body: "", owner: "Kim", date: "2026-11-02", category: "Quality", process: "SPK Assy", cause: "", finalResult: "", logs: [], ...x });
+    const html = renderToStaticMarkup(<Home models={[]} today="2026-11-11" view="mpissues" onOpen={() => {}} initial={[
+      { ...load("MSM-MP", { phase: "MP" }), entries: [issue("1", 1, "AOI false call", { due: "2026-11-05" }), issue("2", 2, "Closed one", { doneDate: "2026-11-03" }), issue("3", 3, "Dev one", { phase: "DV" })] as never },
+    ]} />);
+    expect(html).toContain(">MP Issues<");
+    expect(html).not.toContain("Development plans");
+    expect(html).toContain("<b>AOI false call</b>");
+    expect(html).toMatch(/class="late">2026\/11\/05<span class="wk-late">Late<\/span>/);
+    expect(html).not.toContain("Closed one");
+    expect(html).not.toContain("Dev one");
+    expect(html).toContain(">Open 1</button><button class=\"wk-chip\">All 2</button>");
+  });
 });

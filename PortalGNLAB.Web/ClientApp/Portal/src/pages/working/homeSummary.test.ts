@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { barAt, devPlans, labelSide, modelRow, mpPlans, planBrief, timelineMonths, timelineRange, treeModels, type ModelLoad } from "./homeSummary";
+import { barAt, devPlans, labelSide, modelRow, mpIssueRows, mpPlans, planBrief, timelineMonths, timelineRange, treeModels, type ModelLoad } from "./homeSummary";
 import type { SetupRow } from "./setup";
 import type { Entry, ModelInfo } from "./types";
 
@@ -107,5 +107,18 @@ describe("Home summary", () => {
     expect(p.lateTasks).toBe(1);
     // a model's Setup Plan does not show in its development plan
     expect(devPlans([withSetup("MSM-DEV", "PV", [row(1, "L1", "X", "2026-11-01", "2026-11-02")])], today).plans).toEqual([]);
+  });
+
+  it("lists the MP issues of every model: open first, late first among them, then model order and number", () => {
+    const issue = (x: Partial<Entry>): Partial<Entry> => ({ kind: "issue", status: "Open", doneDate: "", due: "", phase: "MP", seq: 1, ...x });
+    const rows = mpIssueRows([
+      load("A", { phase: "MP" }, [
+        issue({ id: "a1", seq: 1, doneDate: "2026-11-05", status: "Closed" }), issue({ id: "a2", seq: 2 }), issue({ id: "a3", seq: 3, phase: "DV" }),
+      ]),
+      load("B", { phase: "PV" }, [issue({ id: "b1", seq: 1, phase: "PV", setupRowId: "r1", due: "2026-11-01" }), { id: "b2", kind: "dev" }]),
+    ], today);
+    expect(rows.map((r) => [r.model, r.issue.id, r.open, r.late])).toEqual([
+      ["B", "b1", true, true], ["A", "a2", true, false], ["A", "a1", false, false],
+    ]);
   });
 });
