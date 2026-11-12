@@ -184,12 +184,12 @@ export const notesInOrder = (logs: EntryLog[]) =>
 export const isLogLate = (l: LogFields, today: string) => !l.doneDate && !!l.due && l.due < today;
 
 export function logProblem(f: LogFields): string {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date)) return "Date must be yyyy-MM-dd.";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date)) return "Date must be a date (yyMMdd).";
   if (!f.text.trim()) return "Write what was done.";
   if (f.text.length > 5000) return "A note must be 5000 characters or fewer.";
   if (f.owner.trim().length > 100) return "Owner must be 100 characters or fewer.";
-  if (f.due && !/^\d{4}-\d{2}-\d{2}$/.test(f.due)) return "Due must be yyyy-MM-dd.";
-  if (f.doneDate && !/^\d{4}-\d{2}-\d{2}$/.test(f.doneDate)) return "Done date must be yyyy-MM-dd.";
+  if (f.due && !/^\d{4}-\d{2}-\d{2}$/.test(f.due)) return "Due must be a date (yyMMdd).";
+  if (f.doneDate && !/^\d{4}-\d{2}-\d{2}$/.test(f.doneDate)) return "Done date must be a date (yyMMdd).";
   if (f.doneDate && f.doneDate < f.date) return "Done date cannot be before the note date.";
   return "";
 }
@@ -230,11 +230,11 @@ export function pastedImages<F extends FileLike>(files: F[], have: number, haveB
 
 /** Message for a form that cannot be saved yet, or "" when it can. */
 export function entryProblem(f: EntryFields): string {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date)) return "Date must be yyyy-MM-dd.";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date)) return "Date must be a date (yyMMdd).";
   if (!f.title.trim()) return "Title is required.";
   if (f.title.trim().length > 200) return "Title must be 200 characters or fewer.";
-  if (f.due && !/^\d{4}-\d{2}-\d{2}$/.test(f.due)) return "Due must be yyyy-MM-dd.";
-  if (f.doneDate && !/^\d{4}-\d{2}-\d{2}$/.test(f.doneDate)) return "Done date must be yyyy-MM-dd.";
+  if (f.due && !/^\d{4}-\d{2}-\d{2}$/.test(f.due)) return "Due must be a date (yyMMdd).";
+  if (f.doneDate && !/^\d{4}-\d{2}-\d{2}$/.test(f.doneDate)) return "Done date must be a date (yyMMdd).";
   if (f.doneDate && f.doneDate < f.date) return "Done date cannot be before the registered date.";
   return "";
 }

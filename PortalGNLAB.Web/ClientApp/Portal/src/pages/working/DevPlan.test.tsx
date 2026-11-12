@@ -7,22 +7,18 @@ import type { PlanEvent } from "./plan";
 const event = (f: Partial<PlanEvent>): PlanEvent =>
   ({ id: "e", name: "DR build", start: "", end: "", color: "#2563eb", tasks: [], rows: [], bomFrom: "", ...f });
 
-const years = (html: string) => [...html.matchAll(/<input class="inp sm yr"[^>]*aria-label="(Start|End) year" value="(\d*)"/g)].map((m) => `${m[1]} ${m[2]}`);
+const boxes = (html: string) => [...html.matchAll(/<input class="inp wk-datebox sm" placeholder="yyMMdd"[^>]*aria-label="(Start|End)"[^>]*value="(\d*)"/g)].map((m) => `${m[1]} ${m[2]}`);
 
-describe("event dates as yyyy/mm/dd", () => {
-  it("shows the event Start and End as a year box and the month/day typed, not the browser's date box", () => {
+describe("event dates typed as yyMMdd", () => {
+  it("shows the event Start and End as yyMMdd boxes, not the browser's date box", () => {
     const html = renderToStaticMarkup(<EventEdit value={event({ start: "2027-01-05", end: "2028-02-28" })} onKeep={() => {}} onCancel={() => {}} />);
     expect(html).not.toContain('type="date"');
-    expect(years(html)).toEqual(["Start 2027", "End 2028"]);
-    expect(html).toContain('value="01/05"');
-    expect(html).toContain('value="02/28"');
-    expect(html).toContain('placeholder="mm/dd"');
+    expect(boxes(html)).toEqual(["Start 270105", "End 280228"]);
   });
 
-  it("puts this year in the year box of empty event dates", () => {
+  it("leaves the boxes of empty event dates empty", () => {
     const html = renderToStaticMarkup(<EventEdit value={event({})} onKeep={() => {}} onCancel={() => {}} />);
-    const y = String(new Date().getFullYear());
-    expect(years(html)).toEqual([`Start ${y}`, `End ${y}`]);
+    expect(boxes(html)).toEqual(["Start ", "End "]);
   });
 });
 

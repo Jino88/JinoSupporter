@@ -1,4 +1,5 @@
 import { useState } from "react";
+import DateBox from "./DateBox";
 import { workingApi } from "./api";
 import { blankEntry, byMonth, entryProblem, fieldsOf, isLate, isOpenIssue } from "./logic";
 import { KIND_LABEL, RESULTS, type Entry, type EntryFields, type EntryKind } from "./types";
@@ -28,7 +29,7 @@ function EntryForm(props: { value: EntryFields; kindFixed: boolean; busy: boolea
           </select>
         </div>
       )}
-      <div className="wk-f"><label>Date</label><input type="date" className="inp" value={f.date} onChange={(e) => set("date", e.target.value)} /></div>
+      <div className="wk-f"><label>Date</label><DateBox label="Date" value={f.date} onChange={(v) => set("date", v)} /></div>
       {f.kind === "review" && (
         <div className="wk-f"><label>Result</label>
           <select className="inp" value={f.result} onChange={(e) => set("result", e.target.value)}>{RESULTS.map((s) => <option key={s}>{s}</option>)}</select></div>

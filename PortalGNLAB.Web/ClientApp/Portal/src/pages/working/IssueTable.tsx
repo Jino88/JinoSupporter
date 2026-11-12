@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState, type ClipboardEvent, type DragEvent, type ReactNode } from "react";
+import DateBox from "./DateBox";
 import { workingApi } from "./api";
 import {
   blankEntry, blankLog, entryProblem, fieldsOf, isLate, isLogLate, isOpenIssue, issueFields, issuesBySeq, issueTree, logFieldsOf, logProblem,
@@ -114,7 +115,7 @@ function IssueForm(props: {
   );
   const date = (k: "date" | "due" | "doneDate", label: string) => (
     <div className="wk-f"><label>{label}</label>
-      <input type="date" className="inp" value={f[k]} onChange={(e) => set(k, e.target.value)} /></div>
+      <DateBox label={label} value={f[k]} onChange={(v) => set(k, v)} /></div>
   );
   return (
     <div className="wk-form wk-ef wk-if" onPaste={pics.onPaste}>
@@ -221,14 +222,14 @@ function LogEditRow(props: {
         {(pics.problem || (f.text && problem)) && <div className="pi-dirty">{pics.problem || problem}</div>}
       </td>
       <td><input className="inp sm wk-in-owner" value={f.owner} placeholder="Owner" onChange={(e) => set("owner", e.target.value)} /></td>
-      <td><input type="date" className="inp sm" aria-label="Note date" value={f.date} onChange={(e) => set("date", e.target.value)} /></td>
-      <td><input type="date" className="inp sm" aria-label="Due" value={f.due} onChange={(e) => set("due", e.target.value)} /></td>
+      <td><DateBox className="sm" label="Note date" value={f.date} onChange={(v) => set("date", v)} /></td>
+      <td><DateBox className="sm" label="Due" value={f.due} onChange={(v) => set("due", v)} /></td>
       <td>
         <label className="wk-done">
           <input type="checkbox" checked={!!f.doneDate}
             onChange={(e) => set("doneDate", e.target.checked ? (f.date > props.today ? f.date : props.today) : "")} /> Done
         </label>
-        {f.doneDate && <input type="date" className="inp sm" aria-label="Done date" value={f.doneDate} onChange={(e) => set("doneDate", e.target.value)} />}
+        {f.doneDate && <DateBox className="sm" label="Done date" value={f.doneDate} onChange={(v) => set("doneDate", v)} />}
       </td>
       <td></td>
       <td></td>

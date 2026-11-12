@@ -348,10 +348,9 @@ table.wk-dp-tasks tr.done td { color: var(--muted); }
 table.wk-dp-tasks tr.done b { text-decoration: line-through; }
 table.wk-dp-tasks .inp.sm { width: 100%; }
 table.wk-dp-tasks .inp.sm.wk-dp-owner { width: 90px; }
-.wk-dp-day { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
-.wk-dp-day .y { color: var(--muted); font-variant-numeric: tabular-nums; }
-.wk-dp-day .inp.sm, table.wk-dp-tasks .wk-dp-day .inp.sm { width: 76px; font-variant-numeric: tabular-nums; }
-.wk-dp-day .inp.sm.yr, table.wk-dp-tasks .wk-dp-day .inp.sm.yr { width: 58px; }
+/* date box (DateBox.tsx): typed as yyMMdd */
+.wk-datebox { width: 96px; font-variant-numeric: tabular-nums; }
+.wk-datebox.sm, table.wk-dp-tasks .wk-datebox.sm { width: 80px; }
 table.wk-dp-tasks td.wk-dp-grip { width: 14px; padding-right: 0; color: var(--faint); cursor: grab; user-select: none; }
 table.wk-dp-tasks tr[draggable="true"]:hover td.wk-dp-grip { color: var(--muted); }
 table.wk-dp-tasks tr.drop-above > td { box-shadow: inset 0 2px 0 var(--accent); }
