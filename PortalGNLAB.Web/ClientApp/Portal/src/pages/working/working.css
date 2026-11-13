@@ -480,8 +480,10 @@ table.wk-gantt .wk-qty-in { padding: 4px 3px; font-size: 11px; }
 .wk-hm-issues tr.done td { color: var(--faint); }
 .wk-hm-issues td.late { color: var(--bad); font-weight: 600; }
 .wk-hm-issues .wk-late { margin-left: 6px; }
-/* under an issue: its notes not done and its sub-issues */
-.wk-hm-issues tr.sub td, .wk-hm-issues tr.note td { border-top-style: dashed; }
+/* under an issue: its notes not done and its sub-issues, on a light tint with a faint line between them, so an issue and
+   what is under it read as one block and the usual line only falls between issues */
+.wk-hm-issues tr.sub td, .wk-hm-issues tr.note td { background: #fafbfd; }
+.wk-hm-issues tr:has(+ tr.sub, + tr.note) td { border-bottom-color: #f1f5f9; }
 .wk-hm-issues tr.note td { font-size: 12px; color: var(--ink-2); }
 .wk-hm-issues .wk-hm-sub { padding-left: 14px; }
 .wk-hm-issues tr.note.deep .wk-hm-sub { padding-left: 28px; }
