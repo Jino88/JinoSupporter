@@ -38,9 +38,9 @@ export interface PlaceAnswer {
 
 /**
  * The tab AI input was opened on (the server answers only that kind of data): Dev Plan, Dev Issue, Dev History, Reviews,
- * MP Issues, or the Timeline (any entry). None: anywhere (AI tab).
+ * MP Issues, the Timeline (any entry), or My Plans (Working › Personal: issues with no phase). None: anywhere (AI tab).
  */
-export type AiTarget = "plan" | "devissue" | "dev" | "review" | "issue" | "entries";
+export type AiTarget = "plan" | "devissue" | "dev" | "review" | "issue" | "entries" | "personal";
 
 /** What the server is told about the model, so the answer can name events and tasks it already has and skip known entries. */
 export function placeRequest(text: string, today: string, info: ModelInfo, entries: Entry[], images: { name: string; dataUrl: string }[] = [],
@@ -101,17 +101,17 @@ export function readPlaceAnswer(v: unknown): PlaceAnswer {
 }
 
 /** Where an item goes, in the order the places are shown. */
-export const PLACES = ["Model Info", "Dev Plan", "Dev Issue", "Dev History", "Reviews", "MP Issues"] as const;
+export const PLACES = ["Model Info", "Dev Plan", "Dev Issue", "Dev History", "Reviews", "MP Issues", "My Plans"] as const;
 export type Place = (typeof PLACES)[number];
 /** The tab of the model page each place is on. */
 export const PLACE_TAB: Record<Place, "info" | "plan" | "devissue" | "dev" | "review" | "issue"> = {
-  "Model Info": "info", "Dev Plan": "plan", "Dev Issue": "devissue", "Dev History": "dev", Reviews: "review", "MP Issues": "issue",
+  "Model Info": "info", "Dev Plan": "plan", "Dev Issue": "devissue", "Dev History": "dev", Reviews: "review", "MP Issues": "issue", "My Plans": "issue",
 };
 
 /** The places each AI input target puts items in. */
 export const TARGET_PLACES: Record<AiTarget, Place[]> = {
   plan: ["Dev Plan"], devissue: ["Dev Issue"], dev: ["Dev History"], review: ["Reviews"], issue: ["MP Issues"],
-  entries: ["Dev Issue", "Dev History", "Reviews", "MP Issues"],
+  entries: ["Dev Issue", "Dev History", "Reviews", "MP Issues"], personal: ["My Plans"],
 };
 
 export const placeOf = (e: PlaceEntry): Place =>
@@ -195,7 +195,7 @@ export function placeItems(answer: PlaceAnswer, info: ModelInfo, target?: AiTarg
   answer.entries.forEach((e, i) => {
     const pics = e.images.length ? `${e.images.length} picture${e.images.length > 1 ? "s" : ""}` : "";
     const bits = [e.date, e.owner, e.kind === "issue" ? [e.severity, e.due && `due ${e.due}`].filter(Boolean).join(" · ") : e.kind === "review" ? e.result : "", pics];
-    out.push({ key: `entry.${i}`, place: placeOf(e), change: false, title: e.title, detail: bits.filter(Boolean).join(" · ") });
+    out.push({ key: `entry.${i}`, place: target === "personal" ? "My Plans" : placeOf(e), change: false, title: e.title, detail: bits.filter(Boolean).join(" · ") });
   });
   return target ? out.filter((i) => TARGET_PLACES[target].includes(i.place)) : out;
 }

@@ -46,4 +46,18 @@ describe("AI tab", () => {
     expect([...answered.matchAll(/<h3>([^<]+)<span class="cnt">(\d+)<\/span><\/h3>/g)].map((m) => `${m[1]} ${m[2]}`)).toEqual(["Dev Issue 1"]);
     expect(answered).toContain("Put in 1 item");
   });
+
+  it("as AI input of My Plans: about your plans (not the model the plans are kept under), the plans under My Plans", () => {
+    const personal = { ...model, name: "~personal:alice" };
+    const ask = (initial?: typeof answer) => renderToStaticMarkup(
+      <AiTab model={personal} entries={[]} today="2026-11-12" onSaved={() => {}} onAdded={() => {}} onOpen={() => {}} onDirty={() => {}} onError={() => {}}
+        initial={initial} target="personal" />,
+    );
+    const html = ask();
+    expect(html).toContain("Type or paste anything for your plans");
+    expect(html).not.toContain("~personal:");
+    expect(html).toContain("AI makes it into your plans");
+    const answered = ask(readPlaceAnswer({ entries: [{ kind: "issue", stage: "dev", title: "Write the DV report", due: "2026-11-20" }] }));
+    expect([...answered.matchAll(/<h3>([^<]+)<span class="cnt">(\d+)<\/span><\/h3>/g)].map((m) => `${m[1]} ${m[2]}`)).toEqual(["My Plans 1"]);
+  });
 });

@@ -21,5 +21,12 @@ describe("Working › Personal", () => {
     expect(html).not.toContain("Book the jig"); // closed, the Open filter is shown first
     expect(html).not.toContain("a dev note");
     expect(html).toContain("+ New issue");
+    expect(html).not.toContain("AI input"); // until the model the plans are kept under is loaded
+  });
+
+  it("has AI input on My Plans", () => {
+    const html = renderToStaticMarkup(<PersonalPage user="alice" lang="" waiting={0} onLang={() => {}} initial={[]}
+      initialModel={{ name: "~personal:alice", info: {}, revision: 0, updatedAt: "", updatedBy: "" }} />);
+    expect(html).toContain("✦ AI input");
   });
 });
