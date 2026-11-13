@@ -1,4 +1,4 @@
-import { appPath, buildRail, groupActive, groupMenu, ICON_PATHS, isActive, isChromeHidden, railTile, WORKING_PERSONAL } from "./menu";
+import { appPath, buildRail, groupActive, groupMenu, ICON_PATHS, isActive, isChromeHidden, railTile, WORKING_GRAPH, WORKING_PERSONAL } from "./menu";
 import type { MenuItem } from "./api";
 
 const item = (id: string, group: string, href: string, react = false): MenuItem => ({ id, label: id, group, href, react });
@@ -59,7 +59,7 @@ describe("railTile", () => {
   it("has an SVG path for every icon used", () => {
     for (const id of ["ng-rate", "bmes-f-cost", "report", "bmes-worker-status", "bmes-test5", "bmes-make-model-group",
       "bmes-routing-table", "bmes-reason-table", "qr-summary", "qr-bako-data", "qr-airleak-data", "qr-gauss-data",
-      "bmes-daily-report", "production-input", "working", WORKING_PERSONAL, "translate", "review-report", "bmes-setting", "admin-users", "admin-ai-usages",
+      "bmes-daily-report", "production-input", "working", WORKING_PERSONAL, WORKING_GRAPH, "translate", "review-report", "bmes-setting", "admin-users", "admin-ai-usages",
       "test-excel-converter", "admin-db-query"]) {
       expect(ICON_PATHS[railTile(id)!.icon]).toBeTruthy();
     }
@@ -98,10 +98,19 @@ describe("buildRail", () => {
     expect([g.key, g.label]).toEqual(["working", "Working"]);
     expect(g.sections[0].tiles.map((t) => [t.label, t.item.id, t.item.href, t.item.react])).toEqual([
       ["Common", "working", "/app/working", true], ["Personal", WORKING_PERSONAL, "/app/working/personal", true],
+      ["Graph", WORKING_GRAPH, "/app/working/graph-maker", true],
     ]);
     expect(groupActive(g, "/app/working/personal")).toBe(true);
     // no Working permission, no Personal either
     expect(buildRail([item("translate", "T", "/app/tools/translate", true)]).some((e) => e.kind === "group" && e.key === "working")).toBe(false);
+  });
+
+  it("shows the Graph tile only with the Working permission", () => {
+    const graphTiles = (items: MenuItem[]) =>
+      buildRail(items).flatMap((e) => (e.kind === "group" ? e.sections.flatMap((s) => s.tiles) : e.kind === "tile" ? [e] : [])).filter((t) => t.item.id === WORKING_GRAPH);
+    const withWorking = graphTiles([item("working", "Working", "/app/working", true)]);
+    expect(withWorking.map((t) => [t.label, t.icon, t.item.href, t.item.react])).toEqual([["Graph", "trend", "/app/working/graph-maker", true]]);
+    expect(graphTiles([item("translate", "T", "/app/tools/translate", true)])).toEqual([]);
   });
 
   it("shows only permitted menus and drops empty groups and separators", () => {
