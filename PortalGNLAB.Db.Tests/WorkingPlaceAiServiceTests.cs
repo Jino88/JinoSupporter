@@ -354,4 +354,57 @@ public sealed class WorkingPlaceAiServiceTests
         Assert.Contains("use the Total (합계) column of the same row", text);
         Assert.Contains("Never drop an arrival date", text);
     }
+    private const string Mixed = """
+        {"info":{"build":"B2"},"events":[{"id":"","name":"PV build","start":"2026-12-01","end":"2026-12-05","tasks":[]}],
+         "entries":[{"kind":"review","title":"PV review","result":"Fail","phase":"MP"},{"kind":"issue","stage":"mp","title":"Scratch","severity":"Major"}]}
+        """;
+
+    [Fact]
+    public void ParseAnswer_TargetKeepsOnlyItsOwnKindAndMakesEntriesIntoIt()
+    {
+        PlaceAiPlan Parse(string target) { var r = Request(); r.Target = target; return WorkingPlaceAiService.ParseAnswer(Mixed, r); }
+
+        PlaceAiPlan plan = Parse("plan");
+        Assert.Empty(plan.Info);
+        Assert.Equal("PV build", Assert.Single(plan.Events).Name);
+        Assert.Empty(plan.Entries);
+
+        PlaceAiPlan dev = Parse("devissue");
+        Assert.Empty(dev.Info);
+        Assert.Empty(dev.Events);
+        Assert.All(dev.Entries, e => Assert.Equal(("issue", "dev", ""), (e.Kind, e.Stage, e.Phase)));
+        Assert.Equal(new[] { "PV review", "Scratch" }, dev.Entries.Select(e => e.Title));
+
+        Assert.All(Parse("issue").Entries, e => Assert.Equal(("issue", "mp", "MP"), (e.Kind, e.Stage, e.Phase)));
+        Assert.All(Parse("dev").Entries, e => Assert.Equal("dev", e.Kind));
+        PlaceAiPlan review = Parse(" Review ");
+        Assert.Equal(new[] { "Fail", "Pass" }, review.Entries.Select(e => e.Result));
+
+        PlaceAiPlan timeline = Parse("entries");
+        Assert.Empty(timeline.Info);
+        Assert.Empty(timeline.Events);
+        Assert.Equal(new[] { "review", "issue" }, timeline.Entries.Select(e => e.Kind));
+
+        // no target or an unknown one: anywhere, as the AI tab
+        foreach (string? t in new[] { null, "", "nowhere" })
+        {
+            var r = Request();
+            r.Target = t;
+            PlaceAiPlan all = WorkingPlaceAiService.ParseAnswer(Mixed, r);
+            Assert.Equal("B2", all.Info["build"]);
+            Assert.Single(all.Events);
+            Assert.Equal(2, all.Entries.Count);
+        }
+    }
+
+    [Fact]
+    public void BuildContent_TellsTheTargetOnlyWhenThereIsOne()
+    {
+        string With(string? target) =>
+            WorkingPlaceAiService.BuildContent("M", new PlaceAiRequest { Text = "t", Target = target }, [])[0]!["text"]!.GetValue<string>();
+        Assert.Contains("=== TARGET ===\nThe user opened AI input on Dev Issue.", With("devissue").ReplaceLineEndings("\n"));
+        Assert.Contains("on MP Issues.", With("issue"));
+        Assert.DoesNotContain("TARGET", With(null));
+        Assert.DoesNotContain("TARGET", With("nowhere"));
+    }
 }

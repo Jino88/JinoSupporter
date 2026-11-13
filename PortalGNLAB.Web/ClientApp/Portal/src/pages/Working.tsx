@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { localToday } from "./productionInput/logic";
+import AiPopup from "./working/AiPopup";
 import AiTab from "./working/AiTab";
+import SetupAi from "./working/SetupAi";
+import type { AiTarget } from "./working/aiPlace";
 import { workingApi } from "./working/api";
 import DevPlan from "./working/DevPlan";
 import EntryList from "./working/EntryList";
@@ -30,6 +33,13 @@ const CATEGORIES: { label: string; tabs: [Tab, string][] }[] = [
 ];
 const categoryOf = (tab: Tab) => CATEGORIES.find((c) => c.tabs.some(([k]) => k === tab))!;
 const isTab = (v: string | null): v is Tab => CATEGORIES.some((c) => c.tabs.some(([k]) => k === v));
+/**
+ * The tabs with AI input (a popup that makes what is pasted into the data of the tab) and what AI makes there: the place
+ * AI with a target, or Setup Plan rows on the Mass Production Plan.
+ */
+const AI_TARGET: Partial<Record<Tab, AiTarget | "setup">> = {
+  plan: "plan", devissue: "devissue", dev: "dev", review: "review", all: "entries", setup: "setup", issue: "issue",
+};
 /** The issue list of a tab: Dev Issue (development) or Issues (mass production). */
 const stageOf = (tab: Tab): IssueStage | null => (tab === "devissue" ? "dev" : tab === "issue" ? "mp" : null);
 
@@ -68,6 +78,10 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
   const [model, setModel] = useState<WorkingModel | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [infoDirty, setInfoDirty] = useState(false);
+  // AI input popup of the tab, whether something in it would be lost, and a count that reopens the tab after AI put items in
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiDirty, setAiDirty] = useState(false);
+  const [fresh, setFresh] = useState(0);
   const [error, setError] = useState("");
   const load = useRef(0);
   const today = localToday();
@@ -147,6 +161,12 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
     setTab(k);
   };
   const category = categoryOf(tab);
+  const aiTarget = AI_TARGET[tab];
+  const openAi = () => {
+    if (infoDirty && !window.confirm("The unsaved changes on this tab are lost when AI puts its items in. Open AI input anyway?")) return;
+    setAiDirty(false);
+    setAiOpen(true);
+  };
   const modelPhase = phaseName(model?.info.phase);
   const stage = stageOf(tab);
   const stageIssues = stage ? issuesOfStage(entries, stage) : [];
@@ -190,7 +210,7 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
         <aside className="card wk-side">
           <div className="wk-side-h">
             <div className="wk-side-t">
-              <h2>{tr("Model groups")}</h2>
+              <h2>{tr("Model")}</h2>
               <button className="btn sm" disabled={!groups} onClick={() => setManaging(true)} title="Choose the models shown here and add models">Manage</button>
             </div>
             <input className="inp sm" placeholder="Search model…" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Search model" />
@@ -257,6 +277,10 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
                       </button>
                     );
                   })}
+                  {aiTarget && model && (
+                    <button className="btn sm wk-ai-open" title="Paste notes, a mail, Excel cells or pictures; AI makes them into the data of this tab"
+                      onClick={openAi}>✦ AI input</button>
+                  )}
                 </div>
               )}
 
@@ -267,15 +291,15 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
                       onSaved={(m) => { setModel(m); setInfoDirty(false); }} onError={fail} />
                   )}
                   {tab === "plan" && (
-                    <DevPlan key={selected} model={model} onDirty={setInfoDirty}
+                    <DevPlan key={`${selected}:${fresh}`} model={model} onDirty={setInfoDirty}
                       onSaved={(m) => { setModel(m); setInfoDirty(false); }} onError={fail} />
                   )}
                   {tab === "setup" && (
-                    <SetupPlan key={selected} modelName={selected} modelPhase={modelPhase}
+                    <SetupPlan key={`${selected}:${fresh}`} modelName={selected} modelPhase={modelPhase}
                       entries={entries} today={today} onChanged={onChanged} onError={fail} />
                   )}
                   {stage && (
-                    <IssueTable key={selected + stage} modelName={selected} modelPhase={modelPhase}
+                    <IssueTable key={`${selected}:${stage}:${fresh}`} modelName={selected} modelPhase={modelPhase}
                       heading={stage === "dev" ? "Dev Issues" : "Mass Production Issues"}
                       // a new issue starts in the model's phase when it belongs here, else in MP / no phase
                       newDefaults={{ phase: stage === "mp" ? "MP" : modelPhase === "MP" ? "" : modelPhase }}
@@ -287,8 +311,21 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
                       onOpen={(k) => { setInfoDirty(false); setTab(k); }} onError={fail} />
                   )}
                   {(tab === "dev" || tab === "review" || tab === "all") && (
-                    <EntryList key={selected + tab} modelName={selected} kind={tab === "all" ? null : tab}
+                    <EntryList key={`${selected}:${tab}:${fresh}`} modelName={selected} kind={tab === "all" ? null : tab}
                       entries={entries} today={today} onChanged={onChanged} onError={fail} onOpenIssues={(e) => setTab(issuesOfStage([e], "mp").length ? "issue" : "devissue")} />
+                  )}
+                  {aiOpen && aiTarget && (
+                    <AiPopup title={`AI input · ${tr(category.tabs.find(([k]) => k === tab)![1])}`} dirty={aiDirty} onClose={() => setAiOpen(false)}>
+                      {aiTarget === "setup" ? (
+                        <SetupAi key={selected} modelName={selected} today={today} onDirty={setAiDirty} onError={fail}
+                          onDone={() => { setAiOpen(false); setInfoDirty(false); setFresh((n) => n + 1); }} />
+                      ) : (
+                        <AiTab key={selected} model={model} entries={entries} today={today} target={aiTarget} onDirty={setAiDirty}
+                          onSaved={setModel} onAdded={(list) => onChanged([...entries, ...list])}
+                          onOpen={(k) => { setAiOpen(false); setInfoDirty(false); setTab(k); }} onError={fail}
+                          onDone={() => { setAiOpen(false); setInfoDirty(false); setFresh((n) => n + 1); }} />
+                      )}
+                    </AiPopup>
                   )}
                 </>
               )}

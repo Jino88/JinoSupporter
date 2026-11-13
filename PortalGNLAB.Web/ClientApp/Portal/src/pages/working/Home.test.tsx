@@ -99,4 +99,23 @@ describe("Working Home", () => {
     expect(html).not.toContain("Dev one");
     expect(html).toContain(">Open 1</button><button class=\"wk-chip\">All 2</button>");
   });
+
+  it("shows under an MP issue its notes not done and its open sub-issues", () => {
+    const note = (id: string, text: string, x: object = {}) => ({ id, text, date: "2026-11-03", createdAt: "2026-11-03", owner: "Lee", due: "", doneDate: "", createdBy: "a", ...x });
+    const issue = (id: string, seq: number, title: string, x: object = {}) => ({ id, seq, title, kind: "issue", status: "Open", doneDate: "", due: "", phase: "MP",
+      body: "", owner: "Kim", date: "2026-11-02", category: "ETC", process: "RA2", cause: "", finalResult: "", logs: [], ...x });
+    const html = renderToStaticMarkup(<Home models={[]} today="2026-11-11" view="mpissues" onOpen={() => {}} initial={[
+      { ...load("TIM-338", { phase: "MP" }), entries: [
+        issue("p", 1, "RA2/RM MOVING", { logs: [note("n1", "Check the jig"), note("n2", "Old step", { doneDate: "2026-11-04" })] }),
+        issue("a", 2, "RA2 ISSUE", { parentId: "p", logs: [note("n3", "Wait for parts", { due: "2026-11-05" })] }),
+        issue("b", 3, "RM ISSUE", { parentId: "p", doneDate: "2026-11-06" }),
+      ] as never },
+    ]} />);
+    expect(html).toContain("↳ Check the jig");
+    expect(html).not.toContain("Old step");
+    expect(html).toContain("↳ <b>RA2 ISSUE</b>");
+    expect(html).toMatch(/1\.1-1<\/td>.*↳ Wait for parts.*class="late">2026\/11\/05<span class="wk-late">Late/);
+    expect(html).not.toContain("RM ISSUE");
+    expect(html).toContain(">Open 2</button><button class=\"wk-chip\">All 3</button>");
+  });
 });

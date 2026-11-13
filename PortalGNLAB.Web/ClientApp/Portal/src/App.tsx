@@ -13,6 +13,7 @@ import ReviewReport from "./pages/ReviewReport";
 import GraphMaker from "./pages/GraphMaker";
 import ProductionInput from "./pages/ProductionInput";
 import Working from "./pages/Working";
+import WorkingPersonal from "./pages/WorkingPersonal";
 import QrSummary from "./pages/QrSummary";
 import QrBakoData from "./pages/QrBakoData";
 import QrAirleakData from "./pages/QrAirleakData";
@@ -35,7 +36,7 @@ import NgRateByGroup from "./pages/NgRateByGroup";
 
 /** React pages by their path inside /app. A page added here also needs its menu id in
  *  PortalShellEndpoints.ReactRoutes so the menus (React and Blazor) link to it. */
-const pages: Record<string, { title: string; render: (menu: MenuItem[]) => ReactNode }> = {
+const pages: Record<string, { title: string; render: (menu: MenuItem[], user: PortalUser) => ReactNode }> = {
   "/": { title: "Home", render: (menu) => <Home menu={menu} /> },
   "/tools/pc-download": { title: "PC Download", render: () => <PcDownloadPage /> },
   "/admin/users": { title: "User Management", render: () => <AdminUsersPage /> },
@@ -47,6 +48,8 @@ const pages: Record<string, { title: string; render: (menu: MenuItem[]) => React
   "/tools/graph-maker": { title: "Graph Maker", render: () => <GraphMaker /> },
   "/production/input": { title: "Production Input", render: () => <ProductionInput /> },
   "/working": { title: "Working", render: () => <Working /> },
+  // comes with the Working menu (menu.ts WORKING_PERSONAL), so it is opened by whoever may open Working
+  "/working/personal": { title: "Personal", render: (_menu, user) => <WorkingPersonal user={user} /> },
   "/qr/summary": { title: "QR SUMMARY", render: () => <QrSummary /> },
   "/qr/bako-data": { title: "QR BAKO DATA", render: () => <QrBakoData /> },
   "/qr/airleak-data": { title: "QR AIRLEAK DATA", render: () => <QrAirleakData /> },
@@ -103,7 +106,7 @@ export default function App() {
     <div className="app">
       {!isChromeHidden(window.location.search) && <Rail entries={buildRail(menu)} pathname={pathname} user={user} />}
       <main className="main">
-        {page ? page.render(menu) : (
+        {page ? page.render(menu, user) : (
           <section className="card">
             <h1>Page not found</h1>
             <p className="muted">This page has not been moved to the new UI yet.</p>

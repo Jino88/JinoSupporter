@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { barAt, devPlans, labelSide, modelRow, mpIssueRows, mpPlans, planBrief, timelineMonths, timelineRange, treeModels, type ModelLoad } from "./homeSummary";
+import { barAt, devPlans, hasOpen, labelSide, modelRow, mpIssueRows, mpPlans, planBrief, timelineMonths, timelineRange, treeModels, type ModelLoad } from "./homeSummary";
 import type { SetupRow } from "./setup";
 import type { Entry, ModelInfo } from "./types";
 
@@ -120,5 +120,24 @@ describe("Home summary", () => {
     expect(rows.map((r) => [r.model, r.issue.id, r.open, r.late])).toEqual([
       ["B", "b1", true, true], ["A", "a2", true, false], ["A", "a1", false, false],
     ]);
+  });
+
+  it("puts the sub-issues and the notes not done under their MP issue, numbered as the Issues tab does", () => {
+    const note = (id: string, date: string, x: object = {}) => ({ id, date, createdAt: date, text: id, owner: "", due: "", doneDate: "", ...x });
+    const issue = (x: Partial<Entry>): Partial<Entry> => ({ kind: "issue", status: "Open", doneDate: "", due: "", phase: "MP", seq: 1, logs: [], ...x });
+    const rows = mpIssueRows([
+      load("A", { phase: "MP" }, [
+        issue({ id: "p", seq: 1, doneDate: "2026-11-05", logs: [note("n2", "2026-11-03"), note("n1", "2026-11-01", { doneDate: "2026-11-02" })] as never }),
+        issue({ id: "k2", seq: 3, parentId: "p", logs: [note("m1", "2026-11-04", { due: "2026-11-10" })] as never }),
+        issue({ id: "k1", seq: 2, parentId: "p", doneDate: "2026-11-06" }),
+        issue({ id: "q", seq: 4, doneDate: "2026-11-06" }),
+      ]),
+    ], today);
+    // a closed issue with an open sub-issue comes before an issue with nothing open
+    expect(rows.map((r) => [r.issue.id, r.no, hasOpen(r)])).toEqual([["p", "1", true], ["q", "4", false]]);
+    const [p] = rows;
+    expect(p.openNotes.map((n) => [n.no, n.log.id])).toEqual([["1-2", "n2"]]);
+    expect(p.subs.map((s) => [s.issue.id, s.no, s.open])).toEqual([["k1", "1.1", false], ["k2", "1.2", true]]);
+    expect(p.subs[1].openNotes.map((n) => [n.no, n.late])).toEqual([["1.2-1", true]]);
   });
 });

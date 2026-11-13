@@ -614,6 +614,30 @@ try
     Check(working.AddImages("PIC", p1.Id, otherNote.Id, [("a.png", png)], "a") is null && working.AddImages("PIC", p1.Id, "nope", [("a.png", png)], "a") is null
           && working.AddImages("OTHER", p1.Id, null, [("a.png", png)], "a") is null,
         "working: pictures need an issue of the model and a note of that issue (404)");
+
+    // Personal plan: model name ~personal:<login id>, only its owner
+    Check(PortalGNLAB.Web.Endpoints.WorkingEndpoints.PersonalOwnerOk("~personal:alice", "alice")
+          && PortalGNLAB.Web.Endpoints.WorkingEndpoints.PersonalOwnerOk(PortalGNLAB.Web.Endpoints.WorkingEndpoints.PersonalKey("alice"), "alice"),
+        "working: personal key is open to its owner");
+    Check(!PortalGNLAB.Web.Endpoints.WorkingEndpoints.PersonalOwnerOk("~personal:alice", "bob")
+          && !PortalGNLAB.Web.Endpoints.WorkingEndpoints.PersonalOwnerOk("~personal:alice", "")
+          && !PortalGNLAB.Web.Endpoints.WorkingEndpoints.PersonalOwnerOk("~personal:alice", null)
+          && !PortalGNLAB.Web.Endpoints.WorkingEndpoints.PersonalOwnerOk("~personal:", "alice")
+          && !PortalGNLAB.Web.Endpoints.WorkingEndpoints.PersonalOwnerOk("~personal:alice2", "alice"),
+        "working: personal key of someone else is refused");
+    Check(PortalGNLAB.Web.Endpoints.WorkingEndpoints.PersonalOwnerOk("~PERSONAL:Alice", "aLICE")
+          && !PortalGNLAB.Web.Endpoints.WorkingEndpoints.PersonalOwnerOk("~Personal:Alice", "bob"),
+        "working: personal key check ignores case");
+    Check(PortalGNLAB.Web.Endpoints.WorkingEndpoints.PersonalOwnerOk("X316B", "bob")
+          && PortalGNLAB.Web.Endpoints.WorkingEndpoints.PersonalOwnerOk("MSM-X526/X626B", "")
+          && !PortalGNLAB.Web.Endpoints.WorkingEndpoints.IsPersonalModel("PIC") && PortalGNLAB.Web.Endpoints.WorkingEndpoints.IsPersonalModel("~personal:x"),
+        "working: an ordinary model name is not a personal key");
+    WorkingEntry pe = working.CreateEntry("~personal:alice", IBody("mine"), "alice");
+    List<WorkingImage>? pImg = working.AddImages("~personal:alice", pe.Id, null, [("a.png", png)], "alice");
+    Check(working.ImageModelName(pImg![0].Id) == "~personal:alice" && working.ImageModelName(onNote![0].Id) == "PIC" && working.ImageModelName("nope") is null,
+        "working: a picture reports the model name of its entry");
+    Check(WBad(() => working.AddTreeModel("~personal:bob", null, "a")) && WBad(() => working.AddTreeModel("~PERSONAL:x", null, "a")),
+        "working: a personal key cannot be added to the model tree");
     Check(!working.DeleteImage("PIC", p2.Id, onIssue[0].Id) && !working.DeleteImage("OTHER", p1.Id, onIssue[0].Id)
           && working.DeleteImage("PIC", p1.Id, onIssue[0].Id) && !working.DeleteImage("PIC", p1.Id, onIssue[0].Id)
           && working.GetImage(onIssue[0].Id) is null && working.ListEntries("PIC").Single(e => e.Id == p1.Id).Images.Count == 1,

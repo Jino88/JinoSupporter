@@ -36,12 +36,19 @@ export interface PlaceAnswer {
   model: string;
 }
 
+/**
+ * The tab AI input was opened on (the server answers only that kind of data): Dev Plan, Dev Issue, Dev History, Reviews,
+ * MP Issues, or the Timeline (any entry). None: anywhere (AI tab).
+ */
+export type AiTarget = "plan" | "devissue" | "dev" | "review" | "issue" | "entries";
+
 /** What the server is told about the model, so the answer can name events and tasks it already has and skip known entries. */
-export function placeRequest(text: string, today: string, info: ModelInfo, entries: Entry[], images: { name: string; dataUrl: string }[] = []) {
+export function placeRequest(text: string, today: string, info: ModelInfo, entries: Entry[], images: { name: string; dataUrl: string }[] = [],
+  target?: AiTarget) {
   const plan = readDevPlan(info.devPlan);
   const mp = new Set(issuesOfStage(entries, "mp").map((e) => e.id));
   return {
-    text, today, images,
+    text, today, images, ...(target ? { target } : {}),
     info: Object.fromEntries(INFO_KEYS.map((k) => [k, k === "phase" ? phaseName(info.phase) : info[k] ?? ""])) as Record<InfoKey, string>,
     events: plan.events.map((e) => ({
       id: e.id, name: e.name, start: e.start, end: e.end,
@@ -101,6 +108,12 @@ export const PLACE_TAB: Record<Place, "info" | "plan" | "devissue" | "dev" | "re
   "Model Info": "info", "Dev Plan": "plan", "Dev Issue": "devissue", "Dev History": "dev", Reviews: "review", "MP Issues": "issue",
 };
 
+/** The places each AI input target puts items in. */
+export const TARGET_PLACES: Record<AiTarget, Place[]> = {
+  plan: ["Dev Plan"], devissue: ["Dev Issue"], dev: ["Dev History"], review: ["Reviews"], issue: ["MP Issues"],
+  entries: ["Dev Issue", "Dev History", "Reviews", "MP Issues"],
+};
+
 export const placeOf = (e: PlaceEntry): Place =>
   e.kind === "dev" ? "Dev History" : e.kind === "review" ? "Reviews" : e.stage === "mp" ? "MP Issues" : "Dev Issue";
 
@@ -127,9 +140,9 @@ const qtyText = (qty: Record<string, number>) =>
  * Every item of the answer to show and pick: Model Info fields that change, Dev Plan events (new, or an existing one whose
  * name or days change), their Material Plan / Making Plan rows (new, or quantities of a row there changed), their tasks
  * (new or changed) and tasks taken out, and the new entries. An existing event with nothing of its own changing has no
- * item; its rows and tasks stand alone.
+ * item; its rows and tasks stand alone. With a target only the items of its places are given.
  */
-export function placeItems(answer: PlaceAnswer, info: ModelInfo): PlaceItem[] {
+export function placeItems(answer: PlaceAnswer, info: ModelInfo, target?: AiTarget): PlaceItem[] {
   const out: PlaceItem[] = [];
   for (const k of INFO_KEYS) {
     const to = answer.info[k];
@@ -184,7 +197,7 @@ export function placeItems(answer: PlaceAnswer, info: ModelInfo): PlaceItem[] {
     const bits = [e.date, e.owner, e.kind === "issue" ? [e.severity, e.due && `due ${e.due}`].filter(Boolean).join(" · ") : e.kind === "review" ? e.result : "", pics];
     out.push({ key: `entry.${i}`, place: placeOf(e), change: false, title: e.title, detail: bits.filter(Boolean).join(" · ") });
   });
-  return out;
+  return target ? out.filter((i) => TARGET_PLACES[target].includes(i.place)) : out;
 }
 
 /**

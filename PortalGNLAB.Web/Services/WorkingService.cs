@@ -495,6 +495,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
     public WorkingAddedModel AddTreeModel(string? name, string? groupId, string user)
     {
         string n = TreeName(name, "Model name");
+        if (n.StartsWith("~personal:", StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("That model name is reserved.");
         string gid = (groupId ?? "").Trim();
         WorkingGroups groups = ListGroups();
         if (groups.Groups.Any(g => g.Models.Any(m => string.Equals(m.Trim(), n, StringComparison.OrdinalIgnoreCase))))
@@ -1314,6 +1315,14 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
             conn.Dispose();
             throw;
         }
+    }
+
+    /// <summary>The ModelName of the entry a picture belongs to, or null when there is no such picture.</summary>
+    public string? ImageModelName(string imageId)
+    {
+        using SqliteConnection conn = Open();
+        using SqliteCommand cmd = Cmd(conn, "SELECT e.ModelName FROM WorkingImages i JOIN WorkingEntries e ON e.Id = i.EntryId WHERE i.Id=@id", null, ("@id", imageId));
+        return cmd.ExecuteScalar() as string;
     }
 
     /// <summary>The bytes of a picture / video, or null (the whole file in memory; the endpoint streams with OpenImage).</summary>

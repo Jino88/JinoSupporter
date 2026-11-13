@@ -1,9 +1,10 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { Fragment, useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { workingApi } from "./api";
 import { useTr } from "./i18n";
 import { setupApi } from "./setup";
 import {
-  barAt, devPlans, labelSide, modelRow, mpIssueRows, mpPlans, slashDate, timelineMonths, timelineRange, type EventBrief, type ModelLoad, type PlanBrief, type TaskBrief,
+  barAt, devPlans, hasOpen, labelSide, modelRow, mpIssueRows, mpPlans, slashDate, timelineMonths, timelineRange,
+  type EventBrief, type ModelLoad, type MpIssueRow, type PlanBrief, type TaskBrief,
 } from "./homeSummary";
 
 const STATE_LABEL: Record<EventBrief["state"], string> = { done: "Done", now: "Now", upcoming: "Next", late: "Late", undated: "No date" };
@@ -143,14 +144,56 @@ export default function Home(props: {
   );
 }
 
-/** The Mass Production issues of every model in one list, the open ones first (or all of them). */
+/**
+ * The Mass Production issues of every model in one list, the open ones first (or all of them); under each issue its notes
+ * not done and its open sub-issues (all of them with All), each with its notes not done.
+ */
 function MpIssues(props: { loads: ModelLoad[]; today: string; onOpen: (model: string, tab: "issue") => void }) {
   const tr = useTr();
   const [all, setAll] = useState(false);
   const rows = mpIssueRows(props.loads, props.today);
-  const open = rows.filter((r) => r.open);
-  const shown = all ? rows : open;
+  const issues = rows.flatMap((r) => [r, ...r.subs]);
+  const open = issues.filter((r) => r.open);
+  const shown = all ? rows : rows.filter(hasOpen);
   const late = open.filter((r) => r.late).length;
+  const notes = (r: MpIssueRow, sub: boolean) => r.openNotes.map(({ no, log, late: isLateNow }) => (
+    <tr key={log.id} className={"note" + (sub ? " deep" : "")}>
+      <td></td>
+      <td className="num">{no}</td>
+      <td colSpan={2}></td>
+      <td className="l"><span className="wk-hm-sub">↳ {tr(log.text).split("\n")[0]}</span></td>
+      <td>{log.owner || <span className="muted" title="Written by">{log.createdBy}</span>}</td>
+      <td>{slashDate(log.date)}</td>
+      <td className={isLateNow ? "late" : ""}>{log.due && slashDate(log.due)}{isLateNow && <span className="wk-late">{tr("Late")}</span>}</td>
+      <td><span className="wk-st open">{tr("Open")}</span></td>
+      <td colSpan={2}></td>
+    </tr>
+  ));
+  const issueRow = (r: MpIssueRow, sub: boolean) => {
+    const { model, issue: e, open: isOpen, late: isLateNow } = r;
+    return (
+      <Fragment key={model + e.id}>
+        <tr className={[sub && "sub", !isOpen && "done"].filter(Boolean).join(" ") || undefined}>
+          <td>{!sub && <button className="wk-hm-link" onClick={() => props.onOpen(model, "issue")} title="Open the model's Issues">{model}</button>}</td>
+          <td className="num">{r.no}</td>
+          <td>{tr(e.category)}</td>
+          <td>{tr(e.process)}</td>
+          <td className="l">
+            {sub ? <span className="wk-hm-sub">↳ <b>{tr(e.title)}</b></span> : <b>{tr(e.title)}</b>}
+            {e.body && <div className="muted small">{tr(e.body).split("\n")[0]}</div>}
+          </td>
+          <td>{e.owner}</td>
+          <td>{slashDate(e.date)}</td>
+          <td className={isLateNow ? "late" : ""}>{e.due && slashDate(e.due)}{isLateNow && <span className="wk-late">{tr("Late")}</span>}</td>
+          <td>{e.doneDate ? slashDate(e.doneDate) : ""}</td>
+          <td className="l">{tr(e.finalResult)}</td>
+          <td className="num">{e.logs?.length || ""}</td>
+        </tr>
+        {notes(r, sub)}
+        {r.subs.filter((s) => all || s.open).map((s) => issueRow(s, true))}
+      </Fragment>
+    );
+  };
   return (
     <section className="card pi-sec">
       <div className="pi-sec-h">
@@ -158,7 +201,7 @@ function MpIssues(props: { loads: ModelLoad[]; today: string; onOpen: (model: st
         <div className="pi-legend">
           {late > 0 && <span className="wk-open">{late} {tr("late")}</span>}
           <button className={"wk-chip" + (all ? "" : " on")} onClick={() => setAll(false)}>{tr("Open")} {open.length}</button>
-          <button className={"wk-chip" + (all ? " on" : "")} onClick={() => setAll(true)}>{tr("All")} {rows.length}</button>
+          <button className={"wk-chip" + (all ? " on" : "")} onClick={() => setAll(true)}>{tr("All")} {issues.length}</button>
         </div>
       </div>
       <div className="pi-sec-b wk-hm-models">
@@ -169,23 +212,7 @@ function MpIssues(props: { loads: ModelLoad[]; today: string; onOpen: (model: st
                 {["Model", "No.", "Issue type", "Process", "Issue", "Owner", "Registered", "Due", "Done", "Final result", "Notes"].map((h) => <th key={h}>{tr(h)}</th>)}
               </tr>
             </thead>
-            <tbody>
-              {shown.map(({ model, issue: e, open: isOpen, late: isLateNow }) => (
-                <tr key={model + e.id} className={isOpen ? undefined : "done"}>
-                  <td><button className="wk-hm-link" onClick={() => props.onOpen(model, "issue")} title="Open the model's Issues">{model}</button></td>
-                  <td className="num">{e.seq}</td>
-                  <td>{tr(e.category)}</td>
-                  <td>{tr(e.process)}</td>
-                  <td className="l"><b>{tr(e.title)}</b>{e.body && <div className="muted small">{tr(e.body).split("\n")[0]}</div>}</td>
-                  <td>{e.owner}</td>
-                  <td>{slashDate(e.date)}</td>
-                  <td className={isLateNow ? "late" : ""}>{e.due && slashDate(e.due)}{isLateNow && <span className="wk-late">{tr("Late")}</span>}</td>
-                  <td>{e.doneDate ? slashDate(e.doneDate) : ""}</td>
-                  <td className="l">{tr(e.finalResult)}</td>
-                  <td className="num">{e.logs?.length || ""}</td>
-                </tr>
-              ))}
-            </tbody>
+            <tbody>{shown.map((r) => issueRow(r, false))}</tbody>
           </table>
         )}
       </div>

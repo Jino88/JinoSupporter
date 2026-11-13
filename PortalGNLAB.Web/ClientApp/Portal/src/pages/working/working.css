@@ -480,3 +480,16 @@ table.wk-gantt .wk-qty-in { padding: 4px 3px; font-size: 11px; }
 .wk-hm-issues tr.done td { color: var(--faint); }
 .wk-hm-issues td.late { color: var(--bad); font-weight: 600; }
 .wk-hm-issues .wk-late { margin-left: 6px; }
+/* under an issue: its notes not done and its sub-issues */
+.wk-hm-issues tr.sub td, .wk-hm-issues tr.note td { border-top-style: dashed; }
+.wk-hm-issues tr.note td { font-size: 12px; color: var(--ink-2); }
+.wk-hm-issues .wk-hm-sub { padding-left: 14px; }
+.wk-hm-issues tr.note.deep .wk-hm-sub { padding-left: 28px; }
+/* AI input of a Development / Mass Production tab (AiPopup.tsx) */
+/* right after the sub tabs (not at the far end of the row, where it was missed on a wide page) and in the accent color */
+.wk-subtabs .wk-ai-open { margin-left: 6px; height: 26px; border-radius: 999px; background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+.wk-subtabs .wk-ai-open:hover { filter: brightness(1.08); }
+.wk-ai-pop { width: min(860px, 94vw); max-height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.wk-ai-pop-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.wk-ai-pop .wk-ai-pop-h h2 { margin: 0; }
+.wk-ai-pop-b { padding: 14px 16px 16px; overflow: auto; min-height: 0; }
