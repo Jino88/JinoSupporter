@@ -67,6 +67,9 @@ export const ICON_PATHS: Record<string, string> = {
   briefcase: "<rect x='3' y='7' width='18' height='13' rx='2'/><path d='M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18M11 13v2h2v-2'/>",
 };
 
+/** Each user's own plans under Working (pages/WorkingPersonal.tsx); it comes with the Working menu, not a menu of its own. */
+export const WORKING_PERSONAL = "working-personal";
+
 export interface RailTileInfo {
   icon: string;
   label: string;
@@ -87,7 +90,8 @@ const RAIL_TILES: Record<string, RailTileInfo> = {
   "qr-gauss-data": { icon: "bell", label: "Gauss" },
   "bmes-daily-report": { icon: "daily", label: "Daily" },
   "production-input": { icon: "clipboard", label: "Input" },
-  working: { icon: "briefcase", label: "Working" },
+  working: { icon: "briefcase", label: "Common" },
+  [WORKING_PERSONAL]: { icon: "worker", label: "Personal" },
   translate: { icon: "translate", label: "Translate" },
   "review-report": { icon: "write", label: "Write" },
   "bmes-setting": { icon: "gear", label: "Setting" },
@@ -125,6 +129,8 @@ const ADMIN = ["admin-users", "admin-ai-usages", "test-excel-converter", "admin-
 /** Rail layout of NavMenu.razor, limited to the menus the server sent (= the role's permissions). */
 export function buildRail(items: MenuItem[]): RailEntry[] {
   const byId = new Map(items.map((i) => [i.id, i]));
+  const working = byId.get("working");
+  if (working) byId.set(WORKING_PERSONAL, { ...working, id: WORKING_PERSONAL, label: "Personal", href: "/app/working/personal", react: true });
   const tiles = (ids: string[]): RailTile[] =>
     ids.flatMap((id) => {
       const item = byId.get(id);
@@ -143,7 +149,8 @@ export function buildRail(items: MenuItem[]): RailEntry[] {
       { tiles: tiles(BMES_MAIN) },
       { title: "Setting Model", tiles: tiles(BMES_SETTING_MODEL) },
     ]),
-    ...single(["bmes-daily-report", "production-input", "working"]),
+    ...single(["bmes-daily-report", "production-input"]),
+    ...group("working", "briefcase", "Working", "Working", [{ tiles: tiles(["working", WORKING_PERSONAL]) }]),
     ...group("qr", "qr", "QR", "QR inspection data", [{ tiles: tiles(QR_MAIN) }]),
     ...sep(single(TOOLS)),
     ...sep([...single(["bmes-setting"]), ...single(ADMIN)]),

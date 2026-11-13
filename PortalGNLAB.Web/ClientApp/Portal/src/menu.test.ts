@@ -1,4 +1,4 @@
-import { appPath, buildRail, groupActive, groupMenu, ICON_PATHS, isActive, isChromeHidden, railTile } from "./menu";
+import { appPath, buildRail, groupActive, groupMenu, ICON_PATHS, isActive, isChromeHidden, railTile, WORKING_PERSONAL } from "./menu";
 import type { MenuItem } from "./api";
 
 const item = (id: string, group: string, href: string, react = false): MenuItem => ({ id, label: id, group, href, react });
@@ -59,7 +59,7 @@ describe("railTile", () => {
   it("has an SVG path for every icon used", () => {
     for (const id of ["ng-rate", "bmes-f-cost", "report", "bmes-worker-status", "bmes-test5", "bmes-make-model-group",
       "bmes-routing-table", "bmes-reason-table", "qr-summary", "qr-bako-data", "qr-airleak-data", "qr-gauss-data",
-      "bmes-daily-report", "production-input", "working", "translate", "review-report", "bmes-setting", "admin-users", "admin-ai-usages",
+      "bmes-daily-report", "production-input", "working", WORKING_PERSONAL, "translate", "review-report", "bmes-setting", "admin-users", "admin-ai-usages",
       "test-excel-converter", "admin-db-query"]) {
       expect(ICON_PATHS[railTile(id)!.icon]).toBeTruthy();
     }
@@ -79,7 +79,7 @@ describe("buildRail", () => {
 
   it("lays out the rail like NavMenu.razor", () => {
     const rail = buildRail(all);
-    expect(shape(rail)).toEqual(["bmes", "Daily", "Input", "Working", "qr", "-", "Translate", "Write", "-", "Setting", "Users", "AI Usage", "Excel", "DB"]);
+    expect(shape(rail)).toEqual(["bmes", "Daily", "Input", "working", "qr", "-", "Translate", "Write", "-", "Setting", "Users", "AI Usage", "Excel", "DB"]);
     const bmes = rail[0];
     if (bmes.kind !== "group") throw new Error("expected group");
     expect(bmes.sections.map((s) => s.title ?? null)).toEqual([null, "Setting Model"]);
@@ -88,6 +88,20 @@ describe("buildRail", () => {
     const qr = rail[4];
     if (qr.kind !== "group") throw new Error("expected group");
     expect(qr.sections[0].tiles.map((t) => t.label)).toEqual(["Summary", "Bako", "Airleak", "Gauss"]);
+  });
+
+  it("puts Common (the Working page) and Personal (each user's own plans) under Working", () => {
+    const working = buildRail([item("working", "Working", "/app/working", true)]);
+    expect(working.length).toBe(1);
+    const g = working[0];
+    if (g.kind !== "group") throw new Error("expected group");
+    expect([g.key, g.label]).toEqual(["working", "Working"]);
+    expect(g.sections[0].tiles.map((t) => [t.label, t.item.id, t.item.href, t.item.react])).toEqual([
+      ["Common", "working", "/app/working", true], ["Personal", WORKING_PERSONAL, "/app/working/personal", true],
+    ]);
+    expect(groupActive(g, "/app/working/personal")).toBe(true);
+    // no Working permission, no Personal either
+    expect(buildRail([item("translate", "T", "/app/tools/translate", true)]).some((e) => e.kind === "group" && e.key === "working")).toBe(false);
   });
 
   it("shows only permitted menus and drops empty groups and separators", () => {
