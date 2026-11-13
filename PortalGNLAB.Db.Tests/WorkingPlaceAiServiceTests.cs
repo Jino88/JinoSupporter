@@ -398,6 +398,19 @@ public sealed class WorkingPlaceAiServiceTests
     }
 
     [Fact]
+    public void ParseAnswer_PersonalTargetMakesEveryEntryAPlanWithNoPhase()
+    {
+        var r = Request();
+        r.Target = "personal";
+        PlaceAiPlan plan = WorkingPlaceAiService.ParseAnswer(Mixed, r);
+        Assert.Empty(plan.Info);
+        Assert.Empty(plan.Events);
+        Assert.Equal(["PV review", "Scratch"], plan.Entries.Select(e => e.Title));
+        Assert.All(plan.Entries, e => Assert.Equal(["issue", "dev", ""], [e.Kind, e.Stage, e.Phase]));
+        Assert.Contains("on My Plans:", WorkingPlaceAiService.BuildContent("~personal:alice", r, [])[0]!["text"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void BuildContent_TellsTheTargetOnlyWhenThereIsOne()
     {
         string With(string? target) =>

@@ -112,6 +112,10 @@ describe("AI placement answer", () => {
     expect(keys("dev")).toEqual(["entry.2"]);
     expect(keys("review")).toEqual(["entry.3"]);
     expect(keys("entries")).toEqual(["entry.0", "entry.1", "entry.2", "entry.3"]);
+    // My Plans: every entry the server made into a plan, under My Plans; nothing of the model
+    expect(placeItems(answer, info, "personal").map((i) => [i.key, i.place])).toEqual([
+      ["entry.0", "My Plans"], ["entry.1", "My Plans"], ["entry.2", "My Plans"], ["entry.3", "My Plans"],
+    ]);
     expect(keys()).toHaveLength(11);
     // only the items listed are put in: a Dev Issue target does not change Model Info or Dev Plan
     const put = applyPlace(info, answer, all(placeItems(answer, info, "devissue")), "2026-11-12");

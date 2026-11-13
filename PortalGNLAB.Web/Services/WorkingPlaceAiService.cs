@@ -176,8 +176,8 @@ public sealed class PlaceAiRequest
     public List<PlaceAiEntryContext>? Entries { get; set; }
     public List<PlaceAiImage>? Images { get; set; }
     /// <summary>
-    /// The tab the AI input was opened on: plan (Dev Plan), devissue, dev (Dev History), review, issue (MP Issues) or
-    /// entries (Timeline); only that kind of data is answered. Empty or unknown: anywhere (AI tab).
+    /// The tab the AI input was opened on: plan (Dev Plan), devissue, dev (Dev History), review, issue (MP Issues),
+    /// entries (Timeline) or personal (My Plans of Working › Personal); only that kind of data is answered. Empty or unknown: anywhere (AI tab).
     /// </summary>
     public string? Target { get; set; }
 }
@@ -226,6 +226,7 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         ["review"] = "Reviews. Answer only entries of kind \"review\"; info is {} and events is [].",
         ["issue"] = "MP Issues. Answer only entries of kind \"issue\" with stage \"mp\" and phase \"MP\"; info is {} and events is [].",
         ["entries"] = "Timeline. Answer only entries (kind dev, issue or review); info is {} and events is [].",
+        ["personal"] = "My Plans: the user's own plans and to-dos, not a product model. Answer only entries of kind \"issue\", one per plan or to-do (its title, body, owner, due day), with stage \"dev\" and phase \"\"; info is {} and events is [].",
     };
 
     private static readonly JsonSerializerOptions Json = new()
@@ -357,7 +358,7 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         // a target keeps only its own kind of data; entries are made into the kind of the tab
         string target = TargetOf(request);
         List<PlaceAiEntry>? entries = plan?.Entries;
-        if (target is "devissue" or "dev" or "review" or "issue") entries = entries?.Select(e => Retarget(e, target)).ToList();
+        if (target is "devissue" or "dev" or "review" or "issue" or "personal") entries = entries?.Select(e => Retarget(e, target)).ToList();
         return new PlaceAiPlan
         {
             Info = target.Length == 0 ? NormalizeInfo(plan?.Info, current) : [],
@@ -374,13 +375,14 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         return Targets.ContainsKey(t) ? t : "";
     }
 
-    /// <summary>An entry made into the kind of a Dev Issue, Dev History, Reviews or MP Issues tab.</summary>
+    /// <summary>An entry made into the kind of a Dev Issue, Dev History, Reviews or MP Issues tab, or a plan of My Plans (an issue with no phase).</summary>
     private static PlaceAiEntry? Retarget(PlaceAiEntry? e, string target)
     {
         if (e is null) return null;
         e.Kind = target switch { "dev" => "dev", "review" => "review", _ => "issue" };
         if (target == "issue") { e.Stage = "mp"; e.Phase = "MP"; }
         else if (target == "devissue") { e.Stage = "dev"; e.Phase = PhaseOf(e.Phase, allowMp: false); }
+        else if (target == "personal") { e.Stage = "dev"; e.Phase = ""; }
         return e;
     }
 

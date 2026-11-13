@@ -39,6 +39,7 @@ const TARGET_HINT: Record<AiTarget, [string, string]> = {
   review: ["Reviews (the result of a review or meeting: Pass, Conditional or Fail)", "e.g. DR review 11/14: conditional pass, buzz noise to be closed before DV."],
   issue: ["Mass Production issues", "e.g. Line 2 scratch on the cover since 11/10, 0.8% NG, Major, cause: jig wear."],
   entries: ["Dev History, Dev Issue, Review or Mass Production issue entries", "e.g. 11/14 DR review conditional pass. Buzz noise at 1 kHz, Major, fix by 11/30."],
+  personal: ["your plans (a title, details, owner and due day each)", "e.g. DV report to the customer by 11/20. Book the drop test jig next week. Call Park about the F-PCB."],
 };
 
 /**
@@ -63,6 +64,8 @@ export default function AiTab(props: {
   initial?: PlaceAnswer;
 }) {
   const { model, target } = props;
+  // My Plans is kept under a model of the user's id, which is not a name to show
+  const about = target === "personal" ? "your plans" : model.name;
   const first = props.initial ? { answer: props.initial, items: placeItems(props.initial, model.info, target), revision: model.revision, pictures: [] } : null;
   const [text, setText] = useState("");
   const [pictures, setPictures] = useState<File[]>([]);
@@ -138,7 +141,7 @@ export default function AiTab(props: {
       <div className="muted small">
         {target ? (
           <>
-            Type or paste anything for {model.name} — meeting notes, a mail, a schedule, cells copied from Excel, or pictures
+            Type or paste anything for {about} — meeting notes, a mail, a schedule, cells copied from Excel, or pictures
             (Ctrl+V a screenshot or a photo, or drop it here; up to 6). AI makes it into {TARGET_HINT[target][0]}. You see
             every item first and keep the ones you want. Ctrl+Enter sends.
           </>
