@@ -14,6 +14,7 @@ import GraphMaker from "./pages/GraphMaker";
 import ProductionInput from "./pages/ProductionInput";
 import Working from "./pages/Working";
 import WorkingPersonal from "./pages/WorkingPersonal";
+import WorkingGraphMaker from "./pages/WorkingGraphMaker";
 import QrSummary from "./pages/QrSummary";
 import QrBakoData from "./pages/QrBakoData";
 import QrAirleakData from "./pages/QrAirleakData";
@@ -50,6 +51,7 @@ const pages: Record<string, { title: string; render: (menu: MenuItem[], user: Po
   "/working": { title: "Working", render: () => <Working /> },
   // comes with the Working menu (menu.ts WORKING_PERSONAL), so it is opened by whoever may open Working
   "/working/personal": { title: "Personal", render: (_menu, user) => <WorkingPersonal user={user} /> },
+  "/working/graph-maker": { title: "Graphmaker", render: () => <WorkingGraphMaker /> },
   "/qr/summary": { title: "QR SUMMARY", render: () => <QrSummary /> },
   "/qr/bako-data": { title: "QR BAKO DATA", render: () => <QrBakoData /> },
   "/qr/airleak-data": { title: "QR AIRLEAK DATA", render: () => <QrAirleakData /> },

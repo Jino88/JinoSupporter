@@ -70,6 +70,9 @@ export const ICON_PATHS: Record<string, string> = {
 /** Each user's own plans under Working (pages/WorkingPersonal.tsx); it comes with the Working menu, not a menu of its own. */
 export const WORKING_PERSONAL = "working-personal";
 
+/** AI Graphmaker under Working (pages/WorkingGraphMaker.tsx); like Personal it comes with the Working menu. */
+export const WORKING_GRAPH = "working-graph";
+
 export interface RailTileInfo {
   icon: string;
   label: string;
@@ -92,6 +95,7 @@ const RAIL_TILES: Record<string, RailTileInfo> = {
   "production-input": { icon: "clipboard", label: "Input" },
   working: { icon: "briefcase", label: "Common" },
   [WORKING_PERSONAL]: { icon: "worker", label: "Personal" },
+  [WORKING_GRAPH]: { icon: "trend", label: "Graph" },
   translate: { icon: "translate", label: "Translate" },
   "review-report": { icon: "write", label: "Write" },
   "bmes-setting": { icon: "gear", label: "Setting" },
@@ -131,6 +135,7 @@ export function buildRail(items: MenuItem[]): RailEntry[] {
   const byId = new Map(items.map((i) => [i.id, i]));
   const working = byId.get("working");
   if (working) byId.set(WORKING_PERSONAL, { ...working, id: WORKING_PERSONAL, label: "Personal", href: "/app/working/personal", react: true });
+  if (working) byId.set(WORKING_GRAPH, { ...working, id: WORKING_GRAPH, label: "Graphmaker", href: "/app/working/graph-maker", react: true });
   const tiles = (ids: string[]): RailTile[] =>
     ids.flatMap((id) => {
       const item = byId.get(id);
@@ -150,7 +155,7 @@ export function buildRail(items: MenuItem[]): RailEntry[] {
       { title: "Setting Model", tiles: tiles(BMES_SETTING_MODEL) },
     ]),
     ...single(["bmes-daily-report", "production-input"]),
-    ...group("working", "briefcase", "Working", "Working", [{ tiles: tiles(["working", WORKING_PERSONAL]) }]),
+    ...group("working", "briefcase", "Working", "Working", [{ tiles: tiles(["working", WORKING_PERSONAL, WORKING_GRAPH]) }]),
     ...group("qr", "qr", "QR", "QR inspection data", [{ tiles: tiles(QR_MAIN) }]),
     ...sep(single(TOOLS)),
     ...sep([...single(["bmes-setting"]), ...single(ADMIN)]),
