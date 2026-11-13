@@ -123,7 +123,19 @@ public sealed class GraphMakerAiService(AiProviderSettingsService settings, ILog
         string title = Str(root["title"]);
         string reason = Str(root["reason"]);
         JsonObject options = NormalizeOptions(root["options"] as JsonObject, table);
+        FillXColumn(kind, options);
         return new GraphMakerAiSuggestion(kind, title, reason, options);
+    }
+
+    /// <summary>Scatter reads its X from xColumns, the other series charts from xColumn; fill the one the AI left out.</summary>
+    private static void FillXColumn(int kind, JsonObject options)
+    {
+        if (kind == (int)GraphMakerGraphType.Scatter)
+        {
+            if (!options.ContainsKey("xColumns") && options["xColumn"] is JsonNode x) options["xColumns"] = new JsonArray(x.DeepClone());
+        }
+        else if (!options.ContainsKey("xColumn") && options["xColumns"] is JsonArray { Count: > 0 } list)
+            options["xColumn"] = list[0]!.DeepClone();
     }
 
     public static JsonObject NormalizeOptions(JsonObject? raw, GraphMakerTable table)

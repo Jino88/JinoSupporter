@@ -53,6 +53,17 @@ public sealed class GraphMakerAiServiceTests
         Assert.False(o.ContainsKey("unknownKey"));
     }
 
+    [Fact]
+    public void ParseAnswer_FillsTheXColumnTheChartReads()
+    {
+        JsonObject scatter = GraphMakerAiService.ParseAnswer("{\"kind\":1,\"options\":{\"xColumn\":\"Line\"}}", Table()).Options;
+        Assert.Equal(["Line"], scatter["xColumns"]!.AsArray().Select(x => (string?)x));
+        JsonObject average = GraphMakerAiService.ParseAnswer("{\"kind\":2,\"options\":{\"xColumns\":[\"Line\",\"Date\"]}}", Table()).Options;
+        Assert.Equal("Line", (string?)average["xColumn"]);
+        JsonObject both = GraphMakerAiService.ParseAnswer("{\"kind\":1,\"options\":{\"xColumn\":\"Date\",\"xColumns\":[\"Line\"]}}", Table()).Options;
+        Assert.Equal(["Line"], both["xColumns"]!.AsArray().Select(x => (string?)x));
+    }
+
     [Theory]
     [InlineData("{\"kind\":3}", 3)]
     [InlineData("{\"kind\":\"6\"}", 6)]
