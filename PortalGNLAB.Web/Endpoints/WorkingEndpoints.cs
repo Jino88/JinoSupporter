@@ -15,6 +15,22 @@ public static class WorkingEndpoints
     /// </summary>
     public static string ModelName(string name) => name.Replace("%2F", "/", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>The reserved model-name prefix of a personal plan: the model name is ~personal:&lt;login id&gt;.</summary>
+    public const string PersonalPrefix = "~personal:";
+
+    public static bool IsPersonalModel(string? modelName) =>
+        modelName is not null && modelName.StartsWith(PersonalPrefix, StringComparison.OrdinalIgnoreCase);
+
+    public static string PersonalKey(string user) => PersonalPrefix + user;
+
+    /// <summary>True for an ordinary model, or for a personal key that belongs to <paramref name="user"/> (case-insensitive).</summary>
+    public static bool PersonalOwnerOk(string? modelName, string? user)
+    {
+        if (!IsPersonalModel(modelName)) return true;
+        string owner = modelName![PersonalPrefix.Length..];
+        return !string.IsNullOrEmpty(user) && owner.Length > 0 && string.Equals(owner, user, StringComparison.OrdinalIgnoreCase);
+    }
+
     public static IEndpointRouteBuilder MapWorking(this IEndpointRouteBuilder app)
     {
         var api = app.MapGroup("/api/portal/tools/working").RequireAuthorization();
@@ -25,6 +41,10 @@ public static class WorkingEndpoints
             if (!HttpMethods.IsGet(ctx.HttpContext.Request.Method)
                 && ctx.HttpContext.Request.Headers["X-Requested-With"] != "PortalGNLAB")
                 return Results.BadRequest(new { error = "Required request header is missing." });
+            // a personal plan (~personal:<id>) is only for its owner, on every /models/{name}/** path
+            if (ctx.HttpContext.Request.RouteValues["name"] is string routeName
+                && !PersonalOwnerOk(ModelName(routeName), ctx.HttpContext.User.Identity?.Name))
+                return Results.StatusCode(StatusCodes.Status403Forbidden);
             try { return await next(ctx); }
             catch (WorkingConflictException ex) { return Results.Json(new { error = ex.Message }, statusCode: StatusCodes.Status409Conflict); }
             catch (ArgumentException ex) { return Results.BadRequest(new { error = ex.Message }); }
@@ -119,6 +139,8 @@ public static class WorkingEndpoints
         // streamed from the DB with byte ranges, so a video can be played from any point
         api.MapGet("/images/{imageId}", (string imageId, WorkingService svc, HttpContext ctx) =>
         {
+            // a picture of someone else's personal plan is not there for this user
+            if (!PersonalOwnerOk(svc.ImageModelName(imageId), ctx.User.Identity?.Name)) return Results.NotFound();
             if (svc.OpenImage(imageId) is not { } file) return Results.NotFound();
             ctx.Response.RegisterForDispose(file);
             ctx.Response.Headers.XContentTypeOptions = "nosniff";
