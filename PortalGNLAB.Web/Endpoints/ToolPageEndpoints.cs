@@ -50,6 +50,15 @@ public static class ToolPageEndpoints
             var table = GraphMakerParser.Parse(body.Text, new(body.Delimiter, body.HeaderRowNumber, body.HeaderNotUse));
             return Results.Ok(GraphMakerPayloadBuilder.Build(table, body.Request));
         });
+
+        // Working > Graphmaker: the AI picks the chart, the Graph Maker renderer draws it; opened with the Working menu.
+        var workingGraph = ToolGroup(app, "working-graph", AppMenus.Working);
+        workingGraph.MapPost("/analyze", AnalyzeGraphAsync);
+        workingGraph.MapPost("/render", (GraphInput body) =>
+        {
+            var table = GraphMakerParser.Parse(body.Text, new(body.Delimiter, body.HeaderRowNumber, body.HeaderNotUse));
+            return Results.Ok(GraphMakerPayloadBuilder.Build(table, body.Request));
+        });
         return app;
     }
 
@@ -111,6 +120,19 @@ public static class ToolPageEndpoints
             result = new(value.SourceText, value.Translation, value.Usage, "Codex API", api.Model);
         }
         return Results.Ok(new { result.SourceText, result.Translation, usage = FormatUsage(result) });
+    }
+
+    private static async Task<IResult> AnalyzeGraphAsync(GraphMakerAiInput body, GraphMakerAiService ai, HttpContext context)
+    {
+        string actor = $"user={context.User.Identity?.Name ?? "unknown"}; ip={context.Connection.RemoteIpAddress}";
+        try
+        {
+            return Results.Ok(await ai.AnalyzeAsync(body, actor, context.RequestAborted));
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
     }
 
     private static async Task<IResult> ReportActionAsync(
