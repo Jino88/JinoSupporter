@@ -68,7 +68,7 @@ public sealed class BmesPdmScrapeService(NgRateSettingsService settings)
         using var cmd = conn.CreateCommand();
         cmd.CommandText =
             """
-            SELECT PDMNO, PDMVR, PDTNO_TX, PDRTX, BMONO_TX, USEYN, ERDAT
+            SELECT PDMNO, PDMVR, PDTNO_TX, PDRTX, BMONO_TX, USEYN, ERDAT, ARDAT
             FROM BmesPdm
             WHERE (@search = '' OR PDRTX LIKE @like OR BMONO_TX LIKE @like)
             -- BMONO_TX is populated on only a small fraction of rows, so ordering by it first
@@ -94,6 +94,7 @@ public sealed class BmesPdmScrapeService(NgRateSettingsService settings)
                 BmonoTx = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
                 Useyn = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
                 Erdat = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
+                Ardat = reader.IsDBNull(7) ? string.Empty : reader.GetString(7),
             });
         }
         return result;
@@ -184,7 +185,7 @@ public sealed class BmesPdmScrapeService(NgRateSettingsService settings)
         using var cmd = conn.CreateCommand();
         cmd.CommandText =
             $"""
-            SELECT PDMNO, PDMVR, PDTNO_TX, PDRTX, BMONO_TX, USEYN, ERDAT
+            SELECT PDMNO, PDMVR, PDTNO_TX, PDRTX, BMONO_TX, USEYN, ERDAT, ARDAT
             FROM BmesPdm
             WHERE TRIM(UPPER({column})) IN ({placeholders});
             """;
@@ -203,6 +204,7 @@ public sealed class BmesPdmScrapeService(NgRateSettingsService settings)
                 BmonoTx = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
                 Useyn = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
                 Erdat = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
+                Ardat = reader.IsDBNull(7) ? string.Empty : reader.GetString(7),
             };
             into[row.Pdmno + "\t" + row.Pdrtx] = row;
         }
@@ -322,7 +324,12 @@ public sealed class BmesPdmRow
     public string Pdrtx { get; init; } = string.Empty;
     public string BmonoTx { get; init; } = string.Empty;
     public string Useyn { get; init; } = string.Empty;
+
+    /// <summary>Created on (ERDAT, BMES "Create Date").</summary>
     public string Erdat { get; init; } = string.Empty;
+
+    /// <summary>Last changed on (ARDAT, BMES "Mod. Date"; ARNAM_TX is "Mod. User").</summary>
+    public string Ardat { get; init; } = string.Empty;
 
     /// <summary>
     /// Name used as the BOM root. BMONO_TX (the model link) is filled on only a small

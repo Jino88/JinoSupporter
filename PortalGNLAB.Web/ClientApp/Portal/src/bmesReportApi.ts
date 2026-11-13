@@ -35,7 +35,8 @@ export interface BomRow {
 }
 export interface BomResult { model: string; rows: BomRow[]; error: string; warning: string; loadSource: string; fetchedAt: string }
 export interface BomLoad { results: BomResult[]; cacheLoads: number; serverLoads: number; cachedModels: CachedModel[] }
-export interface PdmRow { pdmno: string; pdmvr: string; pdtnoTx: string; pdrtx: string }
+// erdat / ardat: the drawing's Create Date and Mod. Date in BMES (absent from a server older than this client)
+export interface PdmRow { pdmno: string; pdmvr: string; pdtnoTx: string; pdrtx: string; erdat?: string; ardat?: string }
 export interface CostRow { materialCode: string; unitPrice: number | null; priceCurrency: string; priceSource: string; unitPriceVnd: number | null }
 export interface Drawing { success: boolean; error: string; fileName: string; base64: string }
 

@@ -280,9 +280,9 @@ export function buildStandaloneHtml(results: BomResult[], pdm: Map<string, PdmRo
       lines.push('<div style="color:#6c757d;">No BOM rows found.</div>');
       continue;
     }
-    lines.push('<table><thead><tr><th>Lv</th><th>Material</th><th>Code</th><th>PDMNO</th><th>PDTNO_TX</th><th>Path</th></tr></thead><tbody>');
+    lines.push('<table><thead><tr><th>Lv</th><th>Material</th><th>Code</th><th>PDMNO</th><th>PDTNO_TX</th><th>Create Date</th><th>Mod. Date</th><th>Path</th></tr></thead><tbody>');
     for (const product of byProduct(rows, o.hideNoise)) {
-      lines.push(`<tr class="prod${product.isShared ? " shared" : ""}"><td colspan="6">${htmlEscape(product.product)} (${n0(product.rows.length)})</td></tr>`);
+      lines.push(`<tr class="prod${product.isShared ? " shared" : ""}"><td colspan="8">${htmlEscape(product.product)} (${n0(product.rows.length)})</td></tr>`);
       for (const row of product.rows) {
         const level = Math.max(row.bomLevel, 1);
         const indent = "&nbsp;&nbsp;&nbsp;&nbsp;".repeat(level - 1);
@@ -293,6 +293,8 @@ export function buildStandaloneHtml(results: BomResult[], pdm: Map<string, PdmRo
           `<td>${htmlEscape(row.materialCode)}</td>` +
           `<td>${htmlEscape(p?.pdmno ?? "")}</td>` +
           `<td>${htmlEscape(p?.pdtnoTx ?? "")}</td>` +
+          `<td>${htmlEscape(p?.erdat ?? "")}</td>` +
+          `<td>${htmlEscape(p?.ardat ?? "")}</td>` +
           `<td>${htmlEscape(row.bomPathText)}</td></tr>`,
         );
       }

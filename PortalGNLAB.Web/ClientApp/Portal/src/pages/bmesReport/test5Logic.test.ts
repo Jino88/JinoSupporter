@@ -121,4 +121,11 @@ describe("formats and helpers", () => {
     expect(html).toContain("Ring &amp; Co");
     expect(html).toContain("M-P / C-S hidden");
   });
+  it("writes each drawing's Create Date and Mod. Date in the HTML download", () => {
+    const result: BomResult = { model: "X", rows: [row({ materialName: "RING" })], error: "", warning: "", loadSource: "cache", fetchedAt: "" };
+    const pdm = pdmIndex([{ pdmno: "D1", pdmvr: "1", pdtnoTx: "RING", pdrtx: "RING", erdat: "2025-04-08 10:12:29", ardat: "2025-10-02 09:00:00" }]);
+    const html = buildStandaloneHtml([result], pdm, { plant: "3200", maxDepth: 6, workDate: "2026-10-30", hideNoise: true, generated: "2026-10-30 09:00" });
+    expect(html).toContain("<th>Create Date</th><th>Mod. Date</th>");
+    expect(html).toContain("<td>D1</td><td>RING</td><td>2025-04-08 10:12:29</td><td>2025-10-02 09:00:00</td>");
+  });
 });
