@@ -210,7 +210,7 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
         <aside className="card wk-side">
           <div className="wk-side-h">
             <div className="wk-side-t">
-              <h2>{tr("Model groups")}</h2>
+              <h2>{tr("Model")}</h2>
               <button className="btn sm" disabled={!groups} onClick={() => setManaging(true)} title="Choose the models shown here and add models">Manage</button>
             </div>
             <input className="inp sm" placeholder="Search model…" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Search model" />
