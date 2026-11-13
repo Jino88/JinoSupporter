@@ -409,6 +409,7 @@ export default function BmesTest5() {
                   <colgroup>
                     <col className="c-level" /><col className="c-material" /><col className="c-code" /><col className="c-price" />
                     <col className="c-cur" /><col className="c-vnd" /><col className="c-pdm" /><col className="c-type" />
+                    <col className="c-date" /><col className="c-date" />
                   </colgroup>
                   <thead>
                     <tr>
@@ -420,12 +421,14 @@ export default function BmesTest5() {
                       <th className="num" title="VND unit price at the month-start rate of TCURR (KURST=BWCU)">VND</th>
                       <th>PDMNO</th>
                       <th>PDTNO_TX</th>
+                      <th title="When the drawing was registered in BMES (ERDAT)">Create Date</th>
+                      <th title="When the drawing was last changed in BMES (ARDAT)">Mod. Date</th>
                     </tr>
                   </thead>
                   <tbody>
                     {byProduct(rows, hideNoise).map((product) => [
                       <tr key={"p:" + product.product} className={"t5-product" + (product.isShared ? " shared" : "")}>
-                        <td colSpan={8}>{product.product} <span className="br-badge light">{n0(product.rows.length)}</span></td>
+                        <td colSpan={10}>{product.product} <span className="br-badge light">{n0(product.rows.length)}</span></td>
                       </tr>,
                       ...product.rows.map((row) => {
                         const p = findPdm(pdm, row);
@@ -451,6 +454,8 @@ export default function BmesTest5() {
                               )}
                             </td>
                             <td className="muted small">{p?.pdtnoTx ?? ""}</td>
+                            <td className="muted small">{p?.erdat ?? ""}</td>
+                            <td className="muted small">{p?.ardat ?? ""}</td>
                           </tr>
                         );
                       }),

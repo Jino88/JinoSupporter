@@ -593,7 +593,7 @@ public static class BmesReportEndpoints
             var matches = pdm.SearchByNames(body.PartNames ?? [], body.ModelNames ?? []);
             return new
             {
-                rows = matches.Select(m => new { m.Pdmno, m.Pdmvr, m.PdtnoTx, m.Pdrtx }).ToList(),
+                rows = matches.Select(m => new { m.Pdmno, m.Pdmvr, m.PdtnoTx, m.Pdrtx, m.Erdat, m.Ardat }).ToList(),
             };
         });
 
