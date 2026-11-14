@@ -94,7 +94,8 @@ public sealed class WorkingProcessMatchAiServiceTests
         (List<WorkingProcessRow> rows, List<string> unmatched) = WorkingProcessMatchAiService.Build(answer, Order, Items);
 
         Assert.Equal(["01", "02", "03", "04", "05"], rows.Select(r => r.No));
-        Assert.Equal(["Xếp UPPER", "Bôi keo tổ hợp SPK (BONDING)", "DRY", "Bôi keo cố định SPK1 (BONDING 2)", "Kiểm tra AIR LEAK"],
+        // a process of the order keeps its name (the AI renamed two); an added step takes the AI name
+        Assert.Equal(["Xếp UPPER", "Bôi keo tổ hợp SPK", "DRY", "Bôi keo cố định SPK1", "Kiểm tra AIR LEAK"],
             rows.Select(r => r.Process));
         Assert.All(rows, r => Assert.Equal("", r.Id));
 

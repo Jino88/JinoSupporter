@@ -188,7 +188,8 @@ public sealed class WorkingProcessMatchAiService(
         foreach (MatchProcess p in processes.OrderBy(p => p.Seq))
         {
             if (main.TryGetValue(p.Seq, out var m))
-                Add(m.Process.Trim().Length > 0 ? m.Process : p.Name, m.Items, m.Notes);
+                // the name of the order, so the rows tie to the Process table made from the same documents
+                Add(p.Name.Trim().Length > 0 ? p.Name : m.Process, m.Items, m.Notes);
             else Add(p.Name, [], []);
             AddAfter(p.Seq);
         }
