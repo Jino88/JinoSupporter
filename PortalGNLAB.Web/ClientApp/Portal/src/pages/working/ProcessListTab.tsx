@@ -1,28 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 import { useTr } from "./i18n";
-import { BASIS_TEXT, blankRow, cellNumber, nextNo, processListApi, rowsProblem, totals } from "./processList";
+import { BASIS_TEXT, blankRow, lineCount, nextNo, normalizeList, normalizeRow, processListApi, rowsProblem } from "./processList";
 import type { ProcessList, ProcessMatch, ProcessRow } from "./processList";
 import "./processList.css";
 
 const stamp = (iso: string | null) => (iso ? iso.slice(0, 16).replace("T", " ") : "");
-const TEXT_COLS = [["machine", "Machine"], ["jig", "JIG"], ["tester", "Tester"], ["material", "Material"], ["note", "Note"]] as const;
+// Machine, JIG, Ver., Qty and Tester hold one item per line; line i of JIG, Ver. and Qty is the same JIG.
+const TEXT_COLS = [["machine", "Machine"], ["jig", "JIG"], ["jigVer", "Ver."], ["jigQty", "Qty"], ["tester", "Tester"], ["material", "Material"], ["note", "Note"]] as const;
+const NARROW = new Set<string>(["jigVer", "jigQty"]);
 
 /** One row being edited: every cell an input. */
 function EditRow(props: { row: ProcessRow; onChange: (r: ProcessRow) => void; onRemove: () => void }) {
   const r = props.row;
   const set = <K extends keyof ProcessRow>(k: K, v: ProcessRow[K]) => props.onChange({ ...r, [k]: v });
-  const num = (k: "workers" | "stdTime", whole: boolean, label: string) => (
-    <td><input className="inp sm pl-num" type="number" min={0} step={whole ? 1 : "any"} aria-label={label} value={r[k] ?? ""}
-      onChange={(e) => { const n = cellNumber(e.target.value, whole); if (n !== undefined) set(k, n); }} /></td>
-  );
   return (
     <tr className="pl-edit">
       <td><input className="inp sm pl-no" aria-label="No." value={r.no} onChange={(e) => set("no", e.target.value)} /></td>
       <td className="l"><input className="inp sm pl-proc" aria-label="Process" value={r.process} onChange={(e) => set("process", e.target.value)} /></td>
-      {num("workers", true, "Workers")}
-      {num("stdTime", false, "Standard time")}
       {TEXT_COLS.map(([k, label]) => (
-        <td key={k} className="l"><textarea className="inp sm pl-text" rows={1} aria-label={label} value={r[k]} onChange={(e) => set(k, e.target.value)} /></td>
+        <td key={k} className="l"><textarea className={`inp sm pl-text${NARROW.has(k) ? " pl-narrow" : ""}`} rows={lineCount(r[k])} aria-label={label} value={r[k]} onChange={(e) => set(k, e.target.value)} /></td>
       ))}
       <td className="act"><button className="btn sm" title="Remove the row" onClick={props.onRemove}>✕</button></td>
     </tr>
@@ -47,7 +43,7 @@ function MatchNotice(props: { match: ProcessMatch }) {
   );
 }
 
-/** Process List (공정편성 LIST) of a model: one row per process with its people, standard time, machine and jigs. */
+/** Process List (공정편성 LIST) of a model: one row per process with its machines, jigs (version, quantity) and testers. */
 export default function ProcessListTab(props: {
   modelName: string;
   onError: (e: unknown) => void;
@@ -61,9 +57,9 @@ export default function ProcessListTab(props: {
   matching?: boolean;
 }) {
   const tr = useTr();
-  const [list, setList] = useState<ProcessList | undefined>(props.initial);
+  const [list, setList] = useState<ProcessList | undefined>(props.initial && normalizeList(props.initial));
   const [draft, setDraft] = useState<ProcessRow[] | null>(
-    props.match ? props.match.rows : props.editing && props.initial ? props.initial.rows : null);
+    props.match ? props.match.rows.map(normalizeRow) : props.editing && props.initial ? props.initial.rows.map(normalizeRow) : null);
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(props.matching ?? false);
   const [matching, setMatching] = useState(props.matching ?? false);
@@ -74,7 +70,7 @@ export default function ProcessListTab(props: {
   useEffect(() => {
     if (props.initial !== undefined) return;
     let live = true;
-    processListApi.get(props.modelName).then((l) => { if (live) setList(l); }).catch(props.onError);
+    processListApi.get(props.modelName).then((l) => { if (live) setList(normalizeList(l)); }).catch(props.onError);
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -83,7 +79,7 @@ export default function ProcessListTab(props: {
 
   const run = async (work: () => Promise<ProcessList>) => {
     setBusy(true);
-    try { setList(await work()); setDraft(null); setMatch(null); setProblem(null); } catch (e) { props.onError(e); } finally { setBusy(false); }
+    try { setList(normalizeList(await work())); setDraft(null); setMatch(null); setProblem(null); } catch (e) { props.onError(e); } finally { setBusy(false); }
   };
   const save = () => {
     if (!draft) return;
@@ -105,13 +101,12 @@ export default function ProcessListTab(props: {
     setBusy(true); setMatching(true);
     try {
       const m = await processListApi.aiMatch(props.modelName, file);
-      if (m.rows.length > 0) { setDraft(m.rows); setMatch(m); setProblem(null); }
+      if (m.rows.length > 0) { setDraft(m.rows.map(normalizeRow)); setMatch(m); setProblem(null); }
       else setProblem(m.note || "The AI found no processes to match in the workbook.");
     } catch (e) { props.onError(e); } finally { setBusy(false); setMatching(false); }
   };
 
   const rows = draft ?? list.rows;
-  const t = totals(rows);
   return (
     <section className="card pi-sec">
       <div className="pi-sec-h">
@@ -144,10 +139,7 @@ export default function ProcessListTab(props: {
               {problem && <span className="pl-err">{tr(problem)}</span>}
             </>
           )}
-          <span className="pl-sum muted small">
-            {tr("Processes")} <b>{t.processes}</b> · {tr("Workers")} <b>{t.workers}</b>
-            {t.slowest && <> · {tr("Slowest")} <b>{t.slowest.stdTime}s</b> ({t.slowest.no} {t.slowest.process})</>}
-          </span>
+          <span className="pl-sum muted small">{tr("Processes")} <b>{rows.length}</b></span>
         </div>
         {draft && match && <MatchNotice match={match} />}
         {rows.length === 0 && !draft ? (
@@ -157,8 +149,8 @@ export default function ProcessListTab(props: {
             <table className="wk-it pl-t">
               <thead>
                 <tr>
-                  <th>No.</th><th className="l">{tr("Process")}</th><th>{tr("Workers")}</th><th>{tr("Std. time (s)")}</th>
-                  {TEXT_COLS.map(([k, label]) => <th key={k} className="l">{tr(label)}</th>)}
+                  <th>No.</th><th className="l">{tr("Process")}</th>
+                  {TEXT_COLS.map(([k, label]) => <th key={k} className={NARROW.has(k) ? "pl-narrow" : "l"}>{tr(label)}</th>)}
                   {draft && <th></th>}
                 </tr>
               </thead>
@@ -172,9 +164,7 @@ export default function ProcessListTab(props: {
                     <tr key={r.id}>
                       <td className="pl-no">{r.no}</td>
                       <td className="l"><b>{r.process}</b></td>
-                      <td>{r.workers ?? ""}</td>
-                      <td>{r.stdTime ?? ""}</td>
-                      {TEXT_COLS.map(([k]) => <td key={k} className="l pl-cell">{r[k]}</td>)}
+                      {TEXT_COLS.map(([k]) => <td key={k} className={`${NARROW.has(k) ? "" : "l "}pl-cell${NARROW.has(k) ? " pl-narrow" : ""}`}>{r[k]}</td>)}
                     </tr>
                   ))}
               </tbody>

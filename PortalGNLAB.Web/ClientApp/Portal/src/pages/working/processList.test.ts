@@ -1,33 +1,34 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BASIS_TEXT, blankRow, cellNumber, nextNo, processListApi, rowsProblem, totals } from "./processList";
+import { BASIS_TEXT, blankRow, lineCount, nextNo, normalizeList, processListApi, rowsProblem } from "./processList";
+import type { ProcessRow } from "./processList";
 
-const row = (no: string, process: string, workers: number | null, stdTime: number | null) => ({ ...blankRow(no), process, workers, stdTime });
+const row = (no: string, process: string): ProcessRow => ({ ...blankRow(no), process });
 
 describe("process list helpers", () => {
-  it("adds up people and finds the slowest process", () => {
-    const t = totals([row("01", "UPPER ARRAY", 1, 12.312), row("02", "GLUING", 2, 6.156), row("03", "DRY", null, null)]);
-    expect(t).toMatchObject({ processes: 3, workers: 3, time: 18.468 });
-    expect(t.slowest?.no).toBe("01");
-    expect(totals([]).slowest).toBeNull();
+  it("starts a blank row with empty JIG version and quantity", () => {
+    expect(blankRow("01")).toMatchObject({ no: "01", jigVer: "", jigQty: "" });
+  });
+
+  it("fills the JIG version and quantity of data saved before those columns", () => {
+    const old = { rows: [{ ...blankRow("01"), id: "a", jigVer: undefined, jigQty: undefined } as unknown as ProcessRow], revision: 1, updatedBy: "", updatedAt: null, source: "" };
+    expect(normalizeList(old).rows[0]).toMatchObject({ jigVer: "", jigQty: "" });
+    expect(normalizeList({ ...old, rows: [{ ...old.rows[0], jigVer: "V1", jigQty: "6" }] }).rows[0]).toMatchObject({ jigVer: "V1", jigQty: "6" });
+  });
+
+  it("counts the lines of a cell, at least one", () => {
+    expect(lineCount("")).toBe(1);
+    expect(lineCount("A\nB\nC")).toBe(3);
   });
 
   it("numbers a new row after the last numbered one, in the same width", () => {
-    expect(nextNo([row("01", "", null, null), row("09", "", null, null)])).toBe("10");
-    expect(nextNo([row("7", "", null, null), row("A", "", null, null)])).toBe("8");
+    expect(nextNo([row("01", ""), row("09", "")])).toBe("10");
+    expect(nextNo([row("7", ""), row("A", "")])).toBe("8");
     expect(nextNo([])).toBe("");
   });
 
-  it("reads typed numbers: empty is none, people are whole, nothing negative", () => {
-    expect(cellNumber("", true)).toBeNull();
-    expect(cellNumber("3", true)).toBe(3);
-    expect(cellNumber("2.5", true)).toBeUndefined();
-    expect(cellNumber("6,156", false)).toBe(6.156);
-    expect(cellNumber("-1", false)).toBeUndefined();
-  });
-
   it("asks for a number or a name on every row", () => {
-    expect(rowsProblem([row("01", "", null, null), row("", "GLUING", null, null)])).toBeNull();
-    expect(rowsProblem([row("01", "A", null, null), row(" ", " ", 2, null)])).toBe("Row 2 needs a number or a process name.");
+    expect(rowsProblem([row("01", ""), row("", "GLUING")])).toBeNull();
+    expect(rowsProblem([row("01", "A"), row(" ", " ")])).toBe("Row 2 needs a number or a process name.");
   });
 });
 
