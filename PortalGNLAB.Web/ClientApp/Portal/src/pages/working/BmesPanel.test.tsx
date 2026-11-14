@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { TempModelGroup } from "./BmesPanel";
+import { BomPanel, DrawingDates, TempModelGroup } from "./BmesPanel";
 import { blankProcess, emptyManual } from "./manual";
 import type { ManualGroup } from "./manual";
 import { addSub, emptyTempGroup } from "./tempGroup";
@@ -42,5 +42,31 @@ describe("processes and materials per sub group of a temporary model group", () 
     expect(chips(html)).toEqual(["*Model MSM-X536B", "MSM-X536B-TOP", "MSM-X536B-BOTTOM"]);
     expect(html).toContain(">MSU-L20S15-07<");
     expect(html).not.toContain('value="Top bonding"');
+  });
+});
+
+describe("BOM / Drawing tab", () => {
+  const group = { group: "MODULE", productGroup: "", material: "MSM-X526B", products: ["MSM-X526B-TOP", "MSM-X526B-BOTTOM"], subGroups: [] };
+  it("shows the BOM of each product of the linked BMES model group, the first one picked", () => {
+    const html = renderToStaticMarkup(<BomPanel modelName="MSM-X526/X626B" saved="MSM-X526B" onError={() => {}} initial={[group]} />);
+    expect(html).toContain("<h2>BOM / Drawing</h2>");
+    expect(chips(html)).toEqual(["*MSM-X526B-TOP", "MSM-X526B-BOTTOM"]);
+  });
+
+  it("says to link a BMES model group in Model Info when there is none", () => {
+    const html = renderToStaticMarkup(<BomPanel modelName="NEW-1" saved="" onError={() => {}} initial={[group]} />);
+    expect(html).toContain("Link it in Model Info");
+    expect(chips(html)).toEqual([]);
+  });
+
+  it("writes each drawing's Create Date and Mod. Date as a line beside its link, the time in its tip", () => {
+    const list = [
+      { pdmno: "BJ-QD-6-033-538", pdmvr: "0", pdtnoTx: "", pdrtx: "PLATE", erdat: "2025-04-08 10:12:29", ardat: "2025-10-02 09:00:00" },
+      { pdmno: "BJ-QD-6-033-538", pdmvr: "1", pdtnoTx: "", pdrtx: "PLATE" },
+    ];
+    expect(renderToStaticMarkup(<DrawingDates list={list} field="erdat" />))
+      .toBe('<div class="wk-dwg-date" title="2025-04-08 10:12:29">2025-04-08</div><div class="wk-dwg-date" title="">—</div>');
+    expect(renderToStaticMarkup(<DrawingDates list={list} field="ardat" />)).toContain(">2025-10-02<");
+    expect(renderToStaticMarkup(<DrawingDates list={[]} field="ardat" />)).toBe('<span class="muted">—</span>');
   });
 });

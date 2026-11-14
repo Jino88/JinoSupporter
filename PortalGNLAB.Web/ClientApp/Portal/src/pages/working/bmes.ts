@@ -122,6 +122,9 @@ export interface PdmRow {
   pdmvr: string;
   pdtnoTx: string;
   pdrtx: string;
+  /** Create Date (ERDAT) and Mod. Date (ARDAT) of the drawing in BMES; absent from an older server. */
+  erdat?: string;
+  ardat?: string;
 }
 
 export const drawingApi = {

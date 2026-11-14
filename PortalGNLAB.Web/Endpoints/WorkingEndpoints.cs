@@ -225,7 +225,7 @@ public static class WorkingEndpoints
             var names = (body.Names ?? []).Where(n => !string.IsNullOrWhiteSpace(n)).ToList();
             if (names.Count == 0) return Results.Ok(new { rows = Array.Empty<object>() });
             var matches = pdm.SearchByNames(names, []);
-            return Results.Ok(new { rows = matches.Select(m => new { m.Pdmno, m.Pdmvr, m.PdtnoTx, m.Pdrtx }).ToList() });
+            return Results.Ok(new { rows = matches.Select(m => new { m.Pdmno, m.Pdmvr, m.PdtnoTx, m.Pdrtx, m.Erdat, m.Ardat }).ToList() });
         });
         api.MapGet("/bmes/drawing", async (string? pdmno, string? pdmvr, BmesPdmScrapeService pdm, HttpContext ctx) =>
         {
