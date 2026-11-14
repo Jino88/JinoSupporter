@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState, type ClipboardEvent, type DragEvent, type ReactNode } from "react";
 import DateBox from "./DateBox";
+import { shortDate } from "./homeSummary";
 import { useTr } from "./i18n";
 import { workingApi } from "./api";
 import {
@@ -174,7 +175,7 @@ export function IssueForm(props: {
 
 /** Done / not done of a note or issue: the done date, or Open. */
 const DoneCell = (props: { doneDate: string }) =>
-  props.doneDate ? <span className="wk-st closed">{props.doneDate}</span> : <span className="wk-st open">Open</span>;
+  props.doneDate ? <span className="wk-st closed">{shortDate(props.doneDate)}</span> : <span className="wk-st open">Open</span>;
 
 /** A progress note shown in the issue's columns: text + pictures under Issue, then owner and the dates. */
 function LogRow(props: { no: string; log: EntryLog; today: string; busy: boolean; onEdit: () => void; onDelete: () => void; onOpen: (i: WorkingImage) => void }) {
@@ -190,8 +191,8 @@ function LogRow(props: { no: string; log: EntryLog; today: string; busy: boolean
       <td className="l wk-it-title"><div className="wk-text">{tr(line)}</div><Thumbs images={log.images ?? []} onOpen={props.onOpen} /></td>
       <td className="l wk-it-detail">{tr(detail)}</td>
       <td>{log.owner || <span className="muted" title="Written by">{log.createdBy}</span>}</td>
-      <td>{log.date}</td>
-      <td className={late ? "late" : ""}>{log.due}{late && <span className="wk-late">Late</span>}</td>
+      <td>{shortDate(log.date)}</td>
+      <td className={late ? "late" : ""}>{log.due && shortDate(log.due)}{late && <span className="wk-late">Late</span>}</td>
       <td><DoneCell doneDate={log.doneDate ?? ""} /></td>
       <td></td>
       <td></td>
@@ -203,8 +204,11 @@ function LogRow(props: { no: string; log: EntryLog; today: string; busy: boolean
   );
 }
 
-/** Add / edit a progress note in place, in the same columns as the issue. Ctrl+V in the text pastes pictures. */
-function LogEditRow(props: {
+/**
+ * Add / edit a progress note in place, as a panel across the table: owner and dates | issue and its detail | files | buttons.
+ * Ctrl+V in the text pastes pictures.
+ */
+export function LogEditRow(props: {
   no: string; value: LogFields; images: WorkingImage[]; today: string; busy: boolean; isNew: boolean;
   onSave: (f: LogFields, pics: Pics) => Promise<boolean>; onCancel?: () => void; onOpen: (i: WorkingImage) => void;
 }) {
@@ -222,36 +226,38 @@ function LogEditRow(props: {
     <tr className={"wk-it-log edit" + (props.isNew ? " new" : "")}>
       <td className="tog">{props.isNew ? "+" : "↳"}</td>
       <td className="n sub">{props.no}</td>
-      <td colSpan={4}></td>
-      <td className="l wk-it-title" onDragOver={pics.onDragOver} onDrop={pics.onFileDrop}>
-        <div className="wk-note-in">
-          <input className="inp" value={f.text} maxLength={500} onPaste={pics.onPaste} autoFocus={!props.isNew}
-            placeholder={props.isNew ? "Add today's progress… (Ctrl+V or drop pictures / videos)" : "Ctrl+V or drop pictures / videos"}
-            onChange={(e) => set("text", e.target.value)} />
-          <PickFiles onPick={pics.pick} />
+      <td colSpan={COLS - 2} className="wk-ne-cell">
+        <div className="wk-ne" onPaste={pics.onPaste} onDragOver={pics.onDragOver} onDrop={pics.onFileDrop}>
+          <div className="wk-ne-fields">
+            <label>Owner<input className="inp" value={f.owner} onChange={(e) => set("owner", e.target.value)} /></label>
+            <label>Date<DateBox label="Note date" value={f.date} onChange={(v) => set("date", v)} /></label>
+            <label>Due<DateBox label="Due" value={f.due} onChange={(v) => set("due", v)} /></label>
+            <label>Done
+              <span className="wk-ne-done">
+                <input type="checkbox" checked={!!f.doneDate} aria-label="Done"
+                  onChange={(e) => set("doneDate", e.target.checked ? (f.date > props.today ? f.date : props.today) : "")} />
+                {f.doneDate && <DateBox label="Done date" value={f.doneDate} onChange={(v) => set("doneDate", v)} />}
+              </span>
+            </label>
+          </div>
+          <div className="wk-ne-text">
+            <input className="inp" value={f.text} maxLength={500} autoFocus={!props.isNew}
+              placeholder={props.isNew ? "Add today's progress (one line)" : "Issue (one line)"} onChange={(e) => set("text", e.target.value)} />
+            <textarea className="inp wk-ta" rows={4} value={f.detail} placeholder="Issue detail" onChange={(e) => set("detail", e.target.value)} />
+            {(pics.problem || (f.text && problem)) && <div className="pi-dirty">{pics.problem || problem}</div>}
+          </div>
+          <div className="wk-paste wk-ne-files" tabIndex={0}>
+            <div className="wk-paste-h">
+              <span className="muted small">Ctrl+V or drop pictures / videos</span>
+              <PickFiles onPick={pics.pick} />
+            </div>
+            <Thumbs images={pics.kept} onOpen={props.onOpen} onRemove={pics.remove} pending={pics.files} onDrop={pics.drop} />
+          </div>
+          <div className="wk-ne-act">
+            {!props.isNew && <button className="btn sm" onClick={props.onCancel} disabled={props.busy}>Cancel</button>}
+            <button className="btn sm primary" onClick={save} disabled={props.busy || !!problem}>{props.isNew ? "Add" : "Save"}</button>
+          </div>
         </div>
-        <Thumbs images={pics.kept} onOpen={props.onOpen} onRemove={pics.remove} pending={pics.files} onDrop={pics.drop} />
-        {(pics.problem || (f.text && problem)) && <div className="pi-dirty">{pics.problem || problem}</div>}
-      </td>
-      <td className="l wk-it-detail" onDragOver={pics.onDragOver} onDrop={pics.onFileDrop}>
-        <textarea className="inp wk-ta" rows={3} value={f.detail} onPaste={pics.onPaste} placeholder="Issue detail"
-          onChange={(e) => set("detail", e.target.value)} />
-      </td>
-      <td><input className="inp sm wk-in-owner" value={f.owner} placeholder="Owner" onChange={(e) => set("owner", e.target.value)} /></td>
-      <td><DateBox className="sm" label="Note date" value={f.date} onChange={(v) => set("date", v)} /></td>
-      <td><DateBox className="sm" label="Due" value={f.due} onChange={(v) => set("due", v)} /></td>
-      <td>
-        <label className="wk-done">
-          <input type="checkbox" checked={!!f.doneDate}
-            onChange={(e) => set("doneDate", e.target.checked ? (f.date > props.today ? f.date : props.today) : "")} /> Done
-        </label>
-        {f.doneDate && <DateBox className="sm" label="Done date" value={f.doneDate} onChange={(v) => set("doneDate", v)} />}
-      </td>
-      <td></td>
-      <td></td>
-      <td className="act">
-        {!props.isNew && <button className="btn sm" onClick={props.onCancel} disabled={props.busy}>Cancel</button>}
-        <button className="btn sm primary" onClick={save} disabled={props.busy || !!problem}>{props.isNew ? "Add" : "Save"}</button>
       </td>
     </tr>
   );
@@ -401,8 +407,8 @@ export default function IssueTable(props: {
           </td>
           <td className="l wk-it-detail">{tr(e.body)}</td>
           <td>{e.owner}</td>
-          <td>{e.date}</td>
-          <td className={isLate(e, today) ? "late" : ""}>{e.due}{isLate(e, today) && <span className="wk-late">Late</span>}</td>
+          <td>{shortDate(e.date)}</td>
+          <td className={isLate(e, today) ? "late" : ""}>{e.due && shortDate(e.due)}{isLate(e, today) && <span className="wk-late">Late</span>}</td>
           <td><DoneCell doneDate={e.doneDate} /></td>
           <td className="l wk-it-final">{tr(e.finalResult)}</td>
           <td className="n">{notes.length}</td>
