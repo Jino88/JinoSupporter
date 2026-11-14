@@ -44,6 +44,8 @@ export function DocLinks(props: { result: DocsResult }) {
  */
 export default function ModelDocs(props: {
   model: WorkingModel; onSaved: (m: WorkingModel) => void; onOpen: (k: "process" | "jigmc") => void; onError: (e: unknown) => void;
+  /** The Process table or the JIG/MC List was saved (their tabs read it again). */
+  onDocsSaved?: () => void;
 }) {
   const { model } = props;
   const [status, setStatus] = useState("");
@@ -87,7 +89,7 @@ export default function ModelDocs(props: {
             currentGroup: readManual(model.info.manualGroup),
             ask: (g) => manualAiFromInstructions(model.name, g),
             confirm: (t) => window.confirm(t),
-            save: async (g) => props.onSaved(await workingApi.saveModel(model.name, { ...model.info, manualGroup: g }, model.revision)),
+            save: async (g) => { props.onSaved(await workingApi.saveModel(model.name, { ...model.info, manualGroup: g }, model.revision)); props.onDocsSaved?.(); },
           });
         } catch (e) { out.processError = errorText(e); }
       }
@@ -99,7 +101,7 @@ export default function ModelDocs(props: {
             match: () => processListApi.aiMatch(model.name, jig),
             current: () => processListApi.get(model.name),
             confirm: (t) => window.confirm(t),
-            save: async (rows, revision) => { await processListApi.save(model.name, rows, revision); },
+            save: async (rows, revision) => { await processListApi.save(model.name, rows, revision); props.onDocsSaved?.(); },
           });
         } catch (e) { out.jigError = errorText(e); }
       }

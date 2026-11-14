@@ -47,6 +47,18 @@ describe("runProcess", () => {
     await runProcess(steps(group(0), true, order));
     expect(order).toEqual(["ask", "save"]);
   });
+  it("asks with both counts before replacing", async () => {
+    const asked: string[] = [];
+    await runProcess({ ...steps(group(1), true, []), confirm: (t: string) => { asked.push(t); return true; } });
+    expect(asked).toEqual(["Process: replace the 1 processes of the Process table with the 2 the AI made from the Work Instructions?"]);
+    const jig: string[] = [];
+    await runJig({
+      match: async () => ({ rows: [row("1", []), row("2", [])], note: "", unmatched: [] }),
+      current: async () => ({ rows: [row("9", [])], revision: 1 }),
+      confirm: (t) => { jig.push(t); return false; }, save: async () => {},
+    });
+    expect(jig).toEqual(["JIG/MC List: replace its 1 rows with the 2 the AI made from the JIG / Machine / Tester list?"]);
+  });
   it("does not save when the replacement is declined", async () => {
     const order: string[] = [];
     const r = await runProcess(steps(group(1), false, order));
@@ -128,7 +140,7 @@ describe("what a document is (server)", () => {
   it("does not send a workbook too large, and names the file when the connection is cut", async () => {
     const send = vi.fn(async () => { throw new TypeError("Failed to fetch"); });
     vi.stubGlobal("fetch", send);
-    expect(await docKind("M", file("huge.xlsx", MAX_DOC_BYTES + 1))).toEqual({ kind: "unknown", reason: "larger than 100 MB" });
+    expect(await docKind("M", file("huge.xlsx", MAX_DOC_BYTES + 1))).toEqual({ kind: "unknown", reason: "larger than 200 MB" });
     expect(send).not.toHaveBeenCalled();
     await expect(docKind("M", file("pvr.xlsx", 10))).rejects.toThrow(
       "pvr.xlsx could not be sent to the server (Failed to fetch). Check that the server is running, then try again.");

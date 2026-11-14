@@ -12,15 +12,21 @@ public sealed class WorkingManualAiServiceTests
         [
             new(" Xếp UPPER ", "C-01", "", 12.5, 2, "1", false, [new("1", "UPPER CASE", "SM-G778B", "1"), new("2", " ", "", "")],
                 [new("1", "Ionizer", "")], [], ["Không trầy xước"]),
-            new("Bôi keo", "C-02", "Bôi keo tổ hợp SPK", 20, null, "2", true, [new("1", "Keo SL233LF", "", "0.02g")], [], [], []),
+            new("Bôi keo", "C-02", "Bôi keo tổ hợp SPK", 20, null, "2", true, [new("1", "Keo SL233LF", "", "0.02g")],
+                [new("5", "Keo", "SL233LF ( Sử dụng trong vòng 24 giờ)"), new("6", " ", "x")], [], []),
         ]);
         string text = WorkingManualAiService.InstructionsRequest(doc);
         Assert.Contains("(pvr.xlsx)", text);
         // the sheet name stands in for an empty process name; blank parts are left out
         Assert.Contains("{\"order\":1,\"code\":\"C-01\",\"name\":\"Xếp UPPER\",\"ctq\":false,\"parts\":[{\"name\":\"UPPER CASE\",\"spec\":\"SM-G778B\",\"qty\":\"1\"}],"
-            + "\"tools\":[\"Ionizer\"],\"keyPoints\":[\"Không trầy xước\"]}", text);
+            + "\"tools\":[{\"name\":\"Ionizer\",\"note\":\"\"}],\"keyPoints\":[\"Không trầy xước\"]}", text);
         Assert.Contains("\"name\":\"Bôi keo tổ hợp SPK\",\"ctq\":true,\"parts\":[{\"name\":\"Keo SL233LF\",\"spec\":\"\",\"qty\":\"0.02g\"}]", text);
+        // the glue a process uses is in its tools with the product in the note: sent with the note, and asked for as a material
+        Assert.Contains("\"tools\":[{\"name\":\"Keo\",\"note\":\"SL233LF ( Sử dụng trong vòng 24 giờ)\"}]", text);
+        Assert.Contains("the part number in spec", text);
+        Assert.Contains("glue / bond, tape, cushion", text);
         Assert.Contains("keeps its id, type and NG items", text);
+        Assert.True(WorkingManualAiService.InstructionsMaxOutputTokens > WorkingManualAiService.MaxOutputTokens);
     }
 
     [Fact]

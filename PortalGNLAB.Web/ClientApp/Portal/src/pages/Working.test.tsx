@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { CATEGORIES, tabOfQuery } from "./Working";
+import { CATEGORIES, keepDocs, tabOfQuery } from "./Working";
 
 vi.mock("./working/ModelDocs", () => ({ default: () => null }));
 
@@ -17,5 +17,12 @@ describe("Working model page menu", () => {
     expect(tabOfQuery("jigmc")).toBe("jigmc");
     expect(tabOfQuery("nope")).toBe("info");
     expect(tabOfQuery(null)).toBe("info");
+  });
+  it("keeps Documents once opened for the model, so its run goes on behind another tab", () => {
+    expect(keepDocs("docs", "", "M")).toBe(true);
+    expect(keepDocs("jigmc", "M", "M")).toBe(true);
+    expect(keepDocs("jigmc", "", "M")).toBe(false);
+    expect(keepDocs("jigmc", "M", "N")).toBe(false);
+    expect(keepDocs("info", "", null)).toBe(false);
   });
 });

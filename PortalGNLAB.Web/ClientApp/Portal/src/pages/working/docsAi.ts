@@ -27,8 +27,10 @@ export function readProcessAnswer(current: ManualGroup, r: ProcessAiResponse): {
 /** Whether the old content has to be confirmed before the new replaces it. */
 export const needsReplaceConfirm = (hasOld: boolean, incomingEmpty: boolean) => hasOld && !incomingEmpty;
 
-export const replaceProcessText = (oldCount: number) => `Replace the ${oldCount} existing processes with the AI's Process table?`;
-export const replaceJigText = (oldCount: number) => `Replace the ${oldCount} rows of the JIG/MC List with the AI's result?`;
+export const replaceProcessText = (oldCount: number, newCount: number) =>
+  `Process: replace the ${oldCount} processes of the Process table with the ${newCount} the AI made from the Work Instructions?`;
+export const replaceJigText = (oldCount: number, newCount: number) =>
+  `JIG/MC List: replace its ${oldCount} rows with the ${newCount} the AI made from the JIG / Machine / Tester list?`;
 
 export const processSummary = (r: ProcessResult) => `Process: ${r.processes} processes, ${r.materials} materials`;
 export const jigSummary = (r: JigResult) => `JIG/MC List: ${r.processes} processes, ${r.jigKinds} JIG kinds`;
@@ -51,7 +53,7 @@ export async function runProcess(s: ProcessSteps): Promise<ProcessResult> {
   const a = readProcessAnswer(s.currentGroup, await s.ask(s.currentGroup));
   const result = { processes: a.group.processes.length, materials: a.group.materials.length, note: a.note, model: a.model, saved: false, group: a.group };
   if (a.empty) return result;
-  if (needsReplaceConfirm(s.currentGroup.processes.length > 0, a.empty) && !s.confirm(replaceProcessText(s.currentGroup.processes.length))) return result;
+  if (needsReplaceConfirm(s.currentGroup.processes.length > 0, a.empty) && !s.confirm(replaceProcessText(s.currentGroup.processes.length, a.group.processes.length))) return result;
   await s.save(a.group);
   return { ...result, saved: true };
 }
@@ -70,7 +72,7 @@ export async function runJig(s: JigSteps): Promise<JigResult> {
   const result = { ...counts, note: m.note ?? "", unmatched: m.unmatched?.length ?? 0, saved: false, rows: m.rows };
   if (m.rows.length === 0) return result;
   const cur = await s.current();
-  if (cur.rows.length > 0 && !s.confirm(replaceJigText(cur.rows.length))) return result;
+  if (cur.rows.length > 0 && !s.confirm(replaceJigText(cur.rows.length, m.rows.length))) return result;
   await s.save(m.rows, cur.revision);
   return { ...result, saved: true };
 }
@@ -80,8 +82,8 @@ export async function runJig(s: JigSteps): Promise<JigResult> {
 export type DocKind = "instructions" | "jig-list" | "unknown";
 export const KIND_TEXT: Record<DocKind, string> = { instructions: "Work Instructions", "jig-list": "JIG / Machine / Tester list", unknown: "not recognized" };
 
-/** The largest workbook the server reads (as the Work Instructions upload: 100 MB). */
-export const MAX_DOC_BYTES = 100 * 1024 * 1024;
+/** The largest workbook the server reads (as the Work Instructions upload: 200 MB). */
+export const MAX_DOC_BYTES = 200 * 1024 * 1024;
 
 export type FoundKind = { kind: DocKind; reason?: string };
 

@@ -41,6 +41,8 @@ export const CATEGORIES: { label: string; tabs: [Tab, string][] }[] = [
 const categoryOf = (tab: Tab) => CATEGORIES.find((c) => c.tabs.some(([k]) => k === tab))!;
 const isTab = (v: string | null): v is Tab => CATEGORIES.some((c) => c.tabs.some(([k]) => k === v));
 /** The tab an address asks for; the old ?tab=instruction (Work Instructions) is now under Documents. */
+/** Model Info › Documents is kept (hidden on other tabs) once opened for the model: a run and its result outlive a tab change. */
+export const keepDocs = (tab: string, docsFor: string, selected: string | null) => tab === "docs" || (!!selected && docsFor === selected);
 export const tabOfQuery = (v: string | null): Tab => (v === "instruction" ? "docs" : isTab(v) ? v : "info");
 /**
  * The tabs with AI input (a popup that makes what is pasted into the data of the tab) and what AI makes there: the place
@@ -91,6 +93,11 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
   const [aiOpen, setAiOpen] = useState(false);
   const [aiDirty, setAiDirty] = useState(false);
   const [fresh, setFresh] = useState(0);
+  // Model Info › Documents stays (hidden) once opened for the model, so a run goes on, and its result and errors stay,
+  // while another tab is open; what it saves opens the Process and JIG/MC List tabs again (a count in their keys)
+  const [docsFor, setDocsFor] = useState("");
+  const [docsSaved, setDocsSaved] = useState(0);
+  useEffect(() => { if (tab === "docs" && selected) setDocsFor(selected); }, [tab, selected]);
   const [error, setError] = useState("");
   const load = useRef(0);
   const today = localToday();
@@ -300,13 +307,15 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
                       onSaved={(m) => { setModel(m); setInfoDirty(false); }} onError={fail} />
                   )}
                   {tab === "bom" && <BomPanel key={selected} modelName={selected} saved={model.info.bmesMaterial ?? ""} onError={fail} />}
-                  {tab === "docs" && (
-                    <ModelDocs key={selected} model={model} onSaved={(m) => { setModel(m); setInfoDirty(false); }}
-                      onOpen={(k: "process" | "jigmc") => setTab(k)} onError={fail} />
+                  {keepDocs(tab, docsFor, selected) && (
+                    <div hidden={tab !== "docs"}>
+                      <ModelDocs key={selected} model={model} onSaved={(m) => { setModel(m); setInfoDirty(false); }}
+                        onDocsSaved={() => setDocsSaved((n) => n + 1)} onOpen={(k: "process" | "jigmc") => setTab(k)} onError={fail} />
+                    </div>
                   )}
-                  {tab === "jigmc" && <ProcessListTab key={selected} modelName={selected} onError={fail} />}
+                  {tab === "jigmc" && <ProcessListTab key={`${selected}:${docsSaved}`} modelName={selected} onError={fail} />}
                   {tab === "process" && (
-                    <ProcessTab key={selected} model={model} onDirty={setInfoDirty}
+                    <ProcessTab key={`${selected}:${docsSaved}`} model={model} onDirty={setInfoDirty}
                       onSaved={(m) => { setModel(m); setInfoDirty(false); }} onError={fail} />
                   )}
                   {tab === "plan" && (

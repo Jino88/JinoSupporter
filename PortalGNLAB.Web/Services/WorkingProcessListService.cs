@@ -39,7 +39,7 @@ public sealed record WorkingProcessList(List<WorkingProcessRow> Rows, int Revisi
 /// </summary>
 public sealed partial class WorkingProcessListService(string? root = null)
 {
-    public const long MaxUploadBytes = 50L * 1024 * 1024;
+    public const long MaxUploadBytes = 200L * 1024 * 1024;
     public const int MaxRows = 500;
     public const int MaxJigs = 100;
 

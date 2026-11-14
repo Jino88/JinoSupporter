@@ -10,7 +10,7 @@ namespace PortalGNLAB.Web.Services;
 /// <summary>The Work Instructions (작업지도서) of each model: one workbook, one sheet per process.</summary>
 public sealed class WorkingInstructionService(string? root = null)
 {
-    public const long MaxUploadBytes = 100L * 1024 * 1024;
+    public const long MaxUploadBytes = 200L * 1024 * 1024;
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private readonly object gate = new();
