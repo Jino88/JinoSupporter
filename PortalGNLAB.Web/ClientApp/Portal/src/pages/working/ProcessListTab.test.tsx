@@ -84,5 +84,12 @@ describe("process list tab", () => {
     it("shows no box without a result", () => {
       expect(render(list, true)).not.toContain("pl-ai");
     });
+
+    it("keeps the Import label while the AI is matching", () => {
+      const html = renderToStaticMarkup(<ProcessListTab modelName="M" onError={() => {}} initial={list} matching />);
+      expect(html).toContain("AI is matching…");
+      expect(html).toContain("Import JIG / Machine list");
+      expect(html).not.toContain("Reading the workbook…");
+    });
   });
 });
