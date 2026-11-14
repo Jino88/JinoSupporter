@@ -11,6 +11,8 @@ export interface PlanTask {
   owner: string;
   done: boolean;
   note: string;
+  /** Id of the task it is a sub-task of (one level only); absent for a task of the event itself. */
+  parentId?: string;
 }
 
 /** Group of a quantity row: the materials to get in (from the BOM) or the stages to make (SPK Assy, Function, ...). */
@@ -146,6 +148,38 @@ export function moveTo<T extends { id: string }>(list: T[], fromId: string, toId
   return out;
 }
 
+/**
+ * The tasks in the order shown: each task of the event followed by its sub-tasks. A sub-task whose parent is gone, or
+ * is itself a sub-task, becomes a task of the event (sub-tasks are one level deep).
+ */
+export function taskTree(tasks: PlanTask[]): PlanTask[] {
+  const tops = new Set(tasks.filter((t) => !t.parentId).map((t) => t.id));
+  const fixed: PlanTask[] = tasks.map((t) => (t.parentId && !tops.has(t.parentId) ? (({ parentId: _, ...x }) => x)(t) : t));
+  return fixed.filter((t) => !t.parentId).flatMap((t) => [t, ...fixed.filter((c) => c.parentId === t.id)]);
+}
+
+/** A new sub-task put right after the last sub-task of its parent. */
+export const addSubTask = (tasks: PlanTask[], parentId: string, t: PlanTask): PlanTask[] =>
+  taskTree([...tasks, { ...t, parentId }]);
+
+/** A task dragged onto another of the same level: a task moves with its sub-tasks, a sub-task only within its parent. */
+export function moveTask(tasks: PlanTask[], fromId: string, toId: string): PlanTask[] {
+  const a = tasks.find((t) => t.id === fromId), b = tasks.find((t) => t.id === toId);
+  if (!a || !b || (a.parentId ?? "") !== (b.parentId ?? "")) return tasks;
+  return taskTree(moveTo(tasks, fromId, toId));
+}
+
+/** A task taken out with its sub-tasks. */
+export const removeTask = (tasks: PlanTask[], id: string) => tasks.filter((t) => t.id !== id && t.parentId !== id);
+
+/** The days of a task on the calendar: its own, else from its first sub-task to its last. */
+export function groupSpan(tasks: PlanTask[], t: PlanTask): [string, string] | null {
+  const own = ends(t);
+  if (own || t.parentId) return own;
+  const spans = tasks.filter((c) => c.parentId === t.id).map(ends).filter((x): x is [string, string] => !!x);
+  return spans.length ? [spans.map((x) => x[0]).sort()[0], spans.map((x) => x[1]).sort().at(-1)!] : null;
+}
+
 /** Tasks done out of all, for the event row. */
 export const progress = (ev: PlanEvent) => [ev.tasks.filter((t) => t.done).length, ev.tasks.length] as const;
 
@@ -219,10 +253,10 @@ export function readDevPlan(v: unknown): DevPlan {
       end: str(e.end),
       color: str(e.color) || COLORS[i % COLORS.length],
       bomFrom: str(e.bomFrom),
-      tasks: list(e.tasks).filter((t) => t && typeof t === "object").map((t) => ({
+      tasks: taskTree(list(e.tasks).filter((t) => t && typeof t === "object").map((t) => ({
         id: str(t.id) || newId(), name: str(t.name), start: str(t.start), end: str(t.end),
-        owner: str(t.owner), done: t.done === true, note: str(t.note),
-      })),
+        owner: str(t.owner), done: t.done === true, note: str(t.note), ...(str(t.parentId) ? { parentId: str(t.parentId) } : {}),
+      }))),
       rows: list(e.rows).filter((r) => r && typeof r === "object").map((r) => ({
         id: str(r.id) || newId(),
         name: str(r.name),

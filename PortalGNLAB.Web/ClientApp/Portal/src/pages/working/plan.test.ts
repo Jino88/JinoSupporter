@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  blankEvent, blankRow, blankTask, addBomRows, bomRowNames, calendarDays, eventSpan, inSpan, monthDayText, monthRuns, moveInGroup, moveTo, planProblem, progress, planDays, readDevPlan, readMonthDay, readQty, readYearMonthDay, rowTotal, setQty,
+  blankEvent, blankRow, blankTask, addBomRows, addSubTask, bomRowNames, calendarDays, eventSpan, groupSpan, inSpan, monthDayText, monthRuns, moveInGroup, moveTask, moveTo, planProblem,
+  progress, planDays, readDevPlan, readMonthDay, readQty, readYearMonthDay, removeTask, rowTotal, setQty, taskTree,
 } from "./plan";
 import type { PlanEvent, PlanTask } from "./plan";
 
@@ -120,5 +121,50 @@ describe("development plan", () => {
     expect(names(moveInGroup(r, r[3].id, -1))).toBe("m1,k2,m2,k1");
     expect(moveInGroup(r, r[2].id, 1)).toBe(r);
     expect(moveInGroup(r, r[1].id, -1)).toBe(r);
+  });
+
+  describe("sub-tasks", () => {
+    const t = (id: string, parentId?: string, start = "", end = ""): PlanTask => ({ ...task(start, end, { id, name: id }), ...(parentId ? { parentId } : {}) });
+    const ids = (l: PlanTask[]) => l.map((x) => x.id).join(",");
+    const list = [t("A"), t("a1", "A"), t("B"), t("a2", "A"), t("b1", "B")];
+
+    it("shows each task followed by its sub-tasks; one whose parent is gone or is a sub-task becomes a task", () => {
+      expect(ids(taskTree(list))).toBe("A,a1,a2,B,b1");
+      const fixed = taskTree([t("A"), t("x", "gone"), t("a1", "A"), t("y", "a1")]);
+      expect(fixed.map((x) => [x.id, x.parentId ?? ""])).toEqual([["A", ""], ["a1", "A"], ["x", ""], ["y", ""]]);
+    });
+
+    it("adds a sub-task after the last sub-task of its task", () => {
+      expect(ids(addSubTask(taskTree(list), "A", t("a3")))).toBe("A,a1,a2,a3,B,b1");
+      expect(ids(addSubTask(taskTree(list), "B", t("b2")))).toBe("A,a1,a2,B,b1,b2");
+    });
+
+    it("moves a task with its sub-tasks, a sub-task only within its task", () => {
+      const tree = taskTree(list);
+      expect(ids(moveTask(tree, "A", "B"))).toBe("B,b1,A,a1,a2");
+      expect(ids(moveTask(tree, "B", "A"))).toBe("B,b1,A,a1,a2");
+      expect(ids(moveTask(tree, "a2", "a1"))).toBe("A,a2,a1,B,b1");
+      expect(moveTask(tree, "a1", "b1")).toBe(tree);
+      expect(moveTask(tree, "a1", "B")).toBe(tree);
+    });
+
+    it("deletes a task with its sub-tasks", () => {
+      expect(ids(removeTask(taskTree(list), "A"))).toBe("B,b1");
+      expect(ids(removeTask(taskTree(list), "a1"))).toBe("A,a2,B,b1");
+    });
+
+    it("spans a task without dates over its sub-tasks", () => {
+      const l = [t("A"), t("a1", "A", "2026-11-05", "2026-11-07"), t("a2", "A", "2026-11-03", ""), t("B", undefined, "2026-11-01", "2026-11-02"), t("b1", "B", "2026-11-09", "")];
+      expect(groupSpan(l, l[0])).toEqual(["2026-11-03", "2026-11-07"]);
+      expect(groupSpan(l, l[3])).toEqual(["2026-11-01", "2026-11-02"]);
+      expect(groupSpan(l, l[1])).toEqual(["2026-11-05", "2026-11-07"]);
+      expect(groupSpan([t("C")], t("C"))).toBeNull();
+    });
+
+    it("reads the sub-tasks of a saved plan under their task", () => {
+      const p = readDevPlan({ events: [{ id: "e", tasks: [{ id: "A", name: "A" }, { id: "B", name: "B" }, { id: "a1", name: "a1", parentId: "A" }, { id: "z", name: "z", parentId: "nope" }] }] });
+      expect(p.events[0].tasks.map((x) => [x.id, x.parentId ?? ""])).toEqual([["A", ""], ["a1", "A"], ["B", ""], ["z", ""]]);
+      expect("parentId" in p.events[0].tasks[0]).toBe(false);
+    });
   });
 });

@@ -21,6 +21,19 @@ function Drawings(props: { list: PdmRow[] }) {
   );
 }
 
+/** The Create Date or Mod. Date of each drawing of a material (date only, the time in its tip), a line each as its links are. */
+export function DrawingDates(props: { list: PdmRow[]; field: "erdat" | "ardat" }) {
+  if (!props.list.length) return <span className="muted">—</span>;
+  return (
+    <>
+      {props.list.map((d) => {
+        const v = d[props.field] ?? "";
+        return <div key={d.pdmno + "/" + d.pdmvr} className="wk-dwg-date" title={v}>{v.slice(0, 10) || "—"}</div>;
+      })}
+    </>
+  );
+}
+
 /** BOM of one product with the material names and their drawings: from the local cache, or loaded from BMES on request. */
 function BomTable(props: { product: string; onError: (e: unknown) => void }) {
   const { product } = props;
@@ -80,7 +93,11 @@ function BomTable(props: { product: string; onError: (e: unknown) => void }) {
         <div className="pi-wrap">
           <table className="wk-it wk-bom-t">
             <thead>
-              <tr><th>Level</th><th className="l">Material name</th><th>Material code</th><th>Qty</th><th>Unit</th><th className="l">Drawing</th></tr>
+              <tr>
+                <th>Level</th><th className="l">Material name</th><th>Material code</th><th>Qty</th><th>Unit</th><th className="l">Drawing</th>
+                <th title="When the drawing was registered in BMES (ERDAT)">Create Date</th>
+                <th title="When the drawing was last changed in BMES (ARDAT)">Mod. Date</th>
+              </tr>
             </thead>
             <tbody>
               {visibleBom(bom.rows, closed).map(({ row, index }) => (
@@ -95,7 +112,9 @@ function BomTable(props: { product: string; onError: (e: unknown) => void }) {
                   <td className="wk-bom-code">{row.materialCode}</td>
                   <td className="n">{qty(row.usageQty)}</td>
                   <td>{row.usageUnit}</td>
-                  <td className="l"><Drawings list={drawingsOf(drawings, row.materialName)} /></td>
+                  <td className="l wk-bom-dwg"><Drawings list={drawingsOf(drawings, row.materialName)} /></td>
+                  <td><DrawingDates list={drawingsOf(drawings, row.materialName)} field="erdat" /></td>
+                  <td><DrawingDates list={drawingsOf(drawings, row.materialName)} field="ardat" /></td>
                 </tr>
               ))}
             </tbody>
@@ -197,8 +216,8 @@ function GroupPicker(props: {
 
 /**
  * BMES model group of the model (BMES > Make Model Group), shown inside Model information as that page shows it: found
- * by the model name or picked from the Make Model Group list and saved with the model information, with its sub-groups,
- * shift groups and the BOM of each product. A model BMES does not have yet gets a temporary group made here by hand
+ * by the model name or picked from the Make Model Group list and saved with the model information, with its sub-groups
+ * and shift groups (the BOM of each product is on the BOM / Drawing tab, BomPanel). A model BMES does not have yet gets a temporary group made here by hand
  * (Model › Sub Group › Shift Group) with its processes, NG items and materials.
  */
 /**
@@ -263,7 +282,6 @@ export default function BmesPanel(props: {
   onError: (e: unknown) => void;
 }) {
   const [materials, setMaterials] = useState<BmesMaterial[] | null>(null);
-  const [product, setProduct] = useState("");
   const [picking, setPicking] = useState(false);
 
   useEffect(() => {
@@ -276,7 +294,6 @@ export default function BmesPanel(props: {
   const isManual = props.saved === MANUAL;
   const found = materials && !isManual ? matchMaterial(props.modelName, materials, props.saved) : null;
   const m = found?.material ?? null;
-  const shown = m && m.products.includes(product) ? product : m?.products[0] ?? "";
   const hasManual = !isEmptyManual(props.manual) || hasTempGroup(props.temp) || Object.values(props.subManual).some((t) => !isEmptyManual(t));
   const link = (material: string) => { props.onPick(material); setPicking(false); };
 
@@ -289,18 +306,7 @@ export default function BmesPanel(props: {
     body = <TempModelGroup modelName={props.modelName} manual={props.manual} onManual={props.onManual} temp={props.temp} onTemp={props.onTemp}
       subManual={props.subManual} onSubManual={props.onSubManual} onError={props.onError} />;
   } else {
-    body = (
-      <>
-        <LinkedGroup m={m} />
-        <div className="wk-bmes-bomh">
-          <h3>BOM</h3>
-          {m.products.map((p) => (
-            <button key={p} className={"wk-chip" + (p === shown ? " on" : "")} onClick={() => setProduct(p)}>{p}</button>
-          ))}
-        </div>
-        {shown ? <BomTable key={shown} product={shown} onError={props.onError} /> : <div className="muted">No product in this model.</div>}
-      </>
-    );
+    body = <LinkedGroup m={m} />;
   }
 
   return (
@@ -316,5 +322,55 @@ export default function BmesPanel(props: {
       </div>
       {body}
     </div>
+  );
+}
+
+/**
+ * BOM / Drawing tab of a model: the BOM of each product of the BMES model group linked in Model Info (or of the same
+ * name), with the drawings of its materials and when each was registered and last changed.
+ */
+export function BomPanel(props: {
+  modelName: string;
+  /** Material saved in Model Info ("" = found by name). */
+  saved: string;
+  onError: (e: unknown) => void;
+  /** BMES model groups already read (tests); else read here. */
+  initial?: BmesMaterial[];
+}) {
+  const [materials, setMaterials] = useState<BmesMaterial[] | null>(props.initial ?? null);
+  const [product, setProduct] = useState("");
+
+  useEffect(() => {
+    if (props.initial) return;
+    let live = true;
+    bmesApi.materials().then((m) => { if (live) setMaterials(m); }).catch(props.onError);
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const m = materials && props.saved !== MANUAL ? matchMaterial(props.modelName, materials, props.saved)?.material ?? null : null;
+  const shown = m && m.products.includes(product) ? product : m?.products[0] ?? "";
+  return (
+    <section className="card pi-sec">
+      <div className="pi-sec-h">
+        <h2>BOM / Drawing</h2>
+        {m && <span className="muted small">{m.group} › <b>{m.material}</b></span>}
+      </div>
+      <div className="pi-sec-b">
+        {materials === null ? <div className="muted">Loading the BMES model groups…</div>
+          : !m ? <div className="muted">No BMES model group is linked to this model. Link it in Model Info to see its BOM and drawings.</div>
+            : (
+              <>
+                <div className="wk-bmes-bomh">
+                  <h3>BOM</h3>
+                  {m.products.map((p) => (
+                    <button key={p} className={"wk-chip" + (p === shown ? " on" : "")} onClick={() => setProduct(p)}>{p}</button>
+                  ))}
+                </div>
+                {shown ? <BomTable key={shown} product={shown} onError={props.onError} /> : <div className="muted">No product in this model.</div>}
+              </>
+            )}
+      </div>
+    </section>
   );
 }

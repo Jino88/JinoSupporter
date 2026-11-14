@@ -317,7 +317,7 @@ function PlanTimeline(props: { kind: "dev" | "mp"; plans: PlanBrief[]; today: st
                     const tb = t.span && range ? barAt(t.span, range) : null;
                     const state = t.done ? "done" : t.late ? "late" : "open";
                     return (
-                      <div key={t.id} className={"wk-hm-row task " + state}>
+                      <div key={t.id} className={"wk-hm-row task " + state + (t.sub ? " sub" : "")}>
                         <div className="wk-hm-label">
                           <span className={"wk-hm-check " + state}>{t.done ? "✓" : ""}</span>
                           <span className="wk-hm-task" title={t.name}>{tr(t.name)}</span>

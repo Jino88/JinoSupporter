@@ -27,6 +27,12 @@ export function lookUp(map: Record<string, string>, text: string): string {
   return k ? map[k] ?? text : text;
 }
 
+/**
+ * Whether a text is already written in the language picked, so it is shown as written rather than through a translation
+ * (which can reword it, e.g. a Korean note with a typo-like word changed). Korean: any Hangul in it.
+ */
+export const writtenIn = (lang: Lang, text: string) => lang === "ko" && /[\u3131-\u318e\uac00-\ud7a3]/.test(text);
+
 /** How long to wait before asking again for texts the server is still translating, and how many times. */
 const RETRY_MS = 15_000;
 const RETRIES = 20;
@@ -74,7 +80,7 @@ export function TranslationProvider(props: { lang: Lang; children: ReactNode; on
   const tr = useCallback<Tr>((text) => {
     if (!lang || !text) return text;
     const k = text.trim();
-    if (!k) return text;
+    if (!k || writtenIn(lang, k)) return text;
     if (map[k] !== undefined) return map[k];
     if (!asked.current.has(k)) {
       asked.current.add(k);

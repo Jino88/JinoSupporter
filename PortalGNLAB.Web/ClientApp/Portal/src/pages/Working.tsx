@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { localToday } from "./productionInput/logic";
 import AiPopup from "./working/AiPopup";
 import AiTab from "./working/AiTab";
+import { BomPanel } from "./working/BmesPanel";
 import SetupAi from "./working/SetupAi";
 import type { AiTarget } from "./working/aiPlace";
 import { workingApi } from "./working/api";
@@ -23,10 +24,11 @@ import "./working/working.css";
 
 /** The pages of the top menu: Home and the MP issues of every model. */
 type HomeView = "home" | "mpissues";
-type Tab = "info" | "plan" | "devissue" | "dev" | "review" | "all" | "setup" | "issue" | "ai";
-/** Categories of a model page and the tabs under each (Model Info and AI have none). */
+type Tab = "info" | "bom" | "plan" | "devissue" | "dev" | "review" | "all" | "setup" | "issue" | "ai";
+/** Categories of a model page and the tabs under each (Model Info, BOM / Drawing and AI have none). */
 const CATEGORIES: { label: string; tabs: [Tab, string][] }[] = [
   { label: "Model Info", tabs: [["info", "Model Info"]] },
+  { label: "BOM / Drawing", tabs: [["bom", "BOM / Drawing"]] },
   { label: "Development", tabs: [["plan", "Dev Plan"], ["devissue", "Dev Issue"], ["dev", "Dev History"], ["review", "Reviews"], ["all", "Timeline"]] },
   { label: "Mass Production", tabs: [["setup", "Plan"], ["issue", "Issues"]] },
   { label: "AI", tabs: [["ai", "AI"]] },
@@ -290,6 +292,7 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
                     <InfoTab key={selected} model={model} onDirty={setInfoDirty}
                       onSaved={(m) => { setModel(m); setInfoDirty(false); }} onError={fail} />
                   )}
+                  {tab === "bom" && <BomPanel key={selected} modelName={selected} saved={model.info.bmesMaterial ?? ""} onError={fail} />}
                   {tab === "plan" && (
                     <DevPlan key={`${selected}:${fresh}`} model={model} onDirty={setInfoDirty}
                       onSaved={(m) => { setModel(m); setInfoDirty(false); }} onError={fail} />
