@@ -72,8 +72,8 @@
 {
     @if (!ReasonOnly)
     {
-    <div class="card mt-3 ngrate-report-card"
-         data-daily-section="@ExportSectionKey("summary")" data-daily-label="Summary">
+    <div data-daily-section="@ExportSectionKey("summary")" data-daily-label="Summary">
+    <div class="card mt-3 ngrate-report-card">
         <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
             <span>Summary - Group / Model x Date / Week / Month (PPM)</span>
             <span class="text-muted" style="font-size:11px;">
@@ -151,9 +151,7 @@
                                 }
                             </tr>
                             <tr>
-                                @foreach (var col in VisibleDateCols)  { <th>@col.Header</th> }
-                                @foreach (var col in VisibleWeekCols)  { <th>@col.Header</th> }
-                                @foreach (var col in VisibleMonthCols) { <th>@col.Header</th> }
+                                @PeriodHeaderCells()
                             </tr>
                         </thead>
                         <tbody>
@@ -190,6 +188,128 @@
                 </div>
             }
         </div>
+    </div>
+
+    @if (string.IsNullOrEmpty(_reportError) && TotalColCount > 0)
+    {
+        var worstModels = OrderedModels.Where(ModelHasVisibleData).ToList();
+        <div class="card mt-3 ngrate-report-card">
+            <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
+                <span>Worst @MaxWorstRows - Model x Process / NG Name (PPM)</span>
+                <span class="text-muted" style="font-size:11px;">Ranked by the latest date with NG per model</span>
+                <button type="button"
+                        class="btn btn-outline-secondary btn-sm ms-auto daily-copy-btn"
+                        @onclick="() => CopyElementToClipboardAsync(DailyWorstCopyTargetId)"
+                        disabled="@(IsCopying(DailyWorstCopyTargetId) || worstModels.Count == 0)">
+                    @CopyButtonText(DailyWorstCopyTargetId)
+                </button>
+            </div>
+            <div class="card-body ngrate-card-body p-0">
+                @if (worstModels.Count == 0)
+                {
+                    <div class="text-muted small p-4 text-center">No data.</div>
+                }
+                else
+                {
+                    <div id="@DailyWorstCopyTargetId" class="pivot-wrap">
+                        <table class="pivot-table text-fit-table daily-summary-table daily-worst-table">
+                            <thead>
+                                <tr>
+                                    <th class="label-th" rowspan="2">Model / Process Name</th>
+                                    <th class="label-th" rowspan="2">NG Name</th>
+                                    @if (VisibleDateCols.Count > 0)
+                                    {
+                                        <th class="blk-date" colspan="@VisibleDateCols.Count">Date</th>
+                                        <th class="sep-th" rowspan="2"></th>
+                                    }
+                                    @if (VisibleWeekCols.Count > 0)
+                                    {
+                                        <th class="blk-week" colspan="@VisibleWeekCols.Count">Week</th>
+                                        <th class="sep-th" rowspan="2"></th>
+                                    }
+                                    @if (VisibleMonthCols.Count > 0)
+                                    {
+                                        <th class="blk-month" colspan="@VisibleMonthCols.Count">Month</th>
+                                    }
+                                </tr>
+                                <tr>
+                                    @PeriodHeaderCells()
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var model in worstModels)
+                                {
+                                    string groupName = model.GroupName;
+                                    string material = model.Material;
+                                    string groupDisplay = ReportGroupDisplayName(groupName);
+                                    var worstRef = DailyWorstReferenceDateColumn(model.Key);
+                                    var worstRows = GetModelWorstRows(model, worstRef?.Key);
+
+                                    <tr class="grp-total-row">
+                                        <td class="label-td" colspan="2">
+                                            <span class="ngrate-hier-level">MODEL</span>
+                                            <strong>@material</strong>
+                                            @if (!string.Equals(groupDisplay, material, StringComparison.Ordinal))
+                                            {
+                                                <span class="text-muted ms-1" style="font-size:10.5px;">@groupDisplay</span>
+                                            }
+                                            @if (worstRef is not null)
+                                            {
+                                                <span class="text-muted ms-1" style="font-size:10.5px;">(@worstRef.Header)</span>
+                                            }
+                                        </td>
+                                        @foreach (var col in VisibleDateCols)
+                                        {
+                                            double v = MidGroupPpm(groupName, material, col.Key);
+                                            @SummaryPpmCell(v, PreviousDatePpm(col, key => MidGroupPpm(groupName, material, key)))
+                                        }
+                                        @if (VisibleDateCols.Count > 0) { <td class="sep-td"></td> }
+                                        @foreach (var col in VisibleWeekCols)
+                                        {
+                                            double v = MidGroupPpm(groupName, material, col.Key);
+                                            @SummaryPpmCell(v, PreviousWeekPpm(col, key => MidGroupPpm(groupName, material, key)))
+                                        }
+                                        @if (VisibleWeekCols.Count > 0) { <td class="sep-td"></td> }
+                                        @foreach (var col in VisibleMonthCols)
+                                        {
+                                            double v = MidGroupPpm(groupName, material, col.Key);
+                                            @SummaryPpmCell(v, PreviousMonthPpm(col, key => MidGroupPpm(groupName, material, key)))
+                                        }
+                                    </tr>
+                                    @foreach (var row in worstRows)
+                                    {
+                                        var ppm = row.Ppm;
+                                        <tr class="rank-row">
+                                            <td class="label-td">
+                                                <span class="worst-no">@row.No</span>
+                                                <span class="pt-badge @NgRateUi.ProcessTypeClass(row.ProcessType)">@row.ProcessType</span>
+                                                @row.ProcessName
+                                            </td>
+                                            <td class="label-td">@row.NgName</td>
+                                            @foreach (var col in VisibleDateCols)
+                                            {
+                                                @SummaryPpmCell(ppm.GetValueOrDefault(col.Key), PreviousDatePpm(col, key => ppm.GetValueOrDefault(key)))
+                                            }
+                                            @if (VisibleDateCols.Count > 0) { <td class="sep-td"></td> }
+                                            @foreach (var col in VisibleWeekCols)
+                                            {
+                                                @SummaryPpmCell(ppm.GetValueOrDefault(col.Key), PreviousWeekPpm(col, key => ppm.GetValueOrDefault(key)))
+                                            }
+                                            @if (VisibleWeekCols.Count > 0) { <td class="sep-td"></td> }
+                                            @foreach (var col in VisibleMonthCols)
+                                            {
+                                                @SummaryPpmCell(ppm.GetValueOrDefault(col.Key), PreviousMonthPpm(col, key => ppm.GetValueOrDefault(key)))
+                                            }
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    }
     </div>
     }
     else
@@ -504,6 +624,8 @@
     private Dictionary<long, string> _allGroupNamesById = new();
 
     private const string DailySummaryCopyTargetId = "dailySummaryCopyTarget";
+    private const string DailyWorstCopyTargetId = "dailyWorstCopyTarget";
+    private const int MaxWorstRows = 5;
     private const int DefaultDateCap = 7;
     private const int DefaultWeekCap = 3;
     private const int DefaultMonthCap = 3;
@@ -523,6 +645,13 @@
         string Reason,
         int No,
         bool IsTotal,
+        string ProcessType,
+        string ProcessName,
+        string NgName,
+        Dictionary<string, double> Ppm);
+
+    private sealed record DailyWorstRow(
+        int No,
         string ProcessType,
         string ProcessName,
         string NgName,
@@ -1586,6 +1715,37 @@
         return VisibleDateCols[0];
     }
 
+    /// <summary>The latest visible date on which the model has any NG; the Worst table ranks
+    /// a model's process / NG rows by that day. Null when no visible date has NG.</summary>
+    private NgRateReportService.PeriodColumn? DailyWorstReferenceDateColumn(string modelKey)
+        => VisibleDateCols.FirstOrDefault(col => ModelHasDailyReasonPpm(modelKey, col.Key, 0d));
+
+    /// <summary>
+    /// The model's worst process / NG rows: ranked by the reference date's PPM, then by the
+    /// sort reference period, so a model with fewer NG rows on that day is still filled from
+    /// the wider period. Each row carries every report period so the deltas can look back
+    /// past the visible columns.
+    /// </summary>
+    private List<DailyWorstRow> GetModelWorstRows(DailyModelRef model, string? referenceDateKey)
+    {
+        if (_report is null) return new();
+
+        var periodKeys = DistinctPeriodColumns(_report.DateCols.Concat(_report.WeekCols).Concat(_report.MonthCols))
+            .Select(c => c.Key)
+            .ToList();
+        var visibleKeys = VisiblePeriodKeys().ToList();
+
+        return BuildChronicProcessCsvDetails(model, periodKeys)
+            .Where(r => visibleKeys.Any(key => r.Ppm.GetValueOrDefault(key) > 0))
+            .OrderByDescending(r => string.IsNullOrEmpty(referenceDateKey) ? 0 : r.Ppm.GetValueOrDefault(referenceDateKey))
+            .ThenByDescending(r => RefValue(r.Ppm))
+            .ThenBy(r => r.ProcessName, StringComparer.Ordinal)
+            .ThenBy(r => r.NgName, StringComparer.Ordinal)
+            .Take(MaxWorstRows)
+            .Select((r, i) => new DailyWorstRow(i + 1, r.ProcessType, r.ProcessName, r.NgName, r.Ppm))
+            .ToList();
+    }
+
     private bool ModelHasDailyReasonPpm(string modelKey, string dateKey, double threshold)
     {
         if (_reportByMid is null || string.IsNullOrEmpty(dateKey))
@@ -1833,6 +1993,25 @@
 
     private static string PpmClass(double v)
         => NgRateModeSupport.PpmClass(v);
+
+    /// <summary>
+    /// The per-period header cells (date → week → month). The block separators span both
+    /// header rows, so these cells are siblings across blocks; the first cell of each block
+    /// is marked so the faint column line is drawn only between columns of the same block.
+    /// </summary>
+    private RenderFragment PeriodHeaderCells() => builder =>
+    {
+        foreach (var block in new[] { VisibleDateCols, VisibleWeekCols, VisibleMonthCols })
+        {
+            for (int i = 0; i < block.Count; i++)
+            {
+                builder.OpenElement(0, "th");
+                if (i == 0) builder.AddAttribute(1, "class", "blk-start");
+                builder.AddContent(2, block[i].Header);
+                builder.CloseElement();
+            }
+        }
+    };
 
     private RenderFragment SummaryPpmCell(double value, double? previous) => builder =>
     {

@@ -1111,6 +1111,21 @@
     .pivot-table tr.hier-sub1-row:hover td,
     .pivot-table tr.hier-ls-row:hover td { background: #f8faff; }
     .pivot-table tr td.sep-td { background: #fff !important; }
+    /* Faint line between the period columns of one block; never at a block's edge. */
+    .daily-summary-table td:not(.label-td):not(.sep-td) + td:not(.sep-td),
+    .daily-summary-table thead tr + tr th + th:not(.blk-start) {
+        border-left: 1px solid #e5e9f0;
+    }
+    .daily-worst-table .worst-no {
+        display: inline-block;
+        min-width: 16px;
+        margin-right: 4px;
+        color: #94a3b8;
+        font-size: 10.5px;
+        font-weight: 700;
+        text-align: right;
+    }
+    .daily-worst-table .pt-badge { margin-right: 4px; }
 
     .ngrate-hier-level {
         min-width: 0;
