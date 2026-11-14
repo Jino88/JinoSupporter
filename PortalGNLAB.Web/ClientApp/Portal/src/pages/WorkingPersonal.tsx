@@ -68,7 +68,7 @@ export function PersonalPage(props: {
                 onClick={() => { setAiDirty(false); setAiOpen(true); }}>✦ AI input</button>
             </div>
           )}
-          <IssueTable key={fresh} modelName={key} modelPhase="" heading="My Plans" newDefaults={{ phase: "" }}
+          <IssueTable key={fresh} modelName={key} modelPhase="" heading="My Plans" newDefaults={{ phase: "" }} numberInOrder
             entries={issues} today={today} onChanged={onChanged} onError={fail} />
         </>
       )}

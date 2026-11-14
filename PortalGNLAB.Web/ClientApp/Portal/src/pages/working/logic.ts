@@ -119,6 +119,14 @@ export const fieldsOf = (e: Entry): EntryFields => ({
 /** Issue fields with Status kept in step with the done date. */
 export const issueFields = (f: EntryFields): EntryFields => ({ ...f, status: f.doneDate ? "Closed" : "Open" });
 
+/**
+ * The place (1, 2 …) of each top issue among the top issues in number order: the No. of a list numbered in order (My Plans),
+ * where the register numbers have gaps (sub-issues and removed issues take numbers too).
+ */
+export function orderNumbers(list: Entry[]): Map<string, number> {
+  return new Map(issueTree(list).top.map((e, i) => [e.id, i + 1]));
+}
+
 /** Issues in number order (No. 1 first). */
 export const issuesBySeq = (list: Entry[]) => list.filter((e) => e.kind === "issue").sort((a, b) => a.seq - b.seq || a.createdAt.localeCompare(b.createdAt));
 

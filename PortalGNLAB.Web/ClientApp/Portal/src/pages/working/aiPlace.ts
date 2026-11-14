@@ -1,7 +1,7 @@
 // AI tab of a Working model: text typed or pasted is placed by AI (WorkingPlaceAiService) into Model Info fields, Dev Plan
 // events, their tasks and their quantity plans (Material Plan / Making Plan rows), or new Dev History / Dev Issue / MP Issue / Review entries. The answer is shown item by item and only
 // the items kept are saved, with the usual model and entry APIs.
-import { issuesOfStage } from "./logic";
+import { issuesOfStage, orderNumbers } from "./logic";
 import { QTY_GROUPS, blankEvent, blankRow, blankTask, monthDayText, readDevPlan, setQty, type PlanEvent, type QtyGroup, type QtyRow } from "./plan";
 import { phaseName, type Entry, type EntryFields, type EntryKind, type ModelInfo } from "./types";
 
@@ -49,6 +49,8 @@ export function placeRequest(text: string, today: string, info: ModelInfo, entri
   target?: AiTarget) {
   const plan = readDevPlan(info.devPlan);
   const mp = new Set(issuesOfStage(entries, "mp").map((e) => e.id));
+  // My Plans are numbered 1, 2 … in order, as the list shows them
+  const order = target === "personal" ? orderNumbers(entries) : null;
   return {
     text, today, images, ...(target ? { target } : {}),
     info: Object.fromEntries(INFO_KEYS.map((k) => [k, k === "phase" ? phaseName(info.phase) : info[k] ?? ""])) as Record<InfoKey, string>,
@@ -58,7 +60,7 @@ export function placeRequest(text: string, today: string, info: ModelInfo, entri
       rows: e.rows.map((r) => ({ id: r.id, name: r.name, group: r.group, qty: r.qty })),
     })),
     entries: entries.map((e) => ({
-      id: e.id, kind: e.kind, stage: e.kind === "issue" ? (mp.has(e.id) ? "mp" : "dev") : "", seq: e.seq, date: e.date, title: e.title, status: e.status,
+      id: e.id, kind: e.kind, stage: e.kind === "issue" ? (mp.has(e.id) ? "mp" : "dev") : "", seq: order?.get(e.id) ?? e.seq, date: e.date, title: e.title, status: e.status,
       parentId: e.parentId ?? "",
     })),
   };
@@ -202,7 +204,7 @@ export function placeItems(answer: PlaceAnswer, info: ModelInfo, target?: AiTarg
     const fresh = newParentOf(answer, i);
     const parent = e.parentId && fresh < 0 ? entries.find((x) => x.id === e.parentId) : undefined;
     const under = fresh >= 0 ? `Sub-issue of ${answer.entries[fresh].title} (new)`
-      : e.parentId ? `Sub-issue of ${parent ? `No. ${parent.seq} ${parent.title}` : "an issue"}` : "";
+      : e.parentId ? `Sub-issue of ${parent ? `No. ${(target === "personal" ? orderNumbers(entries).get(parent.id) : null) ?? parent.seq} ${parent.title}` : "an issue"}` : "";
     const bits = [under, e.date, e.owner, e.kind === "issue" ? [e.severity, e.due && `due ${e.due}`].filter(Boolean).join(" · ") : e.kind === "review" ? e.result : "", pics];
     // a sub-issue of a new issue is listed under it and is left out with it
     out.push({

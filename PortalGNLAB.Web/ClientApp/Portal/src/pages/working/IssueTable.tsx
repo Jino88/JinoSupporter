@@ -4,7 +4,7 @@ import { shortDate } from "./homeSummary";
 import { useTr } from "./i18n";
 import { workingApi } from "./api";
 import {
-  blankEntry, blankLog, entryProblem, fieldsOf, isLate, isLogLate, isOpenIssue, issueFields, issuesBySeq, issueTree, logFieldsOf, logProblem,
+  blankEntry, blankLog, entryProblem, fieldsOf, isLate, isLogLate, isOpenIssue, issueFields, issuesBySeq, issueTree, logFieldsOf, orderNumbers, logProblem,
   mediaKind, noteParts, notesInOrder, pastedImages, suggestions,
 } from "./logic";
 import {
@@ -280,6 +280,8 @@ export default function IssueTable(props: {
   heading?: string;
   /** Prefilled fields of a new issue. */
   newDefaults?: Partial<EntryFields>;
+  /** Number the issues 1, 2 … in order instead of by their register number (a list of one's own plans). */
+  numberInOrder?: boolean;
 }) {
   const tr = useTr();
   const { modelName, entries, today } = props;
@@ -294,6 +296,8 @@ export default function IssueTable(props: {
 
   const all = issuesBySeq(entries);
   const { top, subs } = issueTree(entries);
+  // numbered in order over every top issue, so a filter does not renumber them
+  const order = orderNumbers(entries);
   const matches = (e: Entry, f: Filter) => f === "all" || (f === "open") === isOpenIssue(e);
   // an issue stays in the list while one of its sub-issues matches the filter
   const shown = top.filter((e) => matches(e, filter) || (subs.get(e.id) ?? []).some((c) => matches(c, filter)));
@@ -498,7 +502,7 @@ export default function IssueTable(props: {
             {!shown.length && (
               <tr><td colSpan={COLS} className="wk-it-empty">{all.length ? "No issue in this filter." : "No issue yet. Add one with + New issue."}</td></tr>
             )}
-            {shown.map((e) => issueRows(e, String(e.seq || "—"), false))}
+            {shown.map((e) => issueRows(e, String((props.numberInOrder ? order.get(e.id) : e.seq) || "—"), false))}
           </tbody>
         </table>
       </div>

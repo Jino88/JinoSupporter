@@ -24,6 +24,17 @@ describe("Working › Personal", () => {
     expect(html).not.toContain("AI input"); // until the model the plans are kept under is loaded
   });
 
+  it("numbers the plans 1, 2 … in order, not by register number (sub-issues and removed plans took numbers too)", () => {
+    const issue = (id: string, seq: number, title: string, x: object = {}) => ({ id, seq, title, kind: "issue", status: "Open", doneDate: "", due: "", phase: "",
+      body: "", owner: "", date: "2026-11-10", category: "", process: "", cause: "", finalResult: "", logs: [], images: [], createdAt: "2026-11-10", ...x });
+    const html = renderToStaticMarkup(<PersonalPage user="alice" lang="" waiting={0} onLang={() => {}} initial={[
+      issue("a", 1, "AI AGENT TF"), issue("s", 2, "Sub task", { parentId: "a" }), issue("b", 32, "GN 출장 일정"),
+    ] as never} />);
+    expect(html).toContain('<td class="n">1</td>');
+    expect(html).toContain('<td class="n">2</td>');
+    expect(html).not.toContain('<td class="n">32</td>');
+  });
+
   it("has AI input on My Plans", () => {
     const html = renderToStaticMarkup(<PersonalPage user="alice" lang="" waiting={0} onLang={() => {}} initial={[]}
       initialModel={{ name: "~personal:alice", info: {}, revision: 0, updatedAt: "", updatedBy: "" }} />);
