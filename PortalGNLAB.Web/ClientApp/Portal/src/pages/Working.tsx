@@ -3,8 +3,9 @@ import { localToday } from "./productionInput/logic";
 import AiPopup from "./working/AiPopup";
 import AiTab from "./working/AiTab";
 import { BomPanel } from "./working/BmesPanel";
+import ModelDocs from "./working/ModelDocs";
 import ProcessListTab from "./working/ProcessListTab";
-import WorkInstructionTab from "./working/WorkInstructionTab";
+import ProcessTab from "./working/ProcessTab";
 import SetupAi from "./working/SetupAi";
 import type { AiTarget } from "./working/aiPlace";
 import { workingApi } from "./working/api";
@@ -26,19 +27,21 @@ import "./working/working.css";
 
 /** The pages of the top menu: Home and the MP issues of every model. */
 type HomeView = "home" | "mpissues";
-type Tab = "info" | "bom" | "plan" | "devissue" | "dev" | "review" | "all" | "setup" | "issue" | "process" | "instruction" | "ai";
-/** Categories of a model page and the tabs under each (Model Info, BOM / Drawing and AI have none). */
-const CATEGORIES: { label: string; tabs: [Tab, string][] }[] = [
-  { label: "Model Info", tabs: [["info", "Model Info"]] },
+type Tab = "info" | "bom" | "plan" | "devissue" | "dev" | "review" | "all" | "setup" | "issue" | "docs" | "process" | "jigmc" | "ai";
+/** Categories of a model page and the tabs under each (BOM / Drawing, Process, JIG/MC List and AI have none). */
+export const CATEGORIES: { label: string; tabs: [Tab, string][] }[] = [
+  { label: "Model Info", tabs: [["info", "Model Info"], ["docs", "Documents"]] },
   { label: "BOM / Drawing", tabs: [["bom", "BOM / Drawing"]] },
   { label: "Development", tabs: [["plan", "Dev Plan"], ["devissue", "Dev Issue"], ["dev", "Dev History"], ["review", "Reviews"], ["all", "Timeline"]] },
   { label: "Mass Production", tabs: [["setup", "Plan"], ["issue", "Issues"]] },
-  { label: "Process List", tabs: [["process", "Process List"]] },
-  { label: "Work Instructions", tabs: [["instruction", "Work Instructions"]] },
+  { label: "Process", tabs: [["process", "Process"]] },
+  { label: "JIG/MC List", tabs: [["jigmc", "JIG/MC List"]] },
   { label: "AI", tabs: [["ai", "AI"]] },
 ];
 const categoryOf = (tab: Tab) => CATEGORIES.find((c) => c.tabs.some(([k]) => k === tab))!;
 const isTab = (v: string | null): v is Tab => CATEGORIES.some((c) => c.tabs.some(([k]) => k === v));
+/** The tab an address asks for; the old ?tab=instruction (Work Instructions) is now under Documents. */
+export const tabOfQuery = (v: string | null): Tab => (v === "instruction" ? "docs" : isTab(v) ? v : "info");
 /**
  * The tabs with AI input (a popup that makes what is pasted into the data of the tab) and what AI makes there: the place
  * AI with a target, or Setup Plan rows on the Mass Production Plan.
@@ -80,7 +83,7 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
   const [home, setHome] = useState(query.get("view") === "home" || query.get("view") === "mpissues" || !query.get("model"));
   const [homeView, setHomeView] = useState<HomeView>(query.get("view") === "mpissues" ? "mpissues" : "home");
   const [selected, setSelected] = useState<string | null>(home ? null : query.get("model"));
-  const [tab, setTab] = useState<Tab>(isTab(query.get("tab")) ? (query.get("tab") as Tab) : "info");
+  const [tab, setTab] = useState<Tab>(tabOfQuery(query.get("tab")));
   const [model, setModel] = useState<WorkingModel | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [infoDirty, setInfoDirty] = useState(false);
@@ -297,8 +300,15 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
                       onSaved={(m) => { setModel(m); setInfoDirty(false); }} onError={fail} />
                   )}
                   {tab === "bom" && <BomPanel key={selected} modelName={selected} saved={model.info.bmesMaterial ?? ""} onError={fail} />}
-                  {tab === "process" && <ProcessListTab key={selected} modelName={selected} onError={fail} />}
-                  {tab === "instruction" && <WorkInstructionTab key={selected} modelName={selected} onError={fail} />}
+                  {tab === "docs" && (
+                    <ModelDocs key={selected} model={model} onSaved={(m) => { setModel(m); setInfoDirty(false); }}
+                      onOpen={(k: "process" | "jigmc") => setTab(k)} onError={fail} />
+                  )}
+                  {tab === "jigmc" && <ProcessListTab key={selected} modelName={selected} onError={fail} />}
+                  {tab === "process" && (
+                    <ProcessTab key={selected} model={model} onDirty={setInfoDirty}
+                      onSaved={(m) => { setModel(m); setInfoDirty(false); }} onError={fail} />
+                  )}
                   {tab === "plan" && (
                     <DevPlan key={`${selected}:${fresh}`} model={model} onDirty={setInfoDirty}
                       onSaved={(m) => { setModel(m); setInfoDirty(false); }} onError={fail} />

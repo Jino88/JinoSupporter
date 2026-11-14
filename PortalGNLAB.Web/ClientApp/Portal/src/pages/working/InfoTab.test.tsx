@@ -10,4 +10,13 @@ describe("Model information", () => {
     for (const gone of ["wk-info-cols", "wk-build", "Stage", "PV2", ">Model<", "Customer", "Build", "PM owner", ">Line<", "SOP target", "Note", "Acme", "2027"])
       expect(html).not.toContain(gone);
   });
+
+  it("does not show the process tables (they are on the Process tab) but keeps the model group", () => {
+    const manualGroup = { materials: ["UPPER"], processes: [{ id: "p1", type: "SUB", name: "Top bonding", localName: "", ngItems: ["Crack"], materials: [{ material: "UPPER", qtyPerUnit: 1 }] }] };
+    const html = renderToStaticMarkup(<InfoTab onDirty={() => {}} onSaved={() => {}} onError={() => {}} model={{ name: "MSM-X526", revision: 1,
+      updatedAt: "", updatedBy: "", info: { phase: "MP", bmesMaterial: "__manual", manualGroup } }} />);
+    expect(html).toContain("BMES model group");
+    expect(html).not.toContain("Top bonding");
+    expect(html).not.toContain("Processes and materials of");
+  });
 });

@@ -193,7 +193,7 @@ export default function ProcessListTab(props: {
   return (
     <section className="card pi-sec">
       <div className="pi-sec-h">
-        <h2>Process List</h2>
+        <h2>JIG/MC List</h2>
         {list.updatedAt && (
           <span className="muted small">
             {list.source && <><b>{list.source}</b> · </>}{stamp(list.updatedAt)} · {list.updatedBy}

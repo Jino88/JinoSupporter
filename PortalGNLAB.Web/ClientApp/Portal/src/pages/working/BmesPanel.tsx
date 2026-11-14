@@ -208,7 +208,7 @@ function GroupPicker(props: {
       {!list.length && <div className="muted">No BMES model matches.</div>}
       <div className="wk-bg-foot">
         {props.onCancel && <button className="btn sm" onClick={props.onCancel}>Cancel</button>}
-        <button className="wk-link" onClick={props.onManual}>Not in BMES yet? Make a temporary model group here (sub groups, shift groups, processes, NG items, materials)</button>
+        <button className="wk-link" onClick={props.onManual}>Not in BMES yet? Make a temporary model group here (sub groups, shift groups)</button>
       </div>
     </div>
   );
@@ -221,13 +221,37 @@ function GroupPicker(props: {
  * (Model › Sub Group › Shift Group) with its processes, NG items and materials.
  */
 /**
- * Temporary model group of a model BMES does not have yet: its Model › Sub Group › Shift Group tree and, below, the
- * processes and materials of the sub-group picked (or of the model while it has no sub-group or its table has something).
+ * Temporary model group of a model BMES does not have yet: its Model › Sub Group › Shift Group tree. The processes, NG items
+ * and materials are on the Process tab (ProcessTables).
  */
 export function TempModelGroup(props: {
   modelName: string;
-  manual: ManualGroupData; onManual: (g: ManualGroupData) => void;
   temp: TempGroupData; onTemp: (g: TempGroupData) => void;
+  subManual: Record<string, ManualGroupData>; onSubManual: (t: Record<string, ManualGroupData>) => void;
+  onError: (e: unknown) => void;
+}) {
+  // a removed sub-group takes its process table with it
+  const onTemp = (t: TempGroupData) => {
+    props.onTemp(t);
+    const kept = keepSubTables(props.subManual, subPaths(t).map((s) => s.id));
+    if (kept !== props.subManual) props.onSubManual(kept);
+  };
+  return (
+    <>
+      <TempGroupEdit modelName={props.modelName} value={props.temp} onChange={onTemp} onError={props.onError} />
+      <div className="muted small wk-tg-note">Processes, NG items and materials are on the Process tab.</div>
+    </>
+  );
+}
+
+/**
+ * Process tab: the processes, NG items and materials of the model, or of the sub-group picked (chips) when the temporary
+ * model group has sub-groups (the model's own table is offered while there is no sub-group or it already has something).
+ */
+export function ProcessTables(props: {
+  modelName: string;
+  manual: ManualGroupData; onManual: (g: ManualGroupData) => void;
+  temp: TempGroupData;
   subManual: Record<string, ManualGroupData>; onSubManual: (t: Record<string, ManualGroupData>) => void;
   onError: (e: unknown) => void;
   /** Table picked first (tests); else the first offered. */
@@ -238,16 +262,8 @@ export function TempModelGroup(props: {
   const subs = subPaths(props.temp);
   const tbl = shownTable(table, subs.map((s) => s.id), props.manual);
   const sub = subs.find((s) => s.id === tbl.at);
-  // a removed sub-group takes its process table with it
-  const onTemp = (t: TempGroupData) => {
-    props.onTemp(t);
-    const kept = keepSubTables(props.subManual, subPaths(t).map((s) => s.id));
-    if (kept !== props.subManual) props.onSubManual(kept);
-  };
   return (
     <>
-      <TempGroupEdit modelName={props.modelName} value={props.temp} onChange={onTemp} onError={props.onError}
-        selected={sub?.id ?? ""} onSelect={setTable} processes={(id) => props.subManual[id]?.processes.length ?? 0} />
       {subs.length > 0 && (
         <div className="wk-tg-tables">
           <span className="muted small">Processes and materials of</span>
@@ -270,9 +286,8 @@ export default function BmesPanel(props: {
   /** Material saved in Model Info ("" = found by name). */
   saved: string;
   onPick: (material: string) => void;
-  /** Model group entered by hand (Model Info), shown when it is picked or BMES has no group for the model. */
+  /** Process table of the model (read only here: whether the model has a hand-made group; it is edited on the Process tab). */
   manual: ManualGroupData;
-  onManual: (g: ManualGroupData) => void;
   /** Model › Sub Group › Shift Group made by hand for a model BMES does not have yet. */
   temp: TempGroupData;
   onTemp: (g: TempGroupData) => void;
@@ -303,7 +318,7 @@ export default function BmesPanel(props: {
     body = <GroupPicker modelName={props.modelName} materials={materials} current={m?.material ?? ""} onLink={link}
       onManual={() => link(MANUAL)} onCancel={picking ? () => setPicking(false) : undefined} />;
   } else if (!m) {
-    body = <TempModelGroup modelName={props.modelName} manual={props.manual} onManual={props.onManual} temp={props.temp} onTemp={props.onTemp}
+    body = <TempModelGroup modelName={props.modelName} temp={props.temp} onTemp={props.onTemp}
       subManual={props.subManual} onSubManual={props.onSubManual} onError={props.onError} />;
   } else {
     body = <LinkedGroup m={m} />;

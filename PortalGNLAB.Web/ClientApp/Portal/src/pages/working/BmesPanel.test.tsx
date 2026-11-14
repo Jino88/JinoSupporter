@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { BomPanel, DrawingDates, TempModelGroup } from "./BmesPanel";
+import { BomPanel, DrawingDates, ProcessTables, TempModelGroup } from "./BmesPanel";
 import { blankProcess, emptyManual } from "./manual";
 import type { ManualGroup } from "./manual";
 import { addSub, emptyTempGroup } from "./tempGroup";
@@ -12,7 +12,7 @@ const table = (process: string, material: string): ManualGroup =>
 const subManual = { [top]: table("Top bonding", "UPPER"), [bottom]: table("Bottom AOI", "LOWER") };
 
 const render = (initial: string | undefined, manual: ManualGroup = emptyManual()) => renderToStaticMarkup(
-  <TempModelGroup modelName="MSM-X536B" manual={manual} onManual={() => {}} temp={temp} onTemp={() => {}}
+  <ProcessTables modelName="MSM-X536B" manual={manual} onManual={() => {}} temp={temp}
     subManual={subManual} onSubManual={() => {}} onError={() => {}} initial={initial} />,
 );
 const chips = (html: string) => [...html.matchAll(/<button class="wk-chip( on)?">([^<]*)<\/button>/g)].map((m) => (m[1] ? "*" : "") + m[2]);
@@ -25,7 +25,6 @@ describe("processes and materials per sub group of a temporary model group", () 
     expect(html).not.toContain('value="Bottom AOI"');
     expect(html).toContain(">UPPER<");
     expect(html).not.toContain(">LOWER<");
-    expect(html).toMatch(/class="wk-bg-sub on"[^>]*>.*?value="MSM-X536B-TOP"/);
   });
 
   it("shows the sub group picked, its own processes and materials only", () => {
@@ -42,6 +41,18 @@ describe("processes and materials per sub group of a temporary model group", () 
     expect(chips(html)).toEqual(["*Model MSM-X536B", "MSM-X536B-TOP", "MSM-X536B-BOTTOM"]);
     expect(html).toContain(">MSU-L20S15-07<");
     expect(html).not.toContain('value="Top bonding"');
+  });
+});
+
+describe("Model Info temporary model group", () => {
+  it("keeps the Model › Sub Group tree but not the process tables, and points to the Process tab", () => {
+    const html = renderToStaticMarkup(<TempModelGroup modelName="MSM-X536B" temp={temp} onTemp={() => {}}
+      subManual={subManual} onSubManual={() => {}} onError={() => {}} />);
+    expect(html).toContain('value="MSM-X536B-TOP"');
+    expect(html).toContain("Processes, NG items and materials are on the Process tab");
+    expect(html).not.toContain("Processes and materials of");
+    expect(html).not.toContain('value="Top bonding"');
+    expect(html).not.toContain(">UPPER<");
   });
 });
 

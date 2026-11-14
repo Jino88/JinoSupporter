@@ -28,7 +28,8 @@ const count = (html: string, re: RegExp) => (html.match(re) ?? []).length;
 describe("process list tab", () => {
   it("shows the rows as text with the process count, and no input box", () => {
     const html = render(list);
-    expect(html).toContain("<h2>Process List</h2>");
+    expect(html).toContain("<h2>JIG/MC List</h2>");
+    expect(html).not.toContain("<h2>Process List</h2>");
     expect(html).toContain("<b>JIG list.xlsx</b>");
     expect(html).toContain("<b>UPPER ARRAY</b>");
     expect(html).toContain("IONIZER\nDISPENSOR");
