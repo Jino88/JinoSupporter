@@ -41,6 +41,13 @@ public static class WorkingProcessListEndpoints
                 return Results.Json(new { error = $"The AI could not answer: {ex.Message}" }, statusCode: StatusCodes.Status502BadGateway);
             }
         });
+        // Model Info › Documents: whether a workbook is a JIG / Machine / Tester list or Work Instructions (nothing is saved)
+        api.MapPost("/models/{name}/documents/kind", async (HttpContext ctx) =>
+        {
+            (IFormFile file, _) = await ReadWorkbook(ctx);
+            await using Stream s = file.OpenReadStream();
+            return Results.Ok(new { kind = WorkingDocumentKind.Of(s) });
+        });
         return api;
     }
 
