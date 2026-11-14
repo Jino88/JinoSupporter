@@ -11,7 +11,7 @@ public sealed class WorkingProcessMatchAiServiceTests
     /// <summary>Like the real list: the layout numbers count DRY (6), which has no work instruction.</summary>
     private static readonly List<WorkingListItem> Items =
     [
-        Item("J1", WorkingListItem.Jig, "ENCLOSURE DISPENSOR JIG (V4)", "1. UPPER ARRAY ~ 7. BONDING 2", 1, 2, 3, 4, 5, 6, 7),
+        Item("J1", WorkingListItem.Jig, "ENCLOSURE DISPENSOR JIG", "1. UPPER ARRAY ~ 7. BONDING 2", 1, 2, 3, 4, 5, 6, 7) with { Ver = "V4", Qty = "70" },
         Item("M1", WorkingListItem.Machine, "IONIZER", "UPPER ARRAY", 1),
         new("M2", WorkingListItem.Machine, "NON CONTACT DISPENSOR DT", "NON CONTACT DISPENSOR DT", "BONDING", [2], "SPK 안착단 본드 도포"),
         Item("M3", WorkingListItem.Machine, "CONVEYOR 3M", "DRY", 6),
@@ -99,14 +99,15 @@ public sealed class WorkingProcessMatchAiServiceTests
         Assert.All(rows, r => Assert.Equal("", r.Id));
 
         WorkingProcessRow upper = rows[0];
-        Assert.Equal(("IONIZER", "ENCLOSURE DISPENSOR JIG (V4)", (double?)12.5), (upper.Machine, upper.Jig, upper.StdTime));
+        // the jig's version and quantity in their own cells; no standard time (the column is gone)
+        Assert.Equal(("IONIZER", "ENCLOSURE DISPENSOR JIG", "V4", "70", (double?)null), (upper.Machine, upper.Jig, upper.JigVer, upper.JigQty, upper.StdTime));
         WorkingProcessRow bonding = rows[1];
-        Assert.Equal(("NON CONTACT DISPENSOR DT", "ENCLOSURE DISPENSOR JIG (V4)", "SPK 안착단 본드 도포"), (bonding.Machine, bonding.Jig, bonding.Note));
+        Assert.Equal(("NON CONTACT DISPENSOR DT", "ENCLOSURE DISPENSOR JIG", "SPK 안착단 본드 도포"), (bonding.Machine, bonding.Jig, bonding.Note));
         WorkingProcessRow dry = rows[2];
         Assert.Equal(("CONVEYOR 3M", "natural dry 10 min", (double?)null), (dry.Machine, dry.Note, dry.StdTime));
         Assert.Equal("unsure", rows[3].Note);
         // a process the answer left out is kept, without items
-        Assert.Equal(("", "", (double?)30.0), (rows[4].Machine, rows[4].Tester, rows[4].StdTime));
+        Assert.Equal(("", "", (double?)null), (rows[4].Machine, rows[4].Tester, rows[4].StdTime));
 
         Assert.Equal(["Tester: 방수검사기 (F520) — AIR LEAK TEST"], unmatched);
     }

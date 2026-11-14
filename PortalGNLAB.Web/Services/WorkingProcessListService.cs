@@ -9,17 +9,20 @@ namespace PortalGNLAB.Web.Services;
 
 /// <summary>
 /// A process of the line: its number (as written, "01"), name, people, standard time (seconds), machines, jigs, testers,
-/// materials (bond / nozzle) and a note.
+/// materials (bond / nozzle) and a note. Machines, jigs and testers are one per line; line i of JigVer and JigQty is the
+/// version and quantity of the jig on line i of Jig ("" when not given). People and standard time are no longer shown.
 /// </summary>
 public sealed record WorkingProcessRow(
     string Id, string No, string Process, int? Workers, double? StdTime, string Machine, string Jig, string Tester,
-    string Material, string Note);
+    string Material, string Note, string JigVer = "", string JigQty = "");
 
 /// <summary>
 /// A machine, jig or tester of a JIG / Machine / Tester list workbook: its name, the text shown in a Process List cell
-/// (with version and quantity), the process it is written for, its process numbers and the note of its row.
+/// (a machine with its quantity, a tester with its model), the process it is written for, its process numbers, the note
+/// of its row and, for a jig, its version and quantity (shown in their own columns).
 /// </summary>
-public sealed record WorkingListItem(string Id, string Kind, string Name, string Label, string Process, List<int> ProcessNos, string Note)
+public sealed record WorkingListItem(string Id, string Kind, string Name, string Label, string Process, List<int> ProcessNos, string Note,
+    string Ver = "", string Qty = "")
 {
     public const string Machine = "machine", Jig = "jig", Tester = "tester";
 }
@@ -81,13 +84,16 @@ public sealed partial class WorkingProcessListService(string? root = null)
         foreach (WorkingProcessRow? r in rows)
         {
             if (r is null) continue;
-            static string T(string? s, int max) => (s ?? "").Trim() is var t && t.Length > max ? t[..max] : (s ?? "").Trim();
+            static string T(string? s, int max) => (s ?? "").Replace("\r\n", "\n").Trim() is var t && t.Length > max ? t[..max] : t;
+            // the version and quantity lines follow the jig lines, so a blank first line is kept
+            static string L(string? s, int max) => Cap(Lines(s), max);
             var row = new WorkingProcessRow(
                 string.IsNullOrWhiteSpace(r.Id) ? Guid.NewGuid().ToString("N")[..12] : T(r.Id, 40),
                 T(r.No, 20), T(r.Process, 200), r.Workers is >= 0 and <= 10_000 ? r.Workers : null,
                 r.StdTime is { } st && double.IsFinite(st) && st >= 0 ? Math.Round(st, 3) : null,
-                T(r.Machine, 1000), T(r.Jig, 1000), T(r.Tester, 1000), T(r.Material, 500), T(r.Note, 1000));
-            if (row.No.Length + row.Process.Length + row.Machine.Length + row.Jig.Length + row.Tester.Length + row.Material.Length + row.Note.Length == 0
+                T(r.Machine, 1000), T(r.Jig, 1000), T(r.Tester, 1000), T(r.Material, 500), T(r.Note, 1000), L(r.JigVer, 500), L(r.JigQty, 500));
+            if (row.No.Length + row.Process.Length + row.Machine.Length + row.Jig.Length + row.Tester.Length + row.Material.Length + row.Note.Length
+                + row.JigVer.Length + row.JigQty.Length == 0
                 && row.Workers is null && row.StdTime is null) continue;
             list.Add(row);
         }
@@ -118,22 +124,39 @@ public sealed partial class WorkingProcessListService(string? root = null)
             {
                 Proc p = At(no);
                 if (item.Kind != WorkingListItem.Jig) p.Name ??= NullIfEmpty(item.Process);
-                (item.Kind switch { WorkingListItem.Machine => p.Machines, WorkingListItem.Jig => p.Jigs, _ => p.Testers }).Add(item.Label);
+                p.Items.Add(item);
                 if (item.Note.Length > 0) p.Notes.Add(item.Note);
             }
         }
         // a tester without process numbers goes to the processes of its name ("AIR LEAK TEST")
         foreach (WorkingListItem t in items.Where(i => i.Kind == WorkingListItem.Tester && i.ProcessNos.Count == 0 && i.Process.Length > 0))
             foreach (Proc p in byNo.Values.Where(p => string.Equals(p.Name ?? p.JigName, t.Process, StringComparison.OrdinalIgnoreCase)))
-                p.Testers.Add(t.Label);
+                p.Items.Add(t);
         if (byNo.Count == 0)
             throw new ArgumentException("No Machine List, JIG LIST or Tester List sheet with process numbers was found in the workbook.");
-        return byNo.Select(kv => new WorkingProcessRow(
-            Guid.NewGuid().ToString("N")[..12], kv.Key.ToString("00", CultureInfo.InvariantCulture),
-            kv.Value.Name ?? kv.Value.JigName ?? "", null, null,
-            string.Join(", ", kv.Value.Machines.Distinct()), string.Join(", ", kv.Value.Jigs.Distinct()),
-            string.Join(", ", kv.Value.Testers.Distinct()), "", string.Join(" / ", kv.Value.Notes.Distinct()))).ToList();
+        return byNo.Select(kv => Row(Guid.NewGuid().ToString("N")[..12], kv.Key.ToString("00", CultureInfo.InvariantCulture),
+            kv.Value.Name ?? kv.Value.JigName ?? "", kv.Value.Items, string.Join(" / ", kv.Value.Notes.Distinct()))).ToList();
     }
+
+    /// <summary>
+    /// A row of a process and its items: machines, jigs and testers one per line, the version and quantity of each jig on
+    /// the same line of their own cells; no people or standard time.
+    /// </summary>
+    public static WorkingProcessRow Row(string id, string no, string process, IEnumerable<WorkingListItem> items, string note)
+    {
+        List<WorkingListItem> its = items.ToList();
+        string Of(string kind) => string.Join("\n", its.Where(i => i.Kind == kind).Select(i => i.Label).Distinct());
+        List<WorkingListItem> jigs = its.Where(i => i.Kind == WorkingListItem.Jig).DistinctBy(i => (i.Label, i.Ver, i.Qty)).ToList();
+        return new WorkingProcessRow(id, no, Cap(process, 200), null, null, Cap(Of(WorkingListItem.Machine), 1000),
+            Cap(string.Join("\n", jigs.Select(j => j.Label)), 1000), Cap(Of(WorkingListItem.Tester), 1000), "", Cap(note, 1000),
+            Cap(Lines(string.Join("\n", jigs.Select(j => j.Ver))), 500), Cap(Lines(string.Join("\n", jigs.Select(j => j.Qty))), 500));
+    }
+
+    private static string Cap(string s, int max) => s.Length > max ? s[..max] : s;
+
+    /// <summary>Each line trimmed and the blank lines at the end left out; a blank line before others is kept (it lines up with a jig).</summary>
+    private static string Lines(string? s) =>
+        string.Join("\n", (s ?? "").Replace("\r\n", "\n").Split('\n').Select(x => x.Trim())).TrimEnd('\n');
 
     /// <summary>
     /// Every machine (Machine List), jig of the main line (JIG LIST) and tester (Tester List) of a list workbook with the
@@ -150,9 +173,9 @@ public sealed partial class WorkingProcessListService(string? root = null)
         using (book)
         {
             var items = new List<WorkingListItem>();
-            void Add(string kind, string name, string label, string process, string nos, string note) =>
+            void Add(string kind, string name, string label, string process, string nos, string note, string ver = "", string qty = "") =>
                 items.Add(new WorkingListItem(kind[..1].ToUpperInvariant() + (items.Count(i => i.Kind == kind) + 1),
-                    kind, name, label, process, Numbers(nos), note));
+                    kind, name, label, process, Numbers(nos), note, ver, qty));
 
             foreach (IXLWorksheet ws in book.Worksheets)
             {
@@ -183,9 +206,9 @@ public sealed partial class WorkingProcessListService(string? root = null)
                         if (jig.Length == 0 || (line.Length > 0 && line != "MAIN")) continue;
                         string ver = cVer > 0 ? Text(row, cVer + 1) : "";
                         string mass = cMass > 0 ? Text(row, cMass) : "";
-                        string label = jig + (ver.Length > 0 && !ver.StartsWith("20", StringComparison.Ordinal) ? $" ({ver})" : "")
-                                       + (mass is "" or "0" or "-" ? "" : $" ×{mass}");
-                        Add(WorkingListItem.Jig, jig, label, OneLine(Text(row, cProc)), Text(row, cNo), "");
+                        if (ver.StartsWith("20", StringComparison.Ordinal)) ver = "";
+                        if (mass is "0" or "-") mass = "";
+                        Add(WorkingListItem.Jig, jig, jig, OneLine(Text(row, cProc)), Text(row, cNo), "", ver, mass);
                     }
                 }
                 else if (Header(ws, "계측기명", "TESTER NAME") is { } th)
@@ -209,7 +232,8 @@ public sealed partial class WorkingProcessListService(string? root = null)
     private sealed class Proc
     {
         public string? Name, JigName;
-        public readonly List<string> Machines = [], Jigs = [], Testers = [], Notes = [];
+        public readonly List<WorkingListItem> Items = [];
+        public readonly List<string> Notes = [];
     }
 
     [GeneratedRegex(@"(\d{1,3})\.\s*([A-Za-z][^~/\n\r]*?)\s*(?=~|/|\r|\n|$|\d{1,3}\))")]

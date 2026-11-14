@@ -130,7 +130,7 @@ public sealed class WorkingProcessMatchAiService(
     /// <summary>
     /// The Process List rows of an answer: every process of the order once and in order (one the answer leaves out is
     /// kept without items), a process the answer adds right after the one before it, numbered 01.. in that order; the
-    /// cells are made from the items given (unknown ids left out), standard time and people from the order.
+    /// cells are made from the items given (unknown ids left out): one per line, a jig's version and quantity in their own cells; no people or standard time.
     /// </summary>
     public static (List<WorkingProcessRow> Rows, List<string> Unmatched) Build(
         MatchAnswer answer, IReadOnlyList<MatchProcess> processes, IReadOnlyList<WorkingListItem> items)
@@ -159,33 +159,30 @@ public sealed class WorkingProcessMatchAiService(
 
         var rows = new List<WorkingProcessRow>();
         var used = new HashSet<string>(StringComparer.Ordinal);
-        void Add(string process, double? stdTime, int? workers, List<string> ids, List<string> notes)
+        void Add(string process, List<string> ids, List<string> notes)
         {
             List<WorkingListItem> its = ids.Distinct().Select(id => byId[id]).ToList();
             used.UnionWith(its.Select(i => i.Id));
-            string Cell(string kind) => string.Join(", ", its.Where(i => i.Kind == kind).Select(i => i.Label).Distinct());
             string note = string.Join(" / ", its.Select(i => i.Note).Concat(notes).Where(n => n.Trim().Length > 0).Distinct());
-            rows.Add(new WorkingProcessRow("", (rows.Count + 1).ToString("00", CultureInfo.InvariantCulture), Limit(process, 200),
-                workers, stdTime, Limit(Cell(WorkingListItem.Machine), 1000), Limit(Cell(WorkingListItem.Jig), 1000),
-                Limit(Cell(WorkingListItem.Tester), 1000), "", Limit(note, 1000)));
+            rows.Add(WorkingProcessListService.Row("", (rows.Count + 1).ToString("00", CultureInfo.InvariantCulture), process.Trim(), its, note));
         }
         void AddAfter(int seq)
         {
             if (added.TryGetValue(seq, out var list))
-                foreach (var x in list) Add(x.Process, null, null, x.Items, x.Notes);
+                foreach (var x in list) Add(x.Process, x.Items, x.Notes);
         }
         AddAfter(0);
         foreach (MatchProcess p in processes.OrderBy(p => p.Seq))
         {
             if (main.TryGetValue(p.Seq, out var m))
-                Add(m.Process.Trim().Length > 0 ? m.Process : p.Name, p.StdTime, p.Workers, m.Items, m.Notes);
-            else Add(p.Name, p.StdTime, p.Workers, [], []);
+                Add(m.Process.Trim().Length > 0 ? m.Process : p.Name, m.Items, m.Notes);
+            else Add(p.Name, [], []);
             AddAfter(p.Seq);
         }
         if (rows.Count > WorkingProcessListService.MaxRows) rows = rows[..WorkingProcessListService.MaxRows];
 
         List<string> unmatched = items.Where(i => !used.Contains(i.Id)).Select(i =>
-            $"{(i.Kind == WorkingListItem.Jig ? "JIG" : i.Kind == WorkingListItem.Machine ? "Machine" : "Tester")}: {i.Label}"
+            $"{(i.Kind == WorkingListItem.Jig ? "JIG" : i.Kind == WorkingListItem.Machine ? "Machine" : "Tester")}: {i.Label}{(i.Ver.Length > 0 ? $" ({i.Ver})" : "")}"
             + (i.Process.Length > 0 ? $" — {i.Process}" : "")).ToList();
         return (rows, unmatched);
     }
