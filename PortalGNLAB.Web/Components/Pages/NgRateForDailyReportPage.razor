@@ -196,7 +196,10 @@
         <div class="card mt-3 ngrate-report-card">
             <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
                 <span>Worst @MaxWorstRows - Model x Process / NG Name (PPM)</span>
-                <span class="text-muted" style="font-size:11px;">Ranked by the latest date with NG per model</span>
+                @if (DailyWorstReferenceColumn is { } worstRef)
+                {
+                    <span class="text-muted" style="font-size:11px;">Ranked by @worstRef.Header PPM</span>
+                }
                 <button type="button"
                         class="btn btn-outline-secondary btn-sm ms-auto daily-copy-btn"
                         @onclick="() => CopyElementToClipboardAsync(DailyWorstCopyTargetId)"
@@ -242,8 +245,7 @@
                                     string groupName = model.GroupName;
                                     string material = model.Material;
                                     string groupDisplay = ReportGroupDisplayName(groupName);
-                                    var worstRef = DailyWorstReferenceDateColumn(model.Key);
-                                    var worstRows = GetModelWorstRows(model, worstRef?.Key);
+                                    var worstRows = GetModelWorstRows(model, DailyWorstReferenceColumn?.Key);
 
                                     <tr class="grp-total-row">
                                         <td class="label-td" colspan="2">
@@ -252,10 +254,6 @@
                                             @if (!string.Equals(groupDisplay, material, StringComparison.Ordinal))
                                             {
                                                 <span class="text-muted ms-1" style="font-size:10.5px;">@groupDisplay</span>
-                                            }
-                                            @if (worstRef is not null)
-                                            {
-                                                <span class="text-muted ms-1" style="font-size:10.5px;">(@worstRef.Header)</span>
                                             }
                                         </td>
                                         @foreach (var col in VisibleDateCols)
@@ -1715,18 +1713,21 @@
         return VisibleDateCols[0];
     }
 
-    /// <summary>The latest visible date on which the model has any NG; the Worst table ranks
-    /// a model's process / NG rows by that day. Null when no visible date has NG.</summary>
-    private NgRateReportService.PeriodColumn? DailyWorstReferenceDateColumn(string modelKey)
-        => VisibleDateCols.FirstOrDefault(col => ModelHasDailyReasonPpm(modelKey, col.Key, 0d));
+    /// <summary>
+    /// The period the Worst table ranks by: the latest week, the one still running (the other
+    /// tables rank by the week before it, <see cref="SortRefKey"/>). The latest date when
+    /// there is no week column.
+    /// </summary>
+    private NgRateReportService.PeriodColumn? DailyWorstReferenceColumn =>
+        VisibleWeekCols.FirstOrDefault() ?? VisibleDateCols.FirstOrDefault();
 
     /// <summary>
-    /// The model's worst process / NG rows: ranked by the reference date's PPM, then by the
-    /// sort reference period, so a model with fewer NG rows on that day is still filled from
-    /// the wider period. Each row carries every report period so the deltas can look back
-    /// past the visible columns.
+    /// The model's worst process / NG rows: ranked by the reference period's PPM, then by the
+    /// sort reference period, so a model with fewer NG rows in that period is still filled
+    /// from it. Each row carries every report period so the deltas can look back past the
+    /// visible columns.
     /// </summary>
-    private List<DailyWorstRow> GetModelWorstRows(DailyModelRef model, string? referenceDateKey)
+    private List<DailyWorstRow> GetModelWorstRows(DailyModelRef model, string? referenceKey)
     {
         if (_report is null) return new();
 
@@ -1737,7 +1738,7 @@
 
         return BuildChronicProcessCsvDetails(model, periodKeys)
             .Where(r => visibleKeys.Any(key => r.Ppm.GetValueOrDefault(key) > 0))
-            .OrderByDescending(r => string.IsNullOrEmpty(referenceDateKey) ? 0 : r.Ppm.GetValueOrDefault(referenceDateKey))
+            .OrderByDescending(r => string.IsNullOrEmpty(referenceKey) ? 0 : r.Ppm.GetValueOrDefault(referenceKey))
             .ThenByDescending(r => RefValue(r.Ppm))
             .ThenBy(r => r.ProcessName, StringComparer.Ordinal)
             .ThenBy(r => r.NgName, StringComparer.Ordinal)
