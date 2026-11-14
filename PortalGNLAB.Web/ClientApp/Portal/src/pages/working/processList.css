@@ -7,7 +7,7 @@
 table.wk-it.pl-t { font-size: 11px; }
 table.wk-it.pl-t th { padding: 4px 4px; }
 table.wk-it.pl-t td { padding: 2px 4px; line-height: 1.35; }
-table.wk-it.pl-t td.pl-cell { white-space: pre-line; max-width: 220px; }
+table.wk-it.pl-t td.pl-cell { white-space: pre-line; max-width: 220px; vertical-align: top; }
 table.wk-it.pl-t td.pl-cell.pl-narrow, table.wk-it.pl-t th.pl-narrow { min-width: 0; text-align: center; }
 table.wk-it.pl-t td.pl-no { font-variant-numeric: tabular-nums; font-weight: 700; }
 table.wk-it.pl-t td.pl-cell.pl-lines { white-space: pre; max-width: none; }
@@ -25,3 +25,14 @@ table.wk-it.pl-t .inp.sm { height: auto; padding: 1px 3px; border-radius: 3px; f
 .pl-ai-un { margin-top: 4px; }
 .pl-ai-un summary { cursor: pointer; }
 .pl-ai-un ul { margin: 4px 0 0; padding-left: 18px; }
+/* JIGs of a process are its sub-rows: indented, with a light divider; the process starts with a firmer line */
+table.wk-it.pl-t tr.pl-first > td { border-top: 1px solid var(--line, #d0d7de); }
+table.wk-it.pl-t tr.pl-sub > td { border-top: 1px dashed var(--line, rgba(127, 127, 127, .25)); }
+table.wk-it.pl-t tr.pl-sub > td.pl-jigcell:first-child { padding-left: 14px; }
+table.wk-it.pl-t td.pl-cell { vertical-align: top; }
+table.wk-it.pl-t td.pl-jigcell { white-space: nowrap; }
+.pl-jig { field-sizing: content; min-width: 60px; }
+.pl-jig.pl-narrow { min-width: 24px; text-align: center; }
+.pl-jigsum { margin: 0 0 8px; font-size: 12px; }
+.pl-jigsum summary { cursor: pointer; }
+.pl-jigsum table.pl-jigtot { margin-top: 4px; width: auto; }
