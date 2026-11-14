@@ -3,11 +3,13 @@ import { productionApi } from "../productionInput/api";
 import { workingApi } from "./api";
 import { bmesApi } from "./bmes";
 import {
-  MANUAL_TYPES, addMaterial, addMaterials, aiAnswer, bomMaterials, blankProcess, deleteMaterial, deleteProcess, editProcess, fromProductionInput, moveProcess, ngFromText, putMaterial, saveProcess, usage,
+  MANUAL_TYPES, addMaterial, addMaterials, aiAnswer, bomGlue, bomMaterials, blankProcess, deleteMaterial, deleteMaterials, deleteProcess, editProcess,
+  fromProductionInput, glueOf, isBond, moveProcess, ngFromText, putMaterial, saveProcess, usage,
 } from "./manual";
 import type { ManualGroup as Group, ManualProcess, ManualType, ManualUse } from "./manual";
 import { useTr } from "./i18n";
 import { mergeSheet, parseNgHeader } from "./ngSheet";
+import { loadInstructions } from "./workInstruction";
 
 /** The header rows of a Daily NG Rate sheet pasted here: the processes and NG items read from them, put into the table. */
 function SheetPaste(props: { value: Group; onApply: (g: Group) => void; onClose: () => void }) {
@@ -136,7 +138,7 @@ function BomImport(props: { modelName: string; value: Group; onApply: (g: Group)
   const [product, setProduct] = useState(props.modelName);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [found, setFound] = useState<{ names: string[]; level1: number; from: string } | null>(null);
+  const [found, setFound] = useState<{ names: string[]; glue: string[]; level1: number; from: string } | null>(null);
   const [off, setOff] = useState<string[]>([]);
   const load = async (fromBmes: boolean) => {
     const name = product.trim();
@@ -146,11 +148,15 @@ function BomImport(props: { modelName: string; value: Group; onApply: (g: Group)
       let bom = fromBmes ? null : await bmesApi.bom(name);
       if (!bom?.rows.length) bom = await bmesApi.fetchBom(name);
       if (!bom.rows.length) { setError(bom.error || `No BOM found for ${name}.`); return; }
+      const names = bomMaterials(props.value, bom.rows);
+      const glue = bomGlue(bom.rows);
       setFound({
-        names: bomMaterials(props.value, bom.rows),
+        names, glue,
         level1: bom.rows.filter((r) => r.level === 1).length,
         from: bom.source === "server" ? "BMES" : "the local BOM cache",
       });
+      // a bond (counted in G / ML) is not a material of the process table: left out unless ticked
+      setOff(names.filter((n) => glue.includes(n)));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally { setBusy(false); }
@@ -176,6 +182,7 @@ function BomImport(props: { modelName: string; value: Group; onApply: (g: Group)
             <label key={n} className="wk-man-bomi small">
               <input type="checkbox" checked={!off.includes(n)}
                 onChange={(e) => setOff(e.target.checked ? off.filter((x) => x !== n) : [...off, n])} /> {n}
+              {found.glue.includes(n) && <span className="wk-man-bondtag">{tr("Bond")}</span>}
             </label>
           ))}
           <div className="wk-man-paste-b">
@@ -206,6 +213,8 @@ function QtyCell(props: { value: number; onChange: (n: number) => void }) {
  */
 function ProcessRow(props: {
   no: number; count: number; value: ManualProcess; materials: string[]; focus: boolean; over: boolean;
+  /** Whether a material is a bond (marked so it is told from the parts). */
+  bond: (material: string) => boolean;
   onChange: (p: ManualProcess) => void; onMove: (by: -1 | 1) => void; onDelete: () => void;
   onDragOver: (e: DragEvent) => void; onDragLeave: (e: DragEvent) => void; onDrop: () => void;
 }) {
@@ -248,7 +257,7 @@ function ProcessRow(props: {
       </td>
       <td className="l">
         {p.materials.map((u, i) => (
-          <div className="wk-man-use" key={u.material + i}>
+          <div className={"wk-man-use" + (props.bond(u.material) ? " wk-man-bond" : "")} key={u.material + i}>
             <select className="wk-man-in wk-man-umat" value={u.material} aria-label="Material" onChange={(e) => setUse(i, { material: e.target.value })}>
               {[u.material, ...unused].filter(Boolean).map((m) => <option key={m}>{m}</option>)}
             </select>
@@ -280,6 +289,8 @@ export default function ManualGroup(props: {
   /** Product the BOM is read from first (the sub-group's name for a sub-group's table); the model name when unset. */
   product?: string;
   value: Group; onChange: (g: Group) => void; onError: (e: unknown) => void;
+  /** Material keys of the glue the model's Work Instructions name; read from them when unset. */
+  glue?: Set<string>;
 }) {
   const tr = useTr();
   const g = props.value;
@@ -292,6 +303,16 @@ export default function ManualGroup(props: {
   const [picked, setPicked] = useState<string[]>([]);
   const [drag, setDrag] = useState<string[] | null>(null);
   const [over, setOver] = useState<string | null>(null);
+  const [readGlue, setReadGlue] = useState<Set<string>>(() => new Set());
+  const glue = props.glue ?? readGlue;
+
+  // the bonds the Work Instructions name (Keo · SL233LF), told from the parts in the lists
+  useEffect(() => {
+    if (props.glue) return;
+    let live = true;
+    loadInstructions(props.modelName).then((doc) => { if (live) setReadGlue(glueOf(doc)); }).catch(() => {});
+    return () => { live = false; };
+  }, [props.modelName, props.glue]);
 
   // a Production Input model with the same name can be copied in
   useEffect(() => {
@@ -316,6 +337,12 @@ export default function ManualGroup(props: {
     if (n && !window.confirm(`${m} is used in ${n} process${n > 1 ? "es" : ""}. Remove it from them too?`)) return;
     props.onChange(deleteMaterial(g, m));
   };
+  const bond = (m: string) => isBond(m, glue);
+  const bonds = g.materials.filter(bond);
+  const removeBonds = () => {
+    if (window.confirm(`Remove the ${bonds.length} bond${bonds.length > 1 ? "s" : ""} (${bonds.join(", ")}) from the material list and from every process?`))
+      props.onChange(deleteMaterials(g, bonds));
+  };
   const removeProc = (p: ManualProcess) => {
     if (window.confirm(`Delete process ${p.name}?`)) props.onChange(deleteProcess(g, p.id));
   };
@@ -330,6 +357,20 @@ export default function ManualGroup(props: {
     setPicked(more ? (sel.includes(m) ? sel.filter((x) => x !== m) : [...sel, m]) : (sel.length === 1 && sel[0] === m ? [] : [m]));
   const takes = (p: ManualProcess) => !!drag?.some((m) => !p.materials.some((u) => u.material.toLowerCase() === m.toLowerCase()));
   const drop = (p: ManualProcess) => { if (drag) props.onChange(putMaterial(g, p.id, drag)); setDrag(null); setOver(null); };
+
+  const matRow = (m: string) => (
+    <tr key={m} className={"wk-man-drag" + (sel.includes(m) ? " wk-man-picked" : "") + (bond(m) ? " wk-man-bond" : "")} draggable
+      title={tr("Drag onto a process to add it; Ctrl+click to pick several")} onClick={(e) => pick(m, e.ctrlKey || e.metaKey)}
+      onDragStart={(e) => {
+        const list = sel.includes(m) ? sel : [m];
+        e.dataTransfer.setData("text/plain", list.join("\n")); e.dataTransfer.effectAllowed = "copy"; setDrag(list);
+      }}
+      onDragEnd={() => { setDrag(null); setOver(null); }}>
+      <td className="l wk-man-mat"><b>{m}</b>{bond(m) && <span className="wk-man-bondtag">{tr("Bond")}</span>}</td>
+      <td className="muted">{usage(g, m)} {tr("proc")}</td>
+      <td className="act"><button className="wk-link bad" onClick={(e) => { e.stopPropagation(); removeMat(m); }} aria-label={`Remove ${m}`}>✕</button></td>
+    </tr>
+  );
 
   return (
     <div className="wk-man">
@@ -352,7 +393,7 @@ export default function ManualGroup(props: {
             </thead>
             <tbody>
               {g.processes.map((p, i) => (
-                <ProcessRow key={p.id} no={i + 1} count={g.processes.length} value={p} materials={g.materials}
+                <ProcessRow key={p.id} no={i + 1} count={g.processes.length} value={p} materials={g.materials} bond={bond}
                   focus={added === p.id} over={over === p.id}
                   onChange={change} onMove={(by) => props.onChange(moveProcess(g, p.id, by))} onDelete={() => removeProc(p)}
                   onDragOver={(e) => { if (!takes(p)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; setOver(p.id); }}
@@ -368,19 +409,16 @@ export default function ManualGroup(props: {
           <table className="wk-it">
             <thead><tr><th className="l">{tr("Material")}</th><th className="fit">{tr("Used in")}</th><th className="fit"></th></tr></thead>
             <tbody>
-              {g.materials.map((m) => (
-                <tr key={m} className={"wk-man-drag" + (sel.includes(m) ? " wk-man-picked" : "")} draggable
-                  title={tr("Drag onto a process to add it; Ctrl+click to pick several")} onClick={(e) => pick(m, e.ctrlKey || e.metaKey)}
-                  onDragStart={(e) => {
-                    const list = sel.includes(m) ? sel : [m];
-                    e.dataTransfer.setData("text/plain", list.join("\n")); e.dataTransfer.effectAllowed = "copy"; setDrag(list);
-                  }}
-                  onDragEnd={() => { setDrag(null); setOver(null); }}>
-                  <td className="l wk-man-mat"><b>{m}</b></td>
-                  <td className="muted">{usage(g, m)} {tr("proc")}</td>
-                  <td className="act"><button className="wk-link bad" onClick={(e) => { e.stopPropagation(); removeMat(m); }} aria-label={`Remove ${m}`}>✕</button></td>
+              {g.materials.filter((m) => !bond(m)).map(matRow)}
+              {bonds.length > 0 && (
+                <tr className="wk-man-bondh">
+                  <td colSpan={3} className="l">
+                    <b>{tr("Bond")}</b> <span className="muted">· {bonds.length} · {tr("glue, not a part")}</span>
+                    <button className="wk-link bad wk-man-bondx" onClick={removeBonds}>{tr("Remove bonds")}</button>
+                  </td>
                 </tr>
-              ))}
+              )}
+              {bonds.map(matRow)}
               {!g.materials.length && <tr><td colSpan={3} className="wk-it-empty">{tr("No material yet.")}</td></tr>}
             </tbody>
           </table>

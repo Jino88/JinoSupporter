@@ -1,6 +1,7 @@
 // Model group entered by hand in Model Info for a model that BMES > Make Model Group does not have: its processes,
 // the NG items of each, the materials each uses per unit and the material names. Kept in the model information JSON.
 import type { ModelSetup } from "../productionInput/types";
+import type { InstructionDoc } from "./workInstruction";
 
 export const MANUAL = "__manual";
 export const MANUAL_TYPES = ["SUB", "MAIN", "FUNCTION", "VISUAL"] as const;
@@ -91,6 +92,45 @@ export const deleteMaterial = (g: ManualGroup, name: string): ManualGroup => ({
   materials: g.materials.filter((m) => key(m) !== key(name)),
   processes: g.processes.map((p) => ({ ...p, materials: p.materials.filter((u) => key(u.material) !== key(name)) })),
 });
+
+/** The names a work instruction gives the glue (bond) of a process in its tools or parts (Keo · SL233LF), as the server does. */
+const GLUE_NAMES = ["keo", "keo dán", "bond", "glue", "adhesive", "epoxy", "본드", "접착제"];
+/** A material named as glue by itself (Glue 233, Epoxy A). */
+const GLUE_WORD = /\b(?:glue|bond|keo|adhesive|epoxy)\b|본드|접착제/i;
+/** A BOM unit a glue is counted in (weight or volume), where a part is counted in pieces (PC). */
+const GLUE_UNITS = ["G", "KG", "MG", "ML", "L"];
+
+/** One material written another way (case, spaces, hyphens) is the same: SL-233LF is SL233LF. */
+export const materialKey = (s: string) => s.replace(/[\s-]/g, "").toUpperCase();
+
+/** The glue of the Work Instructions (material keys): the product in the note of a tool or part named as glue. */
+export function glueOf(doc: Pick<InstructionDoc, "processes"> | null): Set<string> {
+  const glue = new Set<string>();
+  const add = (name: string, product: string) => {
+    if (!GLUE_NAMES.includes(name.trim().toLowerCase())) return;
+    const code = product.split("(")[0].trim(); // "SL233LF ( Sử dụng trong vòng 24 giờ)" → SL233LF
+    if (code) glue.add(materialKey(code));
+  };
+  for (const p of doc?.processes ?? []) {
+    p.tools.forEach((t) => add(t.name, t.note));
+    p.parts.forEach((x) => add(x.name, x.spec));
+  }
+  return glue;
+}
+
+/** A bond: glue the Work Instructions name ("3777 (PUR)" goes with 3777), or named as glue by itself. */
+export function isBond(name: string, glue: Set<string>): boolean {
+  const k = materialKey(name);
+  return glue.has(k) || [...glue].some((g) => k.startsWith(g + "(")) || GLUE_WORD.test(name);
+}
+
+/** The direct BOM materials counted by weight or volume (SL233LF in G): glue, not parts. */
+export const bomGlue = (rows: { level: number; materialName: string; materialCode: string; usageUnit: string }[]): string[] =>
+  rows.filter((r) => r.level === 1 && GLUE_UNITS.includes(r.usageUnit.trim().toUpperCase()))
+    .map((r) => (r.materialName || r.materialCode).trim()).filter(Boolean);
+
+/** Removes these materials from the list and from every process that used them. */
+export const deleteMaterials = (g: ManualGroup, names: string[]): ManualGroup => names.reduce(deleteMaterial, g);
 
 /** How many processes use each material. */
 export const usage = (g: ManualGroup, name: string) => g.processes.filter((p) => p.materials.some((u) => key(u.material) === key(name))).length;

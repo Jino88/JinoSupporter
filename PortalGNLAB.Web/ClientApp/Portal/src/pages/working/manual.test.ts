@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   addMaterial, addMaterials, aiAnswer, blankProcess, bomMaterials, deleteMaterial, emptyManual, fromProductionInput, moveProcess, ngFromText, processProblem, putMaterial, readManual,
-  editProcess, keepSubTables, readSubManual, saveProcess, shownTable, usage,
+  editProcess, keepSubTables, readSubManual, saveProcess, shownTable, usage, bomGlue, deleteMaterials, glueOf, isBond,
 } from "./manual";
 import type { ManualProcess } from "./manual";
 
@@ -138,5 +138,29 @@ describe("model group entered by hand", () => {
     expect(readManual(undefined)).toEqual(emptyManual());
     const g = readManual({ materials: ["A", 3], processes: [{ id: "x", type: "ODD", name: "P", ngItems: ["N", 1], materials: [{ material: "A", qtyPerUnit: "2" }] }] });
     expect(g).toEqual({ materials: ["A"], processes: [{ id: "x", type: "SUB", name: "P", localName: "", ngItems: ["N"], materials: [{ material: "A", qtyPerUnit: 2 }] }] });
+  });
+
+  it("tells a bond from a part: the glue the Work Instructions name, a glue name, or a BOM material counted by weight", () => {
+    const tool = (name: string, note: string) => ({ no: "", name, note });
+    const doc = { processes: [
+      { tools: [tool("Thiết bị", "NON CONTACT DISPENSOR DT"), tool("Keo", "SL233LF ( Sử dụng trong vòng 24 giờ)"), tool("Kim", "25G - 6.34mm")],
+        parts: [{ no: "1", name: "ENCLOSURE", spec: "ENCLOSURE-X316B-UPPER", qty: "1" }] },
+      { tools: [tool("Keo", "G05-0001 ( Sử dụng trong vòng 24 giờ)")], parts: [{ no: "2", name: "Bond", spec: "3777 (PUR)", qty: "" }] },
+    ] } as unknown as Parameters<typeof glueOf>[0];
+    const glue = glueOf(doc);
+    expect([...glue].sort()).toEqual(["3777", "G050001", "SL233LF"]);
+    // written another way, or with what it is after it, it is still the bond
+    expect(["SL-233LF", "G05-0001", "3777 (PUR)", "Glue 233", "본드 A"].filter((m) => isBond(m, glue))).toHaveLength(5);
+    expect(["ENCLOSURE-X316B-UPPER", "SR4060", "MSM-X316B CUSHION-SPL VS", "Bonding tape"].filter((m) => isBond(m, glue))).toEqual([]);
+    expect(glueOf(null).size).toBe(0);
+    const row = (materialName: string, usageUnit: string, level = 1) => ({ level, materialName, materialCode: "", usageUnit });
+    expect(bomGlue([row("PLATE-X316B", "PC"), row("SL233LF", "G"), row("SR4060", " ml "), row("Deep glue", "G", 2)])).toEqual(["SL233LF", "SR4060"]);
+  });
+
+  it("takes several materials out of the list and of every process", () => {
+    const g = { materials: ["UPPER", "SL233LF", "SR4060"], processes: [proc("Bonding", { materials: [{ material: "UPPER", qtyPerUnit: 1 }, { material: "sl233lf", qtyPerUnit: 1 }] })] };
+    const out = deleteMaterials(g, ["SL233LF", "SR4060"]);
+    expect(out.materials).toEqual(["UPPER"]);
+    expect(out.processes[0].materials).toEqual([{ material: "UPPER", qtyPerUnit: 1 }]);
   });
 });
