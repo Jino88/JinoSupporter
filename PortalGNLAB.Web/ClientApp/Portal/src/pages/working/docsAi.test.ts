@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ManualGroup } from "./manual";
 import type { ProcessRow } from "./processList";
-import { isWorkbook, jigSummary, needsReplaceConfirm, processSummary, readProcessAnswer, runJig, runProcess } from "./docsAi";
+import { docLinks, isWorkbook, jigSummary, needsReplaceConfirm, processSummary, readProcessAnswer, runJig, runProcess, sortDocs } from "./docsAi";
 
 const proc = (id: string) => ({ id, type: "SUB", name: id, localName: "", ngItems: [], materials: [{ material: "M1", qtyPerUnit: 1 }] });
 const group = (n: number): ManualGroup => ({ materials: [], processes: Array.from({ length: n }, (_, i) => proc(`p${i}`)) }) as unknown as ManualGroup;
@@ -81,5 +81,31 @@ describe("runJig", () => {
     const b: string[] = [];
     await runJig(mk([], true, b, []));
     expect(b).toEqual(["match"]);
+  });
+});
+
+describe("several documents at once", () => {
+  const f = (name: string) => ({ name });
+  it("uses the first Work Instructions and the first JIG list and says why the others are not used", () => {
+    const d = sortDocs([
+      { file: f("jig.xlsx"), kind: "jig-list" }, { file: f("pvr.xlsx"), kind: "instructions" },
+      { file: f("old pvr.xlsx"), kind: "instructions" }, { file: f("note.xlsx"), kind: "unknown" },
+    ]);
+    expect([d.instructions?.name, d.jig?.name]).toEqual(["pvr.xlsx", "jig.xlsx"]);
+    expect(d.skipped).toEqual(["old pvr.xlsx (another Work Instructions)", "note.xlsx (not recognized)"]);
+    expect(sortDocs([])).toEqual({ skipped: [] });
+  });
+
+  it("ties a JIG/MC row to the Process of the same name (any case and spacing) and keeps the ones in one only", () => {
+    const g = { materials: [], processes: [
+      { ...proc("a"), name: "Xếp  upper" }, { ...proc("b"), name: "Kiểm tra" },
+    ] } as unknown as ManualGroup;
+    const links = docLinks(g, [{ ...row("01", ["CAP"]), process: "Xếp UPPER" }, { ...row("02", []), process: "DRY" }]);
+    expect(links.map((l) => [l.no, l.process, l.materials, l.jigs, l.inProcess, l.inJig])).toEqual([
+      ["01", "Xếp UPPER", ["M1"], ["CAP"], true, true],
+      ["02", "DRY", [], [], false, true],
+      ["", "Kiểm tra", ["M1"], [], true, false],
+    ]);
+    expect(docLinks(undefined, undefined)).toEqual([]);
   });
 });
