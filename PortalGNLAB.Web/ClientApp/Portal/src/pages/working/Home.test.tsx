@@ -94,7 +94,7 @@ describe("Working Home", () => {
     expect(html).toContain(">MP Issues<");
     expect(html).not.toContain("Development plans");
     expect(html).toContain("<b>AOI false call</b>");
-    expect(html).toMatch(/class="late">2026\/11\/05<span class="wk-late">Late<\/span>/);
+    expect(html).toMatch(/class="late">26\/11\/05<span class="wk-late">Late<\/span>/);
     expect(html).not.toContain("Closed one");
     expect(html).not.toContain("Dev one");
     expect(html).toContain(">Open 1</button><button class=\"wk-chip\">All 2</button>");
@@ -114,7 +114,7 @@ describe("Working Home", () => {
     expect(html).toContain("↳ Check the jig");
     expect(html).not.toContain("Old step");
     expect(html).toContain("↳ <b>RA2 ISSUE</b>");
-    expect(html).toMatch(/1\.1-1<\/td>.*↳ Wait for parts.*class="late">2026\/11\/05<span class="wk-late">Late/);
+    expect(html).toMatch(/1\.1-1<\/td>.*↳ Wait for parts.*class="late">26\/11\/05<span class="wk-late">Late/);
     expect(html).not.toContain("RM ISSUE");
     expect(html).toContain(">Open 2</button><button class=\"wk-chip\">All 3</button>");
   });

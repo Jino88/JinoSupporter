@@ -3,7 +3,7 @@ import { workingApi } from "./api";
 import { useTr } from "./i18n";
 import { setupApi } from "./setup";
 import {
-  barAt, devPlans, hasOpen, labelSide, modelRow, mpIssueRows, mpPlans, slashDate, timelineMonths, timelineRange,
+  barAt, devPlans, hasOpen, labelSide, modelRow, mpIssueRows, mpPlans, shortDate, slashDate, timelineMonths, timelineRange,
   type EventBrief, type ModelLoad, type MpIssueRow, type PlanBrief, type TaskBrief,
 } from "./homeSummary";
 import { noteParts } from "./logic";
@@ -165,8 +165,8 @@ function MpIssues(props: { loads: ModelLoad[]; today: string; onOpen: (model: st
       <td className="l"><span className="wk-hm-sub">↳ {tr(noteParts(log).line)}</span></td>
       <td className="l detail">{tr(noteParts(log).detail)}</td>
       <td>{log.owner || <span className="muted" title="Written by">{log.createdBy}</span>}</td>
-      <td>{slashDate(log.date)}</td>
-      <td className={isLateNow ? "late" : ""}>{log.due && slashDate(log.due)}{isLateNow && <span className="wk-late">{tr("Late")}</span>}</td>
+      <td>{shortDate(log.date)}</td>
+      <td className={isLateNow ? "late" : ""}>{log.due && shortDate(log.due)}{isLateNow && <span className="wk-late">{tr("Late")}</span>}</td>
       <td><span className="wk-st open">{tr("Open")}</span></td>
       <td colSpan={2}></td>
     </tr>
@@ -185,9 +185,9 @@ function MpIssues(props: { loads: ModelLoad[]; today: string; onOpen: (model: st
           </td>
           <td className="l detail">{tr(e.body)}</td>
           <td>{e.owner}</td>
-          <td>{slashDate(e.date)}</td>
-          <td className={isLateNow ? "late" : ""}>{e.due && slashDate(e.due)}{isLateNow && <span className="wk-late">{tr("Late")}</span>}</td>
-          <td>{e.doneDate ? slashDate(e.doneDate) : ""}</td>
+          <td>{shortDate(e.date)}</td>
+          <td className={isLateNow ? "late" : ""}>{e.due && shortDate(e.due)}{isLateNow && <span className="wk-late">{tr("Late")}</span>}</td>
+          <td>{e.doneDate ? shortDate(e.doneDate) : ""}</td>
           <td className="l">{tr(e.finalResult)}</td>
           <td className="num">{e.logs?.length || ""}</td>
         </tr>
