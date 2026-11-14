@@ -5,12 +5,16 @@ import type { Jig, ProcessList, ProcessMatch, ProcessRow } from "./processList";
 import "./processList.css";
 
 const stamp = (iso: string | null) => (iso ? iso.slice(0, 16).replace("T", " ") : "");
-// Machine and Tester hold one item per line; every JIG is a sub-row of its process with its own Drawing No., Ver. and Qty.
+// Machine holds one item per line (a Tester name is long, so it wraps); every JIG is a sub-row of its process with its own Drawing No., Ver. and Qty.
 type TextKey = "machine" | "tester" | "material" | "note";
 const HEAD_COLS = [["machine", "Machine"]] as const;
 const TAIL_COLS = [["tester", "Tester"], ["material", "Material"], ["note", "Note"]] as const;
+type TailCol = (typeof TAIL_COLS)[number];
+/** The Tester / Material / Note columns to show: all while editing, else only the ones some process fills in. */
+export const tailCols = (rows: ProcessRow[], edit: boolean): TailCol[] =>
+  TAIL_COLS.filter(([k]) => edit || rows.some((r) => r[k].trim()));
 /** Cells of one item per line: a line is never wrapped. */
-const LINES = new Set<string>(["machine", "tester"]);
+const LINES = new Set<string>(["machine"]);
 
 /** The translation of a text when it differs from the text as written (else nothing to show under it). */
 const trLine = (tr: (t: string) => string, text: string) => {
@@ -25,7 +29,7 @@ function TextCell(props: { k: TextKey; label: string; row: ProcessRow; span: num
   const lines = LINES.has(k);
   const shown = !props.edit && k === "note" ? trLine(tr, r[k]) : "";
   return (
-    <td rowSpan={props.span} className={`l pl-cell${lines ? " pl-lines" : ""}`}>
+    <td rowSpan={props.span} className={`l pl-cell pl-c-${k}${lines ? " pl-lines" : ""}`}>
       {props.edit
         ? <textarea className="inp sm pl-text" wrap={lines ? "off" : undefined} rows={lineCount(r[k])} aria-label={props.label}
           value={r[k]} onChange={(e) => props.onChange({ ...r, [k]: e.target.value })} />
@@ -36,7 +40,7 @@ function TextCell(props: { k: TextKey; label: string; row: ProcessRow; span: num
 }
 
 /** One process: a row per JIG (one row when it has none); the cells of the process span them all. */
-function ProcessRows(props: { row: ProcessRow; zebra: number; edit: boolean; onChange: (r: ProcessRow) => void; onRemove: () => void }) {
+function ProcessRows(props: { row: ProcessRow; zebra: number; edit: boolean; tail: TailCol[]; onChange: (r: ProcessRow) => void; onRemove: () => void }) {
   const { row: r, edit } = props;
   const tr = useTr();
   const span = Math.max(1, r.jigs.length);
@@ -67,7 +71,7 @@ function ProcessRows(props: { row: ProcessRow; zebra: number; edit: boolean; onC
             )}
             {i === 0 && (
               <>
-                {TAIL_COLS.map(([k, label]) => <TextCell key={k} k={k} label={label} row={r} span={span} edit={edit} onChange={props.onChange} />)}
+                {props.tail.map(([k, label]) => <TextCell key={k} k={k} label={label} row={r} span={span} edit={edit} onChange={props.onChange} />)}
                 {edit && (
                   <td rowSpan={span} className="act">
                     <button className="btn sm" onClick={() => props.onChange(addJig(r))}>{tr("+ JIG")}</button>{" "}
@@ -203,6 +207,7 @@ export default function ProcessListTab(props: {
   };
 
   const rows = draft ?? list.rows;
+  const tail = tailCols(rows, editMode);
   return (
     <section className="card pi-sec">
       <div className="pi-sec-h">
@@ -251,13 +256,13 @@ export default function ProcessListTab(props: {
                   <th>No.</th><th className="l">{tr("Process")}</th><th className="l">{tr("Machine")}</th>
                   <th className="l pl-jh pl-jh-first">JIG</th><th className="l pl-jh">{tr("Drawing No")}</th><th className="pl-narrow pl-jh">{tr("Ver.")}</th><th className="pl-narrow pl-jh pl-qty">{tr("Qty")}</th>
                   {editMode && <th></th>}
-                  <th className="l">{tr("Tester")}</th><th className="l">{tr("Material")}</th><th className="l">{tr("Note")}</th>
+                  {tail.map(([k, label]) => <th key={k} className="l">{tr(label)}</th>)}
                   {editMode && <th></th>}
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r, i) => (
-                  <ProcessRows key={draft ? i : r.id || i} row={r} zebra={i % 2} edit={editMode}
+                  <ProcessRows key={draft ? i : r.id || i} row={r} zebra={i % 2} edit={editMode} tail={tail}
                     onChange={(n) => draft && setDraft(draft.map((x, j) => (j === i ? n : x)))}
                     onRemove={() => draft && setDraft(draft.filter((_, j) => j !== i))} />
                 ))}

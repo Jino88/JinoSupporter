@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import ProcessListTab from "./ProcessListTab";
+import ProcessListTab, { tailCols } from "./ProcessListTab";
 import { TrContext } from "./i18n";
 import { addJig, blankRow, removeJig } from "./processList";
 import type { ProcessList, ProcessMatch } from "./processList";
@@ -46,9 +46,18 @@ describe("process list tab", () => {
       expect(html).not.toMatch(/Workers|Slowest|Std\. time|Standard time/);
       expect(html).not.toContain('type="number"');
     }
-    const head = render(list).match(/<table class="wk-it pl-t"><thead>[^]*?<[/]thead>/)![0];
-    const labels = [...head.matchAll(/<th[^>]*>([^<]*)<\/th>/g)].map((m) => m[1]);
-    expect(labels).toEqual(["No.", "Process", "Machine", "JIG", "Drawing No", "Ver.", "Qty", "Tester", "Material", "Note"]);
+    const labels = (html: string) => [...html.match(/<table class="wk-it pl-t"><thead>[^]*?<[/]thead>/)![0].matchAll(/<th[^>]*>([^<]*)<\/th>/g)].map((m) => m[1]).filter(Boolean);
+    // to read, Tester and Note are left out while no process has one; to edit, every column is there
+    expect(labels(render(list))).toEqual(["No.", "Process", "Machine", "JIG", "Drawing No", "Ver.", "Qty", "Material"]);
+    expect(labels(render(list, true))).toEqual(["No.", "Process", "Machine", "JIG", "Drawing No", "Ver.", "Qty", "Tester", "Material", "Note"]);
+  });
+
+  it("shows only the Tester / Material / Note columns some process fills in, all of them to edit", () => {
+    const keys = (rows: typeof list.rows, edit = false) => tailCols(rows, edit).map(([k]) => k);
+    expect(keys(list.rows)).toEqual(["material"]);
+    expect(keys([{ ...list.rows[2], tester: "AOI", note: " x " }])).toEqual(["tester", "note"]);
+    expect(keys([{ ...list.rows[2], note: "  " }])).toEqual([]);
+    expect(keys(list.rows, true)).toEqual(["tester", "material", "note"]);
   });
 
   it("puts every JIG on a sub-row of its process, with the cells of the process spanning them", () => {
@@ -58,10 +67,10 @@ describe("process list tab", () => {
     expect(count(body, /<tr class="pl-(first|sub) pl-g[01]">/g)).toBe(4);
     expect(count(body, /<tr class="pl-first pl-g[01]">/g)).toBe(3);
     expect(count(body, /<tr class="pl-sub pl-g[01]">/g)).toBe(1);
-    // No., Process, Machine, Tester, Material, Note of the first process span its 2 JIG rows
+    // No., Process, Machine and Material of the first process span its 2 JIG rows
     expect(body).toContain('<td rowSpan="2" class="pl-no"><span class="pl-badge">01</span></td>');
     expect(body).toContain('<td rowSpan="2" class="l"><b>UPPER ARRAY</b></td>');
-    expect(count(body, /rowSpan="2"/g)).toBe(6);
+    expect(count(body, /rowSpan="2"/g)).toBe(4);
     // a process without JIG is one row, its JIG cells empty
     expect(body).toContain('<td rowSpan="1" class="pl-no"><span class="pl-badge">03</span></td>');
     // the JIG name, drawing no., version and quantity are cells of their own
