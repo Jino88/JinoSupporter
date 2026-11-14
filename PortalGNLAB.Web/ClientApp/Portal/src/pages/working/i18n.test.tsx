@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { Gantt } from "./DevPlan";
 import Home from "./Home";
-import { TrContext, lookUp } from "./i18n";
+import { TrContext, lookUp, writtenIn } from "./i18n";
 import IssueTable from "./IssueTable";
 import type { Entry } from "./types";
 
@@ -15,6 +15,14 @@ const tr = (t: string) => lookUp(ko, t);
 const inKorean = (node: ReactNode) => renderToStaticMarkup(<TrContext.Provider value={tr}>{node}</TrContext.Provider>);
 
 describe("Working shown in another language", () => {
+  it("shows a Korean text as written in Korean, not through a translation that can reword it", () => {
+    expect(writtenIn("ko", "REAR AP THF 본드로 인한 변형")).toBe(true);
+    expect(writtenIn("ko", "ㅇㅋ")).toBe(true);
+    expect(writtenIn("ko", "Jig ready")).toBe(false);
+    expect(writtenIn("en", "본드로 인한 변형")).toBe(false);
+    expect(writtenIn("", "본드")).toBe(false);
+  });
+
   it("looks a text up by its trimmed text and keeps it as written without a translation", () => {
     expect(lookUp(ko, " Jig ready ")).toBe("지그 준비");
     expect(lookUp(ko, "MSM-G778B")).toBe("MSM-G778B");
