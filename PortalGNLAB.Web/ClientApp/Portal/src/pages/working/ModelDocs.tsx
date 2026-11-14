@@ -57,10 +57,7 @@ export default function ModelDocs(props: {
 
   return (
     <div className="wk-docs">
-      <section className="card pi-sec">
-        <div className="pi-sec-h"><h3>Work Instructions</h3></div>
-        <div className="pi-sec-b"><WorkInstructionTab modelName={model.name} onError={props.onError} /></div>
-      </section>
+      {/* the AI step first: it uses the Work Instructions below and the JIG / Machine / Tester workbook picked here */}
       <section className="card pi-sec">
         <div className="pi-sec-h"><h3>JIG / Machine / Tester list</h3></div>
         <div className="pi-sec-b">
@@ -68,9 +65,7 @@ export default function ModelDocs(props: {
             onChange={(e) => { const f = e.target.files?.[0]; setFile(isWorkbook(f) ? f! : null); if (f && !isWorkbook(f)) setStatus("Choose an .xlsx or .xlsm file."); }} />
           <button type="button" className="btn sm" disabled={busy} onClick={() => pick.current?.click()}>Choose workbook</button>
           <span className="small muted wk-docs-file">{file ? file.name : "No file chosen"}</span>
-        </div>
-      </section>
-      <button type="button" className="btn primary wk-docs-ai" disabled={busy} onClick={() => void run()}>✦ AI: make Process and JIG/MC List</button>
+          <button type="button" className="btn primary wk-docs-ai" disabled={busy} onClick={() => void run()}>✦ AI: make Process and JIG/MC List</button>
       {status && <div className="small wk-docs-status" role="status">{status}</div>}
       {result && (
         <div className="small wk-docs-result">
@@ -93,6 +88,10 @@ export default function ModelDocs(props: {
           {result.jigError && <div className="pi-dirty">JIG/MC List: {result.jigError}</div>}
         </div>
       )}
+        </div>
+      </section>
+      {/* its own card: upload and the sheets */}
+      <WorkInstructionTab modelName={model.name} onError={props.onError} />
     </div>
   );
 }
