@@ -27,6 +27,9 @@ public sealed class ManualAiGroup
 
 public sealed record ManualAiRequest(string? Request, ManualAiGroup? Group);
 
+/// <summary>The current process table, to be remade from the Work Instructions.</summary>
+public sealed record ManualFromInstructions(ManualAiGroup? Group);
+
 public sealed record ManualAiResult(ManualAiGroup Group, string Note, string Model);
 
 /// <summary>
@@ -69,6 +72,51 @@ public sealed class WorkingManualAiService(CodexApiService codex)
 
         (ManualAiGroup group, string note) = ParseAnswer(result.Text);
         return new ManualAiResult(group, note, $"{model} · {Effort}");
+    }
+
+    /// <summary>
+    /// The process table made from the Work Instructions of the model (Model Info › Documents): a process per instruction
+    /// sheet in line order with its parts as materials, existing processes of the same name kept with their NG items.
+    /// </summary>
+    public Task<ManualAiResult> FromInstructionsAsync(string modelName, ManualAiGroup? group, InstructionDoc? doc, CancellationToken ct = default)
+    {
+        if (doc is not { Processes.Count: > 0 })
+            throw new ArgumentException("Upload the Work Instructions of the model first (Model Info › Documents).");
+        return EditAsync(modelName, new ManualAiRequest(InstructionsRequest(doc), group), ct);
+    }
+
+    /// <summary>The request that has AI make the table from the instruction sheets (given as JSON).</summary>
+    public static string InstructionsRequest(InstructionDoc doc)
+    {
+        var sheets = doc.Processes.Select((p, i) => new
+        {
+            order = i + 1,
+            code = p.Code,
+            name = p.Name.Length > 0 ? p.Name : p.Sheet.Trim(),
+            ctq = p.Ctq,
+            parts = p.Parts.Where(x => x.Name.Trim().Length > 0).Select(x => new { name = x.Name.Trim(), spec = x.Spec.Trim(), qty = x.Qty.Trim() }),
+            tools = p.Tools.Select(t => t.Name.Trim()).Where(n => n.Length > 0),
+            keyPoints = p.KeyPoints,
+        });
+        return $"""
+            Make the process table from the Work Instructions of the model ({doc.FileName}), given below as JSON: one
+            sheet per process, in line order.
+            - One process per sheet, in this order. name is the sheet's process name as written; localName is "".
+            - The materials of a process are its parts: material = the part name (add the spec in brackets only when
+              two different parts have the same name), qtyPerUnit = the number in qty (1 when there is none). Parts
+              that are not materials (glue dispensing settings, labels of steps) are left out. Every material goes in
+              the group's materials list once.
+            - type: MAIN for the main assembly line processes, FUNCTION for function / electrical tests, VISUAL for
+              visual or appearance inspection, SUB for sub-assembly and anything else.
+            - A process already in the current group with the same name (any case) keeps its id, type and NG items;
+              a new process has id "" and the NG items its key points name as defects to check, else [].
+            - Processes of the current group that are not in the instructions are removed; the current materials
+              that no process uses are kept.
+            - In note, say how many processes and materials were made and anything that could not be read.
+
+            === WORK INSTRUCTIONS (JSON) ===
+            {JsonSerializer.Serialize(sheets, Json)}
+            """;
     }
 
     /// <summary>Reads the AI answer leniently: strips code fences, takes the outermost {...}, then normalizes.</summary>

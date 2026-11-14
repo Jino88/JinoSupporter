@@ -6,6 +6,33 @@ namespace PortalGNLAB.Db.Tests;
 public sealed class WorkingManualAiServiceTests
 {
     [Fact]
+    public void InstructionsRequest_GivesEverySheetInOrderWithItsPartsAsMaterials()
+    {
+        var doc = new InstructionDoc("pvr.xlsx", DateTime.UtcNow, "u", 1, [],
+        [
+            new(" Xếp UPPER ", "C-01", "", 12.5, 2, "1", false, [new("1", "UPPER CASE", "SM-G778B", "1"), new("2", " ", "", "")],
+                [new("1", "Ionizer", "")], [], ["Không trầy xước"]),
+            new("Bôi keo", "C-02", "Bôi keo tổ hợp SPK", 20, null, "2", true, [new("1", "Keo SL233LF", "", "0.02g")], [], [], []),
+        ]);
+        string text = WorkingManualAiService.InstructionsRequest(doc);
+        Assert.Contains("(pvr.xlsx)", text);
+        // the sheet name stands in for an empty process name; blank parts are left out
+        Assert.Contains("{\"order\":1,\"code\":\"C-01\",\"name\":\"Xếp UPPER\",\"ctq\":false,\"parts\":[{\"name\":\"UPPER CASE\",\"spec\":\"SM-G778B\",\"qty\":\"1\"}],"
+            + "\"tools\":[\"Ionizer\"],\"keyPoints\":[\"Không trầy xước\"]}", text);
+        Assert.Contains("\"name\":\"Bôi keo tổ hợp SPK\",\"ctq\":true,\"parts\":[{\"name\":\"Keo SL233LF\",\"spec\":\"\",\"qty\":\"0.02g\"}]", text);
+        Assert.Contains("keeps its id, type and NG items", text);
+    }
+
+    [Fact]
+    public async Task FromInstructionsAsync_NeedsTheWorkInstructions()
+    {
+        var svc = new WorkingManualAiService(null!);
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => svc.FromInstructionsAsync("M", null, null));
+        Assert.Contains("Upload the Work Instructions", ex.Message);
+        await Assert.ThrowsAsync<ArgumentException>(() => svc.FromInstructionsAsync("M", null, new InstructionDoc("a.xlsx", DateTime.UtcNow, "u", 1, [], [])));
+    }
+
+    [Fact]
     public void ParseAnswer_ReadsFencedJsonWithSurroundingText()
     {
         const string answer = """
