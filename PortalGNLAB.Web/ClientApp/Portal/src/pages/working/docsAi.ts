@@ -80,8 +80,8 @@ export async function runJig(s: JigSteps): Promise<JigResult> {
 export type DocKind = "instructions" | "jig-list" | "unknown";
 export const KIND_TEXT: Record<DocKind, string> = { instructions: "Work Instructions", "jig-list": "JIG / Machine / Tester list", unknown: "not recognized" };
 
-/** The largest workbook the server reads (as the Work Instructions upload: 100 MB). */
-export const MAX_DOC_BYTES = 100 * 1024 * 1024;
+/** The largest workbook the server reads (as the Work Instructions upload: 200 MB). */
+export const MAX_DOC_BYTES = 200 * 1024 * 1024;
 
 export type FoundKind = { kind: DocKind; reason?: string };
 

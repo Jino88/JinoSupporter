@@ -56,7 +56,7 @@ export async function uploadInstructions(name: string, file: File): Promise<Inst
   });
   if (response.status === 401) window.location.assign(loginUrl(location.pathname));
   if (!response.ok)
-    throw new Error((await response.json().catch(() => null))?.error ?? (response.status === 413 ? "The workbook is too large (100 MB at most)." : `Request failed (HTTP ${response.status})`));
+    throw new Error((await response.json().catch(() => null))?.error ?? (response.status === 413 ? "The workbook is too large (200 MB at most)." : `Request failed (HTTP ${response.status})`));
   return (await response.json()) as InstructionDoc;
 }
 

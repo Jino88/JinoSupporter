@@ -108,7 +108,10 @@ public sealed class WorkingInstructionServiceTests(Xunit.Abstractions.ITestOutpu
     [Fact]
     public void DocumentKind_TakesWorkbooksAsLargeAsTheWorkInstructions()
     {
-        // Work Instructions with their pictures are often 50-100 MB; a smaller limit cut the upload ("Failed to fetch")
+        // Work Instructions with their pictures are often 50-100 MB and more; a smaller limit cut the upload ("Failed to fetch")
+        const long mb200 = 200L * 1024 * 1024;
+        Assert.Equal(mb200, WorkingInstructionService.MaxUploadBytes);
+        Assert.Equal(mb200, WorkingProcessListService.MaxUploadBytes);
         Assert.True(WorkingDocumentKind.MaxUploadBytes >= WorkingInstructionService.MaxUploadBytes);
         Assert.True(WorkingDocumentKind.MaxUploadBytes >= WorkingProcessListService.MaxUploadBytes);
     }

@@ -40,10 +40,10 @@ public static class WorkingInstructionEndpoints
         ctx.Features.Set<IFormFeature>(new FormFeature(ctx.Request, new FormOptions { MultipartBodyLengthLimit = totalLimit }));
         IFormCollection form;
         try { form = await ctx.Request.ReadFormAsync(ctx.RequestAborted); }
-        catch (InvalidDataException) { throw new ArgumentException("The workbook is too large (100 MB at most)."); }
+        catch (InvalidDataException) { throw new ArgumentException($"The workbook is too large ({WorkingInstructionService.MaxUploadBytes / (1024 * 1024)} MB at most)."); }
         IFormFile? file = form.Files.GetFile("file");
         if (file is null || file.Length == 0) throw new ArgumentException("Choose the workbook to upload.");
-        if (file.Length > WorkingInstructionService.MaxUploadBytes) throw new ArgumentException("The workbook is too large (100 MB at most).");
+        if (file.Length > WorkingInstructionService.MaxUploadBytes) throw new ArgumentException($"The workbook is too large ({WorkingInstructionService.MaxUploadBytes / (1024 * 1024)} MB at most).");
         return file;
     }
 }

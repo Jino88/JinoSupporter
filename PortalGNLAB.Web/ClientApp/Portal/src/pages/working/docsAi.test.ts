@@ -128,7 +128,7 @@ describe("what a document is (server)", () => {
   it("does not send a workbook too large, and names the file when the connection is cut", async () => {
     const send = vi.fn(async () => { throw new TypeError("Failed to fetch"); });
     vi.stubGlobal("fetch", send);
-    expect(await docKind("M", file("huge.xlsx", MAX_DOC_BYTES + 1))).toEqual({ kind: "unknown", reason: "larger than 100 MB" });
+    expect(await docKind("M", file("huge.xlsx", MAX_DOC_BYTES + 1))).toEqual({ kind: "unknown", reason: "larger than 200 MB" });
     expect(send).not.toHaveBeenCalled();
     await expect(docKind("M", file("pvr.xlsx", 10))).rejects.toThrow(
       "pvr.xlsx could not be sent to the server (Failed to fetch). Check that the server is running, then try again.");
