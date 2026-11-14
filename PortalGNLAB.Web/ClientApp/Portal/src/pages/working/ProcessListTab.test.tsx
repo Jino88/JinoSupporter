@@ -65,8 +65,8 @@ describe("process list tab", () => {
     // a process without JIG is one row, its JIG cells empty
     expect(body).toContain('<td rowSpan="1" class="pl-no"><span class="pl-badge">03</span></td>');
     // the JIG name, drawing no., version and quantity are cells of their own
-    expect(body).toContain('<td class="l pl-jigcell">ENCLOSURE JIG</td><td class="l pl-jigcell">DWG-100</td><td class="pl-narrow pl-jigcell">V4</td><td class="pl-narrow pl-jigcell pl-qty">70</td>');
-    expect(body).toContain('<td class="l pl-jigcell">COVER JIG</td><td class="l pl-jigcell">DWG-200</td><td class="pl-narrow pl-jigcell">V1</td><td class="pl-narrow pl-jigcell pl-qty">6</td>');
+    expect(body).toContain('<td class="l pl-jigcell pl-jfirst">ENCLOSURE JIG</td><td class="l pl-jigcell">DWG-100</td><td class="pl-narrow pl-jigcell">V4</td><td class="pl-narrow pl-jigcell pl-qty">70</td>');
+    expect(body).toContain('<td class="l pl-jigcell pl-jfirst">COVER JIG</td><td class="l pl-jigcell">DWG-200</td><td class="pl-narrow pl-jigcell">V1</td><td class="pl-narrow pl-jigcell pl-qty">6</td>');
     // JIGs are not joined into a multi-line text
     expect(body).not.toContain("ENCLOSURE JIG\nCOVER JIG");
   });

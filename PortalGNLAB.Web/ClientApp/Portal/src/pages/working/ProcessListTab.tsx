@@ -58,7 +58,7 @@ function ProcessRows(props: { row: ProcessRow; zebra: number; edit: boolean; onC
                 {HEAD_COLS.map(([k, label]) => <TextCell key={k} k={k} label={label} row={r} span={span} edit={edit} onChange={props.onChange} />)}
               </>
             )}
-            <td className="l pl-jigcell">{edit ? jigInput("name", "JIG") : j?.name}</td>
+            <td className="l pl-jigcell pl-jfirst">{edit ? jigInput("name", "JIG") : j?.name}</td>
             <td className="l pl-jigcell">{edit ? jigInput("drawingNo", "Drawing No") : j?.drawingNo}</td>
             <td className="pl-narrow pl-jigcell">{edit ? jigInput("ver", "Ver.", " pl-narrow") : j?.ver}</td>
             <td className="pl-narrow pl-jigcell pl-qty">{edit ? jigInput("qty", "Qty", " pl-narrow") : j?.qty}</td>
