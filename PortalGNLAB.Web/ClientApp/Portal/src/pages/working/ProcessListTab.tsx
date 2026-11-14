@@ -12,26 +12,36 @@ const TAIL_COLS = [["tester", "Tester"], ["material", "Material"], ["note", "Not
 /** Cells of one item per line: a line is never wrapped. */
 const LINES = new Set<string>(["machine", "tester"]);
 
+/** The translation of a text when it differs from the text as written (else nothing to show under it). */
+const trLine = (tr: (t: string) => string, text: string) => {
+  const t = text.trim() ? tr(text) : "";
+  return t && t.trim() !== text.trim() ? t : "";
+};
+
 /** A text cell of the process: plain text to read, a box as big as its text to edit. */
 function TextCell(props: { k: TextKey; label: string; row: ProcessRow; span: number; edit: boolean; onChange: (r: ProcessRow) => void }) {
   const { k, row: r } = props;
+  const tr = useTr();
   const lines = LINES.has(k);
+  const shown = !props.edit && k === "note" ? trLine(tr, r[k]) : "";
   return (
     <td rowSpan={props.span} className={`l pl-cell${lines ? " pl-lines" : ""}`}>
       {props.edit
         ? <textarea className="inp sm pl-text" wrap={lines ? "off" : undefined} rows={lineCount(r[k])} aria-label={props.label}
           value={r[k]} onChange={(e) => props.onChange({ ...r, [k]: e.target.value })} />
         : r[k]}
+      {shown && <div className="pl-tr">{shown}</div>}
     </td>
   );
 }
 
 /** One process: a row per JIG (one row when it has none); the cells of the process span them all. */
-function ProcessRows(props: { row: ProcessRow; edit: boolean; onChange: (r: ProcessRow) => void; onRemove: () => void }) {
+function ProcessRows(props: { row: ProcessRow; zebra: number; edit: boolean; onChange: (r: ProcessRow) => void; onRemove: () => void }) {
   const { row: r, edit } = props;
   const tr = useTr();
   const span = Math.max(1, r.jigs.length);
   const set = <K extends keyof ProcessRow>(k: K, v: ProcessRow[K]) => props.onChange({ ...r, [k]: v });
+  const procTr = edit ? "" : trLine(tr, r.process);
   const items: (Jig | null)[] = r.jigs.length ? r.jigs : [null];
   return (
     <>
@@ -40,18 +50,18 @@ function ProcessRows(props: { row: ProcessRow; edit: boolean; onChange: (r: Proc
           <input className={`inp sm pl-jig${extra}`} aria-label={label} value={j[k]} onChange={(e) => props.onChange(setJig(r, i, { [k]: e.target.value }))} />
         );
         return (
-          <tr key={i} className={`${i === 0 ? "pl-first" : "pl-sub"}${edit ? " pl-edit" : ""}`}>
+          <tr key={i} className={`${i === 0 ? "pl-first" : "pl-sub"} pl-g${props.zebra}${edit ? " pl-edit" : ""}`}>
             {i === 0 && (
               <>
-                <td rowSpan={span} className="pl-no">{edit ? <input className="inp sm pl-no" aria-label="No." value={r.no} onChange={(e) => set("no", e.target.value)} /> : r.no}</td>
-                <td rowSpan={span} className="l">{edit ? <input className="inp sm pl-proc" aria-label="Process" value={r.process} onChange={(e) => set("process", e.target.value)} /> : <b>{r.process}</b>}</td>
+                <td rowSpan={span} className="pl-no">{edit ? <input className="inp sm pl-no" aria-label="No." value={r.no} onChange={(e) => set("no", e.target.value)} /> : <span className="pl-badge">{r.no}</span>}</td>
+                <td rowSpan={span} className="l">{edit ? <input className="inp sm pl-proc" aria-label="Process" value={r.process} onChange={(e) => set("process", e.target.value)} /> : <><b>{r.process}</b>{procTr && <div className="pl-tr">{procTr}</div>}</>}</td>
                 {HEAD_COLS.map(([k, label]) => <TextCell key={k} k={k} label={label} row={r} span={span} edit={edit} onChange={props.onChange} />)}
               </>
             )}
             <td className="l pl-jigcell">{edit ? jigInput("name", "JIG") : j?.name}</td>
             <td className="l pl-jigcell">{edit ? jigInput("drawingNo", "Drawing No") : j?.drawingNo}</td>
             <td className="pl-narrow pl-jigcell">{edit ? jigInput("ver", "Ver.", " pl-narrow") : j?.ver}</td>
-            <td className="pl-narrow pl-jigcell">{edit ? jigInput("qty", "Qty", " pl-narrow") : j?.qty}</td>
+            <td className="pl-narrow pl-jigcell pl-qty">{edit ? jigInput("qty", "Qty", " pl-narrow") : j?.qty}</td>
             {edit && (
               <td className="act">{j && <button className="btn sm" title={tr("Remove the JIG")} aria-label="Remove the JIG" onClick={() => props.onChange(removeJig(r, i))}>✕</button>}</td>
             )}
@@ -78,21 +88,24 @@ function JigSummary(props: { rows: ProcessRow[] }) {
   const tr = useTr();
   const t = jigTotals(props.rows);
   return (
-    <div className="pl-jigsum">
-      <div className="pl-jigsum-h">{tr("JIG total")}: <b>{t.kinds}</b>{tr(" kinds")} · <b>{t.total}</b>{tr(" pcs")}</div>
+    <details className="pl-jigsum" open>
+      <summary className="pl-jigsum-h">{tr("JIG total")}: <b>{t.kinds}</b>{tr(" kinds")} · <b>{t.total}</b>{tr(" pcs")}</summary>
       {t.items.length > 0 && (
-        <div className="pl-jigtot">
-          {t.items.map((j, i) => (
-            <div key={i} className="pl-jigtot-i">
-              <span className="pl-jigtot-n">{j.name}</span>
-              <span className="pl-jigtot-d">{j.drawingNo}</span>
-              <span className="pl-jigtot-v">{j.ver}</span>
-              <b className="pl-jigtot-q">{j.qtyNum}</b>
-            </div>
-          ))}
-        </div>
+        <table className="pl-jigtot">
+          <thead><tr><th className="l">JIG</th><th className="l">{tr("Drawing No")}</th><th>{tr("Ver.")}</th><th className="pl-qty">{tr("Qty")}</th></tr></thead>
+          <tbody>
+            {t.items.map((j, i) => (
+              <tr key={i}>
+                <td className="pl-jigtot-n">{j.name}</td>
+                <td className="pl-jigtot-d">{j.drawingNo}</td>
+                <td className="pl-jigtot-v">{j.ver}</td>
+                <td className="pl-qty"><b>{j.qtyNum}</b></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
-    </div>
+    </details>
   );
 }
 
@@ -236,7 +249,7 @@ export default function ProcessListTab(props: {
               <thead>
                 <tr>
                   <th>No.</th><th className="l">{tr("Process")}</th><th className="l">{tr("Machine")}</th>
-                  <th className="l">JIG</th><th className="l">{tr("Drawing No")}</th><th className="pl-narrow">{tr("Ver.")}</th><th className="pl-narrow">{tr("Qty")}</th>
+                  <th className="l pl-jh pl-jh-first">JIG</th><th className="l pl-jh">{tr("Drawing No")}</th><th className="pl-narrow pl-jh">{tr("Ver.")}</th><th className="pl-narrow pl-jh pl-qty">{tr("Qty")}</th>
                   {editMode && <th></th>}
                   <th className="l">{tr("Tester")}</th><th className="l">{tr("Material")}</th><th className="l">{tr("Note")}</th>
                   {editMode && <th></th>}
@@ -244,7 +257,7 @@ export default function ProcessListTab(props: {
               </thead>
               <tbody>
                 {rows.map((r, i) => (
-                  <ProcessRows key={draft ? i : r.id || i} row={r} edit={editMode}
+                  <ProcessRows key={draft ? i : r.id || i} row={r} zebra={i % 2} edit={editMode}
                     onChange={(n) => draft && setDraft(draft.map((x, j) => (j === i ? n : x)))}
                     onRemove={() => draft && setDraft(draft.filter((_, j) => j !== i))} />
                 ))}
