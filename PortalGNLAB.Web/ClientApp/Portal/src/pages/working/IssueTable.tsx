@@ -120,42 +120,44 @@ export function IssueForm(props: {
   );
   return (
     <div className="wk-form wk-ef wk-if" onPaste={pics.onPaste}>
-      <div className="wk-f"><label>Dev phase</label>
-        <select className="inp" value={f.phase} onChange={(e) => set("phase", e.target.value)}>
-          <option value="">—</option>
-          {PHASES.map((p) => <option key={p}>{p}</option>)}
-          {f.phase && !PHASES.includes(f.phase as (typeof PHASES)[number]) && <option>{f.phase}</option>}
-        </select>
+      {/* four columns: classification, owner and dates | issue and its detail | files | final result */}
+      <div className="wk-if-col wk-if-fields">
+        <div className="wk-f"><label>Dev phase</label>
+          <select className="inp" value={f.phase} onChange={(e) => set("phase", e.target.value)}>
+            <option value="">—</option>
+            {PHASES.map((p) => <option key={p}>{p}</option>)}
+            {f.phase && !PHASES.includes(f.phase as (typeof PHASES)[number]) && <option>{f.phase}</option>}
+          </select>
+        </div>
+        {text("category", "Issue type", "wk-l-type")}
+        {text("process", "Process", "wk-l-proc")}
+        {text("cause", "Cause group", "wk-l-cause")}
+        {text("owner", "Owner")}
+        {date("date", "Registered")}
+        {date("due", "Due")}
+        {date("doneDate", "Done")}
       </div>
-      {text("category", "Issue type", "wk-l-type")}
-      {text("process", "Process", "wk-l-proc")}
-      {text("cause", "Cause group", "wk-l-cause")}
-      {/* owner and dates in one narrow column on the left; issue, detail and files side by side on the right */}
-      <div className="wk-if-main">
-        <div className="wk-if-side">
-          {text("owner", "Owner")}
-          {date("date", "Registered")}
-          {date("due", "Due")}
-          {date("doneDate", "Done")}
-        </div>
-        <div className="wk-if-body">
-          <div className="wk-f"><label>Issue</label>
-            <input className="inp" value={f.title} maxLength={200} autoFocus onChange={(e) => set("title", e.target.value)} /></div>
-          <div className="wk-f"><label>Issue detail</label>
-            <textarea className="inp wk-ta" rows={5} value={f.body} onChange={(e) => set("body", e.target.value)} /></div>
-          <div className="wk-f"><label>Files</label>
-            <div className="wk-paste" tabIndex={0} onDragOver={pics.onDragOver} onDrop={pics.onFileDrop}>
-              <div className="wk-paste-h">
-                <span className="muted small">Ctrl+V or drop pictures / videos</span>
-                <PickFiles onPick={pics.pick} />
-              </div>
-              <Thumbs images={pics.kept} onOpen={props.onOpen} onRemove={pics.remove} pending={pics.files} onDrop={pics.drop} />
+      <div className="wk-if-col">
+        <div className="wk-f"><label>Issue</label>
+          <input className="inp" value={f.title} maxLength={200} autoFocus onChange={(e) => set("title", e.target.value)} /></div>
+        <div className="wk-f grow"><label>Issue detail</label>
+          <textarea className="inp wk-ta" rows={5} value={f.body} onChange={(e) => set("body", e.target.value)} /></div>
+      </div>
+      <div className="wk-if-col">
+        <div className="wk-f grow"><label>Files</label>
+          <div className="wk-paste" tabIndex={0} onDragOver={pics.onDragOver} onDrop={pics.onFileDrop}>
+            <div className="wk-paste-h">
+              <span className="muted small">Ctrl+V or drop pictures / videos</span>
+              <PickFiles onPick={pics.pick} />
             </div>
-            {pics.problem && <span className="pi-dirty">{pics.problem}</span>}
+            <Thumbs images={pics.kept} onOpen={props.onOpen} onRemove={pics.remove} pending={pics.files} onDrop={pics.drop} />
           </div>
-          <div className="wk-f wide"><label>Final result</label>
-            <textarea className="inp wk-ta" rows={2} value={f.finalResult} onChange={(e) => set("finalResult", e.target.value)} /></div>
+          {pics.problem && <span className="pi-dirty">{pics.problem}</span>}
         </div>
+      </div>
+      <div className="wk-if-col">
+        <div className="wk-f grow"><label>Final result</label>
+          <textarea className="inp wk-ta" rows={5} value={f.finalResult} onChange={(e) => set("finalResult", e.target.value)} /></div>
       </div>
       <div className="wk-f wide wk-ef-act">
         {problem && f.title && <span className="pi-dirty">{problem}</span>}
