@@ -369,6 +369,12 @@ table.wk-dp-tasks tr[draggable="true"]:hover td.wk-dp-grip { color: var(--muted)
 table.wk-dp-tasks tr.drop-above > td { box-shadow: inset 0 2px 0 var(--accent); }
 table.wk-dp-tasks tr.drop-below > td { box-shadow: inset 0 -2px 0 var(--accent); }
 .wk-dp-add { margin-top: 8px; }
+/* sub-tasks: indented under their task, in the table and on the calendar */
+table.wk-dp-tasks tr.sub > td:nth-child(3) { padding-left: 26px; white-space: nowrap; }
+table.wk-dp-tasks tr.sub b { font-weight: 500; }
+table.wk-dp-tasks .wk-dp-sub { display: inline-block; width: 16px; margin-left: -16px; color: var(--faint); }
+table.wk-gantt > * > tr > td.nm.child { padding-left: 26px; }
+table.wk-gantt > * > tr > td.nm.child b { font-weight: 500; }
 /* Dev Plan: quantity plan of the event clicked, as rows of the calendar right under its row so each day lines up */
 table.wk-gantt > * > tr > td.nm .tw { display: inline-block; width: 11px; margin-left: -4px; color: var(--muted); font-size: 10px; }
 table.wk-gantt > * > tr > td.nm .tw ~ small { margin-left: 22px; }
@@ -425,6 +431,7 @@ table.wk-gantt .wk-qty-in { padding: 4px 3px; font-size: 11px; }
 .wk-hm-row.ev .wk-hm-label { font-weight: 600; }
 .wk-hm-row.task { min-height: 24px; }
 .wk-hm-row.task .wk-hm-label { padding-left: 30px; color: var(--ink-2); font-size: 11.5px; }
+.wk-hm-row.task.sub .wk-hm-label { padding-left: 46px; font-size: 11px; }
 .wk-hm-row:not(.head):hover .wk-hm-label { background: #f8fafc; }
 .wk-hm-dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
 .wk-hm-ev, .wk-hm-task { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }

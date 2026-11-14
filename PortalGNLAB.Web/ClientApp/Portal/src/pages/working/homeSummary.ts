@@ -2,7 +2,7 @@
 // (the Setup Plan of each model).
 import { addDays } from "../productionInput/logic";
 import { isLate, isLogLate, isOpenIssue, issuesOfStage, issueTree, notesInOrder, type GroupNode } from "./logic";
-import { eventSpan, progress, readDevPlan, taskSpan } from "./plan";
+import { eventSpan, groupSpan, progress, readDevPlan } from "./plan";
 import { setupEvents, type SetupRow } from "./setup";
 import { phaseName, type Entry, type EntryLog, type ModelInfo, type WorkingModel } from "./types";
 
@@ -43,6 +43,8 @@ export interface TaskBrief {
   done: boolean;
   late: boolean;
   owner: string;
+  /** A sub-task, shown under its task. */
+  sub?: boolean;
 }
 
 export interface EventBrief {
@@ -84,8 +86,8 @@ export function planBrief(name: string, path: string[], info: ModelInfo, today: 
     const span = eventSpan(ev);
     const [done, total] = progress(ev);
     const tasks = ev.tasks.map((t): TaskBrief => {
-      const s = taskSpan(t);
-      return { id: t.id, name: t.name || "(no name)", span: s, done: t.done, late: !t.done && !!s && s[1] < today, owner: t.owner };
+      const s = groupSpan(ev.tasks, t);
+      return { id: t.id, name: t.name || "(no name)", span: s, done: t.done, late: !t.done && !!s && s[1] < today, owner: t.owner, ...(t.parentId ? { sub: true } : {}) };
     });
     const lateTasks = tasks.filter((t) => t.late).length;
     return { id: ev.id, name: ev.name || "(no name)", color: ev.color, span, done, total, lateTasks, state: eventState(span, done, total, today), tasks };

@@ -7,13 +7,13 @@ import { workingApi } from "./api";
 import { bmesApi } from "./bmes";
 import type { BomRow } from "./bmes";
 import {
-  COLORS, QTY_GROUPS, addBomRows, blankEvent, blankRow, blankTask, calendarDays, eventSpan, inSpan, bomRowNames, monthRuns, moveInGroup, moveTo, planDays, planProblem,
-  progress, readDevPlan, readQty, rowTotal, setQty, taskSpan,
+  COLORS, QTY_GROUPS, addBomRows, addSubTask, blankEvent, blankRow, blankTask, calendarDays, eventSpan, groupSpan, inSpan, bomRowNames, monthRuns, moveInGroup, moveTask,
+  planDays, planProblem, progress, readDevPlan, readQty, removeTask, rowTotal, setQty, taskSpan,
 } from "./plan";
 import type { DevPlan as Plan, PlanEvent, PlanTask, QtyGroup, QtyRow } from "./plan";
 import type { WorkingModel } from "./types";
 
-interface Row { id: string; label: string; sub: string; span: [string, string] | null; color: string; done?: boolean }
+interface Row { id: string; label: string; sub: string; span: [string, string] | null; color: string; done?: boolean; child?: boolean }
 
 export const dates = (span: [string, string] | null) => (span ? (span[0] === span[1] ? span[0].slice(5) : `${span[0].slice(5)} – ${span[1].slice(5)}`) : "no date");
 
@@ -48,7 +48,7 @@ export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; o
             <Fragment key={r.id}>
               <tr className={(props.onPick ? "pick" : "") + (r.id === props.selected ? " on" : "") + (r.id === props.selected && props.expand ? " open" : "")}
                 onClick={props.onPick ? () => props.onPick!(r.id) : undefined}>
-                <td className="nm">
+                <td className={"nm" + (r.child ? " child" : "")}>
                   {props.onPick && <span className="tw">{r.id === props.selected && props.expand ? "▾" : "▸"}</span>}
                   <span className="dot" style={{ background: r.color }} />
                   <b className={r.done ? "done" : ""}>{tr(r.label)}</b>
@@ -250,10 +250,13 @@ function TaskEdit(props: { value: PlanTask; onKeep: (t: PlanTask) => void; onCan
   const problem = planProblem(t);
   const set = (f: Partial<PlanTask>) => setT({ ...t, ...f });
   return (
-    <tr className="wk-dp-edit">
+    <tr className={"wk-dp-edit" + (t.parentId ? " sub" : "")}>
       <td></td>
       <td><input type="checkbox" checked={t.done} aria-label="Done" onChange={(x) => set({ done: x.target.checked })} /></td>
-      <td className="l"><input className="inp sm" value={t.name} placeholder="Task" autoFocus onChange={(x) => set({ name: x.target.value })} /></td>
+      <td className="l">
+        {t.parentId && <span className="wk-dp-sub">↳</span>}
+        <input className="inp sm" value={t.name} placeholder={t.parentId ? "Sub-task" : "Task"} autoFocus onChange={(x) => set({ name: x.target.value })} />
+      </td>
       <td><DateBox className="sm" value={t.start} label="Start" onChange={(start) => set({ start })} /></td>
       <td><DateBox className="sm" value={t.end} label="End" onChange={(end) => set({ end })} /></td>
       <td><input className="inp sm wk-dp-owner" value={t.owner} placeholder="Owner" onChange={(x) => set({ owner: x.target.value })} /></td>
@@ -323,7 +326,7 @@ export default function DevPlan(props: {
   const setTasks = (tasks: PlanTask[]) => ev && setEvents(events.map((x) => (x.id === ev.id ? { ...x, tasks } : x)));
   const keepTask = (t: PlanTask) => {
     if (!ev) return;
-    setTasks(ev.tasks.some((x) => x.id === t.id) ? ev.tasks.map((x) => (x.id === t.id ? t : x)) : [...ev.tasks, t]);
+    setTasks(ev.tasks.some((x) => x.id === t.id) ? ev.tasks.map((x) => (x.id === t.id ? t : x)) : t.parentId ? addSubTask(ev.tasks, t.parentId, t) : [...ev.tasks, t]);
     setEditTask(null);
   };
   const save = async () => {
@@ -342,6 +345,14 @@ export default function DevPlan(props: {
     return { id: e.id, label: e.name, sub: dates(eventSpan(e)) + (all ? ` · ${done}/${all}` : ""), span: eventSpan(e), color: e.color };
   });
   const newTask = editTask && ev && !ev.tasks.some((t) => t.id === editTask.id);
+  // a new sub-task is typed in its place, right after the last sub-task of its parent
+  const shownTasks = ev && newTask && editTask?.parentId ? addSubTask(ev.tasks, editTask.parentId, editTask) : ev?.tasks ?? [];
+  const dragged = ev?.tasks.find((t) => t.id === dragTask);
+  const removeOne = (t: PlanTask) => {
+    const subs = ev!.tasks.filter((y) => y.parentId === t.id).length;
+    if (subs && !window.confirm(`Delete the task ${t.name} and its ${subs} sub-task(s)?`)) return;
+    setTasks(removeTask(ev!.tasks, t.id));
+  };
   // clicking an event opens its quantity plan right under it; clicking it again closes it
   const pick = (id: string) => {
     setShowQty(id === selected ? !showQty : true);
@@ -386,35 +397,41 @@ export default function DevPlan(props: {
             </div>
             <div className="wk-qty-h static">{tr("Detailed schedule")}</div>
             {evDays.length > 0 && ev.tasks.length > 0 && (
-              <Gantt days={evDays} rows={ev.tasks.map((t) => ({ id: t.id, label: t.name, sub: dates(taskSpan(t)) + (t.owner ? " · " + t.owner : ""), span: taskSpan(t), color: ev.color, done: t.done }))} />
+              <Gantt days={evDays} rows={ev.tasks.map((t) => ({ id: t.id, label: t.name, sub: dates(groupSpan(ev.tasks, t)) + (t.owner ? " · " + t.owner : ""), span: groupSpan(ev.tasks, t), color: ev.color, done: t.done, child: !!t.parentId }))} />
             )}
             <table className="wk-it wk-dp-tasks">
               <thead>
                 <tr><th className="fit"></th>{(["Done", "Task", "Start", "End", "Owner", "Note"] as const).map((h) => <th key={h} className={h === "Task" || h === "Note" ? "l" : "fit"}>{tr(h)}</th>)}<th className="fit"></th></tr>
               </thead>
               <tbody>
-                {ev.tasks.map((t) => (editTask?.id === t.id
+                {shownTasks.map((t) => (editTask?.id === t.id
                   ? <TaskEdit key={t.id} value={editTask} onKeep={keepTask} onCancel={() => setEditTask(null)} />
                   : (
-                    <tr key={t.id} className={(t.done ? "done" : "") + (dropOn === t.id && dragTask ? (ev.tasks.findIndex((y) => y.id === dragTask) < ev.tasks.indexOf(t) ? " drop-below" : " drop-above") : "")}
+                    <tr key={t.id} className={(t.parentId ? "sub" : "") + (t.done ? " done" : "") + (dropOn === t.id && dragTask ? (ev.tasks.findIndex((y) => y.id === dragTask) < ev.tasks.indexOf(t) ? " drop-below" : " drop-above") : "")}
                       draggable={!editTask} onDragStart={(x) => { x.dataTransfer.effectAllowed = "move"; x.dataTransfer.setData("text/plain", t.name); setDragTask(t.id); }}
-                      onDragOver={(x) => { if (!dragTask) return; x.preventDefault(); setDropOn(t.id); }}
-                      onDrop={(x) => { x.preventDefault(); if (dragTask) setTasks(moveTo(ev.tasks, dragTask, t.id)); endDrag(); }}
+                      onDragOver={(x) => {
+                        // a task goes among the tasks, a sub-task among the sub-tasks of its parent
+                        if (!dragged || (dragged.parentId ?? "") !== (t.parentId ?? "")) return;
+                        x.preventDefault();
+                        setDropOn(t.id);
+                      }}
+                      onDrop={(x) => { x.preventDefault(); if (dragTask) setTasks(moveTask(ev.tasks, dragTask, t.id)); endDrag(); }}
                       onDragEnd={endDrag}>
                       <td className="wk-dp-grip" title="Drag to move">⠿</td>
                       <td><input type="checkbox" checked={t.done} aria-label={`${t.name} done`} onChange={(x) => setTasks(ev.tasks.map((y) => (y.id === t.id ? { ...y, done: x.target.checked } : y)))} /></td>
-                      <td className="l"><b>{tr(t.name)}</b></td>
+                      <td className="l">{t.parentId && <span className="wk-dp-sub">↳</span>}<b>{tr(t.name)}</b></td>
                       <td>{t.start || "—"}</td>
                       <td>{t.end || "—"}</td>
                       <td>{t.owner || "—"}</td>
                       <td className="l muted">{tr(t.note)}</td>
                       <td className="act">
+                        {!t.parentId && <button className="wk-link" disabled={!!editTask} onClick={() => setEditTask({ ...blankTask(), parentId: t.id })}>+ Sub</button>}
                         <button className="wk-link" disabled={!!editTask} onClick={() => setEditTask(t)}>Edit</button>
-                        <button className="wk-link bad" disabled={!!editTask} onClick={() => setTasks(ev.tasks.filter((y) => y.id !== t.id))}>Delete</button>
+                        <button className="wk-link bad" disabled={!!editTask} onClick={() => removeOne(t)}>Delete</button>
                       </td>
                     </tr>
                   )))}
-                {newTask && <TaskEdit key={editTask!.id} value={editTask!} onKeep={keepTask} onCancel={() => setEditTask(null)} />}
+                {newTask && !editTask!.parentId && <TaskEdit key={editTask!.id} value={editTask!} onKeep={keepTask} onCancel={() => setEditTask(null)} />}
                 {!ev.tasks.length && !newTask && <tr><td colSpan={8} className="wk-it-empty">No detailed schedule yet.</td></tr>}
               </tbody>
             </table>
