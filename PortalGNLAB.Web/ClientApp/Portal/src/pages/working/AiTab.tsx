@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ClipboardEvent, type DragEvent } from "react";
 import { workingApi } from "./api";
 import {
-  PLACE_TAB, PLACES, aiPictures, applyPlace, placeItems, placeRequest, readPlaceAnswer, type AiTarget, type Place, type PlaceAnswer, type PlaceItem,
+  PLACE_TAB, PLACES, aiPictures, applyPlace, placeItems, placeRequest, readPlaceAnswer, withNewParent, type AiTarget, type Place, type PlaceAnswer, type PlaceItem,
 } from "./aiPlace";
 import type { Entry, WorkingModel } from "./types";
 
@@ -120,7 +120,8 @@ export default function AiTab(props: {
     try {
       if (info) props.onSaved(await workingApi.saveModel(model.name, info, model.revision));
       for (const [i, e] of entries.entries()) {
-        const entry = await workingApi.addEntry(model.name, e);
+        // a sub-issue of an issue added just before takes its id
+        const entry = await workingApi.addEntry(model.name, withNewParent(e, added.map((x) => x.id)));
         added.push(entry);
         const files = pics[i].map((n) => asked.pictures[n]).filter(Boolean);
         if (files.length) added[added.length - 1] = { ...entry, images: [...entry.images, ...await workingApi.addImages(model.name, entry.id, "", files)] };

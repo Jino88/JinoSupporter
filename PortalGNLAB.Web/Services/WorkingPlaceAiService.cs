@@ -134,7 +134,10 @@ public sealed class PlaceAiEntry
     public string Category { get; set; } = "";
     public string Process { get; set; } = "";
     public string Cause { get; set; } = "";
-    /// <summary>Issue: the id of an existing issue (not itself a sub-issue) this one is a sub-issue of, or "".</summary>
+    /// <summary>
+    /// Issue: the id of an existing issue (not itself a sub-issue) this one is a sub-issue of, "new:N" for the issue at N
+    /// (0-based) of the same answer's entries when that one is new too, or "".
+    /// </summary>
     public string ParentId { get; set; } = "";
     /// <summary>0-based numbers of the request pictures that are evidence for this entry.</summary>
     [JsonConverter(typeof(PlaceAiIntListConverter))]
@@ -521,8 +524,13 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         foreach (PlaceAiEntryContext? c in known ?? [])
             if (c is not null && c.Kind == "issue" && !string.IsNullOrWhiteSpace(c.Id) && string.IsNullOrWhiteSpace(c.ParentId)) parents[c.Id.Trim()] = c;
         var result = new List<PlaceAiEntry>();
+        // a sub-issue of an issue new in the same answer: its position in the answer -> its position in the result
+        var at = new Dictionary<int, int>();
+        var underNew = new Dictionary<int, int>();
+        int n = -1;
         foreach (PlaceAiEntry? e in entries ?? [])
         {
+            n++;
             if (e is null) continue;
             string kind = (e.Kind ?? "").Trim().ToLowerInvariant();
             if (!Kinds.Contains(kind)) continue;
@@ -552,21 +560,39 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
                 entry.Category = (e.Category ?? "").Trim();
                 entry.Process = (e.Process ?? "").Trim();
                 entry.Cause = (e.Cause ?? "").Trim();
-                if (parents.TryGetValue((e.ParentId ?? "").Trim(), out PlaceAiEntryContext? parent))
+                string parentId = (e.ParentId ?? "").Trim();
+                if (parents.TryGetValue(parentId, out PlaceAiEntryContext? parent))
                 {
-                    // a sub-issue is listed with its issue, so it takes the stage of that issue
                     entry.ParentId = parent.Id.Trim();
-                    if (string.Equals(parent.Stage, "mp", StringComparison.OrdinalIgnoreCase)) { entry.Stage = "mp"; entry.Phase = "MP"; }
-                    else if (entry.Stage == "mp") { entry.Stage = "dev"; entry.Phase = ""; }
+                    TakeStage(entry, parent.Stage);
                 }
+                else if (parentId.StartsWith("new:", StringComparison.Ordinal) && int.TryParse(parentId[4..], NumberStyles.None, CultureInfo.InvariantCulture, out int p))
+                    underNew[result.Count] = p;
             }
             else if (kind == "review")
             {
                 entry.Result = Results.FirstOrDefault(v => string.Equals(v, (e.Result ?? "").Trim(), StringComparison.OrdinalIgnoreCase)) ?? "Pass";
             }
+            at[n] = result.Count;
             result.Add(entry);
         }
+        // "new:N" is kept for a new top issue of the answer (one level), renumbered to its position in the result
+        foreach ((int child, int p) in underNew)
+        {
+            if (!at.TryGetValue(p, out int top) || top == child || underNew.ContainsKey(top)) continue;
+            PlaceAiEntry parent = result[top];
+            if (parent.Kind != "issue" || parent.ParentId.Length > 0) continue;
+            result[child].ParentId = $"new:{top}";
+            TakeStage(result[child], parent.Stage);
+        }
         return result;
+    }
+
+    /// <summary>A sub-issue is listed with its issue, so it takes the stage of that issue.</summary>
+    private static void TakeStage(PlaceAiEntry entry, string parentStage)
+    {
+        if (string.Equals(parentStage, "mp", StringComparison.OrdinalIgnoreCase)) { entry.Stage = "mp"; entry.Phase = "MP"; }
+        else if (entry.Stage == "mp") { entry.Stage = "dev"; entry.Phase = ""; }
     }
 
     private static string TodayOf(PlaceAiRequest? request)
@@ -639,6 +665,9 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
           and its sub-issues as No. <seq>.1, <seq>.2 ... When the user asks to put something under an existing issue
           (e.g. "1번 항목의 sub issue로", "sub-issue of No. 1", "1. 하위로"), make each piece an issue with
           "parentId" = the id of that issue (the issue with parentId "" and that seq); otherwise parentId is "".
+          When the parent is new too (the text gives an item and its parts, e.g. a business trip and its schedule
+          items, and asks for them as an issue with sub-issues), answer the parent as an issue with parentId "" and
+          each part with "parentId" = "new:<N>", N = the 0-based position of the parent in your "entries" array.
           Never use a sub-issue (parentId not "") as a parent.
         - entries, kind "review": the result of a review or meeting; result is Pass, Conditional or Fail.
 

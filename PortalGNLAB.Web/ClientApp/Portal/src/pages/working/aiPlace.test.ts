@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aiPictures, applyPlace, placeItems, placeRequest, readPlaceAnswer } from "./aiPlace";
+import { aiPictures, applyPlace, placeItems, placeRequest, readPlaceAnswer, withNewParent } from "./aiPlace";
 import { readDevPlan } from "./plan";
 import type { Entry, ModelInfo } from "./types";
 
@@ -119,6 +119,33 @@ describe("AI placement answer", () => {
     expect(items.map((i) => i.detail)).toEqual(["Sub-issue of No. 1 AI 과제", "Sub-issue of an issue", ""]);
     const put = applyPlace(info, a, all(placeItems(a, info, undefined, entries)), "2026-11-12");
     expect(put.entries.map((e) => [e.title, e.parentId])).toEqual([["GN-06", "a"], ["GN-07", "gone"], ["Top", undefined], ["History", undefined]]);
+  });
+
+  it("puts a sub-issue under an issue new in the same answer: listed under it, left out with it, added after it with its id", () => {
+    const a = readPlaceAnswer({ entries: [
+      { kind: "issue", stage: "dev", title: "BN → GN 이동", parentId: "new:1" },
+      { kind: "issue", stage: "dev", title: "GN 출장 일정" },
+      { kind: "issue", stage: "dev", title: "자료 정리", parentId: "new:1" },
+      { kind: "issue", stage: "dev", title: "Top" },
+    ] });
+    const items = placeItems(a, info, "personal");
+    expect(items.map((i) => [i.title, i.parent ?? "", i.detail.split(" · ")[0]])).toEqual([
+      ["BN → GN 이동", "entry.1", "Sub-issue of GN 출장 일정 (new)"], ["GN 출장 일정", "", ""],
+      ["자료 정리", "entry.1", "Sub-issue of GN 출장 일정 (new)"], ["Top", "", ""],
+    ]);
+
+    // the new issue first, its sub-issues after the others, each pointing at its place among the entries added
+    const put = applyPlace(info, a, all(items), "2026-11-14");
+    expect(put.entries.map((e) => [e.title, e.parentId])).toEqual([
+      ["GN 출장 일정", undefined], ["Top", undefined], ["BN → GN 이동", "new:0"], ["자료 정리", "new:0"],
+    ]);
+    expect(withNewParent(put.entries[2], ["p1", "t1"]).parentId).toBe("p1");
+    expect(withNewParent(put.entries[0], ["p1"])).toBe(put.entries[0]);
+    expect("parentId" in withNewParent(put.entries[2], [])).toBe(false);
+
+    // without the new issue, a sub-issue left in on its own is added as an issue
+    const alone = applyPlace(info, a, new Set(["entry.2"]), "2026-11-14");
+    expect(alone.entries.map((e) => [e.title, e.parentId])).toEqual([["자료 정리", undefined]]);
   });
 
   it("with a target, asks for it and lists only the items of its places", () => {

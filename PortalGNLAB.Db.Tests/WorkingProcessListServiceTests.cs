@@ -77,7 +77,7 @@ public sealed class WorkingProcessListServiceTests : IDisposable
         WorkingProcessRow first = rows[0];
         Assert.Equal("UPPER ARRAY", first.Process);
         Assert.Equal("IONIZER", first.Machine);
-        Assert.Equal("ENCLOSURE DISPENSOR CAP JIG (V1) ×6", first.Jig);
+        Assert.Equal(("ENCLOSURE DISPENSOR CAP JIG", "V1", "6"), (first.Jig, first.JigVer, first.JigQty));
 
         WorkingProcessRow bonding = rows[1];
         Assert.Equal("BONDING", bonding.Process);
@@ -85,7 +85,9 @@ public sealed class WorkingProcessListServiceTests : IDisposable
 
         // names from the JIG LIST "N. NAME" when the Machine List has no row for the number
         Assert.Equal("SPK ASSY", rows.Single(r => r.No == "05").Process);
-        Assert.Equal("SPK ARRAY JIG (V0) ×4", rows.Single(r => r.No == "04").Jig);
+        WorkingProcessRow four = rows.Single(r => r.No == "04");
+        Assert.Equal(("SPK ARRAY JIG", "V0", "4"), (four.Jig, four.JigVer, four.JigQty));
+        Assert.Null(four.StdTime);
         Assert.Equal("AOI TEST 2", rows.Single(r => r.No == "07").Process);
         // the QM line's jigs are not on the line
         Assert.DoesNotContain(rows, r => r.Jig.Contains("DROP TEST JIG"));
@@ -102,7 +104,7 @@ public sealed class WorkingProcessListServiceTests : IDisposable
 
         Assert.Equal(["J1", "J2", "M1", "M2", "M3", "T1"], items.Select(i => i.Id));
         WorkingListItem cap = items[0];
-        Assert.Equal((WorkingListItem.Jig, "ENCLOSURE DISPENSOR CAP JIG", "ENCLOSURE DISPENSOR CAP JIG (V1) ×6"), (cap.Kind, cap.Name, cap.Label));
+        Assert.Equal((WorkingListItem.Jig, "ENCLOSURE DISPENSOR CAP JIG", "ENCLOSURE DISPENSOR CAP JIG", "V1", "6"), (cap.Kind, cap.Name, cap.Label, cap.Ver, cap.Qty));
         Assert.Equal("1)  1. UPPER ARRAY ~ 5. SPK ASSY / 2) 7. AOI TEST 2", cap.Process);
         Assert.Equal([1, 2, 7], cap.ProcessNos);
         WorkingListItem bonding = items.Single(i => i.Id == "M2");
@@ -115,6 +117,25 @@ public sealed class WorkingProcessListServiceTests : IDisposable
         Assert.DoesNotContain(items, i => i.Name == "DROP TEST JIG");
         // nor the drawing transfer list
         Assert.DoesNotContain(items, i => i.Name == "PLATE TRAY");
+    }
+
+    [Fact]
+    public void Row_PutsEachItemOnItsOwnLineAndTheJigVersionsAndQuantitiesOnTheSameLines()
+    {
+        static WorkingListItem It(string kind, string label, string ver = "", string qty = "") => new("", kind, label, label, "", [], "", ver, qty);
+        WorkingProcessRow row = WorkingProcessListService.Row("", "01", "BONDING",
+        [
+            It(WorkingListItem.Machine, "IONIZER"), It(WorkingListItem.Machine, "DISPENSOR ×2"), It(WorkingListItem.Machine, "IONIZER"),
+            It(WorkingListItem.Jig, "NO VERSION JIG", "", "2"), It(WorkingListItem.Jig, "CAP JIG", "V1", "6"), It(WorkingListItem.Jig, "CAP JIG", "V1", "6"),
+            It(WorkingListItem.Jig, "TRAY", "V3", ""), It(WorkingListItem.Tester, "F520"),
+        ], "");
+        Assert.Equal(("IONIZER\nDISPENSOR ×2", "F520"), (row.Machine, row.Tester));
+        Assert.Equal(("NO VERSION JIG\nCAP JIG\nTRAY", "\nV1\nV3", "2\n6"), (row.Jig, row.JigVer, row.JigQty));
+        Assert.Equal(((int?)null, (double?)null), (row.Workers, row.StdTime));
+
+        // saving keeps the blank first version line (it belongs to the first jig) and leaves out blank lines at the end
+        WorkingProcessRow saved = Assert.Single(WorkingProcessListService.Clean([row with { JigVer = " \r\n V1 \nV3\n\n", JigQty = "2\n6\n" }]));
+        Assert.Equal(("\nV1\nV3", "2\n6", "IONIZER\nDISPENSOR ×2"), (saved.JigVer, saved.JigQty, saved.Machine));
     }
 
     [Fact]
@@ -170,7 +191,7 @@ public sealed class WorkingProcessListServiceTests : IDisposable
         foreach (WorkingProcessRow r in rows)
             Console.WriteLine($"{r.No} | {r.Process} | {r.Machine} | {r.Jig} | {r.Tester} | {r.Note}");
         Assert.Contains(rows, r => r.No == "02" && r.Machine == "NON CONTACT DISPENSOR DT");
-        Assert.Contains(rows, r => r.Jig.Contains("ENCLOSURE DISPENSOR JIG (V4)"));
+        Assert.Contains(rows, r => r.Jig.Split('\n').Zip(r.JigVer.Split('\n')).Contains(("ENCLOSURE DISPENSOR JIG", "V4")));
         Assert.True(rows.Count >= 40);
 
         fs.Position = 0;
