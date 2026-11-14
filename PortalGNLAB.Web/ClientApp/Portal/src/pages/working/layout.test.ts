@@ -9,6 +9,16 @@ describe("process layout view maths", () => {
     expect(toScreen(v, 100, 50)).toEqual([216, 16]);
   });
 
+  it("fits bounds far from the origin, as a real line layout is (x 1.19M, y -547k)", () => {
+    const v = fitView([1191892, -547132, 1278724, -491399], 1000, 700, 0);
+    const [left, bottom] = toScreen(v, 1191892, -547132);
+    const [right, top] = toScreen(v, 1278724, -491399);
+    expect(left).toBeCloseTo(0);
+    expect(right).toBeCloseTo(1000);
+    expect((top + bottom) / 2).toBeCloseTo(350);
+    expect(top).toBeLessThan(bottom);
+  });
+
   it("converts screen and world back and forth", () => {
     const v = fitView([-10, -20, 30, 60], 800, 600);
     const [sx, sy] = toScreen(v, 7, -3);
