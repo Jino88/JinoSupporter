@@ -27,7 +27,7 @@ export interface PlaceEntry {
   severity: string; result: string; phase: string; category: string; process: string; cause: string;
   /** Pictures sent with the text (0 = the first) that belong to this entry; saved with it. */
   images: number[];
-  /** Issue: the existing issue it goes under as a sub-issue, or "". */
+  /** Issue: the existing issue it goes under as a sub-issue, "new:N" for the new issue at N of the answer's entries, or "". */
   parentId: string;
 }
 export interface PlaceAnswer {
@@ -199,10 +199,16 @@ export function placeItems(answer: PlaceAnswer, info: ModelInfo, target?: AiTarg
   });
   answer.entries.forEach((e, i) => {
     const pics = e.images.length ? `${e.images.length} picture${e.images.length > 1 ? "s" : ""}` : "";
-    const parent = e.parentId ? entries.find((x) => x.id === e.parentId) : undefined;
-    const under = e.parentId ? `Sub-issue of ${parent ? `No. ${parent.seq} ${parent.title}` : "an issue"}` : "";
+    const fresh = newParentOf(answer, i);
+    const parent = e.parentId && fresh < 0 ? entries.find((x) => x.id === e.parentId) : undefined;
+    const under = fresh >= 0 ? `Sub-issue of ${answer.entries[fresh].title} (new)`
+      : e.parentId ? `Sub-issue of ${parent ? `No. ${parent.seq} ${parent.title}` : "an issue"}` : "";
     const bits = [under, e.date, e.owner, e.kind === "issue" ? [e.severity, e.due && `due ${e.due}`].filter(Boolean).join(" · ") : e.kind === "review" ? e.result : "", pics];
-    out.push({ key: `entry.${i}`, place: target === "personal" ? "My Plans" : placeOf(e), change: false, title: e.title, detail: bits.filter(Boolean).join(" · ") });
+    // a sub-issue of a new issue is listed under it and is left out with it
+    out.push({
+      key: `entry.${i}`, place: target === "personal" ? "My Plans" : placeOf(e), change: false, title: e.title, detail: bits.filter(Boolean).join(" · "),
+      ...(fresh >= 0 ? { parent: `entry.${fresh}` } : {}),
+    });
   });
   return target ? out.filter((i) => TARGET_PLACES[target].includes(i.place)) : out;
 }
@@ -267,18 +273,44 @@ export function applyPlace(info: ModelInfo, answer: PlaceAnswer, picked: Set<str
   });
   if (planChanged) { next = { ...next, devPlan: { ...plan, events } }; changed = true; }
 
-  const kept = answer.entries.filter((_, i) => picked.has(`entry.${i}`));
-  const entries = kept.map((e): EntryFields => {
+  // a sub-issue of an issue new here comes after the others, so that issue is added first and gives its id
+  const keptAt = answer.entries.map((_, i) => i).filter((i) => picked.has(`entry.${i}`));
+  const order = [...keptAt.filter((i) => newParentOf(answer, i) < 0), ...keptAt.filter((i) => newParentOf(answer, i) >= 0)];
+  const at = new Map(order.map((i, k) => [i, k]));
+  const entries = order.map((i): EntryFields => {
+    const e = answer.entries[i];
     const issue = e.kind === "issue";
+    const fresh = newParentOf(answer, i);
+    const parentId = fresh >= 0 ? (at.has(fresh) ? `new:${at.get(fresh)}` : "") : e.parentId;
     return {
       kind: e.kind, date: /^\d{4}-\d{2}-\d{2}$/.test(e.date) ? e.date : today, title: e.title.slice(0, 200), body: e.body,
       status: issue ? "Open" : "", severity: issue ? e.severity : "", result: e.kind === "review" ? e.result || "Pass" : "",
       owner: e.owner, due: issue ? e.due : "", phase: issue ? (e.stage === "mp" ? "MP" : e.phase) : "",
       category: issue ? e.category : "", process: issue ? e.process : "", cause: issue ? e.cause : "", doneDate: "", finalResult: "",
-      ...(issue && e.parentId ? { parentId: e.parentId } : {}),
+      ...(issue && parentId ? { parentId } : {}),
     };
   });
-  return { info: changed ? next : null, entries, pictures: kept.map((e) => e.images) };
+  return { info: changed ? next : null, entries, pictures: order.map((i) => answer.entries[i].images) };
+}
+
+/** The position (in the answer's entries) of the new issue entry <i> is a sub-issue of ("new:N"), or -1. */
+function newParentOf(answer: PlaceAnswer, i: number): number {
+  const m = /^new:(\d+)$/.exec(answer.entries[i].parentId);
+  const n = m ? Number(m[1]) : -1;
+  const p = answer.entries[n];
+  return n !== i && p && p.kind === "issue" && !p.parentId ? n : -1;
+}
+
+/**
+ * An entry of applyPlace ready to add: a sub-issue of a new issue ("new:K", K its place in the entries) takes the id that
+ * issue got when it was added (<ids>, in the same order), or is added as an issue of its own when that one is not there.
+ */
+export function withNewParent(e: EntryFields, ids: string[]): EntryFields {
+  const m = /^new:(\d+)$/.exec(e.parentId ?? "");
+  if (!m) return e;
+  const id = ids[Number(m[1])];
+  const { parentId: _, ...rest } = e;
+  return id ? { ...rest, parentId: id } : rest;
 }
 
 /** Pictures AI can read: PNG, JPEG, GIF or WebP, 5 MB or less each, 6 at most with the ones already there. */

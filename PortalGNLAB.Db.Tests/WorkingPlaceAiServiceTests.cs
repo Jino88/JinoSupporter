@@ -184,6 +184,32 @@ public sealed class WorkingPlaceAiServiceTests
     }
 
     [Fact]
+    public void ParseAnswer_SubIssueOfAnIssueNewInTheSameAnswerPointsAtItsPositionThere()
+    {
+        PlaceAiRequest req = Request();
+        req.Target = "personal";
+        // a trip and its schedule items, all new; entries left out before the parent move its position
+        const string answer = """
+            {"entries":[
+              {"kind":"issue","title":""},
+              {"kind":"issue","title":"BN → GN 이동","parentId":"new:2"},
+              {"kind":"issue","title":"GN 출장 일정 (11/17~11/20)","parentId":""},
+              {"kind":"issue","title":"자료 정리","parentId":" new:2 "},
+              {"kind":"issue","title":"under a sub-issue","parentId":"new:3"},
+              {"kind":"issue","title":"under itself","parentId":"new:5"},
+              {"kind":"issue","title":"out of range","parentId":"new:99"},
+              {"kind":"issue","title":"not a number","parentId":"new:x"}
+            ]}
+            """;
+        List<PlaceAiEntry> e = WorkingPlaceAiService.ParseAnswer(answer, req).Entries;
+        Assert.Equal(["BN → GN 이동", "GN 출장 일정 (11/17~11/20)", "자료 정리", "under a sub-issue", "under itself", "out of range", "not a number"],
+            e.Select(x => x.Title));
+        Assert.Equal(["new:1", "", "new:1", "", "", "", ""], e.Select(x => x.ParentId));
+
+        Assert.Contains("\"new:<N>\"", WorkingPlaceAiService.Instructions);
+    }
+
+    [Fact]
     public async Task PlaceAsync_EmptyTextAndNoPictureIsRejected()
     {
         var svc = new WorkingPlaceAiService(null!);
