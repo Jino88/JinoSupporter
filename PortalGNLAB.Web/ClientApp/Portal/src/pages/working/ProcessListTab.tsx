@@ -73,38 +73,49 @@ function ProcessRows(props: { row: ProcessRow; edit: boolean; onChange: (r: Proc
   );
 }
 
-/** All JIGs of the list as one: kinds and pieces, with the list of them to unfold. */
+/** All JIGs of the list as one, always shown: the count per kind of JIG and the total, above the processes. */
 function JigSummary(props: { rows: ProcessRow[] }) {
   const tr = useTr();
   const t = jigTotals(props.rows);
   return (
-    <details className="pl-jigsum">
-      <summary>{tr("JIG total")}: <b>{t.kinds}</b>{tr(" kinds")} · <b>{t.total}</b>{tr(" pcs")}</summary>
+    <div className="pl-jigsum">
+      <div className="pl-jigsum-h">{tr("JIG total")}: <b>{t.kinds}</b>{tr(" kinds")} · <b>{t.total}</b>{tr(" pcs")}</div>
       {t.items.length > 0 && (
-        <table className="wk-it pl-t pl-jigtot">
-          <thead><tr><th className="l">JIG</th><th className="l">{tr("Drawing No")}</th><th>{tr("Ver.")}</th><th>{tr("Qty")}</th></tr></thead>
-          <tbody>
-            {t.items.map((j, i) => (
-              <tr key={i}><td className="l">{j.name}</td><td className="l">{j.drawingNo}</td><td className="pl-narrow">{j.ver}</td><td className="pl-narrow">{j.qtyNum}</td></tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="pl-jigtot">
+          {t.items.map((j, i) => (
+            <div key={i} className="pl-jigtot-i">
+              <span className="pl-jigtot-n">{j.name}</span>
+              <span className="pl-jigtot-d">{j.drawingNo}</span>
+              <span className="pl-jigtot-v">{j.ver}</span>
+              <b className="pl-jigtot-q">{j.qtyNum}</b>
+            </div>
+          ))}
+        </div>
       )}
-    </details>
+    </div>
   );
 }
 
-/** What the AI match says about its rows: where the order came from, the model, its note and what it could not place. */
+/**
+ * What the AI match says about its rows, as information (not an error): the rows are not saved yet, where the order
+ * came from, the model, its note and the items it could not put on a process with the reason for each.
+ */
 function MatchNotice(props: { match: ProcessMatch }) {
   const tr = useTr();
   const m = props.match;
   return (
     <div className="pl-ai" role="note">
-      <div><b>✦ {tr(BASIS_TEXT[m.basis] ?? BASIS_TEXT.workbook)}</b>{m.model && <span className="muted small"> · {m.model}</span>}</div>
-      {m.note && <div className="pl-ai-note">{m.note}</div>}
+      <div>
+        <b>✦ {tr("AI match result (not saved yet)")}</b>
+        <span className="muted small"> · {tr(BASIS_TEXT[m.basis] ?? BASIS_TEXT.workbook)}{m.model && <> · {m.model}</>}</span>
+      </div>
+      {m.note && <div className="pl-ai-note"><span className="muted">{tr("AI note")}:</span> {m.note}</div>}
       {m.unmatched.length > 0 && (
         <details className="pl-ai-un">
-          <summary>{tr("Not placed in a process")} ({m.unmatched.length})</summary>
+          <summary>{tr("Items not put on a process")} ({m.unmatched.length})</summary>
+          <div className="muted small">
+            {tr("They are for a process that is not in this line's process list, or have no process number. Add them with Edit if needed.")}
+          </div>
           <ul>{m.unmatched.map((u, i) => <li key={i}>{u}</li>)}</ul>
         </details>
       )}

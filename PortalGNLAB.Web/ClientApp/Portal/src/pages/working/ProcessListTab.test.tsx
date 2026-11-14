@@ -69,15 +69,16 @@ describe("process list tab", () => {
     expect(body).not.toContain("ENCLOSURE JIG\nCOVER JIG");
   });
 
-  it("shows the JIG total at the top: one count per distinct JIG, with its biggest quantity", () => {
+  it("shows the JIG total at the top, always open: one line per kind of JIG with its biggest quantity, and the sum", () => {
     const html = render(list);
-    expect(html).toContain('<details class="pl-jigsum">');
     // ENCLOSURE JIG 70 + COVER JIG max(6, 10) = 80 over 2 kinds
     expect(html).toMatch(/JIG total: <b>2<\/b> kinds · <b>80<\/b> pcs/);
-    const sum = html.match(/<details class="pl-jigsum">[^]*?<[/]details>/)![0];
-    expect(sum).toContain("Drawing No");
-    expect(sum).toContain("DWG-100");
-    expect(sum.indexOf("<details")).toBeLessThan(html.indexOf('<table class="wk-it pl-t">'));
+    const sum = html.match(/<div class="pl-jigsum">[^]*?<div class="pl-wrap">/)![0];
+    // not folded away
+    expect(html).not.toContain("<details");
+    const lines = [...sum.matchAll(/<div class="pl-jigtot-i">([^]*?)<\/div>/g)].map((m) => m[1].replace(/<[^>]+>/g, "|").replace(/\|+/g, "|"));
+    expect(lines).toEqual(["|ENCLOSURE JIG|DWG-100|V4|70|", "|COVER JIG|DWG-200|V1|10|"]);
+    expect(html.indexOf("pl-jigsum")).toBeLessThan(html.indexOf('<table class="wk-it pl-t">'));
   });
 
   it("edits with boxes only after Edit: JIG, Drawing No, Ver. and Qty per JIG row, + JIG per process", () => {
@@ -164,6 +165,16 @@ describe("process list tab", () => {
       expect(html).toContain("Two jigs had no process.");
       expect(html).toContain("JIG-77");
       expect(html.indexOf("pl-ai")).toBeLessThan(html.indexOf('<table class="wk-it pl-t">'));
+    });
+
+    it("reads as information about an unsaved result, not as an error, and says why items have no process", () => {
+      const html = renderMatch(match);
+      expect(html).toContain("AI match result (not saved yet)");
+      expect(html).toMatch(/AI note(<!-- -->)?:<\/span>/);
+      expect(html).toContain("Items not put on a process (2)");
+      expect(html).toContain("not in this line&#x27;s process list, or have no process number. Add them with Edit if needed.");
+      expect(html).not.toContain("Not placed in a process");
+      expect(html).not.toMatch(/pl-err|role="alert"/);
     });
 
     it("words the basis and leaves the list out when nothing was unmatched", () => {

@@ -110,16 +110,38 @@ public sealed class WorkingProcessMatchAiServiceTests
         // a process the answer left out is kept, without items
         Assert.Equal(("", "", (double?)null), (rows[4].Machine, rows[4].Tester, rows[4].StdTime));
 
-        Assert.Equal(["Tester: 방수검사기 (F520) — AIR LEAK TEST"], unmatched);
+        // what is left says why it has no process
+        Assert.Equal(["Tester: 방수검사기 (F520) — AIR LEAK TEST (no process number; no process of that name in the list)"], unmatched);
     }
 
     [Fact]
-    public void Build_AnEmptyAnswerStillListsTheOrder()
+    public void Build_AnEmptyAnswerStillListsTheOrderAndPutsItemsByTheirProcessNumbers()
     {
         (List<WorkingProcessRow> rows, List<string> unmatched) =
             WorkingProcessMatchAiService.Build(new MatchAnswer([], ""), Order, Items);
         Assert.Equal(Order.Select(p => p.Name), rows.Select(r => r.Process));
-        Assert.Equal(Items.Count, unmatched.Count);
+        // the processes coded 01..04 take the items of those numbers
+        Assert.Equal(("IONIZER", "ENCLOSURE DISPENSOR JIG"), (rows[0].Machine, rows[0].Jigs![0].Name));
+        Assert.Equal("NON CONTACT DISPENSOR DT", rows[1].Machine);
+        Assert.Equal("ENCLOSURE DISPENSOR JIG", Assert.Single(rows[3].Jigs!).Name);
+        Assert.Equal([
+            "Machine: CONVEYOR 3M — DRY (workbook process 6; no such process in the list)",
+            "Machine: NON CONTACT DISPENSOR DT-B — BONDING 2 (workbook process 7; no such process in the list)",
+            "Tester: 방수검사기 (F520) — AIR LEAK TEST (no process number; no process of that name in the list)",
+        ], unmatched);
+    }
+
+    [Fact]
+    public void Build_PutsAnItemTheAnswerLeftOutOnTheProcessOfItsName()
+    {
+        List<MatchProcess> order = [new(1, "C-01", "Bôi keo", null, null, []), new(2, "C-02", "air leak test", null, null, [])];
+        (List<WorkingProcessRow> rows, List<string> unmatched) =
+            WorkingProcessMatchAiService.Build(new MatchAnswer([new(1, "", ["M2"], "")], ""), order, Items);
+        Assert.Equal("방수검사기 (F520)", rows[1].Tester);
+        // codes that are not numbers take nothing by number
+        Assert.Equal("NON CONTACT DISPENSOR DT", rows[0].Machine);
+        Assert.Empty(rows[0].Jigs!);
+        Assert.Equal(4, unmatched.Count);
     }
 
     private sealed class ProcessComparer : IEqualityComparer<MatchProcess>
