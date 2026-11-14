@@ -102,7 +102,7 @@ function Thumbs(props: {
   );
 }
 
-function IssueForm(props: {
+export function IssueForm(props: {
   value: EntryFields; images: WorkingImage[]; lists: Lists; busy: boolean;
   onSave: (f: EntryFields, pics: Pics) => void; onCancel: () => void; onOpen: (i: WorkingImage) => void;
 }) {
@@ -130,29 +130,33 @@ function IssueForm(props: {
       {text("category", "Issue type", "wk-l-type")}
       {text("process", "Process", "wk-l-proc")}
       {text("cause", "Cause group", "wk-l-cause")}
-      <div className="wk-f wide"><label>Issue</label>
-        <input className="inp" value={f.title} maxLength={200} autoFocus onChange={(e) => set("title", e.target.value)} /></div>
-      <div className="wk-f wide"><label>Issue detail</label>
-        <textarea className="inp wk-ta" rows={3} value={f.body} onChange={(e) => set("body", e.target.value)} /></div>
-      <div className="wk-f wide"><label>Pictures / videos</label>
-        <div className="wk-paste" tabIndex={0} onDragOver={pics.onDragOver} onDrop={pics.onFileDrop}>
-          <div className="wk-paste-h">
-            <span className="muted small">
-              Click here and press Ctrl+V, or drop files here. Pictures (PNG, JPEG, GIF, WebP, BMP) up to 10 MB, videos (MP4, MOV, WebM,
-              MKV, AVI) up to 500 MB; kept as they are.
-            </span>
-            <PickFiles onPick={pics.pick} />
-          </div>
-          <Thumbs images={pics.kept} onOpen={props.onOpen} onRemove={pics.remove} pending={pics.files} onDrop={pics.drop} />
+      {/* owner and dates in one narrow column on the left; issue, detail and files side by side on the right */}
+      <div className="wk-if-main">
+        <div className="wk-if-side">
+          {text("owner", "Owner")}
+          {date("date", "Registered")}
+          {date("due", "Due")}
+          {date("doneDate", "Done")}
         </div>
-        {pics.problem && <span className="pi-dirty">{pics.problem}</span>}
+        <div className="wk-if-body">
+          <div className="wk-f"><label>Issue</label>
+            <input className="inp" value={f.title} maxLength={200} autoFocus onChange={(e) => set("title", e.target.value)} /></div>
+          <div className="wk-f"><label>Issue detail</label>
+            <textarea className="inp wk-ta" rows={5} value={f.body} onChange={(e) => set("body", e.target.value)} /></div>
+          <div className="wk-f"><label>Files</label>
+            <div className="wk-paste" tabIndex={0} onDragOver={pics.onDragOver} onDrop={pics.onFileDrop}>
+              <div className="wk-paste-h">
+                <span className="muted small">Ctrl+V or drop pictures / videos</span>
+                <PickFiles onPick={pics.pick} />
+              </div>
+              <Thumbs images={pics.kept} onOpen={props.onOpen} onRemove={pics.remove} pending={pics.files} onDrop={pics.drop} />
+            </div>
+            {pics.problem && <span className="pi-dirty">{pics.problem}</span>}
+          </div>
+          <div className="wk-f wide"><label>Final result</label>
+            <textarea className="inp wk-ta" rows={2} value={f.finalResult} onChange={(e) => set("finalResult", e.target.value)} /></div>
+        </div>
       </div>
-      {text("owner", "Owner")}
-      {date("date", "Registered")}
-      {date("due", "Due")}
-      {date("doneDate", "Done")}
-      <div className="wk-f wide"><label>Final result</label>
-        <textarea className="inp wk-ta" rows={2} value={f.finalResult} onChange={(e) => set("finalResult", e.target.value)} /></div>
       <div className="wk-f wide wk-ef-act">
         {problem && f.title && <span className="pi-dirty">{problem}</span>}
         <button className="btn sm" onClick={props.onCancel} disabled={props.busy}>Cancel</button>
