@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  addMaterial, addMaterials, aiAnswer, blankProcess, bomMaterials, deleteMaterial, emptyManual, fromProductionInput, moveProcess, ngFromText, processProblem, putMaterial, readManual,
+  addMaterial, addMaterials, aiAnswer, blankProcess, bomMaterials, deleteMaterial, emptyManual, moveProcess, ngFromText, processProblem, putMaterial, readManual,
   editProcess, keepSubTables, readSubManual, saveProcess, shownTable, usage, bomGlue, deleteMaterials, glueOf, isBond,
 } from "./manual";
 import type { ManualProcess } from "./manual";
@@ -85,18 +85,6 @@ describe("model group entered by hand", () => {
     expect(g.processes.map((p) => p.name)).toEqual(["AOI 1A", "AOI 2"]);
     expect(moveProcess(g, b.id, -1).processes.map((p) => p.name)).toEqual(["AOI 2", "AOI 1A"]);
     expect(moveProcess(g, b.id, 1)).toBe(g);
-  });
-
-  it("copies a Production Input setup", () => {
-    const g = fromProductionInput({
-      materials: ["UPPER"], stages: [],
-      processes: [{ id: "p", name: "Bonding", localName: "Bôi keo", segment: "A", type: "SUB",
-        ngItems: [{ id: "n1", name: "NG" }, { id: "n2", name: "Glue overflow" }], materials: [{ material: "UPPER", qtyPerUnit: 1 }] }],
-    });
-    expect(g.materials).toEqual(["UPPER"]);
-    expect(g.processes.map((p) => [p.type, p.name, p.localName, p.ngItems, p.materials])).toEqual([
-      ["SUB", "Bonding", "Bôi keo", ["NG", "Glue overflow"], [{ material: "UPPER", qtyPerUnit: 1 }]],
-    ]);
   });
 
   it("puts a process changed in place into the table as typed, the others unchanged", () => {

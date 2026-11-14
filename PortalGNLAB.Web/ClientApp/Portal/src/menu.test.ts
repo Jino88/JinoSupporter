@@ -53,13 +53,14 @@ describe("railTile", () => {
 
   it("returns undefined for menus that are not on the rail", () => {
     expect(railTile("team-memo")).toBeUndefined();
+    expect(railTile("production-input")).toBeUndefined();
     expect(railTile("nope")).toBeUndefined();
   });
 
   it("has an SVG path for every icon used", () => {
     for (const id of ["ng-rate", "bmes-f-cost", "report", "bmes-worker-status", "bmes-test5", "bmes-make-model-group",
       "bmes-routing-table", "bmes-reason-table", "qr-summary", "qr-bako-data", "qr-airleak-data", "qr-gauss-data",
-      "bmes-daily-report", "production-input", "working", WORKING_PERSONAL, WORKING_GRAPH, "translate", "review-report", "bmes-setting", "admin-users", "admin-ai-usages",
+      "bmes-daily-report", "working", WORKING_PERSONAL, WORKING_GRAPH, "translate", "review-report", "bmes-setting", "admin-users", "admin-ai-usages",
       "test-excel-converter", "admin-db-query"]) {
       expect(ICON_PATHS[railTile(id)!.icon]).toBeTruthy();
     }
@@ -70,7 +71,7 @@ describe("railTile", () => {
 describe("buildRail", () => {
   const all = [
     "ng-rate", "bmes-f-cost", "report", "bmes-worker-status", "bmes-test5", "bmes-make-model-group",
-    "bmes-routing-table", "bmes-reason-table", "bmes-daily-report", "production-input", "working", "qr-summary", "qr-bako-data",
+    "bmes-routing-table", "bmes-reason-table", "bmes-daily-report", "working", "qr-summary", "qr-bako-data",
     "qr-airleak-data", "qr-gauss-data", "translate", "review-report", "bmes-setting", "admin-users",
     "admin-ai-usages", "test-excel-converter", "admin-db-query",
   ].map((id) => item(id, "G", "/x/" + id));
@@ -79,13 +80,13 @@ describe("buildRail", () => {
 
   it("lays out the rail like NavMenu.razor", () => {
     const rail = buildRail(all);
-    expect(shape(rail)).toEqual(["bmes", "Daily", "Input", "working", "qr", "-", "Translate", "Write", "-", "Setting", "Users", "AI Usage", "Excel", "DB"]);
+    expect(shape(rail)).toEqual(["bmes", "Daily", "working", "qr", "-", "Translate", "Write", "-", "Setting", "Users", "AI Usage", "Excel", "DB"]);
     const bmes = rail[0];
     if (bmes.kind !== "group") throw new Error("expected group");
     expect(bmes.sections.map((s) => s.title ?? null)).toEqual([null, "Setting Model"]);
     expect(bmes.sections[0].tiles.map((t) => t.label)).toEqual(["NG Rate", "F-Cost", "Report", "Worker", "BOM"]);
     expect(bmes.sections[1].tiles.map((t) => t.label)).toEqual(["Group", "Routing", "Reason"]);
-    const qr = rail[4];
+    const qr = rail[3];
     if (qr.kind !== "group") throw new Error("expected group");
     expect(qr.sections[0].tiles.map((t) => t.label)).toEqual(["Summary", "Bako", "Airleak", "Gauss"]);
   });

@@ -1,6 +1,5 @@
 // Model group entered by hand in Model Info for a model that BMES > Make Model Group does not have: its processes,
 // the NG items of each, the materials each uses per unit and the material names. Kept in the model information JSON.
-import type { ModelSetup } from "../productionInput/types";
 import type { InstructionDoc } from "./workInstruction";
 
 export const MANUAL = "__manual";
@@ -168,15 +167,6 @@ export function moveProcess(g: ManualGroup, id: string, by: -1 | 1): ManualGroup
   [list[i], list[j]] = [list[j], list[i]];
   return { ...g, processes: list };
 }
-
-/** The processes, NG items and materials of a Production Input model setup. */
-export const fromProductionInput = (s: ModelSetup): ManualGroup => ({
-  materials: [...s.materials],
-  processes: s.processes.map((p) => ({
-    id: newId(), type: p.type, name: p.name, localName: p.localName ?? "",
-    ngItems: p.ngItems.map((n) => n.name), materials: p.materials.map((u) => ({ material: u.material, qtyPerUnit: u.qtyPerUnit })),
-  })),
-});
 
 /**
  * The group AI answered, read leniently, with the names of the processes it added (no id of the current group) and

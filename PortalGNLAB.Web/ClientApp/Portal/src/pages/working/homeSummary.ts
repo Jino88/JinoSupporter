@@ -1,6 +1,6 @@
 // Home of Working: a summary of every model, the development plans of the models in development first, then the MP plans
 // (the Setup Plan of each model).
-import { addDays } from "../productionInput/logic";
+import { addDays } from "./dates";
 import { isLate, isLogLate, isOpenIssue, issuesOfStage, issueTree, notesInOrder, type GroupNode } from "./logic";
 import { eventSpan, groupSpan, progress, readDevPlan } from "./plan";
 import { setupEvents, type SetupRow } from "./setup";

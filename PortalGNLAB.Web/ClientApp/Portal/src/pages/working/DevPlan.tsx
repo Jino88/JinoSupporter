@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import DateBox from "./DateBox";
 import { useTr } from "./i18n";
 import type { ReactNode } from "react";
-import { WEEKDAYS, localToday, weekday } from "../productionInput/logic";
+import { WEEKDAYS, localToday, weekday } from "./dates";
 import { workingApi } from "./api";
 import { bmesApi } from "./bmes";
 import type { BomRow } from "./bmes";

@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { addDays } from "../productionInput/logic";
+import { addDays } from "./dates";
 import DevPlan, { EventEdit, Gantt } from "./DevPlan";
 import type { PlanEvent } from "./plan";
 

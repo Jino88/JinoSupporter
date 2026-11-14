@@ -1,6 +1,6 @@
 // Development plan of a Working model (Dev Plan tab): events (ER build, DR, tooling, ...) each with a detailed
 // schedule of tasks. Kept in the model information JSON (info.devPlan) and saved with the model.
-import { addDays } from "../productionInput/logic";
+import { addDays } from "./dates";
 
 export interface PlanTask {
   id: string;

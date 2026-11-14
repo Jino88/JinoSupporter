@@ -11,7 +11,6 @@ import TestExcelConverter from "./pages/TestExcelConverter";
 import Translate from "./pages/Translate";
 import ReviewReport from "./pages/ReviewReport";
 import GraphMaker from "./pages/GraphMaker";
-import ProductionInput from "./pages/ProductionInput";
 import Working from "./pages/Working";
 import WorkingPersonal from "./pages/WorkingPersonal";
 import WorkingGraphMaker from "./pages/WorkingGraphMaker";
@@ -47,7 +46,6 @@ const pages: Record<string, { title: string; render: (menu: MenuItem[], user: Po
   "/tools/translate": { title: "Translate", render: () => <Translate /> },
   "/tools/review-report": { title: "Review Report", render: () => <ReviewReport /> },
   "/tools/graph-maker": { title: "Graph Maker", render: () => <GraphMaker /> },
-  "/production/input": { title: "Production Input", render: () => <ProductionInput /> },
   "/working": { title: "Working", render: () => <Working /> },
   // comes with the Working menu (menu.ts WORKING_PERSONAL), so it is opened by whoever may open Working
   "/working/personal": { title: "Personal", render: (_menu, user) => <WorkingPersonal user={user} /> },

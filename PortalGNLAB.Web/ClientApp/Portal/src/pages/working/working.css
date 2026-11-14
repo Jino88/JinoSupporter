@@ -1,4 +1,25 @@
 /* Working (docs/ui-mockups/model-hub/a-tabs.html + the merged timeline of b-dossier.html). Inside .pi-page for its colours. */
+
+/* The page frame Working took from the retired Production Input page: colours, tabs, sections. */
+.pi-page {
+  --line-soft: #eef2f7; --accent: #4f46e5; --accent-soft: #eef2ff; --accent-ink: #4338ca; --ink-2: #334155; --faint: #94a3b8;
+  --bad: #dc2626; --bad-soft: #fef2f2; --good: #059669; --good-soft: #ecfdf5; --warn: #b45309; --warn-soft: #fffbeb;
+}
+.pi-page .page-head p { max-width: 900px; }
+.pi-dirty { font-size: 11px; color: var(--warn); font-weight: 700; }
+.pi-msg { font-size: 12px; color: var(--good); font-weight: 600; }
+.pi-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+.pi-tabs button { border: 0; background: none; padding: 9px 14px; font: inherit; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.pi-tabs button.on { color: var(--accent-ink); border-bottom-color: var(--accent); }
+.pi-tabs .cnt, .pi-sec-h .cnt { font-size: 10.5px; font-weight: 700; color: var(--muted); background: #f1f5f9; border-radius: 999px; padding: 1px 7px; margin-left: 6px; }
+.pi-sec { padding: 0; overflow: hidden; }
+.pi-sec-h { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); background: #fcfdfe; }
+.pi-sec-h h2 { margin: 0; font-size: 14px; }
+.pi-sec-b { padding: 12px 16px; }
+.pi-wrap { overflow-x: auto; }
+.pi-legend { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; color: var(--muted); font-size: 11.5px; }
+.pi-empty { padding: 40px; text-align: center; color: var(--muted); }
+
 .wk-lay { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 14px; align-items: start; }
 .wk-side { padding: 0; position: sticky; top: 0; max-height: calc(100vh - 24px); display: flex; flex-direction: column; overflow: hidden; }
 .wk-side-h { padding: 12px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }

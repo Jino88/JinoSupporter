@@ -1,10 +1,9 @@
 import { useEffect, useState, type DragEvent } from "react";
-import { productionApi } from "../productionInput/api";
 import { workingApi } from "./api";
 import { bmesApi } from "./bmes";
 import {
   MANUAL_TYPES, addMaterial, addMaterials, aiAnswer, bomGlue, bomMaterials, blankProcess, deleteMaterial, deleteMaterials, deleteProcess, editProcess,
-  fromProductionInput, glueOf, isBond, moveProcess, ngFromText, putMaterial, saveProcess, usage,
+  glueOf, isBond, moveProcess, ngFromText, putMaterial, saveProcess, usage,
 } from "./manual";
 import type { ManualGroup as Group, ManualProcess, ManualType, ManualUse } from "./manual";
 import { useTr } from "./i18n";
@@ -297,7 +296,6 @@ export default function ManualGroup(props: {
   // the process just added, whose name box gets the cursor
   const [added, setAdded] = useState<string | null>(null);
   const [newMat, setNewMat] = useState("");
-  const [source, setSource] = useState<{ id: string; name: string; build: string } | null>(null);
   const [pasting, setPasting] = useState(false);
   // materials picked in the list (Ctrl+click for several), the ones dragged onto a process row, and the row they are over
   const [picked, setPicked] = useState<string[]>([]);
@@ -314,21 +312,6 @@ export default function ManualGroup(props: {
     return () => { live = false; };
   }, [props.modelName, props.glue]);
 
-  // a Production Input model with the same name can be copied in
-  useEffect(() => {
-    let live = true;
-    productionApi.models()
-      .then((list) => { if (live) setSource(list.find((m) => m.name.trim().toLowerCase() === props.modelName.trim().toLowerCase()) ?? null); })
-      .catch(() => {});
-    return () => { live = false; };
-  }, [props.modelName]);
-
-  const copy = async () => {
-    if (!source) return;
-    if ((g.processes.length || g.materials.length)
-      && !window.confirm(`Replace the processes and materials below with the ones of Production Input ${source.name} (${source.build})?`)) return;
-    try { props.onChange(fromProductionInput((await productionApi.model(source.id)).setup)); } catch (e) { props.onError(e); }
-  };
   const addMat = () => {
     try { props.onChange(addMaterial(g, newMat)); setNewMat(""); } catch (e) { props.onError(e); }
   };
@@ -376,9 +359,7 @@ export default function ManualGroup(props: {
     <div className="wk-man">
       <div className="wk-man-h">
         <span className="wk-man-hb">
-          <button className="btn sm" disabled={pasting} onClick={() => setPasting(true)}>{tr("Paste NG Rate header")}</button>
-          {source && <button className="btn sm" onClick={copy}>{tr("Copy from Production Input")} {source.name} ({source.build})</button>}
-        </span>
+          <button className="btn sm" disabled={pasting} onClick={() => setPasting(true)}>{tr("Paste NG Rate header")}</button>        </span>
       </div>
       <AiRequest modelName={props.modelName} value={g} onApply={props.onChange} />
       {pasting && <SheetPaste value={g} onClose={() => setPasting(false)} onApply={(next) => { props.onChange(next); setPasting(false); }} />}
