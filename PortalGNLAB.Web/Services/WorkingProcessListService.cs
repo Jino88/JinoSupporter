@@ -1,7 +1,236 @@
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using ClosedXML.Excel;
+
 namespace PortalGNLAB.Web.Services;
 
-/// <summary>The Process List (공정편성 LIST) of each model.</summary>
-public sealed class WorkingProcessListService(string? root = null)
+/// <summary>
+/// A process of the line: its number (as written, "01"), name, people, standard time (seconds), machines, jigs, testers,
+/// materials (bond / nozzle) and a note.
+/// </summary>
+public sealed record WorkingProcessRow(
+    string Id, string No, string Process, int? Workers, double? StdTime, string Machine, string Jig, string Tester,
+    string Material, string Note);
+
+public sealed record WorkingProcessList(List<WorkingProcessRow> Rows, int Revision, string UpdatedBy, DateTime? UpdatedAt, string Source);
+
+/// <summary>
+/// The Process List (공정편성 LIST) of each model, kept as JSON under &lt;data&gt;\PortalGNLAB\working-process-list. Rows are
+/// typed in, or read from a JIG / Machine / Tester list workbook (its Machine List, JIG LIST and Tester List sheets).
+/// </summary>
+public sealed partial class WorkingProcessListService(string? root = null)
 {
+    public const long MaxUploadBytes = 50L * 1024 * 1024;
+    public const int MaxRows = 500;
+
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+    private readonly Lock _gate = new();
+
     private string Root => root ?? AppStoragePaths.AppFolder("working-process-list");
+
+    private string FileOf(string modelName)
+    {
+        byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(modelName.Trim().ToLowerInvariant()));
+        return Path.Combine(Root, Convert.ToHexString(hash, 0, 16).ToLowerInvariant() + ".json");
+    }
+
+    public WorkingProcessList Get(string modelName)
+    {
+        string path = FileOf(modelName);
+        lock (_gate)
+            return File.Exists(path)
+                ? JsonSerializer.Deserialize<WorkingProcessList>(File.ReadAllText(path), Json) ?? Empty
+                : Empty;
+    }
+
+    private static WorkingProcessList Empty => new([], 0, "", null, "");
+
+    /// <summary>Keeps the rows (cleaned, given ids) when <paramref name="revision"/> is the one stored; else a conflict.</summary>
+    public WorkingProcessList Save(string modelName, IEnumerable<WorkingProcessRow?> rows, int revision, string user, string? source = null)
+    {
+        var clean = Clean(rows);
+        lock (_gate)
+        {
+            WorkingProcessList now = Get(modelName);
+            if (revision != now.Revision)
+                throw new WorkingConflictException("Someone else saved this Process List. Reload it and make your change again.");
+            var saved = new WorkingProcessList(clean, now.Revision + 1, user, DateTime.UtcNow, source ?? now.Source);
+            string path = FileOf(modelName);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path + ".tmp", JsonSerializer.Serialize(saved, Json));
+            File.Move(path + ".tmp", path, overwrite: true);
+            return saved;
+        }
+    }
+
+    public static List<WorkingProcessRow> Clean(IEnumerable<WorkingProcessRow?> rows)
+    {
+        var list = new List<WorkingProcessRow>();
+        foreach (WorkingProcessRow? r in rows)
+        {
+            if (r is null) continue;
+            static string T(string? s, int max) => (s ?? "").Trim() is var t && t.Length > max ? t[..max] : (s ?? "").Trim();
+            var row = new WorkingProcessRow(
+                string.IsNullOrWhiteSpace(r.Id) ? Guid.NewGuid().ToString("N")[..12] : T(r.Id, 40),
+                T(r.No, 20), T(r.Process, 200), r.Workers is >= 0 and <= 10_000 ? r.Workers : null,
+                r.StdTime is { } st && double.IsFinite(st) && st >= 0 ? Math.Round(st, 3) : null,
+                T(r.Machine, 1000), T(r.Jig, 1000), T(r.Tester, 1000), T(r.Material, 500), T(r.Note, 1000));
+            if (row.No.Length + row.Process.Length + row.Machine.Length + row.Jig.Length + row.Tester.Length + row.Material.Length + row.Note.Length == 0
+                && row.Workers is null && row.StdTime is null) continue;
+            list.Add(row);
+        }
+        if (list.Count > MaxRows) throw new ArgumentException($"A Process List has at most {MaxRows} rows.");
+        return list;
+    }
+
+    // ---------------------------------------------------------------- reading a JIG / Machine / Tester list workbook
+
+    /// <summary>
+    /// The processes of a JIG / Machine / Tester list workbook by process number: Machine List rows give the name and the
+    /// machines, JIG LIST rows (with process ranges such as "1) 1 ~ 5 / 2) 7 ~ 9") the jigs, Tester List rows the testers.
+    /// </summary>
+    public static List<WorkingProcessRow> ReadWorkbook(Stream xlsx)
+    {
+        XLWorkbook book;
+        try { book = new XLWorkbook(xlsx); }
+        catch (Exception ex) when (ex is not ArgumentException)
+        {
+            throw new ArgumentException("The workbook could not be opened. If it is protected (DRM), upload a decrypted copy.");
+        }
+        using (book)
+        {
+            var byNo = new SortedDictionary<int, Proc>();
+            var unnumbered = new List<(string Process, string Tester)>();
+            Proc At(int no) => byNo.TryGetValue(no, out Proc? p) ? p : byNo[no] = new Proc();
+
+            foreach (IXLWorksheet ws in book.Worksheets)
+            {
+                if (Header(ws, "설비명", "MACHINE NAME") is { } mh)
+                {
+                    int cNo = Col(mh, "사용공정 번호", "PROCESS NO"), cName = Col(mh, "설비명", "MACHINE NAME"),
+                        cProc = Col(mh, "사용 공정", "USING THE PROCESS)"), cQty = Col(mh, "소요 수량", "REQUIRED QUANTITY"),
+                        cNote = Col(mh, "비고", "NOTE");
+                    foreach (IXLRow row in Rows(ws, mh))
+                    {
+                        string machine = Text(row, cName);
+                        if (machine.Length == 0) continue;
+                        foreach (int no in Numbers(Text(row, cNo)))
+                        {
+                            Proc p = At(no);
+                            p.Name ??= NullIfEmpty(OneLine(Text(row, cProc)));
+                            string qty = Text(row, cQty);
+                            p.Machines.Add(qty is "" or "1" ? machine : $"{machine} ×{qty}");
+                            if (OneLine(Text(row, cNote)) is { Length: > 0 } note) p.Notes.Add(note);
+                        }
+                    }
+                }
+                else if (Header(ws, "JIG 및 소모성", "JIG & CONSUMABLE") is { } jh)
+                {
+                    int cLine = Col(jh, "LINE"), cProc = Col(jh, "공정", "(PROCESS)"), cJig = Col(jh, "JIG 및 소모성", "JIG & CONSUMABLE"),
+                        cNo = Col(jh, "사용공정 번호", "PROCESS NO"), cVer = Col(jh, "MSM-", "VER");
+                    int cMass = Col(jh, "MASS JIG");
+                    foreach (IXLRow row in Rows(ws, jh))
+                    {
+                        string jig = OneLine(Text(row, cJig));
+                        string line = Text(row, cLine).ToUpperInvariant();
+                        if (jig.Length == 0 || (line.Length > 0 && line != "MAIN")) continue;
+                        // "1)  1. UPPER ARRAY ~ 5. SPK ASSY": names of the numbered processes
+                        foreach (Match m in NumberedName().Matches(Text(row, cProc)))
+                            At(int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture)).JigName ??= m.Groups[2].Value.Trim();
+                        string ver = cVer > 0 ? Text(row, cVer + 1) : "";
+                        string mass = cMass > 0 ? Text(row, cMass) : "";
+                        string label = jig + (ver.Length > 0 && !ver.StartsWith("20", StringComparison.Ordinal) ? $" ({ver})" : "")
+                                       + (mass is "" or "0" or "-" ? "" : $" ×{mass}");
+                        foreach (int no in Numbers(Text(row, cNo))) At(no).Jigs.Add(label);
+                    }
+                }
+                else if (Header(ws, "계측기명", "TESTER NAME") is { } th)
+                {
+                    int cName = Col(th, "계측기명", "TESTER NAME"), cModel = Col(th, "모델명", "MODEL NAME"),
+                        cProc = Col(th, "사용 공정", "USING THE PROCESS)"), cNo = Col(th, "사용공정 번호", "PROCESS NO");
+                    foreach (IXLRow row in Rows(ws, th))
+                    {
+                        string name = OneLine(Text(row, cName));
+                        if (name.Length == 0) continue;
+                        string model = OneLine(Text(row, cModel));
+                        string label = model.Length > 0 ? $"{name} ({model})" : name;
+                        string proc = OneLine(Text(row, cProc));
+                        List<int> nos = Numbers(Text(row, cNo));
+                        if (nos.Count == 0 && proc.Length > 0) unnumbered.Add((proc, label));
+                        foreach (int no in nos)
+                        {
+                            At(no).Testers.Add(label);
+                            At(no).Name ??= NullIfEmpty(proc);
+                        }
+                    }
+                }
+            }
+            // a tester without process numbers goes to the processes of its name ("AIR LEAK TEST")
+            foreach ((string proc, string tester) in unnumbered)
+                foreach (Proc p in byNo.Values.Where(p => string.Equals(p.Name ?? p.JigName, proc, StringComparison.OrdinalIgnoreCase)))
+                    p.Testers.Add(tester);
+            if (byNo.Count == 0)
+                throw new ArgumentException("No Machine List, JIG LIST or Tester List sheet with process numbers was found in the workbook.");
+            return byNo.Select(kv => new WorkingProcessRow(
+                Guid.NewGuid().ToString("N")[..12], kv.Key.ToString("00", CultureInfo.InvariantCulture),
+                kv.Value.Name ?? kv.Value.JigName ?? "", null, null,
+                string.Join(", ", kv.Value.Machines.Distinct()), string.Join(", ", kv.Value.Jigs.Distinct()),
+                string.Join(", ", kv.Value.Testers.Distinct()), "", string.Join(" / ", kv.Value.Notes.Distinct()))).ToList();
+        }
+    }
+
+    private sealed class Proc
+    {
+        public string? Name, JigName;
+        public readonly List<string> Machines = [], Jigs = [], Testers = [], Notes = [];
+    }
+
+    [GeneratedRegex(@"(\d{1,3})\.\s*([A-Za-z][^~/\n\r]*?)\s*(?=~|/|\r|\n|$|\d{1,3}\))")]
+    private static partial Regex NumberedName();
+
+    /// <summary>Process numbers of a cell: "4", "4 ~ 5", "1) 1 ~ 5\n2) 7 ~ 9", "36, 37, 40" (list markers "1)" left out).</summary>
+    public static List<int> Numbers(string cell)
+    {
+        var list = new List<int>();
+        string s = Regex.Replace(cell, @"\d+\)", " ");
+        foreach (Match m in Regex.Matches(s, @"(\d{1,3})(?:\s*~\s*(\d{1,3}))?"))
+        {
+            int lo = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
+            int hi = m.Groups[2].Success ? int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture) : lo;
+            if (hi < lo || hi - lo > 200) hi = lo;
+            for (int n = lo; n <= hi; n++) if (n > 0 && !list.Contains(n)) list.Add(n);
+        }
+        return list;
+    }
+
+    /// <summary>The first row (of the first 15) with a cell containing one of the texts: the header of a list sheet.</summary>
+    private static IXLRow? Header(IXLWorksheet ws, params string[] texts)
+    {
+        foreach (IXLRow row in ws.RowsUsed().Take(15))
+            if (row.CellsUsed().Any(c => texts.Any(t => Upper(c).Contains(t, StringComparison.Ordinal)))) return row;
+        return null;
+    }
+
+    /// <summary>The column of the header cell containing one of the texts, or 0.</summary>
+    private static int Col(IXLRow header, params string[] texts) =>
+        header.CellsUsed().FirstOrDefault(c => texts.Any(t => Upper(c).Contains(t, StringComparison.Ordinal)))?.Address.ColumnNumber ?? 0;
+
+    private static string Upper(IXLCell c) => c.GetFormattedString().Replace('\n', ' ').ToUpperInvariant();
+
+    private static IEnumerable<IXLRow> Rows(IXLWorksheet ws, IXLRow header) =>
+        ws.RowsUsed().Where(r => r.RowNumber() > header.RowNumber());
+
+    private static string Text(IXLRow row, int col)
+    {
+        if (col <= 0) return "";
+        IXLCell cell = row.Cell(col);
+        return (cell.IsMerged() ? cell.MergedRange().FirstCell() : cell).GetFormattedString().Trim();
+    }
+
+    private static string OneLine(string s) => Regex.Replace(s, @"\s*[\r\n]+\s*", " / ").Trim(' ', '/');
+
+    private static string? NullIfEmpty(string s) => s.Length == 0 ? null : s;
 }
