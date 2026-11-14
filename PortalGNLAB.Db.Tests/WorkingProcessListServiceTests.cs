@@ -25,11 +25,15 @@ public sealed class WorkingProcessListServiceTests : IDisposable
         string[] jh = ["순서\n(No)", "MASS\nFACTORY", "LINE", "공정\n(Process)", "JIG 및 소모성 자재\n(JIG & Consumable material)", "MASS JIG",
                        "사용공정 번호\n(Using the process No)", "MSM-G778B", "Ver."];
         for (int i = 0; i < jh.Length; i++) jig.Cell(3, i + 2).Value = jh[i];
+        // "도번(Drawing No)" over "Ver." and "Drawing No" on the row below, as in the real list
+        jig.Cell(3, 10).Value = "도번(Drawing No)";
+        jig.Cell(4, 10).Value = "Ver.";
+        jig.Cell(4, 11).Value = "Drawing No";
         object[][] jigs =
         [
-            [1, "GN", "MAIN", "1)  1. UPPER ARRAY ~ 5. SPK ASSY\n2) 7. AOI TEST 2", "ENCLOSURE DISPENSOR CAP JIG", 6, "1) 1 ~ 2\n2) 7", "", "V1"],
-            [2, "GN", "MAIN", "4. SPK ARRAY ~ 5. SPK ASSY", "SPK ARRAY JIG", 4, "4 ~ 5", "", "V0"],
-            [3, "GN", "QM", "신뢰성 지그", "DROP TEST JIG", 1, "49", "", "V3"],
+            [1, "GN", "MAIN", "1)  1. UPPER ARRAY ~ 5. SPK ASSY\n2) 7. AOI TEST 2", "ENCLOSURE DISPENSOR CAP JIG", 6, "1) 1 ~ 2\n2) 7", "", "V1", "BJJ2604-MO-02-A00-01"],
+            [2, "GN", "MAIN", "4. SPK ARRAY ~ 5. SPK ASSY", "SPK ARRAY JIG", 4, "4 ~ 5", "", "V0", "-"],
+            [3, "GN", "QM", "신뢰성 지그", "DROP TEST JIG", 1, "49", "", "V3", ""],
         ];
         for (int r = 0; r < jigs.Length; r++)
             for (int c = 0; c < jigs[r].Length; c++) jig.Cell(5 + r, c + 2).Value = XLCellValue.FromObject(jigs[r][c]);
@@ -77,7 +81,8 @@ public sealed class WorkingProcessListServiceTests : IDisposable
         WorkingProcessRow first = rows[0];
         Assert.Equal("UPPER ARRAY", first.Process);
         Assert.Equal("IONIZER", first.Machine);
-        Assert.Equal(("ENCLOSURE DISPENSOR CAP JIG", "V1", "6"), (first.Jig, first.JigVer, first.JigQty));
+        Assert.Equal([new WorkingJig("ENCLOSURE DISPENSOR CAP JIG", "BJJ2604-MO-02-A00-01", "V1", "6")], first.Jigs!);
+        Assert.Equal(("", "", ""), (first.Jig, first.JigVer, first.JigQty));
 
         WorkingProcessRow bonding = rows[1];
         Assert.Equal("BONDING", bonding.Process);
@@ -86,11 +91,11 @@ public sealed class WorkingProcessListServiceTests : IDisposable
         // names from the JIG LIST "N. NAME" when the Machine List has no row for the number
         Assert.Equal("SPK ASSY", rows.Single(r => r.No == "05").Process);
         WorkingProcessRow four = rows.Single(r => r.No == "04");
-        Assert.Equal(("SPK ARRAY JIG", "V0", "4"), (four.Jig, four.JigVer, four.JigQty));
+        Assert.Equal([new WorkingJig("SPK ARRAY JIG", "", "V0", "4")], four.Jigs!);
         Assert.Null(four.StdTime);
         Assert.Equal("AOI TEST 2", rows.Single(r => r.No == "07").Process);
         // the QM line's jigs are not on the line
-        Assert.DoesNotContain(rows, r => r.Jig.Contains("DROP TEST JIG"));
+        Assert.DoesNotContain(rows, r => r.Jigs!.Any(j => j.Name == "DROP TEST JIG"));
 
         WorkingProcessRow leak = rows.Single(r => r.No == "46");
         Assert.Equal("AIR LEAK TEST S.A(CP) ×2", leak.Machine);
@@ -120,22 +125,57 @@ public sealed class WorkingProcessListServiceTests : IDisposable
     }
 
     [Fact]
-    public void Row_PutsEachItemOnItsOwnLineAndTheJigVersionsAndQuantitiesOnTheSameLines()
+    public void Row_PutsMachinesAndTestersOnePerLineAndEachJigApart()
     {
-        static WorkingListItem It(string kind, string label, string ver = "", string qty = "") => new("", kind, label, label, "", [], "", ver, qty);
+        static WorkingListItem It(string kind, string label, string ver = "", string qty = "", string drawing = "") =>
+            new("", kind, label, label, "", [], "", ver, qty, drawing);
         WorkingProcessRow row = WorkingProcessListService.Row("", "01", "BONDING",
         [
             It(WorkingListItem.Machine, "IONIZER"), It(WorkingListItem.Machine, "DISPENSOR ×2"), It(WorkingListItem.Machine, "IONIZER"),
-            It(WorkingListItem.Jig, "NO VERSION JIG", "", "2"), It(WorkingListItem.Jig, "CAP JIG", "V1", "6"), It(WorkingListItem.Jig, "CAP JIG", "V1", "6"),
+            It(WorkingListItem.Jig, "NO VERSION JIG", "", "2"), It(WorkingListItem.Jig, "CAP JIG", "V1", "6", "BJJ-02"), It(WorkingListItem.Jig, "CAP JIG", "V1", "6", "BJJ-02"),
             It(WorkingListItem.Jig, "TRAY", "V3", ""), It(WorkingListItem.Tester, "F520"),
         ], "");
         Assert.Equal(("IONIZER\nDISPENSOR ×2", "F520"), (row.Machine, row.Tester));
-        Assert.Equal(("NO VERSION JIG\nCAP JIG\nTRAY", "\nV1\nV3", "2\n6"), (row.Jig, row.JigVer, row.JigQty));
-        Assert.Equal(((int?)null, (double?)null), (row.Workers, row.StdTime));
+        Assert.Equal([new WorkingJig("NO VERSION JIG", "", "", "2"), new WorkingJig("CAP JIG", "BJJ-02", "V1", "6"), new WorkingJig("TRAY", "", "V3", "")], row.Jigs!);
+        Assert.Equal(((int?)null, (double?)null, ""), (row.Workers, row.StdTime, row.Jig));
 
-        // saving keeps the blank first version line (it belongs to the first jig) and leaves out blank lines at the end
-        WorkingProcessRow saved = Assert.Single(WorkingProcessListService.Clean([row with { JigVer = " \r\n V1 \nV3\n\n", JigQty = "2\n6\n" }]));
-        Assert.Equal(("\nV1\nV3", "2\n6", "IONIZER\nDISPENSOR ×2"), (saved.JigVer, saved.JigQty, saved.Machine));
+        // saving trims each jig and leaves out empty ones
+        WorkingProcessRow saved = Assert.Single(WorkingProcessListService.Clean(
+            [row with { Jigs = [new(" CAP JIG ", " BJJ-02 ", " V1", "6 "), new("", " ", "", ""), null!] }]));
+        Assert.Equal([new WorkingJig("CAP JIG", "BJJ-02", "V1", "6")], saved.Jigs!);
+    }
+
+    [Fact]
+    public void Upgrade_ReadsTheJigTextOfListsSavedBeforeIntoJigs()
+    {
+        WorkingProcessRow Old(string jig, string ver = "", string qty = "") => Row("01", "BONDING") with { Jig = jig, JigVer = ver, JigQty = qty };
+
+        // one jig per line with version and quantity lines (a blank version line belongs to the first jig)
+        WorkingProcessRow lines = WorkingProcessListService.Upgrade(Old("NO VERSION JIG\nCAP JIG", "\nV1", "2\n6"));
+        Assert.Equal([new WorkingJig("NO VERSION JIG", "", "", "2"), new WorkingJig("CAP JIG", "", "V1", "6")], lines.Jigs!);
+        Assert.Equal(("", "", ""), (lines.Jig, lines.JigVer, lines.JigQty));
+        // labels with the version and quantity in them, joined with ", "
+        Assert.Equal([new WorkingJig("ENCLOSURE DISPENSOR CAP JIG", "", "V1", "6"), new WorkingJig("PLATE TRAY", "", "", "4"), new WorkingJig("SPK JIG", "", "V0", "")],
+            WorkingProcessListService.Upgrade(Old("ENCLOSURE DISPENSOR CAP JIG (V1) ×6, PLATE TRAY ×4, SPK JIG (V0)")).Jigs!);
+        // a row with jigs or with none stays as it is
+        Assert.Empty(WorkingProcessListService.Upgrade(Row("01", "X")).Jigs!);
+        var has = Row("01", "X") with { Jigs = [new("A", "", "", "")], Jig = "B" };
+        Assert.Equal("A", Assert.Single(WorkingProcessListService.Upgrade(has).Jigs!).Name);
+        // and saving converts too
+        Assert.Equal("CAP JIG", Assert.Single(WorkingProcessListService.Clean([Old("CAP JIG (V1) ×6")])).Jigs![0].Name);
+    }
+
+    [Fact]
+    public void Get_ReadsAListSavedBeforeJigsWithItsJigs()
+    {
+        Directory.CreateDirectory(_dir);
+        var svc = new WorkingProcessListService(_dir);
+        svc.Save("MSM-G778B", [Row("01", "UPPER ARRAY")], 0, "u");
+        string file = Directory.GetFiles(_dir, "*.json").Single();
+        File.WriteAllText(file, File.ReadAllText(file).Replace("\"jig\":\"\"", "\"jig\":\"CAP JIG\\nTRAY\"").Replace("\"jigVer\":\"\"", "\"jigVer\":\"V1\\nV0\"")
+            .Replace(",\"jigs\":[]", ""));
+        Assert.DoesNotContain("\"jigs\"", File.ReadAllText(file));
+        Assert.Equal([new WorkingJig("CAP JIG", "", "V1", ""), new WorkingJig("TRAY", "", "V0", "")], svc.Get("MSM-G778B").Rows[0].Jigs!);
     }
 
     [Fact]
@@ -173,7 +213,9 @@ public sealed class WorkingProcessListServiceTests : IDisposable
         Assert.False(string.IsNullOrEmpty(row.Id));
 
         Assert.Equal((1, "u1"), (svc.Get("msm-g778b ").Revision, svc.Get("msm-g778b ").UpdatedBy));
-        Assert.Equal(row, svc.Get("MSM-G778B").Rows[0]);
+        WorkingProcessRow read = svc.Get("MSM-G778B").Rows[0];
+        Assert.Equal(row with { Jigs = null }, read with { Jigs = null });
+        Assert.Empty(read.Jigs!);
         Assert.Empty(svc.Get("MSM-X316B").Rows);
         // a save from an older revision is refused
         Assert.Throws<WorkingConflictException>(() => svc.Save("MSM-G778B", [Row("02", "GLUING")], 0, "u2"));
@@ -189,9 +231,9 @@ public sealed class WorkingProcessListServiceTests : IDisposable
         using FileStream fs = File.OpenRead(path);
         List<WorkingProcessRow> rows = WorkingProcessListService.ReadWorkbook(fs);
         foreach (WorkingProcessRow r in rows)
-            Console.WriteLine($"{r.No} | {r.Process} | {r.Machine} | {r.Jig} | {r.Tester} | {r.Note}");
+            Console.WriteLine($"{r.No} | {r.Process} | {r.Machine} | {string.Join(" + ", r.Jigs!.Select(j => $"{j.Name} [{j.DrawingNo}] {j.Ver} x{j.Qty}"))} | {r.Tester} | {r.Note}");
         Assert.Contains(rows, r => r.No == "02" && r.Machine == "NON CONTACT DISPENSOR DT");
-        Assert.Contains(rows, r => r.Jig.Split('\n').Zip(r.JigVer.Split('\n')).Contains(("ENCLOSURE DISPENSOR JIG", "V4")));
+        Assert.Contains(rows, r => r.Jigs!.Contains(new WorkingJig("ENCLOSURE DISPENSOR JIG", "BJJ2604-MO-01-A00-04", "V4", "70")));
         Assert.True(rows.Count >= 40);
 
         fs.Position = 0;

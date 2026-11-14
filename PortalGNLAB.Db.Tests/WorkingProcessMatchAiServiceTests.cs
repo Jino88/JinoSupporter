@@ -11,7 +11,7 @@ public sealed class WorkingProcessMatchAiServiceTests
     /// <summary>Like the real list: the layout numbers count DRY (6), which has no work instruction.</summary>
     private static readonly List<WorkingListItem> Items =
     [
-        Item("J1", WorkingListItem.Jig, "ENCLOSURE DISPENSOR JIG", "1. UPPER ARRAY ~ 7. BONDING 2", 1, 2, 3, 4, 5, 6, 7) with { Ver = "V4", Qty = "70" },
+        Item("J1", WorkingListItem.Jig, "ENCLOSURE DISPENSOR JIG", "1. UPPER ARRAY ~ 7. BONDING 2", 1, 2, 3, 4, 5, 6, 7) with { Ver = "V4", Qty = "70", DrawingNo = "BJJ-01" },
         Item("M1", WorkingListItem.Machine, "IONIZER", "UPPER ARRAY", 1),
         new("M2", WorkingListItem.Machine, "NON CONTACT DISPENSOR DT", "NON CONTACT DISPENSOR DT", "BONDING", [2], "SPK 안착단 본드 도포"),
         Item("M3", WorkingListItem.Machine, "CONVEYOR 3M", "DRY", 6),
@@ -100,9 +100,10 @@ public sealed class WorkingProcessMatchAiServiceTests
 
         WorkingProcessRow upper = rows[0];
         // the jig's version and quantity in their own cells; no standard time (the column is gone)
-        Assert.Equal(("IONIZER", "ENCLOSURE DISPENSOR JIG", "V4", "70", (double?)null), (upper.Machine, upper.Jig, upper.JigVer, upper.JigQty, upper.StdTime));
+        Assert.Equal(("IONIZER", (double?)null), (upper.Machine, upper.StdTime));
+        Assert.Equal([new WorkingJig("ENCLOSURE DISPENSOR JIG", "BJJ-01", "V4", "70")], upper.Jigs!);
         WorkingProcessRow bonding = rows[1];
-        Assert.Equal(("NON CONTACT DISPENSOR DT", "ENCLOSURE DISPENSOR JIG", "SPK 안착단 본드 도포"), (bonding.Machine, bonding.Jig, bonding.Note));
+        Assert.Equal(("NON CONTACT DISPENSOR DT", "ENCLOSURE DISPENSOR JIG", "SPK 안착단 본드 도포"), (bonding.Machine, bonding.Jigs![0].Name, bonding.Note));
         WorkingProcessRow dry = rows[2];
         Assert.Equal(("CONVEYOR 3M", "natural dry 10 min", (double?)null), (dry.Machine, dry.Note, dry.StdTime));
         Assert.Equal("unsure", rows[3].Note);
