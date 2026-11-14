@@ -121,6 +121,21 @@ describe("AI placement answer", () => {
     expect(put.entries.map((e) => [e.title, e.parentId])).toEqual([["GN-06", "a"], ["GN-07", "gone"], ["Top", undefined], ["History", undefined]]);
   });
 
+  it("tells AI the numbers My Plans shows (1, 2 … in order), so 'No. 2' is the second plan", () => {
+    const entries = [
+      { id: "a", kind: "issue", seq: 1, date: "2026-11-01", title: "AI AGENT TF", status: "Open", phase: "", createdAt: "1" },
+      { id: "s", kind: "issue", seq: 2, date: "2026-11-02", title: "Sub", status: "Open", phase: "", parentId: "a", createdAt: "2" },
+      { id: "b", kind: "issue", seq: 32, date: "2026-11-03", title: "GN 출장", status: "Open", phase: "", createdAt: "3" },
+    ] as Entry[];
+    expect(placeRequest("t", "2026-11-14", info, entries, [], "personal").entries.filter((e) => !e.parentId).map((e) => [e.id, e.seq]))
+      .toEqual([["a", 1], ["b", 2]]);
+    // a model keeps its register numbers
+    expect(placeRequest("t", "2026-11-14", info, entries, [], "devissue").entries.map((e) => e.seq)).toEqual([1, 2, 32]);
+    const a = readPlaceAnswer({ entries: [{ kind: "issue", stage: "dev", title: "자료 정리", parentId: "b" }] });
+    expect(placeItems(a, info, "personal", entries)[0].detail).toBe("Sub-issue of No. 2 GN 출장");
+    expect(placeItems(a, info, "devissue", entries)[0].detail).toBe("Sub-issue of No. 32 GN 출장");
+  });
+
   it("puts a sub-issue under an issue new in the same answer: listed under it, left out with it, added after it with its id", () => {
     const a = readPlaceAnswer({ entries: [
       { kind: "issue", stage: "dev", title: "BN → GN 이동", parentId: "new:1" },
