@@ -240,6 +240,10 @@ public static class WorkingEndpoints
             return Results.File(result.Bytes, WorkingBmesService.DrawingContentType(result.FileName));
         });
 
+        // Process List (공정편성 LIST) and Work Instructions (작업지도서) of a model
+        api.MapWorkingProcessList();
+        api.MapWorkingInstructions();
+
         return app;
     }
 
