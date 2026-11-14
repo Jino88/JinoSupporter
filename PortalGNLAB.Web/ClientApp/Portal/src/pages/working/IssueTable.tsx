@@ -4,14 +4,14 @@ import { useTr } from "./i18n";
 import { workingApi } from "./api";
 import {
   blankEntry, blankLog, entryProblem, fieldsOf, isLate, isLogLate, isOpenIssue, issueFields, issuesBySeq, issueTree, logFieldsOf, logProblem,
-  mediaKind, notesInOrder, pastedImages, suggestions,
+  mediaKind, noteParts, notesInOrder, pastedImages, suggestions,
 } from "./logic";
 import {
   ISSUE_CAUSES, ISSUE_PROCESSES, ISSUE_TYPES, isVideo, PHASES, phaseName, type Entry, type EntryFields, type EntryLog, type LogFields, type WorkingImage,
 } from "./types";
 
 type Filter = "open" | "closed" | "all";
-const COLS = 14;
+const COLS = 15;
 
 interface Lists { types: string[]; processes: string[]; causes: string[] }
 
@@ -132,6 +132,8 @@ function IssueForm(props: {
       {text("cause", "Cause group", "wk-l-cause")}
       <div className="wk-f wide"><label>Issue</label>
         <input className="inp" value={f.title} maxLength={200} autoFocus onChange={(e) => set("title", e.target.value)} /></div>
+      <div className="wk-f wide"><label>Issue detail</label>
+        <textarea className="inp wk-ta" rows={3} value={f.body} onChange={(e) => set("body", e.target.value)} /></div>
       <div className="wk-f wide"><label>Pictures / videos</label>
         <div className="wk-paste" tabIndex={0} onDragOver={pics.onDragOver} onDrop={pics.onFileDrop}>
           <div className="wk-paste-h">
@@ -173,12 +175,14 @@ function LogRow(props: { no: string; log: EntryLog; today: string; busy: boolean
   const { log } = props;
   const tr = useTr();
   const late = isLogLate(logFieldsOf(log), props.today);
+  const { line, detail } = noteParts(log);
   return (
     <tr className={"wk-it-log" + (log.doneDate ? " done" : "")}>
       <td className="tog">↳</td>
       <td className="n sub">{props.no}</td>
       <td colSpan={4}></td>
-      <td className="l wk-it-title"><div className="wk-text">{tr(log.text)}</div><Thumbs images={log.images ?? []} onOpen={props.onOpen} /></td>
+      <td className="l wk-it-title"><div className="wk-text">{tr(line)}</div><Thumbs images={log.images ?? []} onOpen={props.onOpen} /></td>
+      <td className="l wk-it-detail">{tr(detail)}</td>
       <td>{log.owner || <span className="muted" title="Written by">{log.createdBy}</span>}</td>
       <td>{log.date}</td>
       <td className={late ? "late" : ""}>{log.due}{late && <span className="wk-late">Late</span>}</td>
@@ -215,13 +219,17 @@ function LogEditRow(props: {
       <td colSpan={4}></td>
       <td className="l wk-it-title" onDragOver={pics.onDragOver} onDrop={pics.onFileDrop}>
         <div className="wk-note-in">
-          <textarea className="inp wk-ta" rows={3} value={f.text} onPaste={pics.onPaste} autoFocus={!props.isNew}
+          <input className="inp" value={f.text} maxLength={500} onPaste={pics.onPaste} autoFocus={!props.isNew}
             placeholder={props.isNew ? "Add today's progress… (Ctrl+V or drop pictures / videos)" : "Ctrl+V or drop pictures / videos"}
             onChange={(e) => set("text", e.target.value)} />
           <PickFiles onPick={pics.pick} />
         </div>
         <Thumbs images={pics.kept} onOpen={props.onOpen} onRemove={pics.remove} pending={pics.files} onDrop={pics.drop} />
         {(pics.problem || (f.text && problem)) && <div className="pi-dirty">{pics.problem || problem}</div>}
+      </td>
+      <td className="l wk-it-detail" onDragOver={pics.onDragOver} onDrop={pics.onFileDrop}>
+        <textarea className="inp wk-ta" rows={3} value={f.detail} onPaste={pics.onPaste} placeholder="Issue detail"
+          onChange={(e) => set("detail", e.target.value)} />
       </td>
       <td><input className="inp sm wk-in-owner" value={f.owner} placeholder="Owner" onChange={(e) => set("owner", e.target.value)} /></td>
       <td><DateBox className="sm" label="Note date" value={f.date} onChange={(v) => set("date", v)} /></td>
@@ -377,14 +385,15 @@ export default function IssueTable(props: {
           <td>{tr(e.category)}</td>
           <td>{tr(e.process)}</td>
           <td>{tr(e.cause)}</td>
-          <td className="l wk-it-title" title={e.body ? tr(e.body) : undefined}>
+          <td className="l wk-it-title">
             {sub ? <span className="wk-it-subt">{tr(e.title)}</span> : <b>{tr(e.title)}</b>}
             {kids.length > 0 && !expanded && (
               <span className="wk-it-kids">{kids.length} sub-issue{kids.length > 1 ? "s" : ""}{openKids ? `, ${openKids} open` : ""}</span>
             )}
             <Thumbs images={e.images ?? []} onOpen={setViewer} />
-            {last && !expanded && <div className="muted small">{last.date.slice(5)} · {tr(last.text).split("\n")[0]}</div>}
+            {last && !expanded && <div className="muted small">{last.date.slice(5)} · {tr(noteParts(last).line)}</div>}
           </td>
+          <td className="l wk-it-detail">{tr(e.body)}</td>
           <td>{e.owner}</td>
           <td>{e.date}</td>
           <td className={isLate(e, today) ? "late" : ""}>{e.due}{isLate(e, today) && <span className="wk-late">Late</span>}</td>
@@ -466,7 +475,8 @@ export default function IssueTable(props: {
             <tr>
               <th rowSpan={2} className="fit"></th><th rowSpan={2} className="fit">No.</th><th rowSpan={2} className="fit">{tr("Dev phase")}</th>
               <th colSpan={3} className="grp">{tr("Classification")}</th>
-              <th rowSpan={2} className="l wide">{tr("Issue")}</th><th rowSpan={2} className="fit">{tr("Owner")}</th>
+              <th rowSpan={2} className="l wide">{tr("Issue")}</th><th rowSpan={2} className="l detail">{tr("Issue detail")}</th>
+              <th rowSpan={2} className="fit">{tr("Owner")}</th>
               <th rowSpan={2} className="fit">{tr("Registered")}</th><th rowSpan={2} className="fit">{tr("Due")}</th><th rowSpan={2} className="fit">{tr("Done")}</th>
               <th rowSpan={2} className="l final">{tr("Final result")}</th><th rowSpan={2} className="fit">{tr("Notes")}</th><th rowSpan={2} className="fit"></th>
             </tr>

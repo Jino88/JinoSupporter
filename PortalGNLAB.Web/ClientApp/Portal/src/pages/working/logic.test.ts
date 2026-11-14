@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   blankEntry, blankLog, buildTree, fieldsOf, byMonth, countByKind, entryProblem, filterTree, firstModel, isLate, isLogLate, isOpenIssue, issueFields,
-  issuesBySeq, issuesOfStage, issueTree, logProblem, mediaKind, notesInOrder, pastedImages, pathOf, replaceSome, sortEntries, suggestions,
+  issuesBySeq, issuesOfStage, issueTree, logProblem, mediaKind, noteParts, notesInOrder, pastedImages, pathOf, replaceSome, sortEntries, suggestions,
 } from "./logic";
 import { PHASES, phaseName } from "./types";
 import type { Entry, EntryLog, ModelGroup } from "./types";
@@ -151,13 +151,23 @@ describe("issue register", () => {
     const f = { ...blankLog("2026-11-09"), text: "Checked 20 pcs, 2 NG" };
     expect(logProblem({ ...f, text: "  " })).toBe("Write what was done.");
     expect(logProblem({ ...f, date: "2026/11/09" })).toBe("Date must be a date (yyMMdd).");
-    expect(logProblem({ ...f, text: "x".repeat(5001) })).toMatch(/5000/);
+    expect(logProblem({ ...f, text: "x".repeat(501) })).toMatch(/500 characters/);
+    expect(logProblem({ ...f, text: "two\nlines" })).toMatch(/one line/);
+    expect(logProblem({ ...f, detail: "d".repeat(5001) })).toMatch(/Issue detail.*5000/);
+    expect(logProblem({ ...f, text: "x".repeat(500), detail: "line 1\nline 2" })).toBe("");
     expect(logProblem({ ...f, due: "11/12" })).toBe("Due must be a date (yyMMdd).");
     expect(logProblem({ ...f, doneDate: "2026-11-08" })).toMatch(/before the note date/);
     expect(logProblem({ ...f, due: "2026-11-12", doneDate: "2026-11-10" })).toBe("");
     expect(isLogLate({ ...f, due: "2026-11-08" }, "2026-11-09")).toBe(true);
     expect(isLogLate({ ...f, due: "2026-11-08", doneDate: "2026-11-09" }, "2026-11-09")).toBe(false);
     expect(isLogLate({ ...f, due: "2026-11-09" }, "2026-11-09")).toBe(false);
+  });
+
+  it("splits a note into its one-line issue and its detail", () => {
+    expect(noteParts({ text: "QM stock", detail: " order qty " })).toEqual({ line: "QM stock", detail: "order qty" });
+    expect(noteParts({ text: " first \r\n second\nthird ", detail: "" })).toEqual({ line: "first", detail: "second\nthird" });
+    expect(noteParts({ text: "first\nsecond", detail: "kept" })).toEqual({ line: "first", detail: "second\nkept" });
+    expect(noteParts({ text: "only" })).toEqual({ line: "only", detail: "" });
   });
   it("lists notes oldest first", () => {
     const n = (id: string, date: string, createdAt: string) => ({ ...blankLog(date), id, createdAt }) as EntryLog;

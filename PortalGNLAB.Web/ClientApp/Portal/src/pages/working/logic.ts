@@ -171,10 +171,18 @@ export function suggestions(used: string[], defaults: string[]): string[] {
   return out;
 }
 
-export const blankLog = (today: string): LogFields => ({ date: today, text: "", owner: "", due: "", doneDate: "" });
+export const blankLog = (today: string): LogFields => ({ date: today, text: "", detail: "", owner: "", due: "", doneDate: "" });
 
-export const logFieldsOf = (l: EntryLog): LogFields =>
-  ({ date: l.date, text: l.text, owner: l.owner ?? "", due: l.due ?? "", doneDate: l.doneDate ?? "" });
+/** A note's one-line issue and its detail; lines after the first of an older several-line text go to the front of the detail. */
+export function noteParts(l: { text: string; detail?: string }): { line: string; detail: string } {
+  const [line = "", ...rest] = l.text.replace(/\r\n?/g, "\n").trim().split("\n");
+  return { line: line.trim(), detail: [rest.join("\n").trim(), (l.detail ?? "").trim()].filter(Boolean).join("\n") };
+}
+
+export const logFieldsOf = (l: EntryLog): LogFields => {
+  const { line, detail } = noteParts(l);
+  return { date: l.date, text: line, detail, owner: l.owner ?? "", due: l.due ?? "", doneDate: l.doneDate ?? "" };
+};
 
 /** Notes in date order, oldest first. */
 export const notesInOrder = (logs: EntryLog[]) =>
@@ -186,7 +194,9 @@ export const isLogLate = (l: LogFields, today: string) => !l.doneDate && !!l.due
 export function logProblem(f: LogFields): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date)) return "Date must be a date (yyMMdd).";
   if (!f.text.trim()) return "Write what was done.";
-  if (f.text.length > 5000) return "A note must be 5000 characters or fewer.";
+  if (/[\r\n]/.test(f.text)) return "Write the issue in one line and the rest in Issue detail.";
+  if (f.text.trim().length > 500) return "The issue must be 500 characters or fewer.";
+  if (f.detail.trim().length > 5000) return "Issue detail must be 5000 characters or fewer.";
   if (f.owner.trim().length > 100) return "Owner must be 100 characters or fewer.";
   if (f.due && !/^\d{4}-\d{2}-\d{2}$/.test(f.due)) return "Due must be a date (yyMMdd).";
   if (f.doneDate && !/^\d{4}-\d{2}-\d{2}$/.test(f.doneDate)) return "Done date must be a date (yyMMdd).";
@@ -233,6 +243,7 @@ export function entryProblem(f: EntryFields): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date)) return "Date must be a date (yyMMdd).";
   if (!f.title.trim()) return "Title is required.";
   if (f.title.trim().length > 200) return "Title must be 200 characters or fewer.";
+  if (f.body.length > 20000) return "Issue detail must be 20000 characters or fewer.";
   if (f.due && !/^\d{4}-\d{2}-\d{2}$/.test(f.due)) return "Due must be a date (yyMMdd).";
   if (f.doneDate && !/^\d{4}-\d{2}-\d{2}$/.test(f.doneDate)) return "Done date must be a date (yyMMdd).";
   if (f.doneDate && f.doneDate < f.date) return "Done date cannot be before the registered date.";
