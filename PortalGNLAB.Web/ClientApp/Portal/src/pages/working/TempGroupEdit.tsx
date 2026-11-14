@@ -104,9 +104,6 @@ export default function TempGroupEdit(props: {
           onChange={(e) => props.onChange({ ...g, group: e.target.value })} />
         <span className="muted small wk-bg-count">{counts.subs} sub groups · {counts.shifts} shifts</span>
       </div>
-      <div className="muted small">
-        Made here because BMES &gt; Make Model Group cannot make this model yet. Use Change link when BMES has it.
-      </div>
       <Shifts list={g.lineShifts} onRemove={(n) => apply(() => removeShift(g, n))} />
       <AddRow onShift={(n) => apply(() => addShift(g, null, n))} onSub={(n) => apply(() => addSub(g, null, n))} />
       {g.subGroups.length > 0 && <div className="wk-bg-subs">{g.subGroups.map((s) => card(s, 1))}</div>}

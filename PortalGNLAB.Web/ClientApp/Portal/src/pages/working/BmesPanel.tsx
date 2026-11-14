@@ -166,7 +166,6 @@ function GroupPicker(props: {
   );
   return (
     <div className="wk-bg-picker">
-      <div className="muted small">Pick the BMES &gt; Make Model Group model of {props.modelName}, then Save the model information.</div>
       {suggested.length > 0 && !q && !group && (
         <div className="wk-bg-group sugg">
           <div className="wk-bg-gname">Looks like {props.modelName}</div>
@@ -310,7 +309,7 @@ export default function BmesPanel(props: {
         <h3>BMES model group</h3>
         {materials !== null && !picking && (m || isManual || hasManual) && (
           <span className="wk-bmes-pick">
-            {m ? <>{m.group} › <b>{m.material}</b> · {found?.by === "saved" ? "linked in Model Info" : "same name"}</> : "Temporary group, entered by hand"}
+            {m ? <>{m.group} › <b>{m.material}</b> · {found?.by === "saved" ? "linked in Model Info" : "same name"}</> : null}
             <button className="btn sm" onClick={() => setPicking(true)}>Change link</button>
           </span>
         )}
