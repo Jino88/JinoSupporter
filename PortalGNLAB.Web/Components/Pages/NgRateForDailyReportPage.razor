@@ -73,13 +73,13 @@
     @if (!ReasonOnly)
     {
     <div data-daily-section="@ExportSectionKey("summary")" data-daily-label="Summary">
-    <div class="card mt-3 ngrate-report-card">
+    <div id="@DailySummaryCopyTargetId" class="card mt-3 ngrate-report-card">
         <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
             <span>Summary - Group / Model x Date / Week / Month (PPM)</span>
-            <span class="text-muted" style="font-size:11px;">
+            <span class="text-muted" style="font-size:11px;" data-copy-hidden="true">
                 D @VisibleDateCols.Count/@_report.DateCols.Count - W @VisibleWeekCols.Count/@_report.WeekCols.Count - M @VisibleMonthCols.Count/@_report.MonthCols.Count - @_report.TotalRows rows
             </span>
-            <div class="d-flex align-items-center gap-2 ms-auto">
+            <div class="d-flex align-items-center gap-2 ms-auto" data-copy-hidden="true">
                 <button type="button"
                         class="btn btn-outline-secondary btn-sm daily-copy-btn"
                         @onclick="() => CopyElementToClipboardAsync(DailySummaryCopyTargetId)"
@@ -118,7 +118,7 @@
         <div class="card-body ngrate-card-body p-0">
             @if (!string.IsNullOrEmpty(_copyError))
             {
-                <div class="alert alert-warning m-3 py-2 small">@_copyError</div>
+                <div class="alert alert-warning m-3 py-2 small" data-copy-hidden="true">@_copyError</div>
             }
             @if (!string.IsNullOrEmpty(_reportError))
             {
@@ -130,7 +130,7 @@
             }
             else
             {
-                <div id="@DailySummaryCopyTargetId" class="pivot-wrap">
+                <div class="pivot-wrap">
                     <table class="pivot-table text-fit-table daily-summary-table">
                         <thead>
                             <tr>
@@ -193,7 +193,7 @@
     @if (string.IsNullOrEmpty(_reportError) && TotalColCount > 0)
     {
         var worstModels = OrderedModels.Where(ModelHasVisibleData).ToList();
-        <div class="card mt-3 ngrate-report-card">
+        <div id="@DailyWorstCopyTargetId" class="card mt-3 ngrate-report-card">
             <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
                 <span>Worst @MaxWorstRows - Model x Process / NG Name (PPM)</span>
                 @if (DailyWorstReferenceColumn is { } worstRef)
@@ -202,6 +202,7 @@
                 }
                 <button type="button"
                         class="btn btn-outline-secondary btn-sm ms-auto daily-copy-btn"
+                        data-copy-hidden="true"
                         @onclick="() => CopyElementToClipboardAsync(DailyWorstCopyTargetId)"
                         disabled="@(IsCopying(DailyWorstCopyTargetId) || worstModels.Count == 0)">
                     @CopyButtonText(DailyWorstCopyTargetId)
@@ -214,7 +215,7 @@
                 }
                 else
                 {
-                    <div id="@DailyWorstCopyTargetId" class="pivot-wrap">
+                    <div class="pivot-wrap">
                         <table class="pivot-table text-fit-table daily-summary-table daily-worst-table">
                             <thead>
                                 <tr>
@@ -345,13 +346,14 @@
             : new List<DailyReasonRow>();
         bool enableReasonCollapse = ReasonOnly;
         string dailyReasonReferenceHeader = dailyReasonReferenceCol?.Header ?? "Last Date";
-        var modelCopyTargetId = ModelCopyTargetId(model.Key);
+        var typeCopyTargetId = ModelCopyTargetId(model.Key, "type");
+        var reasonCopyTargetId = ModelCopyTargetId(model.Key, "reason");
 
-        <div id="@modelCopyTargetId" class="daily-model-copy-target"
+        <div class="daily-model-copy-target"
              data-daily-section="@ExportSectionKey(model.Key)" data-daily-label="@model.Material">
             @if (!ReasonOnly)
             {
-            <div class="card mt-3 ngrate-report-card">
+            <div id="@typeCopyTargetId" class="card mt-3 ngrate-report-card">
                 <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
                     <span class="ngrate-hier-level">MODEL</span>
                     <span>@model.Material</span>
@@ -359,9 +361,9 @@
                     <button type="button"
                             class="btn btn-outline-secondary btn-sm ms-auto daily-copy-btn"
                             data-copy-hidden="true"
-                            @onclick="() => CopyElementToClipboardAsync(modelCopyTargetId)"
-                            disabled="@IsCopying(modelCopyTargetId)">
-                        @CopyButtonText(modelCopyTargetId)
+                            @onclick="() => CopyElementToClipboardAsync(typeCopyTargetId)"
+                            disabled="@(IsCopying(typeCopyTargetId) || summaryRows.Count == 0)">
+                        @CopyButtonText(typeCopyTargetId)
                     </button>
                 </div>
                 <div class="card-body ngrate-card-body p-0">
@@ -415,7 +417,7 @@
             </div>
             }
 
-            <div class="card ngrate-report-card @(ReasonOnly ? "mt-3" : "mt-2")">
+            <div id="@reasonCopyTargetId" class="card ngrate-report-card @(ReasonOnly ? "mt-3" : "mt-2")">
                 <div class="card-header ngrate-card-header small fw-semibold d-flex align-items-center gap-2">
                     <span class="ngrate-hier-level">MODEL</span>
                     <span>@model.Material</span>
@@ -432,14 +434,22 @@
                             <span data-ppm-label="@ExportReasonLabelTemplate(dailyReasonReferenceHeader)">@($"Reason Detail >= {FormatPpm(DailyReasonPpmThreshold)} PPM ({dailyReasonReferenceHeader})")</span>
                         }
                     </span>
-                    @if (!ReasonOnly)
-                    {
+                    <div class="d-flex align-items-center gap-2 ms-auto" data-copy-hidden="true">
                         <button type="button"
-                                class="btn btn-outline-secondary btn-sm ms-auto daily-copy-btn"
-                                @onclick="() => ToggleDailyReasonModel(model.Key)">
-                            @(showReasonTable ? "Hide" : "Load")
+                                class="btn btn-outline-secondary btn-sm daily-copy-btn"
+                                @onclick="() => CopyElementToClipboardAsync(reasonCopyTargetId)"
+                                disabled="@(IsCopying(reasonCopyTargetId) || reasonRows.Count == 0)">
+                            @CopyButtonText(reasonCopyTargetId)
                         </button>
-                    }
+                        @if (!ReasonOnly)
+                        {
+                            <button type="button"
+                                    class="btn btn-outline-secondary btn-sm daily-copy-btn"
+                                    @onclick="() => ToggleDailyReasonModel(model.Key)">
+                                @(showReasonTable ? "Hide" : "Load")
+                            </button>
+                        }
+                    </div>
                 </div>
                 <div class="card-body ngrate-card-body p-0">
                     @if (!showReasonTable)
@@ -1141,7 +1151,7 @@
         }
         catch (Exception ex)
         {
-            _copyError = $"Copy failed: {ex.Message}";
+            _copyError = $"Capture failed: {ex.Message}";
         }
         finally
         {
@@ -1547,8 +1557,8 @@
 
     private string CopyButtonText(string elementId)
     {
-        if (IsCopying(elementId)) return "Copying...";
-        return string.Equals(_copiedElementId, elementId, StringComparison.Ordinal) ? "Copied" : "Copy";
+        if (IsCopying(elementId)) return "Capturing...";
+        return string.Equals(_copiedElementId, elementId, StringComparison.Ordinal) ? "Captured" : "Capture";
     }
 
     private bool IsDailyReasonModelVisible(string modelKey)
@@ -1986,8 +1996,8 @@
     private static string ModelKey(string groupName, string material)
         => NgRateModeSupport.ModelKey(groupName, material);
 
-    private static string ModelCopyTargetId(string modelKey)
-        => "dailyModelCopy_" + new string(modelKey.Select(ch => char.IsLetterOrDigit(ch) ? ch : '_').ToArray());
+    private static string ModelCopyTargetId(string modelKey, string table)
+        => $"dailyModelCopy_{table}_" + new string(modelKey.Select(ch => char.IsLetterOrDigit(ch) ? ch : '_').ToArray());
 
     private static string FormatPpm(double v)
         => NgRateModeSupport.FormatPpm(v);
