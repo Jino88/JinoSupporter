@@ -41,26 +41,28 @@ public static class WorkingProcessListEndpoints
                 return Results.Json(new { error = $"The AI could not answer: {ex.Message}" }, statusCode: StatusCodes.Status502BadGateway);
             }
         });
-        // Model Info › Documents: whether a workbook is a JIG / Machine / Tester list or Work Instructions (nothing is saved)
+        // Model Info › Documents: whether a workbook is a JIG / Machine / Tester list or Work Instructions (nothing is saved);
+        // it takes workbooks as large as the Work Instructions (their pictures make them far larger than a JIG list)
         api.MapPost("/models/{name}/documents/kind", async (HttpContext ctx) =>
         {
-            (IFormFile file, _) = await ReadWorkbook(ctx);
+            (IFormFile file, _) = await ReadWorkbook(ctx, WorkingDocumentKind.MaxUploadBytes);
             await using Stream s = file.OpenReadStream();
-            return Results.Ok(new { kind = WorkingDocumentKind.Of(s) });
+            WorkingDocumentKind.Found found = WorkingDocumentKind.Of(s);
+            return Results.Ok(new { kind = found.Kind, reason = found.Reason });
         });
         return api;
     }
 
-    private static async Task<(IFormFile File, int Revision)> ReadWorkbook(HttpContext ctx)
+    private static async Task<(IFormFile File, int Revision)> ReadWorkbook(HttpContext ctx, long maxBytes = WorkingProcessListService.MaxUploadBytes)
     {
         if (!ctx.Request.HasFormContentType) throw new ArgumentException("Send the workbook as multipart/form-data.");
-        const long totalLimit = WorkingProcessListService.MaxUploadBytes + 1024 * 1024;
+        long totalLimit = maxBytes + 1024 * 1024;
         var limit = ctx.Features.Get<IHttpMaxRequestBodySizeFeature>();
         if (limit is { IsReadOnly: false }) limit.MaxRequestBodySize = totalLimit;
         ctx.Features.Set<IFormFeature>(new FormFeature(ctx.Request, new FormOptions { MultipartBodyLengthLimit = totalLimit }));
         IFormCollection form;
         try { form = await ctx.Request.ReadFormAsync(ctx.RequestAborted); }
-        catch (InvalidDataException) { throw new ArgumentException("The workbook is too large (50 MB at most)."); }
+        catch (InvalidDataException) { throw new ArgumentException($"The workbook is too large ({maxBytes / (1024 * 1024)} MB at most)."); }
         IFormFile file = form.Files.GetFile("file") ?? throw new ArgumentException("Choose an Excel workbook.");
         string ext = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (ext is not (".xlsx" or ".xlsm")) throw new ArgumentException("Upload the JIG / Machine list as an .xlsx workbook.");

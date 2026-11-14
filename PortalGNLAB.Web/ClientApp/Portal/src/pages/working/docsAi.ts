@@ -80,29 +80,42 @@ export async function runJig(s: JigSteps): Promise<JigResult> {
 export type DocKind = "instructions" | "jig-list" | "unknown";
 export const KIND_TEXT: Record<DocKind, string> = { instructions: "Work Instructions", "jig-list": "JIG / Machine / Tester list", unknown: "not recognized" };
 
-/** What the server finds a workbook to be (nothing is saved). */
-export async function docKind(name: string, file: File): Promise<DocKind> {
+/** The largest workbook the server reads (as the Work Instructions upload: 100 MB). */
+export const MAX_DOC_BYTES = 100 * 1024 * 1024;
+
+export type FoundKind = { kind: DocKind; reason?: string };
+
+/** What the server finds a workbook to be (nothing is saved); a workbook too large is not sent. */
+export async function docKind(name: string, file: File): Promise<FoundKind> {
+  if (file.size > MAX_DOC_BYTES) return { kind: "unknown", reason: `larger than ${MAX_DOC_BYTES / 1024 / 1024} MB` };
   const form = new FormData();
   form.append("file", file, file.name);
-  const response = await fetch(toolPath(`working/models/${encodeURIComponent(name)}/documents/kind`), {
-    method: "POST", credentials: "same-origin", headers: { Accept: "application/json", "X-Requested-With": "PortalGNLAB" }, body: form,
-  });
+  let response: Response;
+  try {
+    response = await fetch(toolPath(`working/models/${encodeURIComponent(name)}/documents/kind`), {
+      method: "POST", credentials: "same-origin", headers: { Accept: "application/json", "X-Requested-With": "PortalGNLAB" }, body: form,
+    });
+  } catch (e) {
+    // the browser says only "Failed to fetch" when the connection is cut (the server stopped, or refused the upload)
+    throw new Error(`${file.name} could not be sent to the server (${errorText(e)}). Check that the server is running, then try again.`);
+  }
   if (response.status === 401) window.location.assign(loginUrl(location.pathname));
-  const body = await response.json().catch(() => null) as { kind?: string; error?: string } | null;
-  if (!response.ok) throw new Error(body?.error ?? `Request failed (HTTP ${response.status})`);
-  return body?.kind === "instructions" || body?.kind === "jig-list" ? body.kind : "unknown";
+  const body = await response.json().catch(() => null) as { kind?: string; reason?: string; error?: string } | null;
+  if (!response.ok) throw new Error(`${file.name}: ${body?.error ?? `Request failed (HTTP ${response.status})`}`);
+  const kind = body?.kind === "instructions" || body?.kind === "jig-list" ? body.kind : "unknown";
+  return body?.reason ? { kind, reason: body.reason } : { kind };
 }
 
 /**
  * The files picked, by what they are: the Work Instructions and the JIG / Machine / Tester list used (the first of each),
  * and the names of the others (a second file of a kind, or one that is neither) with why they are not used.
  */
-export function sortDocs<F extends { name: string }>(found: { file: F; kind: DocKind }[]): { instructions?: F; jig?: F; skipped: string[] } {
+export function sortDocs<F extends { name: string }>(found: ({ file: F } & FoundKind)[]): { instructions?: F; jig?: F; skipped: string[] } {
   const out: { instructions?: F; jig?: F; skipped: string[] } = { skipped: [] };
-  for (const { file, kind } of found) {
+  for (const { file, kind, reason } of found) {
     if (kind === "instructions" && !out.instructions) out.instructions = file;
     else if (kind === "jig-list" && !out.jig) out.jig = file;
-    else out.skipped.push(`${file.name} (${kind === "unknown" ? KIND_TEXT.unknown : `another ${KIND_TEXT[kind]}`})`);
+    else out.skipped.push(`${file.name} (${kind === "unknown" ? reason || KIND_TEXT.unknown : `another ${KIND_TEXT[kind]}`})`);
   }
   return out;
 }

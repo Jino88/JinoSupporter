@@ -6,7 +6,7 @@ import { readManual } from "./manual";
 import { processListApi } from "./processList";
 import {
   KIND_TEXT, NOTHING_TO_DO, docKind, docLinks, errorText, isWorkbook, jigSummary, manualAiFromInstructions, processSummary, runJig, runProcess, sortDocs,
-  type DocKind, type DocsResult,
+  type DocKind, type DocsResult, type FoundKind,
 } from "./docsAi";
 import type { WorkingModel } from "./types";
 import "./modelDocs.css";
@@ -63,8 +63,8 @@ export default function ModelDocs(props: {
     try {
       // what each document is
       setStatus("Reading what each document is…");
-      const kinds: { file: File; kind: DocKind }[] = [];
-      for (const f of books) kinds.push({ file: f, kind: await docKind(model.name, f) });
+      const kinds: ({ file: File } & FoundKind)[] = [];
+      for (const f of books) kinds.push({ file: f, ...(await docKind(model.name, f)) });
       setFound(kinds.map((k) => ({ name: k.file.name, kind: k.kind })));
       const docs = sortDocs(kinds);
       setSkipped([...others, ...docs.skipped]);
