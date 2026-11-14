@@ -36,4 +36,28 @@ describe("model group table changed in place", () => {
     // nothing extra when the language is the original
     expect(renderToStaticMarkup(<ManualGroup modelName="X316B" value={g} onChange={() => {}} onError={() => {}} />)).not.toContain("wk-man-tr");
   });
+
+  it("lists the bonds under their own heading below the parts, marked where a process uses one", () => {
+    const g = {
+      materials: ["SL233LF", "UPPER", "Glue 233", "LOWER"],
+      processes: [{ ...blankProcess(), name: "Bonding", materials: [{ material: "UPPER", qtyPerUnit: 1 }, { material: "SL233LF", qtyPerUnit: 1 }] }],
+    };
+    const html = renderToStaticMarkup(<ManualGroup modelName="X316B" glue={new Set(["SL233LF"])} value={g} onChange={() => {}} onError={() => {}} />);
+    const list = html.slice(html.indexOf("wk-man-mats"));
+    const at = (s: string) => list.indexOf(s);
+    // parts first in their order, then the heading, then the bonds
+    expect(at("<b>UPPER</b>")).toBeLessThan(at("<b>LOWER</b>"));
+    expect(at("<b>LOWER</b>")).toBeLessThan(at("wk-man-bondh"));
+    expect(at("wk-man-bondh")).toBeLessThan(at("<b>SL233LF</b>"));
+    expect(at("<b>SL233LF</b>")).toBeLessThan(at("<b>Glue 233</b>"));
+    expect(list).toContain("<b>Bond</b> <span class=\"muted\">· 2 · glue, not a part</span>");
+    expect(list).toContain(">Remove bonds</button>");
+    expect(list.match(/wk-man-bondtag/g)).toHaveLength(2);
+    // in the process: the bond is marked, the part is not
+    expect(html).toMatch(/<div class="wk-man-use wk-man-bond"><select[^>]*><option[^>]*>SL233LF</);
+    expect(html).toMatch(/<div class="wk-man-use"><select[^>]*><option[^>]*>UPPER</);
+    // no bond: no heading
+    expect(renderToStaticMarkup(<ManualGroup modelName="X316B" glue={new Set()} value={{ materials: ["UPPER"], processes: [] }} onChange={() => {}} onError={() => {}} />))
+      .not.toContain("wk-man-bond");
+  });
 });

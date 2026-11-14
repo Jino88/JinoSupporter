@@ -319,6 +319,13 @@ textarea.wk-man-in.wk-man-ng { resize: none; overflow: hidden; height: auto; fie
 .wk-man-drag td:first-child { cursor: grab; }
 .wk-man-picked td { background: #e0e7ff; }
 .wk-man-over td { background: #eef2ff; }
+/* bonds (glue the Work Instructions name, or counted in G / ML in the BOM): amber, under their own heading below the parts */
+.wk-man-bondtag { display: inline-block; margin-left: 6px; padding: 0 5px; border-radius: 4px; background: #fef3c7; color: #92400e;
+  border: 1px solid #fcd34d; font-size: 10px; font-weight: 600; line-height: 15px; vertical-align: 1px; }
+.wk-man-bond:not(.wk-man-picked) td { background: #fffbeb; }
+.wk-man-bondh td { background: #fef3c7; border-top: 2px solid #f59e0b; font-size: 12px; }
+.wk-man-bondh .wk-man-bondx { float: right; }
+.wk-man-use.wk-man-bond select.wk-man-umat { color: #92400e; background: #fef3c7; border-radius: 4px; }
 .wk-man-hint { margin-top: 6px; }
 .wk-man-newmat { display: flex; gap: 6px; margin-top: 8px; }
 .wk-man-newmat .inp { flex: 1; min-width: 0; }
