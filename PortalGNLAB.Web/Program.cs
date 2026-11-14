@@ -168,8 +168,9 @@ builder.Services.AddScoped<PortalGNLAB.Web.Services.GraphMaker.GraphMakerAiServi
 builder.Services.AddSingleton(new ProductionInputService());
 // Working: per-model info and work history (dev / issue / review) plus read-only model groups.
 builder.Services.AddSingleton(new WorkingService());
-// Working > Layout: a model's process layout (DXF) read into lines and texts.
-builder.Services.AddSingleton(new WorkingLayoutService());
+// Working > Process List (공정편성 LIST) and Work Instructions (작업지도서) of a model.
+builder.Services.AddSingleton(new WorkingProcessListService());
+builder.Services.AddSingleton(new WorkingInstructionService());
 builder.Services.AddSingleton<WorkingTranslationService>();
 // Team memo display translation (EN/KO/VI via Codex Luna, cached in the memo DB).
 builder.Services.AddScoped<TeamMemoTranslationService>();

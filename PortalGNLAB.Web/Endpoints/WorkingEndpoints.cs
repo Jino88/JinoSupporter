@@ -130,19 +130,6 @@ public static class WorkingEndpoints
         api.MapDelete("/models/{name}/setup/{rowId}", (string name, string rowId, WorkingService svc) =>
             svc.DeleteSetupRow(ModelName(name), rowId) ? Results.NoContent() : Results.NotFound());
 
-        // the process layout of a model: a DXF read into lines and texts, kept and sent as gzip JSON
-        api.MapGet("/models/{name}/layout", (string name, WorkingLayoutService layouts, HttpContext ctx) =>
-            layouts.LoadGzip(ModelName(name)) is { } gz ? GzipJson(ctx, gz) : Results.NotFound());
-        api.MapPost("/models/{name}/layout", async (string name, HttpContext ctx, WorkingLayoutService layouts, ClaimsPrincipal user) =>
-        {
-            IFormFile file = await ReadLayoutFile(ctx);
-            await using Stream dxf = file.OpenReadStream();
-            byte[] gz = await Task.Run(() => layouts.Save(ModelName(name), file.FileName, file.Length, dxf, User(user)), ctx.RequestAborted);
-            return GzipJson(ctx, gz);
-        });
-        api.MapDelete("/models/{name}/layout", (string name, WorkingLayoutService layouts) =>
-            layouts.Delete(ModelName(name)) ? Results.NoContent() : Results.NotFound());
-
         // pictures and videos pasted into an entry (no logId) or into one of its notes, stored as sent
         api.MapPost("/models/{name}/entries/{id}/images", async (string name, string id, HttpContext ctx, WorkingService svc, ClaimsPrincipal user) =>
         {
@@ -253,6 +240,10 @@ public static class WorkingEndpoints
             return Results.File(result.Bytes, WorkingBmesService.DrawingContentType(result.FileName));
         });
 
+        // Process List (공정편성 LIST) and Work Instructions (작업지도서) of a model
+        api.MapWorkingProcessList();
+        api.MapWorkingInstructions();
+
         return app;
     }
 
@@ -263,30 +254,6 @@ public static class WorkingEndpoints
     public sealed record WorkingTreeMoveSave(string? GroupId);
     public sealed record WorkingTreeGroupSave(string? Name, string? ParentId);
     public sealed record WorkingPdmRequest(List<string>? Names);
-
-    private static IResult GzipJson(HttpContext ctx, byte[] gz)
-    {
-        ctx.Response.Headers.ContentEncoding = "gzip";
-        ctx.Response.Headers.CacheControl = "no-store";
-        return Results.Bytes(gz, "application/json");
-    }
-
-    /// <summary>The one .dxf "file" of a layout upload (up to <see cref="WorkingLayoutService.MaxUploadBytes"/>).</summary>
-    private static async Task<IFormFile> ReadLayoutFile(HttpContext ctx)
-    {
-        if (!ctx.Request.HasFormContentType) throw new ArgumentException("Send the drawing as multipart/form-data.");
-        const long totalLimit = WorkingLayoutService.MaxUploadBytes + 1024 * 1024;
-        var limit = ctx.Features.Get<IHttpMaxRequestBodySizeFeature>();
-        if (limit is { IsReadOnly: false }) limit.MaxRequestBodySize = totalLimit;
-        ctx.Features.Set<IFormFeature>(new FormFeature(ctx.Request, new FormOptions { MultipartBodyLengthLimit = totalLimit }));
-        IFormCollection form;
-        try { form = await ctx.Request.ReadFormAsync(ctx.RequestAborted); }
-        catch (InvalidDataException) { throw new ArgumentException("The drawing is too large (300 MB at most)."); }
-        IFormFile file = form.Files.GetFile("file") ?? throw new ArgumentException("Choose a .dxf file.");
-        if (!file.FileName.EndsWith(".dxf", StringComparison.OrdinalIgnoreCase))
-            throw new ArgumentException("Upload the layout as a .dxf file (save a DWG as DXF first).");
-        return file;
-    }
 
     /// <summary>
     /// The "files" and optional "logId" of a multipart upload; the form is read here (no IFormFile binding). Files over the
