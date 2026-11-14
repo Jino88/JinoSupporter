@@ -43,6 +43,17 @@ describe("process list tab", () => {
     expect(html).toContain("V4\nV1");
     expect(html).toContain("70\n6");
     expect(html).toContain("pl-cell pl-narrow");
+    // a long JIG name is not wrapped onto a second line, which would put it beside the next version and quantity
+    expect(html).toContain('class="l pl-cell pl-lines">ENCLOSURE JIG\nCOVER JIG</td>');
+    expect(html).toContain('class="pl-cell pl-narrow pl-lines">V4\nV1</td>');
+    expect(html).toContain('class="l pl-cell">SL233LF / VZ10-L1</td>');
+  });
+
+  it("edits JIG, Ver. and Qty in boxes of the same height that do not wrap", () => {
+    const html = render({ ...list, rows: [{ ...list.rows[0], jigVer: "V4", jigQty: "" }] }, true);
+    for (const label of ["JIG", "Ver\\.", "Qty"]) expect(html).toMatch(new RegExp(`<textarea[^>]*wrap="off"[^>]*rows="2"[^>]*aria-label="${label}"`));
+    expect(html).toMatch(/<textarea[^>]*wrap="off"[^>]*rows="2"[^>]*aria-label="Machine"/);
+    expect(html).toMatch(/<textarea class="inp sm pl-text" rows="1" aria-label="Note"/);
   });
 
   it("shows data saved without JIG version and quantity", () => {

@@ -8,17 +8,23 @@ const stamp = (iso: string | null) => (iso ? iso.slice(0, 16).replace("T", " ") 
 // Machine, JIG, Ver., Qty and Tester hold one item per line; line i of JIG, Ver. and Qty is the same JIG.
 const TEXT_COLS = [["machine", "Machine"], ["jig", "JIG"], ["jigVer", "Ver."], ["jigQty", "Qty"], ["tester", "Tester"], ["material", "Material"], ["note", "Note"]] as const;
 const NARROW = new Set<string>(["jigVer", "jigQty"]);
+/** Cells of one item per line: a line is never wrapped, so line i of JIG, Ver. and Qty stays side by side. */
+const LINES = new Set<string>(["machine", "jig", "jigVer", "jigQty", "tester"]);
+const JIG_COLS = new Set<string>(["jig", "jigVer", "jigQty"]);
 
 /** One row being edited: every cell an input. */
 function EditRow(props: { row: ProcessRow; onChange: (r: ProcessRow) => void; onRemove: () => void }) {
   const r = props.row;
   const set = <K extends keyof ProcessRow>(k: K, v: ProcessRow[K]) => props.onChange({ ...r, [k]: v });
+  // JIG, Ver. and Qty are as tall as the longest of them
+  const jigLines = Math.max(lineCount(r.jig), lineCount(r.jigVer), lineCount(r.jigQty));
   return (
     <tr className="pl-edit">
       <td><input className="inp sm pl-no" aria-label="No." value={r.no} onChange={(e) => set("no", e.target.value)} /></td>
       <td className="l"><input className="inp sm pl-proc" aria-label="Process" value={r.process} onChange={(e) => set("process", e.target.value)} /></td>
       {TEXT_COLS.map(([k, label]) => (
-        <td key={k} className="l"><textarea className={`inp sm pl-text${NARROW.has(k) ? " pl-narrow" : ""}`} rows={lineCount(r[k])} aria-label={label} value={r[k]} onChange={(e) => set(k, e.target.value)} /></td>
+        <td key={k} className="l"><textarea className={`inp sm pl-text${NARROW.has(k) ? " pl-narrow" : ""}`} wrap={LINES.has(k) ? "off" : undefined}
+          rows={JIG_COLS.has(k) ? jigLines : lineCount(r[k])} aria-label={label} value={r[k]} onChange={(e) => set(k, e.target.value)} /></td>
       ))}
       <td className="act"><button className="btn sm" title="Remove the row" onClick={props.onRemove}>✕</button></td>
     </tr>
@@ -164,7 +170,7 @@ export default function ProcessListTab(props: {
                     <tr key={r.id}>
                       <td className="pl-no">{r.no}</td>
                       <td className="l"><b>{r.process}</b></td>
-                      {TEXT_COLS.map(([k]) => <td key={k} className={`${NARROW.has(k) ? "" : "l "}pl-cell${NARROW.has(k) ? " pl-narrow" : ""}`}>{r[k]}</td>)}
+                      {TEXT_COLS.map(([k]) => <td key={k} className={`${NARROW.has(k) ? "" : "l "}pl-cell${NARROW.has(k) ? " pl-narrow" : ""}${LINES.has(k) ? " pl-lines" : ""}`}>{r[k]}</td>)}
                     </tr>
                   ))}
               </tbody>
