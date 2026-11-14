@@ -1,0 +1,16 @@
+/* Work Instructions tab (WorkInstructionTab.tsx): the uploaded workbook, its revision history and the process pages. */
+.wi-file { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 12.5px; }
+.wi-file b { font-weight: 700; word-break: break-all; }
+.wi-file .btns { margin-left: auto; display: flex; gap: 6px; }
+.wi-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; font-size: 12.5px; color: var(--ink-2); }
+.wi-sub { margin: 14px 0 6px; font-size: 12.5px; font-weight: 700; }
+table.wi-t td.l, table.wi-t th.l { text-align: left; }
+table.wi-t td.pre { white-space: pre-wrap; }
+table.wi-t tbody tr.wi-row { cursor: pointer; }
+table.wi-t tbody tr.wi-row:hover td, table.wi-t tbody tr.wi-row.on td { background: var(--accent-soft); }
+.wi-ctq { display: inline-block; padding: 0 6px; border-radius: 8px; background: #fee2e2; color: #b91c1c; font-size: 10.5px; font-weight: 700; }
+.wi-detail { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px 20px; padding: 8px 4px 10px; text-align: left; }
+.wi-detail h4 { margin: 0 0 4px; font-size: 12px; }
+.wi-detail ol, .wi-detail ul { margin: 0; padding-left: 18px; font-size: 12px; }
+.wi-detail li { margin-bottom: 3px; white-space: pre-wrap; }
+.wi-detail .muted { font-size: 11.5px; }
