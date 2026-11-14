@@ -29,6 +29,8 @@ export function treeModels(nodes: GroupNode[], trail: string[] = [], seen = new 
 
 /** yyyy-MM-dd as yyyy/MM/dd. */
 export const slashDate = (d: string) => d.replace(/-/g, "/");
+/** yy/MM/dd, e.g. 26/01/03 (MP Issues). */
+export const shortDate = (d: string) => slashDate(d).slice(2);
 
 /** Where an event is against today: finished, under way, coming, past its end with tasks open, or without dates. */
 export type EventState = "done" | "now" | "upcoming" | "late" | "undated";
