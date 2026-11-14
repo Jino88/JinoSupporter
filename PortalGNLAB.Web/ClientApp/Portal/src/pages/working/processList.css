@@ -2,21 +2,24 @@
 .pl-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 10px; }
 .pl-sum { margin-left: auto; }
 .pl-err { color: var(--bad, #c0392b); font-size: 12px; }
-.pl-wrap { overflow-x: auto; }
+.pl-wrap { overflow: auto; max-height: calc(100vh - 230px); }
 /* small and tight so a whole line of processes fits on one screen */
-table.wk-it.pl-t { font-size: 11px; }
-table.wk-it.pl-t th { padding: 4px 4px; }
-table.wk-it.pl-t td { padding: 2px 4px; line-height: 1.35; }
+table.wk-it.pl-t { font-size: 12px; }
+table.wk-it.pl-t th { padding: 6px 6px; position: sticky; top: 0; z-index: 2; background: #eef2f7; border-bottom: 2px solid #94a3b8; }
+table.wk-it.pl-t th.pl-jh { background: #e0e9f8; }
+table.wk-it.pl-t td { padding: 4px 6px; line-height: 1.45; vertical-align: top; }
 table.wk-it.pl-t td.pl-cell { white-space: pre-line; max-width: 220px; vertical-align: top; }
 table.wk-it.pl-t td.pl-cell.pl-narrow, table.wk-it.pl-t th.pl-narrow { min-width: 0; text-align: center; }
 table.wk-it.pl-t td.pl-no { font-variant-numeric: tabular-nums; font-weight: 700; }
 table.wk-it.pl-t td.pl-cell.pl-lines { white-space: pre; max-width: none; }
+/* a note is read as a few lines, not squeezed into a word per line */
+table.wk-it.pl-t td.pl-c-note, table.wk-it.pl-t td.pl-c-material { min-width: 160px; }
 table.wk-it.pl-t tr.pl-edit td { padding: 1px 2px; }
 table.wk-it.pl-t tr.pl-edit .btn.sm { height: 20px; padding: 0 5px; font-size: 10px; }
 /* edit boxes as big as what they hold: no fixed height (.inp.sm), no scroll bars */
-table.wk-it.pl-t .inp.sm { height: auto; padding: 1px 3px; border-radius: 3px; font-size: 11px; line-height: 1.35; }
+table.wk-it.pl-t .inp.sm { height: auto; padding: 1px 3px; border-radius: 3px; font-size: 12px; line-height: 1.4; }
 .pl-no { width: 30px; }
-.pl-proc { width: 120px; field-sizing: content; min-width: 60px; }
+.pl-proc { field-sizing: content; min-width: 120px; max-width: 260px; }
 .pl-text { display: block; field-sizing: content; min-width: 60px; max-width: 220px; overflow: hidden; resize: none; font: inherit; }
 .pl-text[wrap="off"] { max-width: none; white-space: pre; }
 .pl-text.pl-narrow { min-width: 24px; text-align: center; }
@@ -27,18 +30,27 @@ table.wk-it.pl-t .inp.sm { height: auto; padding: 1px 3px; border-radius: 3px; f
 .pl-ai-un summary { cursor: pointer; }
 .pl-ai-un ul { margin: 4px 0 0; padding-left: 18px; }
 /* JIGs of a process are its sub-rows, in line with the first one, with a light divider; the process starts with a firmer line */
-table.wk-it.pl-t tr.pl-first > td { border-top: 1px solid var(--line, #d0d7de); }
+table.wk-it.pl-t tr.pl-first > td { border-top: 2px solid #94a3b8; }
 table.wk-it.pl-t tr.pl-sub > td { border-top: 1px dashed var(--line, rgba(127, 127, 127, .25)); }
 table.wk-it.pl-t td.pl-cell { vertical-align: top; }
-table.wk-it.pl-t td.pl-jigcell { white-space: nowrap; }
+/* a JIG name and its drawing no. are read as one line, never broken inside a code */
+table.wk-it.pl-t td.pl-jigcell { white-space: nowrap; background: rgba(37, 99, 235, .06); }
+table.wk-it.pl-t th.pl-jh-first, table.wk-it.pl-t td.pl-jfirst { border-left: 1px solid #b6c8e6; }
+table.wk-it.pl-t tr.pl-g1 > td { background-color: #f6f8fb; }
+table.wk-it.pl-t tr.pl-g1 > td.pl-jigcell { background-color: #eaf0fb; }
+.pl-qty { text-align: right; font-variant-numeric: tabular-nums; }
+table.wk-it.pl-t td.pl-narrow.pl-qty, table.wk-it.pl-t th.pl-narrow.pl-qty { text-align: right; }
+.pl-badge { display: inline-block; min-width: 24px; padding: 1px 6px; border-radius: 10px; background: #1e3a8a; color: #fff; font-size: 11px; font-weight: 700; text-align: center; }
+.pl-tr { margin-top: 2px; font-size: 12px; font-weight: 400; line-height: 1.4; color: #2563eb; white-space: pre-line; }
 .pl-jig { field-sizing: content; min-width: 60px; }
 .pl-jig.pl-narrow { min-width: 24px; text-align: center; }
-/* the JIG total, always shown: one line per kind of JIG, in as many columns as fit */
-.pl-jigsum { margin: 0 0 8px; padding: 6px 8px; border: 1px solid var(--line, #d0d7de); border-radius: 6px; font-size: 11px; }
-.pl-jigsum-h { margin-bottom: 4px; font-size: 12px; }
-.pl-jigtot { display: grid; grid-template-columns: repeat(auto-fill, minmax(430px, 1fr)); column-gap: 20px; }
-.pl-jigtot-i { display: grid; grid-template-columns: minmax(0, 1fr) 140px 26px 32px; gap: 6px; padding: 1px 0; border-bottom: 1px dotted var(--line-soft, #e5e7eb); }
-.pl-jigtot-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* the JIG total: a small table with its own head, folded with its summary line */
+.pl-jigsum { margin: 0 0 10px; padding: 6px 10px; border: 1px solid var(--line, #d0d7de); border-radius: 6px; font-size: 12px; background: #fafbfd; }
+.pl-jigsum-h { cursor: pointer; font-size: 13px; }
+table.pl-jigtot { margin-top: 6px; border-collapse: collapse; font-size: 12px; max-width: 100%; }
+table.pl-jigtot th { padding: 3px 12px 3px 6px; text-align: center; font-weight: 600; background: #eef2f7; border-bottom: 1px solid #94a3b8; }
+table.pl-jigtot th.l { text-align: left; }
+table.pl-jigtot td { padding: 3px 12px 3px 6px; border-bottom: 1px dotted var(--line-soft, #d9dee5); overflow-wrap: anywhere; }
 .pl-jigtot-d { color: var(--ink-2, #555); font-variant-numeric: tabular-nums; }
 .pl-jigtot-v { text-align: center; }
-.pl-jigtot-q { text-align: right; font-variant-numeric: tabular-nums; }
+table.pl-jigtot .pl-qty { text-align: right; }

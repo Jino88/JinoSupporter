@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import ProcessListTab from "./ProcessListTab";
+import ProcessListTab, { tailCols } from "./ProcessListTab";
+import { TrContext } from "./i18n";
 import { addJig, blankRow, removeJig } from "./processList";
 import type { ProcessList, ProcessMatch } from "./processList";
 
@@ -45,41 +46,84 @@ describe("process list tab", () => {
       expect(html).not.toMatch(/Workers|Slowest|Std\. time|Standard time/);
       expect(html).not.toContain('type="number"');
     }
-    const head = render(list).match(/<table class="wk-it pl-t"><thead>[^]*?<[/]thead>/)![0];
-    const labels = [...head.matchAll(/<th[^>]*>([^<]*)<\/th>/g)].map((m) => m[1]);
-    expect(labels).toEqual(["No.", "Process", "Machine", "JIG", "Drawing No", "Ver.", "Qty", "Tester", "Material", "Note"]);
+    const labels = (html: string) => [...html.match(/<table class="wk-it pl-t"><thead>[^]*?<[/]thead>/)![0].matchAll(/<th[^>]*>([^<]*)<\/th>/g)].map((m) => m[1]).filter(Boolean);
+    // to read, Tester and Note are left out while no process has one; to edit, every column is there
+    expect(labels(render(list))).toEqual(["No.", "Process", "Machine", "JIG", "Drawing No", "Ver.", "Qty", "Material"]);
+    expect(labels(render(list, true))).toEqual(["No.", "Process", "Machine", "JIG", "Drawing No", "Ver.", "Qty", "Tester", "Material", "Note"]);
+  });
+
+  it("shows only the Tester / Material / Note columns some process fills in, all of them to edit", () => {
+    const keys = (rows: typeof list.rows, edit = false) => tailCols(rows, edit).map(([k]) => k);
+    expect(keys(list.rows)).toEqual(["material"]);
+    expect(keys([{ ...list.rows[2], tester: "AOI", note: " x " }])).toEqual(["tester", "note"]);
+    expect(keys([{ ...list.rows[2], note: "  " }])).toEqual([]);
+    expect(keys(list.rows, true)).toEqual(["tester", "material", "note"]);
   });
 
   it("puts every JIG on a sub-row of its process, with the cells of the process spanning them", () => {
     const html = render(list);
     const body = html.match(/<table class="wk-it pl-t"><thead>[^]*<[/]table>/)![0];
     // 2 JIGs + 1 JIG + no JIG (one row) = 4 rows
-    expect(count(body, /<tr class="pl-(first|sub)">/g)).toBe(4);
-    expect(count(body, /<tr class="pl-first">/g)).toBe(3);
-    expect(count(body, /<tr class="pl-sub">/g)).toBe(1);
-    // No., Process, Machine, Tester, Material, Note of the first process span its 2 JIG rows
-    expect(body).toContain('<td rowSpan="2" class="pl-no">01</td>');
+    expect(count(body, /<tr class="pl-(first|sub) pl-g[01]">/g)).toBe(4);
+    expect(count(body, /<tr class="pl-first pl-g[01]">/g)).toBe(3);
+    expect(count(body, /<tr class="pl-sub pl-g[01]">/g)).toBe(1);
+    // No., Process, Machine and Material of the first process span its 2 JIG rows
+    expect(body).toContain('<td rowSpan="2" class="pl-no"><span class="pl-badge">01</span></td>');
     expect(body).toContain('<td rowSpan="2" class="l"><b>UPPER ARRAY</b></td>');
-    expect(count(body, /rowSpan="2"/g)).toBe(6);
+    expect(count(body, /rowSpan="2"/g)).toBe(4);
     // a process without JIG is one row, its JIG cells empty
-    expect(body).toContain('<td rowSpan="1" class="pl-no">03</td>');
+    expect(body).toContain('<td rowSpan="1" class="pl-no"><span class="pl-badge">03</span></td>');
     // the JIG name, drawing no., version and quantity are cells of their own
-    expect(body).toContain('<td class="l pl-jigcell">ENCLOSURE JIG</td><td class="l pl-jigcell">DWG-100</td><td class="pl-narrow pl-jigcell">V4</td><td class="pl-narrow pl-jigcell">70</td>');
-    expect(body).toContain('<td class="l pl-jigcell">COVER JIG</td><td class="l pl-jigcell">DWG-200</td><td class="pl-narrow pl-jigcell">V1</td><td class="pl-narrow pl-jigcell">6</td>');
+    expect(body).toContain('<td class="l pl-jigcell pl-jfirst">ENCLOSURE JIG</td><td class="l pl-jigcell">DWG-100</td><td class="pl-narrow pl-jigcell">V4</td><td class="pl-narrow pl-jigcell pl-qty">70</td>');
+    expect(body).toContain('<td class="l pl-jigcell pl-jfirst">COVER JIG</td><td class="l pl-jigcell">DWG-200</td><td class="pl-narrow pl-jigcell">V1</td><td class="pl-narrow pl-jigcell pl-qty">6</td>');
     // JIGs are not joined into a multi-line text
     expect(body).not.toContain("ENCLOSURE JIG\nCOVER JIG");
   });
 
-  it("shows the JIG total at the top, always open: one line per kind of JIG with its biggest quantity, and the sum", () => {
+  it("shows the JIG total at the top as a small table with a head, open: one line per kind of JIG with its biggest quantity, and the sum", () => {
     const html = render(list);
     // ENCLOSURE JIG 70 + COVER JIG max(6, 10) = 80 over 2 kinds
     expect(html).toMatch(/JIG total: <b>2<\/b> kinds · <b>80<\/b> pcs/);
-    const sum = html.match(/<div class="pl-jigsum">[^]*?<div class="pl-wrap">/)![0];
-    // not folded away
-    expect(html).not.toContain("<details");
-    const lines = [...sum.matchAll(/<div class="pl-jigtot-i">([^]*?)<\/div>/g)].map((m) => m[1].replace(/<[^>]+>/g, "|").replace(/\|+/g, "|"));
+    const sum = html.match(/<details class="pl-jigsum"[^>]*>[^]*?<\/details>/)![0];
+    expect(sum).toMatch(/^<details class="pl-jigsum" open/);
+    const head = [...sum.matchAll(/<th[^>]*>([^<]*)<\/th>/g)].map((m) => m[1]);
+    expect(head).toEqual(["JIG", "Drawing No", "Ver.", "Qty"]);
+    const lines = [...sum.matchAll(/<tbody>[^]*?<\/tbody>/g)][0][0].split("</tr>").filter((x) => x.includes("<td")).map((m) => m.replace(/<[^>]+>/g, "|").replace(/\|+/g, "|"));
     expect(lines).toEqual(["|ENCLOSURE JIG|DWG-100|V4|70|", "|COVER JIG|DWG-200|V1|10|"]);
     expect(html.indexOf("pl-jigsum")).toBeLessThan(html.indexOf('<table class="wk-it pl-t">'));
+  });
+
+  it("gives every process its own zebra group", () => {
+    const body = render(list);
+    expect(count(body, /pl-g0/g)).toBe(3);
+    expect(count(body, /pl-g1/g)).toBe(1);
+  });
+
+  describe("translation", () => {
+    const map: Record<string, string> = { "UPPER ARRAY": "상부 배열", "BONDING": "BONDING", "Two jigs": "x" };
+    const withTr = (editing = false) => renderToStaticMarkup(
+      <TrContext.Provider value={(t) => map[t] ?? t}>
+        <ProcessListTab modelName="M" onError={() => {}} initial={{ ...list, rows: [{ ...list.rows[0], note: "UPPER ARRAY" }, list.rows[1]] }} editing={editing} />
+      </TrContext.Provider>);
+
+    it("shows the translation under the process name and the note, only when it differs", () => {
+      const html = withTr();
+      expect(html).toContain('<b>UPPER ARRAY</b><div class="pl-tr">상부 배열</div>');
+      expect(html).toContain('UPPER ARRAY<div class="pl-tr">상부 배열</div></td>');
+      // BONDING translates to itself: no line
+      expect(count(html, /class="pl-tr"/g)).toBe(2);
+      expect(html).not.toContain("<b>BONDING</b><div");
+    });
+
+    it("shows no translation line in the language as written", () => {
+      expect(render(list)).not.toContain("pl-tr");
+    });
+
+    it("keeps the edit boxes as written", () => {
+      const html = withTr(true);
+      expect(html).toContain('value="UPPER ARRAY"');
+      expect(html).not.toContain("상부 배열");
+    });
   });
 
   it("edits with boxes only after Edit: JIG, Drawing No, Ver. and Qty per JIG row, + JIG per process", () => {
