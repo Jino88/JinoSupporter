@@ -20,10 +20,6 @@ function SheetPaste(props: { value: Group; onApply: (g: Group) => void; onClose:
   };
   return (
     <div className="wk-man-paste">
-      <div className="muted small">
-        Copy the process row and the Input / NG / NG rate (%) row of the Daily NG Rate sheet in Excel together and paste them here.
-        Processes with the same name keep their type and materials; the material list stays.
-      </div>
       <textarea className="inp sm wk-ta" rows={4} value={text} autoFocus placeholder="Paste the header rows here (Ctrl+V)"
         onChange={(e) => setText(e.target.value)} />
       {sheet?.problem && <div className="pi-dirty small">{sheet.problem}</div>}
@@ -86,10 +82,6 @@ function AiRequest(props: { modelName: string; value: Group; onApply: (g: Group)
   };
   return (
     <div className="wk-man-paste">
-      <div className="muted small">
-        Ask AI to change the table: type what to do and paste cells copied from Excel if needed
-        (e.g. "Fill the processes and NG items from this header", "Put LOWER into processes 3 to 6"). Ctrl+Enter sends.
-      </div>
       <textarea className="inp sm wk-ta" rows={3} value={text} placeholder="What should change in the table?" disabled={!!busy}
         onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void send(); } }} />
       {error && <div className="pi-dirty small">{error}</div>}
@@ -330,7 +322,6 @@ export default function ManualGroup(props: {
   return (
     <div className="wk-man">
       <div className="wk-man-h">
-        <span className="muted small">Entered here because BMES has no model group for this model. Save the model information to keep changes.</span>
         <span className="wk-man-hb">
           <button className="btn sm" disabled={pasting} onClick={() => setPasting(true)}>Paste NG Rate header</button>
           {source && <button className="btn sm" onClick={copy}>Copy from Production Input {source.name} ({source.build})</button>}
@@ -381,10 +372,9 @@ export default function ManualGroup(props: {
               {!g.materials.length && <tr><td colSpan={3} className="wk-it-empty">No material yet.</td></tr>}
             </tbody>
           </table>
-          {g.materials.length > 0 && (
+          {sel.length > 1 && (
             <div className="muted small wk-man-hint">
-              {sel.length > 1 && <><b>{sel.length} picked</b> · <button className="wk-link" onClick={() => setPicked([])}>Clear</button><br /></>}
-              Drag a material onto a process to add it; Ctrl+click to pick several and drag them together (1 per unit; change the qty in the row).
+              <b>{sel.length} picked</b> · <button className="wk-link" onClick={() => setPicked([])}>Clear</button>
             </div>
           )}
           <div className="wk-man-newmat">
