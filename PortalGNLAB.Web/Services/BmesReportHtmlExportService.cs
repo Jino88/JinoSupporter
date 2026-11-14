@@ -340,7 +340,7 @@ public sealed class BmesReportHtmlExportService
     {
         string payload = JsonSerializer.Serialize(new
         {
-            Version = 2,
+            Version = 3,
             SchemaVersion = BmesReportContract.SchemaVersion,
             CalculationVersion = BmesReportContract.CalculationVersion,
             Start = start.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
@@ -1222,8 +1222,8 @@ public sealed class BmesReportHtmlExportService
   .rpt-tab.active { background: #fff; border-color: #d7dee8; color: #0f172a; margin-bottom: -1px; }
   /* Interactive-only controls (copy / move / remove / reason toggles) are inert in a static
      snapshot — hide them. Keep the viewer chrome: top tabs, per-model sub-tabs, the toolbar
-     reset, and export toggles. */
-  .report-export button:not(.rpt-tab):not(.rpt-subtab):not(.export-toggle):not(#tb-reset) { display: none !important; }
+     reset, export toggles, and Capture buttons (wired below). */
+  .report-export button:not(.rpt-tab):not(.rpt-subtab):not(.export-toggle):not(#tb-reset):not([data-capture-target]) { display: none !important; }
   .report-export .form-check-inline { display: none !important; }
 
   /* Report-content sizing — mirrors BmesReportPage's own overrides so numbers render
@@ -1608,6 +1608,26 @@ public sealed class BmesReportHtmlExportService
     kpiMonthExpanded[monthKey] = !expanded;
     setKpiMonthExpanded(host, monthKey, !expanded);
     sizeTables();
+  });
+
+  // Capture buttons: the live page wires them through Blazor; here the same
+  // app.js renderer copies the card named by data-capture-target as a PNG.
+  host.addEventListener('click', function (event) {
+    var button = event.target.closest
+      ? event.target.closest('button[data-capture-target]')
+      : null;
+    if (!button || !host.contains(button) || button.disabled) return;
+
+    button.disabled = true;
+    button.textContent = 'Capturing...';
+    button.title = '';
+    function done(text) {
+      button.textContent = text;
+      setTimeout(function () { button.textContent = 'Capture'; button.disabled = false; }, 1500);
+    }
+    window.ngRateImageCopy.copyElementToClipboard(button.getAttribute('data-capture-target'))
+      .then(function () { done('Captured'); },
+            function (e) { button.title = (e && e.message) || ''; done('Capture failed'); });
   });
 
   function sizeTables() {

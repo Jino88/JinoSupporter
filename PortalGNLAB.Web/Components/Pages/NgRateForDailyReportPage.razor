@@ -82,6 +82,7 @@
             <div class="d-flex align-items-center gap-2 ms-auto" data-copy-hidden="true">
                 <button type="button"
                         class="btn btn-outline-secondary btn-sm daily-copy-btn"
+                        data-capture-target="@DailySummaryCopyTargetId"
                         @onclick="() => CopyElementToClipboardAsync(DailySummaryCopyTargetId)"
                         disabled="@(IsCopying(DailySummaryCopyTargetId) || !string.IsNullOrEmpty(_reportError) || TotalColCount == 0)">
                     @CopyButtonText(DailySummaryCopyTargetId)
@@ -203,6 +204,7 @@
                 <button type="button"
                         class="btn btn-outline-secondary btn-sm ms-auto daily-copy-btn"
                         data-copy-hidden="true"
+                        data-capture-target="@DailyWorstCopyTargetId"
                         @onclick="() => CopyElementToClipboardAsync(DailyWorstCopyTargetId)"
                         disabled="@(IsCopying(DailyWorstCopyTargetId) || worstModels.Count == 0)">
                     @CopyButtonText(DailyWorstCopyTargetId)
@@ -361,6 +363,7 @@
                     <button type="button"
                             class="btn btn-outline-secondary btn-sm ms-auto daily-copy-btn"
                             data-copy-hidden="true"
+                            data-capture-target="@typeCopyTargetId"
                             @onclick="() => CopyElementToClipboardAsync(typeCopyTargetId)"
                             disabled="@(IsCopying(typeCopyTargetId) || summaryRows.Count == 0)">
                         @CopyButtonText(typeCopyTargetId)
@@ -437,6 +440,7 @@
                     <div class="d-flex align-items-center gap-2 ms-auto" data-copy-hidden="true">
                         <button type="button"
                                 class="btn btn-outline-secondary btn-sm daily-copy-btn"
+                                data-capture-target="@reasonCopyTargetId"
                                 @onclick="() => CopyElementToClipboardAsync(reasonCopyTargetId)"
                                 disabled="@(IsCopying(reasonCopyTargetId) || reasonRows.Count == 0)">
                             @CopyButtonText(reasonCopyTargetId)
