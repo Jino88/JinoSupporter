@@ -64,7 +64,7 @@ export default function InfoTab(props: {
         </div>
         <div className="pi-sec-b">
           <BmesPanel modelName={model.name} saved={info.bmesMaterial ?? ""} onError={props.onError}
-            manual={readManual(info.manualGroup)} onManual={(g) => setInfo((cur) => ({ ...cur, manualGroup: g }))}
+            manual={readManual(info.manualGroup)}
             temp={readTempGroup(info.tempGroup)} onTemp={(g) => setInfo((cur) => ({ ...cur, tempGroup: g }))}
             subManual={readSubManual(info.subManual)} onSubManual={(t) => setInfo((cur) => ({ ...cur, subManual: t }))}
             onPick={(m) => setInfo(({ bmesMaterial: _old, ...rest }) => (m ? { ...rest, bmesMaterial: m } : rest))} />

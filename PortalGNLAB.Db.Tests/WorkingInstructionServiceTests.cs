@@ -77,6 +77,28 @@ public sealed class WorkingInstructionServiceTests(Xunit.Abstractions.ITestOutpu
     }
 
     [Fact]
+    public void DocumentKind_TellsWorkInstructionsFromAJigListAndFromAnythingElse()
+    {
+        string Kind(string path) { using FileStream fs = File.OpenRead(path); return WorkingDocumentKind.Of(fs); }
+
+        // Work Instructions, even with a sheet named "JIG List" that is not a list of the line
+        Assert.Equal(WorkingDocumentKind.Instructions,
+            Kind(Make(wb => { History(wb); Process(wb, "A"); wb.AddWorksheet("JIG List").Cell("B2").Value = "JIG List"; })));
+        Assert.Equal(WorkingDocumentKind.JigList, Kind(Make(wb =>
+        {
+            var ws = wb.AddWorksheet("JIG LIST");
+            string[] head = ["LINE", "공정\n(Process)", "JIG 및 소모성 자재\n(JIG & Consumable material)", "사용공정 번호\n(Using the process No)"];
+            for (int i = 0; i < head.Length; i++) ws.Cell(3, i + 2).Value = head[i];
+            ws.Cell(4, 2).Value = "MAIN"; ws.Cell(4, 3).Value = "1. UPPER ARRAY"; ws.Cell(4, 4).Value = "CAP JIG"; ws.Cell(4, 5).Value = "1";
+        }, "jig.xlsx")));
+        Assert.Equal(WorkingDocumentKind.Unknown, Kind(Make(wb => wb.AddWorksheet("Sheet1").Cell("A1").Value = "hello", "other.xlsx")));
+        Directory.CreateDirectory(dir);
+        string junk = Path.Combine(dir, "junk.xlsx");
+        File.WriteAllText(junk, "hello");
+        Assert.Equal(WorkingDocumentKind.Unknown, Kind(junk));
+    }
+
+    [Fact]
     public void ParseFile_SheetWithoutCtqLabelIsNotCtq()
     {
         string path = Make(wb => { History(wb); Process(wb, "A"); });

@@ -86,6 +86,15 @@ public static class WorkingEndpoints
             cts.CancelAfter(TimeSpan.FromMinutes(3));
             return Results.Ok(await ai.EditAsync(ModelName(name), body, cts.Token));
         });
+        // Model Info › Documents: AI makes the process table (processes, materials and their quantities) from the Work Instructions; nothing is saved here
+        api.MapPost("/models/{name}/manual/ai-from-instructions", async (string name, ManualFromInstructions body, WorkingManualAiService ai,
+            WorkingInstructionService instructions, HttpContext http) =>
+        {
+            string model = ModelName(name);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(http.RequestAborted);
+            cts.CancelAfter(TimeSpan.FromMinutes(4));
+            return Results.Ok(await ai.FromInstructionsAsync(model, body.Group, instructions.Get(model), cts.Token));
+        });
         // AI tab: AI decides where free text belongs (Model Info / Dev Plan / entries); nothing is saved here
         api.MapPost("/models/{name}/ai/place", async (string name, PlaceAiRequest body, WorkingPlaceAiService ai, HttpContext http) =>
         {
