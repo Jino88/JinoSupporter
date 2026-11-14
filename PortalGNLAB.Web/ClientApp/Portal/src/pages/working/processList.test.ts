@@ -1,18 +1,60 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BASIS_TEXT, blankRow, lineCount, nextNo, normalizeList, processListApi, rowsProblem } from "./processList";
+import { BASIS_TEXT, addJig, blankJig, blankRow, jigTotals, lineCount, nextNo, normalizeList, processListApi, removeJig, rowsProblem, setJig } from "./processList";
 import type { ProcessRow } from "./processList";
 
 const row = (no: string, process: string): ProcessRow => ({ ...blankRow(no), process });
 
 describe("process list helpers", () => {
-  it("starts a blank row with empty JIG version and quantity", () => {
-    expect(blankRow("01")).toMatchObject({ no: "01", jigVer: "", jigQty: "" });
+  it("starts a blank row without JIGs", () => {
+    expect(blankRow("01")).toMatchObject({ no: "01", jigs: [] });
+    expect(blankJig()).toEqual({ name: "", drawingNo: "", ver: "", qty: "" });
   });
 
-  it("fills the JIG version and quantity of data saved before those columns", () => {
-    const old = { rows: [{ ...blankRow("01"), id: "a", jigVer: undefined, jigQty: undefined } as unknown as ProcessRow], revision: 1, updatedBy: "", updatedAt: null, source: "" };
-    expect(normalizeList(old).rows[0]).toMatchObject({ jigVer: "", jigQty: "" });
-    expect(normalizeList({ ...old, rows: [{ ...old.rows[0], jigVer: "V1", jigQty: "6" }] }).rows[0]).toMatchObject({ jigVer: "V1", jigQty: "6" });
+  it("normalizes an older response without jigs to none, and drops the retired jig strings", () => {
+    const old = { rows: [{ ...blankRow("01"), id: "a", jigs: undefined, jig: "X", jigVer: "V1", jigQty: "2" } as unknown as ProcessRow], revision: 1, updatedBy: "", updatedAt: null, source: "" };
+    const n = normalizeList(old).rows[0];
+    expect(n.jigs).toEqual([]);
+    expect(n).not.toHaveProperty("jig");
+    expect(n).not.toHaveProperty("jigVer");
+    const withJigs = { ...old, rows: [{ ...old.rows[0], jigs: [{ name: "A", qty: "3" }] } as unknown as ProcessRow] };
+    expect(normalizeList(withJigs).rows[0].jigs).toEqual([{ name: "A", drawingNo: "", ver: "", qty: "3" }]);
+  });
+
+  it("adds, changes and removes the JIGs of a row without touching the original", () => {
+    const r0 = blankRow("01");
+    const r1 = addJig(addJig(r0));
+    expect(r0.jigs).toHaveLength(0);
+    expect(r1.jigs).toHaveLength(2);
+    const r2 = setJig(r1, 1, { name: "B", drawingNo: "D-2" });
+    expect(r2.jigs.map((j) => j.name)).toEqual(["", "B"]);
+    expect(r2.jigs[1].drawingNo).toBe("D-2");
+    expect(removeJig(r2, 0).jigs.map((j) => j.name)).toEqual(["B"]);
+  });
+
+  describe("jigTotals", () => {
+    const jig = (name: string, drawingNo: string, ver: string, qty: string) => ({ name, drawingNo, ver, qty });
+    const withJigs = (no: string, ...jigs: ReturnType<typeof jig>[]): ProcessRow => ({ ...blankRow(no), jigs });
+
+    it("counts the same JIG (name + ver. + drawing no.) of several processes once, with its biggest quantity, and sums them", () => {
+      const t = jigTotals([
+        withJigs("01", jig("COVER JIG", "D-1", "V1", "6"), jig("BASE", "D-2", "V4", "70")),
+        withJigs("02", jig("COVER JIG", "D-1", "V1", "10"), jig("cover jig ", "D-1", "V1", "8")),
+      ]);
+      expect(t.kinds).toBe(2);
+      expect(t.items.find((i) => i.name === "COVER JIG")).toMatchObject({ qtyNum: 10, qty: "10" });
+      expect(t.total).toBe(80);
+    });
+
+    it("keeps a JIG with another version or drawing no. apart, reads an unreadable quantity as 0, and skips unnamed JIGs", () => {
+      const t = jigTotals([withJigs("01", jig("A", "D-1", "V1", "2"), jig("A", "D-1", "V2", "3"), jig("A", "D-9", "V1", "x"), jig("", "D-5", "", "9"))]);
+      expect(t.kinds).toBe(3);
+      expect(t.total).toBe(5);
+      expect(t.items.find((i) => i.drawingNo === "D-9")!.qtyNum).toBe(0);
+    });
+
+    it("is empty without JIGs", () => {
+      expect(jigTotals([blankRow("01")])).toMatchObject({ kinds: 0, total: 0, items: [] });
+    });
   });
 
   it("counts the lines of a cell, at least one", () => {

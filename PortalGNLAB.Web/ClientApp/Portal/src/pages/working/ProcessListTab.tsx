@@ -1,33 +1,96 @@
 import { useEffect, useRef, useState } from "react";
 import { useTr } from "./i18n";
-import { BASIS_TEXT, blankRow, lineCount, nextNo, normalizeList, normalizeRow, processListApi, rowsProblem } from "./processList";
-import type { ProcessList, ProcessMatch, ProcessRow } from "./processList";
+import { BASIS_TEXT, addJig, blankRow, jigTotals, lineCount, nextNo, normalizeList, normalizeRow, processListApi, removeJig, rowsProblem, setJig } from "./processList";
+import type { Jig, ProcessList, ProcessMatch, ProcessRow } from "./processList";
 import "./processList.css";
 
 const stamp = (iso: string | null) => (iso ? iso.slice(0, 16).replace("T", " ") : "");
-// Machine, JIG, Ver., Qty and Tester hold one item per line; line i of JIG, Ver. and Qty is the same JIG.
-const TEXT_COLS = [["machine", "Machine"], ["jig", "JIG"], ["jigVer", "Ver."], ["jigQty", "Qty"], ["tester", "Tester"], ["material", "Material"], ["note", "Note"]] as const;
-const NARROW = new Set<string>(["jigVer", "jigQty"]);
-/** Cells of one item per line: a line is never wrapped, so line i of JIG, Ver. and Qty stays side by side. */
-const LINES = new Set<string>(["machine", "jig", "jigVer", "jigQty", "tester"]);
-const JIG_COLS = new Set<string>(["jig", "jigVer", "jigQty"]);
+// Machine and Tester hold one item per line; every JIG is a sub-row of its process with its own Drawing No., Ver. and Qty.
+type TextKey = "machine" | "tester" | "material" | "note";
+const HEAD_COLS = [["machine", "Machine"]] as const;
+const TAIL_COLS = [["tester", "Tester"], ["material", "Material"], ["note", "Note"]] as const;
+/** Cells of one item per line: a line is never wrapped. */
+const LINES = new Set<string>(["machine", "tester"]);
 
-/** One row being edited: every cell an input. */
-function EditRow(props: { row: ProcessRow; onChange: (r: ProcessRow) => void; onRemove: () => void }) {
-  const r = props.row;
-  const set = <K extends keyof ProcessRow>(k: K, v: ProcessRow[K]) => props.onChange({ ...r, [k]: v });
-  // JIG, Ver. and Qty are as tall as the longest of them
-  const jigLines = Math.max(lineCount(r.jig), lineCount(r.jigVer), lineCount(r.jigQty));
+/** A text cell of the process: plain text to read, a box as big as its text to edit. */
+function TextCell(props: { k: TextKey; label: string; row: ProcessRow; span: number; edit: boolean; onChange: (r: ProcessRow) => void }) {
+  const { k, row: r } = props;
+  const lines = LINES.has(k);
   return (
-    <tr className="pl-edit">
-      <td><input className="inp sm pl-no" aria-label="No." value={r.no} onChange={(e) => set("no", e.target.value)} /></td>
-      <td className="l"><input className="inp sm pl-proc" aria-label="Process" value={r.process} onChange={(e) => set("process", e.target.value)} /></td>
-      {TEXT_COLS.map(([k, label]) => (
-        <td key={k} className="l"><textarea className={`inp sm pl-text${NARROW.has(k) ? " pl-narrow" : ""}`} wrap={LINES.has(k) ? "off" : undefined}
-          rows={JIG_COLS.has(k) ? jigLines : lineCount(r[k])} aria-label={label} value={r[k]} onChange={(e) => set(k, e.target.value)} /></td>
-      ))}
-      <td className="act"><button className="btn sm" title="Remove the row" onClick={props.onRemove}>✕</button></td>
-    </tr>
+    <td rowSpan={props.span} className={`l pl-cell${lines ? " pl-lines" : ""}`}>
+      {props.edit
+        ? <textarea className="inp sm pl-text" wrap={lines ? "off" : undefined} rows={lineCount(r[k])} aria-label={props.label}
+          value={r[k]} onChange={(e) => props.onChange({ ...r, [k]: e.target.value })} />
+        : r[k]}
+    </td>
+  );
+}
+
+/** One process: a row per JIG (one row when it has none); the cells of the process span them all. */
+function ProcessRows(props: { row: ProcessRow; edit: boolean; onChange: (r: ProcessRow) => void; onRemove: () => void }) {
+  const { row: r, edit } = props;
+  const tr = useTr();
+  const span = Math.max(1, r.jigs.length);
+  const set = <K extends keyof ProcessRow>(k: K, v: ProcessRow[K]) => props.onChange({ ...r, [k]: v });
+  const items: (Jig | null)[] = r.jigs.length ? r.jigs : [null];
+  return (
+    <>
+      {items.map((j, i) => {
+        const jigInput = (k: keyof Jig, label: string, extra = "") => j && (
+          <input className={`inp sm pl-jig${extra}`} aria-label={label} value={j[k]} onChange={(e) => props.onChange(setJig(r, i, { [k]: e.target.value }))} />
+        );
+        return (
+          <tr key={i} className={`${i === 0 ? "pl-first" : "pl-sub"}${edit ? " pl-edit" : ""}`}>
+            {i === 0 && (
+              <>
+                <td rowSpan={span} className="pl-no">{edit ? <input className="inp sm pl-no" aria-label="No." value={r.no} onChange={(e) => set("no", e.target.value)} /> : r.no}</td>
+                <td rowSpan={span} className="l">{edit ? <input className="inp sm pl-proc" aria-label="Process" value={r.process} onChange={(e) => set("process", e.target.value)} /> : <b>{r.process}</b>}</td>
+                {HEAD_COLS.map(([k, label]) => <TextCell key={k} k={k} label={label} row={r} span={span} edit={edit} onChange={props.onChange} />)}
+              </>
+            )}
+            <td className="l pl-jigcell">{edit ? jigInput("name", "JIG") : j?.name}</td>
+            <td className="l pl-jigcell">{edit ? jigInput("drawingNo", "Drawing No") : j?.drawingNo}</td>
+            <td className="pl-narrow pl-jigcell">{edit ? jigInput("ver", "Ver.", " pl-narrow") : j?.ver}</td>
+            <td className="pl-narrow pl-jigcell">{edit ? jigInput("qty", "Qty", " pl-narrow") : j?.qty}</td>
+            {edit && (
+              <td className="act">{j && <button className="btn sm" title={tr("Remove the JIG")} aria-label="Remove the JIG" onClick={() => props.onChange(removeJig(r, i))}>✕</button>}</td>
+            )}
+            {i === 0 && (
+              <>
+                {TAIL_COLS.map(([k, label]) => <TextCell key={k} k={k} label={label} row={r} span={span} edit={edit} onChange={props.onChange} />)}
+                {edit && (
+                  <td rowSpan={span} className="act">
+                    <button className="btn sm" onClick={() => props.onChange(addJig(r))}>{tr("+ JIG")}</button>{" "}
+                    <button className="btn sm" title={tr("Remove the row")} aria-label="Remove the row" onClick={props.onRemove}>✕</button>
+                  </td>
+                )}
+              </>
+            )}
+          </tr>
+        );
+      })}
+    </>
+  );
+}
+
+/** All JIGs of the list as one: kinds and pieces, with the list of them to unfold. */
+function JigSummary(props: { rows: ProcessRow[] }) {
+  const tr = useTr();
+  const t = jigTotals(props.rows);
+  return (
+    <details className="pl-jigsum">
+      <summary>{tr("JIG total")}: <b>{t.kinds}</b>{tr(" kinds")} · <b>{t.total}</b>{tr(" pcs")}</summary>
+      {t.items.length > 0 && (
+        <table className="wk-it pl-t pl-jigtot">
+          <thead><tr><th className="l">JIG</th><th className="l">{tr("Drawing No")}</th><th>{tr("Ver.")}</th><th>{tr("Qty")}</th></tr></thead>
+          <tbody>
+            {t.items.map((j, i) => (
+              <tr key={i}><td className="l">{j.name}</td><td className="l">{j.drawingNo}</td><td className="pl-narrow">{j.ver}</td><td className="pl-narrow">{j.qtyNum}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </details>
   );
 }
 
@@ -49,15 +112,15 @@ function MatchNotice(props: { match: ProcessMatch }) {
   );
 }
 
-/** Process List (공정편성 LIST) of a model: one row per process with its machines, jigs (version, quantity) and testers. */
+/** Process List (공정편성 LIST) of a model: one row per process with its machines, jigs (drawing no., version, quantity) and testers. */
 export default function ProcessListTab(props: {
   modelName: string;
   onError: (e: unknown) => void;
   /** List already read (tests); else read here. */
   initial?: ProcessList;
-  /** Start in edit mode (tests). */
+  /** Start in edit mode with the rows of `initial` as the draft (tests). */
   editing?: boolean;
-  /** AI match result already in the draft (tests). */
+  /** AI match result already in the draft, read as text until Edit (tests). */
   match?: ProcessMatch;
   /** Start while the AI is matching (tests). */
   matching?: boolean;
@@ -65,7 +128,9 @@ export default function ProcessListTab(props: {
   const tr = useTr();
   const [list, setList] = useState<ProcessList | undefined>(props.initial && normalizeList(props.initial));
   const [draft, setDraft] = useState<ProcessRow[] | null>(
-    props.match ? props.match.rows.map(normalizeRow) : props.editing && props.initial ? props.initial.rows.map(normalizeRow) : null);
+    props.match ? props.match.rows.map(normalizeRow) : props.editing && props.initial ? normalizeList(props.initial).rows : null);
+  // a draft is read as text until Edit is pressed (an AI match result starts as such a draft)
+  const [editMode, setEditMode] = useState(Boolean(props.editing && props.initial && !props.match));
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(props.matching ?? false);
   const [matching, setMatching] = useState(props.matching ?? false);
@@ -83,9 +148,10 @@ export default function ProcessListTab(props: {
 
   if (!list) return <section className="card pi-sec"><div className="pi-sec-b muted">{tr("Loading…")}</div></section>;
 
+  const leave = () => { setDraft(null); setEditMode(false); setMatch(null); setProblem(null); };
   const run = async (work: () => Promise<ProcessList>) => {
     setBusy(true);
-    try { setList(normalizeList(await work())); setDraft(null); setMatch(null); setProblem(null); } catch (e) { props.onError(e); } finally { setBusy(false); }
+    try { setList(normalizeList(await work())); leave(); } catch (e) { props.onError(e); } finally { setBusy(false); }
   };
   const save = () => {
     if (!draft) return;
@@ -107,7 +173,7 @@ export default function ProcessListTab(props: {
     setBusy(true); setMatching(true);
     try {
       const m = await processListApi.aiMatch(props.modelName, file);
-      if (m.rows.length > 0) { setDraft(m.rows.map(normalizeRow)); setMatch(m); setProblem(null); }
+      if (m.rows.length > 0) { setDraft(m.rows.map(normalizeRow)); setEditMode(false); setMatch(m); setProblem(null); }
       else setProblem(m.note || "The AI found no processes to match in the workbook.");
     } catch (e) { props.onError(e); } finally { setBusy(false); setMatching(false); }
   };
@@ -128,13 +194,15 @@ export default function ProcessListTab(props: {
           {draft ? (
             <>
               <button className="btn sm primary" disabled={busy} onClick={save}>{tr("Save")}</button>
-              <button className="btn sm" disabled={busy} onClick={() => { setDraft(null); setMatch(null); setProblem(null); }}>{tr("Cancel")}</button>
-              <button className="btn sm" disabled={busy} onClick={() => setDraft([...draft, blankRow(nextNo(draft))])}>{tr("+ Row")}</button>
+              <button className="btn sm" disabled={busy} onClick={leave}>{tr("Cancel")}</button>
+              {editMode
+                ? <button className="btn sm" disabled={busy} onClick={() => setDraft([...draft, blankRow(nextNo(draft))])}>{tr("+ Row")}</button>
+                : <button className="btn sm" disabled={busy} onClick={() => setEditMode(true)}>{tr("Edit")}</button>}
               {problem && <span className="pl-err">{tr(problem)}</span>}
             </>
           ) : (
             <>
-              <button className="btn sm" disabled={busy} onClick={() => setDraft(list.rows.length ? list.rows : [blankRow("01")])}>{tr("Edit")}</button>
+              <button className="btn sm" disabled={busy} onClick={() => { setDraft(list.rows.length ? list.rows : [blankRow("01")]); setEditMode(true); }}>{tr("Edit")}</button>
               <button className="btn sm" disabled={busy} title={tr("Read the Machine List, JIG LIST and Tester List sheets of the workbook")}
                 onClick={() => input.current?.click()}>{busy && !matching ? tr("Reading the workbook…") : tr("Import JIG / Machine list")}</button>
               <input ref={input} type="file" accept=".xlsx,.xlsm" hidden onChange={(e) => importFile(e.target.files?.[0])} />
@@ -147,6 +215,7 @@ export default function ProcessListTab(props: {
           )}
           <span className="pl-sum muted small">{tr("Processes")} <b>{rows.length}</b></span>
         </div>
+        <JigSummary rows={rows} />
         {draft && match && <MatchNotice match={match} />}
         {rows.length === 0 && !draft ? (
           <div className="muted">{tr("No processes yet. Import the JIG / Machine / Tester list workbook of the model, or Edit to type them in.")}</div>
@@ -155,24 +224,19 @@ export default function ProcessListTab(props: {
             <table className="wk-it pl-t">
               <thead>
                 <tr>
-                  <th>No.</th><th className="l">{tr("Process")}</th>
-                  {TEXT_COLS.map(([k, label]) => <th key={k} className={NARROW.has(k) ? "pl-narrow" : "l"}>{tr(label)}</th>)}
-                  {draft && <th></th>}
+                  <th>No.</th><th className="l">{tr("Process")}</th><th className="l">{tr("Machine")}</th>
+                  <th className="l">JIG</th><th className="l">{tr("Drawing No")}</th><th className="pl-narrow">{tr("Ver.")}</th><th className="pl-narrow">{tr("Qty")}</th>
+                  {editMode && <th></th>}
+                  <th className="l">{tr("Tester")}</th><th className="l">{tr("Material")}</th><th className="l">{tr("Note")}</th>
+                  {editMode && <th></th>}
                 </tr>
               </thead>
               <tbody>
-                {draft
-                  ? draft.map((r, i) => (
-                    <EditRow key={i} row={r} onChange={(n) => setDraft(draft.map((x, j) => (j === i ? n : x)))}
-                      onRemove={() => setDraft(draft.filter((_, j) => j !== i))} />
-                  ))
-                  : list.rows.map((r) => (
-                    <tr key={r.id}>
-                      <td className="pl-no">{r.no}</td>
-                      <td className="l"><b>{r.process}</b></td>
-                      {TEXT_COLS.map(([k]) => <td key={k} className={`${NARROW.has(k) ? "" : "l "}pl-cell${NARROW.has(k) ? " pl-narrow" : ""}${LINES.has(k) ? " pl-lines" : ""}`}>{r[k]}</td>)}
-                    </tr>
-                  ))}
+                {rows.map((r, i) => (
+                  <ProcessRows key={draft ? i : r.id || i} row={r} edit={editMode}
+                    onChange={(n) => draft && setDraft(draft.map((x, j) => (j === i ? n : x)))}
+                    onRemove={() => draft && setDraft(draft.filter((_, j) => j !== i))} />
+                ))}
               </tbody>
             </table>
           </div>

@@ -1,11 +1,13 @@
 // Process List (공정편성 LIST) of a model (Endpoints/WorkingProcessListEndpoints.cs, /process-list): one row per process
-// with its machines, jigs (version and quantity apart) and testers; typed in or read from a JIG / Machine / Tester list workbook.
+// with its machines, jigs (each with drawing no., version and quantity) and testers; typed in or read from a JIG / Machine / Tester list workbook.
 import { loginUrl } from "../../api";
 import { getJson, toolPath, toolSend } from "../../toolsApi";
 
+/** One JIG of a process: its drawing number (도번), version and quantity are its own. */
+export type Jig = { name: string; drawingNo: string; ver: string; qty: string };
 export type ProcessRow = {
   id: string; no: string; process: string; workers: number | null; stdTime: number | null;
-  machine: string; jig: string; jigVer: string; jigQty: string; tester: string; material: string; note: string;
+  machine: string; jigs: Jig[]; tester: string; material: string; note: string;
 };
 export type ProcessList = { rows: ProcessRow[]; revision: number; updatedBy: string; updatedAt: string | null; source: string };
 
@@ -54,8 +56,17 @@ function upload<T>(route: string, file: File, fields: Record<string, string> = {
   });
 }
 
+export const blankJig = (): Jig => ({ name: "", drawingNo: "", ver: "", qty: "" });
 export const blankRow = (no = ""): ProcessRow =>
-  ({ id: "", no, process: "", workers: null, stdTime: null, machine: "", jig: "", jigVer: "", jigQty: "", tester: "", material: "", note: "" });
+  ({ id: "", no, process: "", workers: null, stdTime: null, machine: "", jigs: [], tester: "", material: "", note: "" });
+
+/** The row with one more empty JIG at its end. */
+export const addJig = (r: ProcessRow): ProcessRow => ({ ...r, jigs: [...r.jigs, blankJig()] });
+/** The row without its JIG number i (0-based). */
+export const removeJig = (r: ProcessRow, i: number): ProcessRow => ({ ...r, jigs: r.jigs.filter((_, j) => j !== i) });
+/** The row with its JIG number i changed. */
+export const setJig = (r: ProcessRow, i: number, patch: Partial<Jig>): ProcessRow =>
+  ({ ...r, jigs: r.jigs.map((j, k) => (k === i ? { ...j, ...patch } : j)) });
 
 /** The number after the last numbered row ("07" after "06"), in the same width; "" when no row has a number. */
 export function nextNo(rows: ProcessRow[]): string {
@@ -65,9 +76,32 @@ export function nextNo(rows: ProcessRow[]): string {
   return String(Number(last) + 1).padStart(last.length, "0");
 }
 
-/** A row from the server; data saved before the JIG version / quantity columns has neither field. */
-export const normalizeRow = (r: ProcessRow): ProcessRow => ({ ...r, jigVer: r.jigVer ?? "", jigQty: r.jigQty ?? "" });
+/** A row from the server; an older response has no jigs (and the retired jig / jigVer / jigQty strings, dropped here). */
+export const normalizeRow = (r: ProcessRow): ProcessRow => {
+  const { jig: _j, jigVer: _v, jigQty: _q, ...rest } = r as ProcessRow & { jig?: string; jigVer?: string; jigQty?: string };
+  return { ...rest, jigs: (r.jigs ?? []).map((j) => ({ ...blankJig(), ...j })) };
+};
 export const normalizeList = (l: ProcessList): ProcessList => ({ ...l, rows: l.rows.map(normalizeRow) });
+
+/** Quantity of a JIG as a number; 0 when it cannot be read (only a leading number counts). */
+const qtyNumber = (qty: string) => { const n = parseInt(qty.trim(), 10); return Number.isFinite(n) && n > 0 ? n : 0; };
+
+export type JigTotal = Jig & { qtyNum: number };
+/** All JIGs of the list as one: the same JIG (name + version + drawing no.) in several processes counts once, with the biggest of its quantities. */
+export function jigTotals(rows: ProcessRow[]): { items: JigTotal[]; kinds: number; total: number } {
+  const map = new Map<string, JigTotal>();
+  for (const j of rows.flatMap((r) => r.jigs ?? [])) {
+    const name = j.name.trim();
+    if (!name) continue;
+    const key = [name, j.ver, j.drawingNo].map((v) => v.trim().toLowerCase()).join("\u0000");
+    const n = qtyNumber(j.qty);
+    const have = map.get(key);
+    if (!have) map.set(key, { name, drawingNo: j.drawingNo.trim(), ver: j.ver.trim(), qty: j.qty.trim(), qtyNum: n });
+    else if (n > have.qtyNum) { have.qtyNum = n; have.qty = j.qty.trim(); }
+  }
+  const items = [...map.values()];
+  return { items, kinds: items.length, total: items.reduce((a, b) => a + b.qtyNum, 0) };
+}
 
 /** Lines of a cell (one item per line), at least 1: the rows of its textarea. */
 export const lineCount = (text: string) => Math.max(1, text.split("\n").length);
