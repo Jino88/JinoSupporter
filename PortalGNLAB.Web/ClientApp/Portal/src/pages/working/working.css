@@ -99,9 +99,10 @@ table.wk-it { width: 100%; border-collapse: separate; border-spacing: 0; font-si
 table.wk-it th { background: #f8fafc; color: var(--ink-2); font-size: 10.5px; font-weight: 700; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; text-align: center; }
 table.wk-it th.grp { border-bottom: 1px solid var(--line-soft); color: var(--accent-ink); background: var(--accent-soft); }
 table.wk-it th.l, table.wk-it td.l { text-align: left; }
-/* owner, dates, counts and buttons take only the room they need; Issue and Final result share the rest */
+/* owner, dates, counts and buttons take only the room they need; Issue, Issue detail and Final result share the rest */
 table.wk-it th.fit { width: 1%; }
-table.wk-it th.final { width: 22%; }
+table.wk-it th.detail { width: 22%; }
+table.wk-it th.final { width: 18%; }
 table.wk-it td { padding: 7px 8px; border-bottom: 1px solid var(--line-soft); text-align: center; vertical-align: top; white-space: nowrap; }
 table.wk-it td.n { font-variant-numeric: tabular-nums; font-weight: 700; }
 table.wk-it td.tog { color: var(--faint); width: 18px; padding-right: 0; }
@@ -115,7 +116,7 @@ table.wk-it td.act .wk-link + .wk-link { margin-left: 8px; }
 .wk-it-row.done td { color: var(--muted); }
 .wk-it-title { white-space: normal !important; min-width: 300px; }
 .wk-it-title .small { margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 640px; }
-.wk-it-final { white-space: pre-wrap !important; min-width: 160px; }
+.wk-it-final, .wk-it-detail { white-space: pre-wrap !important; min-width: 160px; }
 .wk-it-sub > td { background: #fbfcfe; padding: 10px 16px 14px 34px; text-align: left; white-space: normal; }
 .wk-it-empty { padding: 24px !important; color: var(--muted); }
 .wk-if { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -167,7 +168,7 @@ tr.wk-it-sub.child > td { box-shadow: inset 3px 0 0 var(--accent); }
 .wk-paste-h { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .wk-pick { flex: none; cursor: pointer; }
 .wk-note-in { display: flex; align-items: flex-start; gap: 6px; }
-.wk-note-in .wk-ta { flex: 1; }
+.wk-note-in .inp { flex: 1; min-width: 0; }
 .wk-upload { display: flex; align-items: center; gap: 10px; padding: 8px 16px; font-size: 12px; font-weight: 600; color: var(--accent-ink); background: var(--accent-soft); }
 .wk-upload-bar { flex: 1; max-width: 320px; height: 6px; border-radius: 3px; background: #fff; overflow: hidden; }
 .wk-upload-bar > span { display: block; height: 100%; background: var(--accent); transition: width .2s; }
@@ -477,6 +478,7 @@ table.wk-gantt .wk-qty-in { padding: 4px 3px; font-size: 11px; }
 .wk-menu .wk-lang button { padding: 5px 10px; font-size: 12px; border-bottom-width: 2px; }
 /* MP Issues of every model (Home.tsx) */
 .wk-hm-issues td.l { min-width: 220px; white-space: normal; }
+.wk-hm-issues td.detail { white-space: pre-wrap; color: var(--ink-2); }
 .wk-hm-issues tr.done td { color: var(--faint); }
 .wk-hm-issues td.late { color: var(--bad); font-weight: 600; }
 .wk-hm-issues .wk-late { margin-left: 6px; }

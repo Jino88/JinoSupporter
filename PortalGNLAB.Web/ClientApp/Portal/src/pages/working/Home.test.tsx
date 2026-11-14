@@ -118,4 +118,21 @@ describe("Working Home", () => {
     expect(html).not.toContain("RM ISSUE");
     expect(html).toContain(">Open 2</button><button class=\"wk-chip\">All 3</button>");
   });
+
+  it("shows the issue on one line and the rest in the Issue detail column", () => {
+    const html = renderToStaticMarkup(<Home models={[]} today="2026-11-11" view="mpissues" onOpen={() => {}} initial={[
+      { ...load("TIM-338", { phase: "MP" }), entries: [{
+        id: "f", seq: 1, title: "FINAL LINE ISSUE", kind: "issue", status: "Open", doneDate: "", due: "", phase: "MP", body: "Line A\nLine B",
+        owner: "Kim", date: "2026-11-02", category: "ETC", process: "FINAL", cause: "", finalResult: "",
+        logs: [
+          { id: "n1", text: "QM stock shared", detail: "Order qty to discuss", date: "2026-11-03", createdAt: "2026-11-03", owner: "", due: "", doneDate: "", createdBy: "a" },
+          { id: "n2", text: "Old note\nsecond line", date: "2026-11-04", createdAt: "2026-11-04", owner: "", due: "", doneDate: "", createdBy: "a" },
+        ],
+      }] as never },
+    ]} />);
+    expect(html).toContain("<th>Issue</th><th>Issue detail</th><th>Owner</th>");
+    expect(html).toContain("<b>FINAL LINE ISSUE</b></td><td class=\"l detail\">Line A\nLine B</td>");
+    expect(html).toContain("↳ QM stock shared</span></td><td class=\"l detail\">Order qty to discuss</td>");
+    expect(html).toContain("↳ Old note</span></td><td class=\"l detail\">second line</td>");
+  });
 });

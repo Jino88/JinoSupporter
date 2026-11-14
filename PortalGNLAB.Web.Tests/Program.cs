@@ -555,6 +555,18 @@ try
           && WBad(() => working.CreateLog("PIC", p1.Id, new("2026-11-09", "x", 0, "", "", "11/10"), "a"))
           && WBad(() => working.CreateLog("PIC", p1.Id, new("2026-11-09", "x", 0, new string('o', 101)), "a")),
         "working: note due / done date are yyyy-MM-dd and owner is capped at 100");
+    WorkingEntry detIssue = working.CreateEntry("DET", IBody("detail issue"), "alice");
+    WorkingEntryLog detNote = working.CreateLog("DET", detIssue.Id, new("2026-11-09", " one line ", Detail: " line 2\nline 3 "), "alice")!;
+    Check(detNote is { Text: "one line", Detail: "line 2\nline 3" }
+          && working.UpdateLog("DET", detIssue.Id, detNote.Id, new("2026-11-09", "renamed", 1), "bob") is { Text: "renamed", Detail: "line 2\nline 3" }
+          && working.UpdateLog("DET", detIssue.Id, detNote.Id, new("2026-11-09", "renamed", 2, Detail: ""), "bob") is { Detail: "" },
+        "working: note detail saved trimmed; Detail null keeps it on update, \"\" clears it");
+    Check(WBad(() => working.CreateLog("DET", detIssue.Id, new("2026-11-09", "two\nlines"), "a"))
+          && WBad(() => working.CreateLog("DET", detIssue.Id, new("2026-11-09", "a\rb"), "a"))
+          && WBad(() => working.CreateLog("DET", detIssue.Id, new("2026-11-09", new string('t', 501)), "a"))
+          && WBad(() => working.CreateLog("DET", detIssue.Id, new("2026-11-09", "x", Detail: new string('d', 5001)), "a"))
+          && working.CreateLog("DET", detIssue.Id, new("2026-11-09", new string('t', 500), Detail: new string('d', 5000)), "a") is not null,
+        "working: a note's issue is one line of up to 500 characters; its detail up to 5000");
     byte[] png = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3];
     byte[] jpg = [0xFF, 0xD8, 0xFF, 0xE0, 9];
     List<WorkingImage>? onIssue = working.AddImages("pic", p1.Id, null, [("image.png", png), ("..\\x.jpg", jpg)], "alice");
@@ -738,6 +750,7 @@ try
                 CREATE TABLE WorkingEntryLogs (Id TEXT PRIMARY KEY, EntryId TEXT NOT NULL, Date TEXT NOT NULL, Text TEXT NOT NULL, Revision INTEGER NOT NULL,
                   CreatedBy TEXT NOT NULL DEFAULT '', CreatedAt TEXT NOT NULL, UpdatedBy TEXT NOT NULL DEFAULT '', UpdatedAt TEXT NOT NULL);
                 INSERT INTO WorkingEntryLogs VALUES ('n','b','2026-11-09','old note',1,'u','2026-11-09T03:00:00Z','u','2026-11-09T03:00:00Z');
+                INSERT INTO WorkingEntryLogs VALUES ('m','a','2026-11-09',' first line ' || char(13) || char(10) || ' second' || char(10) || 'third ',1,'u','2026-11-09T03:00:00Z','u','2026-11-09T03:00:00Z');
                 """;
             oCmd.ExecuteNonQuery();
         }
@@ -750,6 +763,9 @@ try
               && migrated.UpdateLog("M", "b", "n", new("2026-11-09", "old note", 1, "lee", "2026-11-11"), "u") is { Owner: "lee", Due: "2026-11-11" }
               && migrated.AddImages("M", "b", "n", [("a.png", png)], "u") is [_],
             "working: old notes table gets owner / due / done date; pictures table created");
+        Check(old.Single(e => e.Id == "a").Logs is [{ Text: "first line", Detail: "second\nthird" }]
+              && new WorkingService(oldDb, glossDb).ListEntries("M").Single(e => e.Id == "b").Logs is [{ Text: "old note", Detail: "" }],
+            "working: a several-line old note keeps its first line as the issue and moves the rest to Detail");
     }
     finally
     {

@@ -6,6 +6,7 @@ import {
   barAt, devPlans, hasOpen, labelSide, modelRow, mpIssueRows, mpPlans, slashDate, timelineMonths, timelineRange,
   type EventBrief, type ModelLoad, type MpIssueRow, type PlanBrief, type TaskBrief,
 } from "./homeSummary";
+import { noteParts } from "./logic";
 
 const STATE_LABEL: Record<EventBrief["state"], string> = { done: "Done", now: "Now", upcoming: "Next", late: "Late", undated: "No date" };
 /** Models loaded at the same time, so a long tree does not send every request at once. */
@@ -161,7 +162,8 @@ function MpIssues(props: { loads: ModelLoad[]; today: string; onOpen: (model: st
       <td></td>
       <td className="num">{no}</td>
       <td colSpan={2}></td>
-      <td className="l"><span className="wk-hm-sub">↳ {tr(log.text).split("\n")[0]}</span></td>
+      <td className="l"><span className="wk-hm-sub">↳ {tr(noteParts(log).line)}</span></td>
+      <td className="l detail">{tr(noteParts(log).detail)}</td>
       <td>{log.owner || <span className="muted" title="Written by">{log.createdBy}</span>}</td>
       <td>{slashDate(log.date)}</td>
       <td className={isLateNow ? "late" : ""}>{log.due && slashDate(log.due)}{isLateNow && <span className="wk-late">{tr("Late")}</span>}</td>
@@ -180,8 +182,8 @@ function MpIssues(props: { loads: ModelLoad[]; today: string; onOpen: (model: st
           <td>{tr(e.process)}</td>
           <td className="l">
             {sub ? <span className="wk-hm-sub">↳ <b>{tr(e.title)}</b></span> : <b>{tr(e.title)}</b>}
-            {e.body && <div className="muted small">{tr(e.body).split("\n")[0]}</div>}
           </td>
+          <td className="l detail">{tr(e.body)}</td>
           <td>{e.owner}</td>
           <td>{slashDate(e.date)}</td>
           <td className={isLateNow ? "late" : ""}>{e.due && slashDate(e.due)}{isLateNow && <span className="wk-late">{tr("Late")}</span>}</td>
@@ -209,7 +211,7 @@ function MpIssues(props: { loads: ModelLoad[]; today: string; onOpen: (model: st
           <table className="grid wk-hm-issues">
             <thead>
               <tr>
-                {["Model", "No.", "Issue type", "Process", "Issue", "Owner", "Registered", "Due", "Done", "Final result", "Notes"].map((h) => <th key={h}>{tr(h)}</th>)}
+                {["Model", "No.", "Issue type", "Process", "Issue", "Issue detail", "Owner", "Registered", "Due", "Done", "Final result", "Notes"].map((h) => <th key={h}>{tr(h)}</th>)}
               </tr>
             </thead>
             <tbody>{shown.map((r) => issueRow(r, false))}</tbody>

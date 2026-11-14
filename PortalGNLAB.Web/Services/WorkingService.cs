@@ -58,12 +58,17 @@ public sealed record WorkingSetupRowSave(
 
 public sealed record WorkingSetupImport(List<WorkingSetupRowSave>? Rows);
 
-/// <summary>A dated progress note; Due / DoneDate are "" or yyyy-MM-dd (a note with a done date is done).</summary>
+/// <summary>
+/// A dated progress note; Text is the one-line issue and Detail the rest (any lines); Due / DoneDate are "" or yyyy-MM-dd
+/// (a note with a done date is done). Notes written before Detail may still have several lines in Text.
+/// </summary>
 public sealed record WorkingEntryLog(
     string Id, string EntryId, string Date, string Text, int Revision, string CreatedBy, string CreatedAt, string UpdatedBy, string UpdatedAt,
-    string Owner, string Due, string DoneDate, List<WorkingImage> Images);
+    string Owner, string Due, string DoneDate, List<WorkingImage> Images, string Detail = "");
 
-public sealed record WorkingLogSave(string? Date, string? Text, int Revision = 0, string? Owner = null, string? Due = null, string? DoneDate = null);
+/// <summary>Detail null on update = keep the note's detail.</summary>
+public sealed record WorkingLogSave(
+    string? Date, string? Text, int Revision = 0, string? Owner = null, string? Due = null, string? DoneDate = null, string? Detail = null);
 
 /// <summary>
 /// A picture or video pasted into an entry (LogId "") or into one of its notes. The original bytes are stored in the DB
@@ -206,12 +211,13 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         ("ParentId", "TEXT NOT NULL DEFAULT ''"),
     ];
 
-    /// <summary>Note columns added 2026-11-09 (schedule and done date of a note).</summary>
+    /// <summary>Note columns added 2026-11-09 (schedule and done date of a note) and 2026-11-14 (Detail).</summary>
     private static readonly (string Name, string Type)[] AddedLogColumns =
     [
         ("Owner", "TEXT NOT NULL DEFAULT ''"),
         ("Due", "TEXT NOT NULL DEFAULT ''"),
         ("DoneDate", "TEXT NOT NULL DEFAULT ''"),
+        ("Detail", "TEXT NOT NULL DEFAULT ''"),
     ];
 
     /// <summary>Picture and video formats kept, told apart by their first bytes (the sent content type is not trusted).</summary>
@@ -233,7 +239,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         "Id, ModelName, Kind, Date, Title, Body, Status, Severity, Result, Owner, Due, Revision, CreatedBy, CreatedAt, UpdatedBy, UpdatedAt, " +
         "Seq, Phase, Category, Process, Cause, DoneDate, FinalResult, SetupRowId, ParentId";
 
-    private const string LogColumns = "Id, EntryId, Date, Text, Revision, CreatedBy, CreatedAt, UpdatedBy, UpdatedAt, Owner, Due, DoneDate";
+    private const string LogColumns = "Id, EntryId, Date, Text, Revision, CreatedBy, CreatedAt, UpdatedBy, UpdatedAt, Owner, Due, DoneDate, Detail";
 
     private const string ImageColumns = "i.Id, i.EntryId, i.LogId, i.FileName, i.ContentType, i.Size, i.CreatedBy, i.CreatedAt";
 
@@ -296,7 +302,49 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
                 ("@s", NextSeq(conn, tx, model, kind)), ("@id", id)))
                 set.ExecuteNonQuery();
         FixSetupIssueProcess(conn, tx);
+        SplitNoteDetail(conn, tx);
         tx.Commit();
+    }
+
+    /// <summary>True (and the migration marked as applied) when <paramref name="name"/> has not run yet.</summary>
+    private static bool FirstRun(SqliteConnection conn, SqliteTransaction tx, string name)
+    {
+        using (SqliteCommand make = Cmd(conn, "CREATE TABLE IF NOT EXISTS WorkingMigrations (Name TEXT PRIMARY KEY, AppliedAt TEXT NOT NULL)", tx))
+            make.ExecuteNonQuery();
+        using (SqliteCommand done = Cmd(conn, "SELECT COUNT(*) FROM WorkingMigrations WHERE Name=@n", tx, ("@n", name)))
+            if (Convert.ToInt32(done.ExecuteScalar(), CultureInfo.InvariantCulture) > 0) return false;
+        using (SqliteCommand mark = Cmd(conn, "INSERT INTO WorkingMigrations (Name, AppliedAt) VALUES (@n, @at)", tx,
+            ("@n", name), ("@at", DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture))))
+            mark.ExecuteNonQuery();
+        return true;
+    }
+
+    /// <summary>
+    /// Once: a note's issue (Text) became one line when Issue detail was added (2026-11-14); the lines after the first
+    /// move to the front of its Detail.
+    /// </summary>
+    private static void SplitNoteDetail(SqliteConnection conn, SqliteTransaction tx)
+    {
+        if (!FirstRun(conn, tx, "note-detail-split")) return;
+        var split = new List<(string Id, string Text, string Detail)>();
+        using (SqliteCommand find = Cmd(conn, "SELECT Id, Text, Detail FROM WorkingEntryLogs WHERE instr(Text, char(10)) > 0 OR instr(Text, char(13)) > 0", tx))
+        using (SqliteDataReader r = find.ExecuteReader())
+            while (r.Read())
+            {
+                (string line, string after) = SplitFirstLine(r.GetString(1));
+                split.Add((r.GetString(0), line, string.Join("\n", new[] { after, r.GetString(2).Trim() }.Where(t => t.Length > 0))));
+            }
+        foreach ((string id, string text, string detail) in split)
+            using (SqliteCommand set = Cmd(conn, "UPDATE WorkingEntryLogs SET Text=@t, Detail=@d WHERE Id=@id", tx, ("@t", text), ("@d", detail), ("@id", id)))
+                set.ExecuteNonQuery();
+    }
+
+    /// <summary>The first non-blank line of a text and the lines after it, both trimmed.</summary>
+    internal static (string Line, string After) SplitFirstLine(string text)
+    {
+        string t = text.Replace("\r\n", "\n").Replace('\r', '\n').Trim();
+        int nl = t.IndexOf('\n');
+        return nl < 0 ? (t, "") : (t[..nl].Trim(), t[(nl + 1)..].Trim());
     }
 
     /// <summary>
@@ -305,19 +353,12 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
     /// </summary>
     private static void FixSetupIssueProcess(SqliteConnection conn, SqliteTransaction tx)
     {
-        const string name = "setup-issue-process";
-        using (SqliteCommand make = Cmd(conn, "CREATE TABLE IF NOT EXISTS WorkingMigrations (Name TEXT PRIMARY KEY, AppliedAt TEXT NOT NULL)", tx))
-            make.ExecuteNonQuery();
-        using (SqliteCommand done = Cmd(conn, "SELECT COUNT(*) FROM WorkingMigrations WHERE Name=@n", tx, ("@n", name)))
-            if (Convert.ToInt32(done.ExecuteScalar(), CultureInfo.InvariantCulture) > 0) return;
+        if (!FirstRun(conn, tx, "setup-issue-process")) return;
         using (SqliteCommand fix = Cmd(conn,
             "UPDATE WorkingEntries SET Process = substr(trim((SELECT s.ProcessName FROM WorkingSetupRows s WHERE s.Id = WorkingEntries.SetupRowId)), 1, 60) " +
             "WHERE SetupRowId <> '' AND EXISTS (SELECT 1 FROM WorkingSetupRows s WHERE s.Id = WorkingEntries.SetupRowId " +
             "AND s.Line <> '' AND WorkingEntries.Process = s.Line AND trim(s.ProcessName) <> '')", tx))
             fix.ExecuteNonQuery();
-        using (SqliteCommand mark = Cmd(conn, "INSERT INTO WorkingMigrations (Name, AppliedAt) VALUES (@n, @at)", tx,
-            ("@n", name), ("@at", DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture))))
-            mark.ExecuteNonQuery();
     }
 
     private static void AddMissingColumns(SqliteConnection conn, SqliteTransaction tx, string table, (string Name, string Type)[] columns)
@@ -733,7 +774,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
     /// <summary>A note row; its pictures are picked from <paramref name="images"/> (pictures of its entry or wider).</summary>
     private static WorkingEntryLog ReadLog(SqliteDataReader r, List<WorkingImage> images) =>
         new(r.GetString(0), r.GetString(1), r.GetString(2), r.GetString(3), r.GetInt32(4), r.GetString(5), r.GetString(6),
-            r.GetString(7), r.GetString(8), r.GetString(9), r.GetString(10), r.GetString(11), ImagesOf(images, r.GetString(0)));
+            r.GetString(7), r.GetString(8), r.GetString(9), r.GetString(10), r.GetString(11), ImagesOf(images, r.GetString(0)), r.GetString(12));
 
     private static List<WorkingImage> ImagesOf(List<WorkingImage> images, string logId) => images.Where(i => i.LogId == logId).ToList();
 
@@ -1092,20 +1133,24 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
 
     // ── Progress notes: dated notes under an entry; they do not change the entry's revision ──
 
-    private sealed record CleanedLog(string Date, string Text, string Owner, string Due, string DoneDate);
+    private sealed record CleanedLog(string Date, string Text, string Owner, string Due, string DoneDate, string Detail);
 
+    /// <summary>The issue (Text) is one line; the rest goes in Detail.</summary>
     private static CleanedLog CleanLog(WorkingLogSave b)
     {
         string date = (b.Date ?? "").Trim();
         if (!IsDate(date)) throw new ArgumentException("Date must be yyyy-MM-dd.");
         string text = (b.Text ?? "").Trim();
         if (text.Length == 0) throw new ArgumentException("Note text is required.");
-        if (text.Length > 5000) throw new ArgumentException("Note text must be 5000 characters or fewer.");
-        return new(date, text, Limit(b.Owner, "Owner", 100), OptionalDate(b.Due, "Due"), OptionalDate(b.DoneDate, "Done date"));
+        if (text.Contains('\n') || text.Contains('\r')) throw new ArgumentException("Note text must be one line; write the rest in Issue detail.");
+        if (text.Length > 500) throw new ArgumentException("Note text must be 500 characters or fewer.");
+        string detail = (b.Detail ?? "").Trim();
+        if (detail.Length > 5000) throw new ArgumentException("Issue detail must be 5000 characters or fewer.");
+        return new(date, text, Limit(b.Owner, "Owner", 100), OptionalDate(b.Due, "Due"), OptionalDate(b.DoneDate, "Done date"), detail);
     }
 
     private static (string, object?)[] LogArgs(CleanedLog l) =>
-        [("@d", l.Date), ("@t", l.Text), ("@o", l.Owner), ("@due", l.Due), ("@done", l.DoneDate)];
+        [("@d", l.Date), ("@t", l.Text), ("@o", l.Owner), ("@due", l.Due), ("@done", l.DoneDate), ("@detail", l.Detail)];
 
     private static bool EntryExists(SqliteConnection conn, SqliteTransaction tx, string model, string entryId)
     {
@@ -1132,7 +1177,7 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         if (!EntryExists(conn, tx, model, entryId)) return null;
         string id = Guid.NewGuid().ToString("N"), now = Now();
         using (SqliteCommand ins = Cmd(conn,
-            $"INSERT INTO WorkingEntryLogs ({LogColumns}) VALUES (@id,@e,@d,@t,1,@u,@now,@u,@now,@o,@due,@done)", tx,
+            $"INSERT INTO WorkingEntryLogs ({LogColumns}) VALUES (@id,@e,@d,@t,1,@u,@now,@u,@now,@o,@due,@done,@detail)", tx,
             [("@id", id), ("@e", entryId), ("@u", user), ("@now", now), .. LogArgs(log)]))
             ins.ExecuteNonQuery();
         WorkingEntryLog saved = ReadLogRow(conn, tx, entryId, id)!;
@@ -1152,8 +1197,9 @@ public sealed class WorkingService(string? dbPath = null, string? glossaryDbPath
         if (current is null) return null;
         if (current.Revision != body.Revision)
             throw new WorkingConflictException("Someone else saved this note first. Reload and try again.");
+        if (body.Detail is null) log = log with { Detail = current.Detail };
         using (SqliteCommand upd = Cmd(conn,
-            "UPDATE WorkingEntryLogs SET Date=@d, Text=@t, Owner=@o, Due=@due, DoneDate=@done, Revision=Revision+1, UpdatedBy=@u, " +
+            "UPDATE WorkingEntryLogs SET Date=@d, Text=@t, Owner=@o, Due=@due, DoneDate=@done, Detail=@detail, Revision=Revision+1, UpdatedBy=@u, " +
             "UpdatedAt=@now WHERE Id=@id AND EntryId=@e", tx,
             [("@id", logId), ("@e", entryId), ("@u", user), ("@now", Now()), .. LogArgs(log)]))
             upd.ExecuteNonQuery();

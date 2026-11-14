@@ -59,7 +59,7 @@ public sealed class WorkingTranslationService(WorkingService working, IServiceSc
             foreach (WorkingEntry e in working.ListEntries(model))
             {
                 texts.AddRange([e.Title, e.Body, e.FinalResult, e.Category, e.Process, e.Cause]);
-                foreach (WorkingEntryLog l in e.Logs) texts.Add(l.Text);
+                foreach (WorkingEntryLog l in e.Logs) texts.AddRange([l.Text, l.Detail]);
             }
             foreach (WorkingSetupRow r in working.ListSetupRows(model)) texts.AddRange([r.ProcessName, r.MachineNote]);
         }

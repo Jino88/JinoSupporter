@@ -98,7 +98,10 @@ export interface WorkingImage {
 /** Editable fields of a progress note. */
 export interface LogFields {
   date: string;
+  /** The issue, one line. */
   text: string;
+  /** Issue detail: the rest, any lines. */
+  detail: string;
   owner: string;
   /** Planned completion date (yyyy-MM-dd) or "". */
   due: string;
