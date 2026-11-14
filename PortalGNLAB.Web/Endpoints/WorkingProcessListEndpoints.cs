@@ -23,6 +23,24 @@ public static class WorkingProcessListEndpoints
             List<WorkingProcessRow> rows = WorkingProcessListService.ReadWorkbook(s);
             return Results.Ok(svc.Save(WorkingEndpoints.ModelName(name), rows, revision, user.Identity?.Name ?? "", Path.GetFileName(file.FileName)));
         });
+        // AI match: the workbook's machines, jigs and testers put on the processes in process order; nothing is saved here
+        api.MapPost("/models/{name}/process-list/ai-match", async (string name, HttpContext ctx, WorkingProcessMatchAiService ai) =>
+        {
+            (IFormFile file, _) = await ReadWorkbook(ctx);
+            List<WorkingListItem> items;
+            await using (Stream s = file.OpenReadStream()) items = WorkingProcessListService.ReadItems(s);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ctx.RequestAborted);
+            cts.CancelAfter(TimeSpan.FromMinutes(4));
+            try { return Results.Ok(await ai.MatchAsync(WorkingEndpoints.ModelName(name), items, cts.Token)); }
+            catch (OperationCanceledException) when (!ctx.RequestAborted.IsCancellationRequested)
+            {
+                return Results.Json(new { error = "The AI took too long to answer. Try again." }, statusCode: StatusCodes.Status504GatewayTimeout);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException)
+            {
+                return Results.Json(new { error = $"The AI could not answer: {ex.Message}" }, statusCode: StatusCodes.Status502BadGateway);
+            }
+        });
         return api;
     }
 

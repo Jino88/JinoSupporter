@@ -163,6 +163,7 @@ builder.Services.AddScoped<ReviewReportService>();
 builder.Services.AddScoped<WorkingManualAiService>();
 builder.Services.AddScoped<WorkingPlaceAiService>();
 builder.Services.AddScoped<WorkingSetupAiService>();
+builder.Services.AddScoped<WorkingProcessMatchAiService>();
 // Working > Graphmaker: Codex CLI picks the Graph Maker chart for pasted data.
 builder.Services.AddScoped<PortalGNLAB.Web.Services.GraphMaker.GraphMakerAiService>();
 builder.Services.AddSingleton(new ProductionInputService());
