@@ -14,31 +14,12 @@ public sealed class MenuPermissionService
     {
         _repo = repo;
         _repo.SeedDefaultMenuPermissionsIfEmpty();
-        GrantProductionInputOnce();
         GrantWorkingOnce();
-    }
-
-    private const string ProductionInputGrantMarker = "Migration:grant-production-input-2026-10-30";
-
-    /// <summary>
-    /// Roles seeded before Production Input existed never get it from <c>DefaultsByRole</c>, so grant it
-    /// once to the default roles that already have permissions. The marker keeps a later admin removal.
-    /// </summary>
-    private void GrantProductionInputOnce()
-    {
-        if (!string.IsNullOrEmpty(_repo.GetSetting(ProductionInputGrantMarker))) return;
-        foreach ((string role, string[] menus) in AppMenus.DefaultsByRole)
-        {
-            if (role == AppRoles.Admin || !menus.Contains(AppMenus.ProductionInput)) continue;
-            if (_repo.GetMenuPermissionsForRole(role).Count > 0)
-                _repo.SetMenuPermission(role, AppMenus.ProductionInput, true);
-        }
-        _repo.SetSetting(ProductionInputGrantMarker, DateTime.UtcNow.ToString("O"));
     }
 
     private const string WorkingGrantMarker = "Migration:grant-working-2026-11-09";
 
-    /// <summary>Same one-time grant as Production Input, for the Working menu.</summary>
+    /// <summary>Roles seeded before the Working menu existed never get it from <c>DefaultsByRole</c>, so grant it once to the default roles that already have permissions. The marker keeps a later admin removal.</summary>
     private void GrantWorkingOnce()
     {
         if (!string.IsNullOrEmpty(_repo.GetSetting(WorkingGrantMarker))) return;

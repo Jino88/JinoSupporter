@@ -166,7 +166,6 @@ builder.Services.AddScoped<WorkingSetupAiService>();
 builder.Services.AddScoped<WorkingProcessMatchAiService>();
 // Working > Graphmaker: Codex CLI picks the Graph Maker chart for pasted data.
 builder.Services.AddScoped<PortalGNLAB.Web.Services.GraphMaker.GraphMakerAiService>();
-builder.Services.AddSingleton(new ProductionInputService());
 // Working: per-model info and work history (dev / issue / review) plus read-only model groups.
 builder.Services.AddSingleton(new WorkingService());
 // Working > Process List (공정편성 LIST) and Work Instructions (작업지도서) of a model.

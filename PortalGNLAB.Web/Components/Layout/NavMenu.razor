@@ -57,10 +57,6 @@
     {
         @Tile("bmes/daily-report", "daily", "Daily", "Daily Report", exact: true)
     }
-    @if (can(AppMenus.ProductionInput))
-    {
-        @AppTile("/app/production/input", "clipboard", "Input", "Production Daily Input")
-    }
     @if (can(AppMenus.Working))
     {
         @AppTile("/app/working", "briefcase", "Working", "Working — model info, plan and history")

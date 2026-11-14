@@ -222,7 +222,7 @@ public static class BmesTableEndpoints
             string name = body.Start.Date == body.End.Date
                 ? $"WorkerStatus_{body.Start:yyyyMMdd}.xlsx"
                 : $"WorkerStatus_{body.Start:yyyyMMdd}_{body.End:yyyyMMdd}.xlsx";
-            return Results.File(bytes, ProductionInputEndpoints.XlsxContentType, name);
+            return Results.File(bytes, BrowserDownload.XlsxContentType, name);
         });
 
         // ── Model Group ───────────────────────────────────────────────────────

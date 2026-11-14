@@ -29,7 +29,6 @@ public static class PortalShellEndpoints
         [AppMenus.Report]             = "/report/bmes",
         [AppMenus.Translate]          = "/translate",
         [AppMenus.ReviewReport]       = "/tools/review-report",
-        [AppMenus.ProductionInput]    = "/app/production/input",
         [AppMenus.Working]            = "/app/working",
         [AppMenus.BmesSetting]        = "/setting",
         [AppMenus.AdminUsers]         = "/admin/users",
@@ -47,7 +46,6 @@ public static class PortalShellEndpoints
         [AppMenus.TestExcelConverter] = "/app/admin/test-excel-converter",
         [AppMenus.Translate] = "/app/tools/translate",
         [AppMenus.ReviewReport] = "/app/tools/review-report",
-        [AppMenus.ProductionInput] = "/app/production/input",
         [AppMenus.Working] = "/app/working",
         [AppMenus.BmesSetting] = "/app/setting",
         [AppMenus.BmesRoutingTable] = "/app/bmes/routing-table",
@@ -120,7 +118,6 @@ public static class PortalShellEndpoints
         app.MapAdminTools();
         app.MapToolPages();
         app.MapTeamMemo();
-        app.MapProductionInput();
         app.MapBmesTables();
         app.MapQr();
         app.MapSetting();
