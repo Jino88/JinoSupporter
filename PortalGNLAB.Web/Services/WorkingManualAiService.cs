@@ -49,7 +49,7 @@ public sealed class WorkingManualAiService(CodexApiService codex)
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
-    public async Task<ManualAiResult> EditAsync(string modelName, ManualAiRequest body, CancellationToken ct = default)
+    public async Task<ManualAiResult> EditAsync(string modelName, ManualAiRequest body, CancellationToken ct = default, int maxOutputTokens = MaxOutputTokens)
     {
         string request = body.Request?.Trim() ?? "";
         if (request.Length == 0) throw new ArgumentException("Type what to change.");
@@ -67,7 +67,7 @@ public sealed class WorkingManualAiService(CodexApiService codex)
         var content = new JsonArray { new JsonObject { ["type"] = "input_text", ["text"] = text.ToString() } };
 
         string model = codex.Model;
-        CodexTextResult result = await codex.GenerateAsync(Instructions, content, model, Effort, 16000, ct);
+        CodexTextResult result = await codex.GenerateAsync(Instructions, content, model, Effort, maxOutputTokens, ct);
         codex.RecordUsage(result.Usage);
 
         (ManualAiGroup group, string note) = ParseAnswer(result.Text);
@@ -82,8 +82,11 @@ public sealed class WorkingManualAiService(CodexApiService codex)
     {
         if (doc is not { Processes.Count: > 0 })
             throw new ArgumentException("Upload the Work Instructions of the model first (Model Info › Documents).");
-        return EditAsync(modelName, new ManualAiRequest(InstructionsRequest(doc), group), ct);
+        // a table of every sheet is long (60+ processes with their materials and NG items): room for all of it
+        return EditAsync(modelName, new ManualAiRequest(InstructionsRequest(doc), group), ct, InstructionsMaxOutputTokens);
     }
+
+    public const int MaxOutputTokens = 16000, InstructionsMaxOutputTokens = 32000;
 
     /// <summary>The request that has AI make the table from the instruction sheets (given as JSON).</summary>
     public static string InstructionsRequest(InstructionDoc doc)
@@ -95,17 +98,24 @@ public sealed class WorkingManualAiService(CodexApiService codex)
             name = p.Name.Length > 0 ? p.Name : p.Sheet.Trim(),
             ctq = p.Ctq,
             parts = p.Parts.Where(x => x.Name.Trim().Length > 0).Select(x => new { name = x.Name.Trim(), spec = x.Spec.Trim(), qty = x.Qty.Trim() }),
-            tools = p.Tools.Select(t => t.Name.Trim()).Where(n => n.Length > 0),
+            // with the note: the glue, tape or cushion a process uses is named there (Keo · SL233LF)
+            tools = p.Tools.Where(t => t.Name.Trim().Length > 0).Select(t => new { name = t.Name.Trim(), note = t.Note.Trim() }),
             keyPoints = p.KeyPoints,
         });
         return $"""
             Make the process table from the Work Instructions of the model ({doc.FileName}), given below as JSON: one
             sheet per process, in line order.
             - One process per sheet, in this order. name is the sheet's process name as written; localName is "".
-            - The materials of a process are its parts: material = the part name (add the spec in brackets only when
-              two different parts have the same name), qtyPerUnit = the number in qty (1 when there is none). Parts
-              that are not materials (glue dispensing settings, labels of steps) are left out. Every material goes in
-              the group's materials list once.
+            - The materials of a process are what goes into the product there, each with qtyPerUnit:
+              * its parts: material = the part number in spec (ENCLOSURE-G778B-UPPER, BRS-181389S08ZZ, TAPE-G778B_R0),
+                or the part name when spec is not a part number; qtyPerUnit = the number in qty (1 when there is none).
+              * the glue / bond, tape, cushion or other consumable that stays on the product, from its tools: name like
+                Keo, Băng dính, Tape, Cushion, Bond, 본드, 접착제, 테이프 with the product in note. material = the product
+                name or code in note without remarks in brackets (Keo · "SL233LF ( Sử dụng trong vòng 24 giờ)" → SL233LF);
+                qtyPerUnit 1.
+              Not materials: machines, jigs, needles, settings (pressure, amount, temperature, time), cleaning cloths,
+              swabs, finger cots, alcohol, pens, header rows of the part list (Tên gọi, Ghi chú).
+              Every material goes in the group's materials list once, with the same name in every process.
             - type: MAIN for the main assembly line processes, FUNCTION for function / electrical tests, VISUAL for
               visual or appearance inspection, SUB for sub-assembly and anything else.
             - A process already in the current group with the same name (any case) keeps its id, type and NG items;

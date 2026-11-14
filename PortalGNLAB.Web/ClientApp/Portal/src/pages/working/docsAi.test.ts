@@ -47,6 +47,18 @@ describe("runProcess", () => {
     await runProcess(steps(group(0), true, order));
     expect(order).toEqual(["ask", "save"]);
   });
+  it("asks with both counts before replacing", async () => {
+    const asked: string[] = [];
+    await runProcess({ ...steps(group(1), true, []), confirm: (t: string) => { asked.push(t); return true; } });
+    expect(asked).toEqual(["Process: replace the 1 processes of the Process table with the 2 the AI made from the Work Instructions?"]);
+    const jig: string[] = [];
+    await runJig({
+      match: async () => ({ rows: [row("1", []), row("2", [])], note: "", unmatched: [] }),
+      current: async () => ({ rows: [row("9", [])], revision: 1 }),
+      confirm: (t) => { jig.push(t); return false; }, save: async () => {},
+    });
+    expect(jig).toEqual(["JIG/MC List: replace its 1 rows with the 2 the AI made from the JIG / Machine / Tester list?"]);
+  });
   it("does not save when the replacement is declined", async () => {
     const order: string[] = [];
     const r = await runProcess(steps(group(1), false, order));
