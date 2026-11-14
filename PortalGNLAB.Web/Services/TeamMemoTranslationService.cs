@@ -39,6 +39,8 @@ public sealed class TeamMemoTranslationService(TeamMemoService memos, CodexApiSe
 {
     public const string Model = CodexApiService.LunaModel;
     public const string Effort = "low";
+    /// <summary>Stored with each translation; one from an earlier prompt that kept a Vietnamese text as written is asked again.</summary>
+    public const string PromptVersion = "p2";
     // Three translations come back per item, so batches are smaller than a single-language call.
     private const int MaxItemsPerCall = 25;
     private const int MaxCharsPerCall = 6_000;
@@ -166,22 +168,38 @@ public sealed class TeamMemoTranslationService(TeamMemoService memos, CodexApiSe
         return missing.Count;
     }
 
+    public const string Instructions = """
+        You translate text from a shared engineering work memo (manufacturing, quality, process review).
+        The input is a JSON array of strings. Translate EVERY string into English, Korean and Vietnamese.
+        Return ONLY a JSON object {"items":[{"en":"...","ko":"...","vi":"..."}, ...]} with exactly one
+        object per input string, in the same order.
+
+        Rules:
+        - Natural, concise wording used by engineers on a factory floor.
+        - If a string is already in a target language, return it unchanged for that language. Vietnamese is written in
+          Latin letters but is not English: "Xếp UPPER" is "Stack UPPER" in English and "UPPER 적재" in Korean.
+        - Keep product codes, model names, part numbers and part or machine names written in capitals (e.g. MSM-X526B,
+          TIU-C11-20, SPK, UPPER, LOWER, AOI, NG, PV2, JIG), numbers, units, dates, file names and @mentions exactly as
+          written; translate the words around them. UPPER / LOWER name a part (upper / lower case), never letter case.
+        - Keep markdown (headings, bullets, tables, **bold**, `code`) and line breaks exactly; translate only the words.
+        - Never add explanations or notes.
+        """;
+
+    /// <summary>
+    /// True for a translation stored before <see cref="PromptVersion"/> that is a Vietnamese text as written, given as its
+    /// English or Korean (the earlier prompt kept "process names in Latin letters", and Vietnamese is in Latin letters).
+    /// </summary>
+    public static bool KeptAsWritten(string source, string lang, string text, string model) =>
+        lang != TeamMemoLanguage.Vietnamese && text.Trim() == source.Trim() && IsVietnamese(source)
+        && !model.EndsWith(PromptVersion, StringComparison.Ordinal);
+
+    /// <summary>Whether the text has a Vietnamese letter (Latin with a diacritic, đ).</summary>
+    public static bool IsVietnamese(string text) =>
+        text.Any(c => c is >= 'À' and <= 'ɏ' or >= 'Ạ' and <= 'ỹ' && char.IsLetter(c));
+
     private async Task<List<(string Source, Dictionary<string, string> ByLang)>> TranslateBatchAsync(List<string> items, CancellationToken ct)
     {
-        const string instructions = """
-            You translate text from a shared engineering work memo (manufacturing, quality, process review).
-            The input is a JSON array of strings. Translate EVERY string into English, Korean and Vietnamese.
-            Return ONLY a JSON object {"items":[{"en":"...","ko":"...","vi":"..."}, ...]} with exactly one
-            object per input string, in the same order.
-
-            Rules:
-            - Natural, concise wording used by engineers on a factory floor.
-            - If a string is already in a target language, return it unchanged for that language.
-            - Keep product codes, model names, part numbers, process names in Latin letters (e.g. MSM-X526B, TIU-C11-20,
-              SPK, NG, PV2, JIG), numbers, units, dates, file names and @mentions exactly as written.
-            - Keep markdown (headings, bullets, tables, **bold**, `code`) and line breaks exactly; translate only the words.
-            - Never add explanations or notes.
-            """;
+        const string instructions = Instructions;
         var content = new JsonArray
         {
             new JsonObject { ["type"] = "input_text", ["text"] = JsonSerializer.Serialize(items) },
@@ -263,11 +281,12 @@ public sealed class TeamMemoTranslationService(TeamMemoService memos, CodexApiSe
                 names.Add($"@h{i}");
                 cmd.Parameters.AddWithValue($"@h{i++}", h);
             }
-            cmd.CommandText = $"SELECT Hash, Lang, Text FROM WebTranslations WHERE Hash IN ({string.Join(",", names)});";
+            cmd.CommandText = $"SELECT Hash, Lang, Text, Model FROM WebTranslations WHERE Hash IN ({string.Join(",", names)});";
             using var r = cmd.ExecuteReader();
             while (r.Read())
             {
                 string text = byHash[r.GetString(0)];
+                if (KeptAsWritten(text, r.GetString(1), r.GetString(2), r.GetString(3))) continue; // translated again
                 if (!result.TryGetValue(text, out var byLang)) result[text] = byLang = new(StringComparer.Ordinal);
                 byLang[r.GetString(1)] = r.GetString(2);
             }
@@ -291,7 +310,7 @@ public sealed class TeamMemoTranslationService(TeamMemoService memos, CodexApiSe
                 cmd.Parameters.AddWithValue("@h", Hash(source));
                 cmd.Parameters.AddWithValue("@l", lang);
                 cmd.Parameters.AddWithValue("@t", text);
-                cmd.Parameters.AddWithValue("@m", $"{Model} · {Effort}");
+                cmd.Parameters.AddWithValue("@m", $"{Model} · {Effort} · {PromptVersion}");
                 cmd.Parameters.AddWithValue("@now", now);
                 cmd.ExecuteNonQuery();
             }
