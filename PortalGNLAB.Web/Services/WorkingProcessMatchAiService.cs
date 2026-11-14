@@ -157,6 +157,19 @@ public sealed class WorkingProcessMatchAiService(
             }
         }
 
+        // an item the answer left out goes where the workbook puts it: the processes of its numbers (a process whose
+        // code is that number) or the process of its name
+        var placed = new HashSet<string>(main.Values.Concat(added.Values.SelectMany(x => x)).SelectMany(x => x.Items), StringComparer.Ordinal);
+        foreach (WorkingListItem item in items.Where(i => !placed.Contains(i.Id)))
+            foreach (MatchProcess p in processes)
+            {
+                bool byNo = int.TryParse(p.Code.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out int no) && item.ProcessNos.Contains(no);
+                bool byName = item.Process.Trim().Length > 0 && string.Equals(item.Process.Trim(), p.Name.Trim(), StringComparison.OrdinalIgnoreCase);
+                if (!byNo && !byName) continue;
+                if (main.TryGetValue(p.Seq, out var had)) had.Items.Add(item.Id);
+                else main[p.Seq] = ("", [item.Id], []);
+            }
+
         var rows = new List<WorkingProcessRow>();
         var used = new HashSet<string>(StringComparer.Ordinal);
         void Add(string process, List<string> ids, List<string> notes)
@@ -181,9 +194,12 @@ public sealed class WorkingProcessMatchAiService(
         }
         if (rows.Count > WorkingProcessListService.MaxRows) rows = rows[..WorkingProcessListService.MaxRows];
 
+        // what is left has no process here: why, so it does not read as an error
         List<string> unmatched = items.Where(i => !used.Contains(i.Id)).Select(i =>
             $"{(i.Kind == WorkingListItem.Jig ? "JIG" : i.Kind == WorkingListItem.Machine ? "Machine" : "Tester")}: {i.Label}{(i.Ver.Length > 0 ? $" ({i.Ver})" : "")}"
-            + (i.Process.Length > 0 ? $" — {i.Process}" : "")).ToList();
+            + (i.Process.Length > 0 ? $" — {i.Process}" : "")
+            + (i.ProcessNos.Count == 0 ? " (no process number; no process of that name in the list)"
+                : $" (workbook process {string.Join(", ", i.ProcessNos)}; no such process in the list)")).ToList();
         return (rows, unmatched);
     }
 
