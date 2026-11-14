@@ -57,14 +57,16 @@ export default function ProcessListTab(props: {
   editing?: boolean;
   /** AI match result already in the draft (tests). */
   match?: ProcessMatch;
+  /** Start while the AI is matching (tests). */
+  matching?: boolean;
 }) {
   const tr = useTr();
   const [list, setList] = useState<ProcessList | undefined>(props.initial);
   const [draft, setDraft] = useState<ProcessRow[] | null>(
     props.match ? props.match.rows : props.editing && props.initial ? props.initial.rows : null);
   const [problem, setProblem] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [matching, setMatching] = useState(false);
+  const [busy, setBusy] = useState(props.matching ?? false);
+  const [matching, setMatching] = useState(props.matching ?? false);
   const [match, setMatch] = useState<ProcessMatch | null>(props.match ?? null);
   const input = useRef<HTMLInputElement>(null);
   const aiInput = useRef<HTMLInputElement>(null);
@@ -133,7 +135,7 @@ export default function ProcessListTab(props: {
             <>
               <button className="btn sm" disabled={busy} onClick={() => setDraft(list.rows.length ? list.rows : [blankRow("01")])}>{tr("Edit")}</button>
               <button className="btn sm" disabled={busy} title={tr("Read the Machine List, JIG LIST and Tester List sheets of the workbook")}
-                onClick={() => input.current?.click()}>{busy ? tr("Reading the workbook…") : tr("Import JIG / Machine list")}</button>
+                onClick={() => input.current?.click()}>{busy && !matching ? tr("Reading the workbook…") : tr("Import JIG / Machine list")}</button>
               <input ref={input} type="file" accept=".xlsx,.xlsm" hidden onChange={(e) => importFile(e.target.files?.[0])} />
               <button className="btn sm" disabled={busy} aria-busy={matching}
                 title={tr("The AI matches the machines, JIGs and testers of the workbook to the processes, in process order")}

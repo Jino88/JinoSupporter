@@ -56,6 +56,12 @@ public sealed class WorkingProcessListServiceTests : IDisposable
         ts.Cell(5, 2).Value = 1; ts.Cell(5, 4).Value = "방수검사기\n(Warterproof Function Tester)"; ts.Cell(5, 5).Value = "F520";
         ts.Cell(5, 7).Value = "AIR LEAK TEST";
 
+        // a drawing transfer list names jigs and machines too, but is not a list of the line
+        var transfer = book.AddWorksheet("사업장 도면 이관 LIST");
+        string[] trh = ["NO", "MODEL", "도번", "Ver.", "JIG & 설비명", "양산처"];
+        for (int i = 0; i < trh.Length; i++) transfer.Cell(2, i + 1).Value = trh[i];
+        transfer.Cell(3, 1).Value = 1; transfer.Cell(3, 2).Value = "MSM-G778B"; transfer.Cell(3, 5).Value = "PLATE TRAY";
+
         var ms = new MemoryStream();
         book.SaveAs(ms);
         ms.Position = 0;
@@ -87,6 +93,28 @@ public sealed class WorkingProcessListServiceTests : IDisposable
         WorkingProcessRow leak = rows.Single(r => r.No == "46");
         Assert.Equal("AIR LEAK TEST S.A(CP) ×2", leak.Machine);
         Assert.Equal("방수검사기 / (Warterproof Function Tester) (F520)", leak.Tester);
+    }
+
+    [Fact]
+    public void ReadItems_ListsEveryMachineJigAndTesterWithItsProcess()
+    {
+        List<WorkingListItem> items = WorkingProcessListService.ReadItems(Workbook());
+
+        Assert.Equal(["J1", "J2", "M1", "M2", "M3", "T1"], items.Select(i => i.Id));
+        WorkingListItem cap = items[0];
+        Assert.Equal((WorkingListItem.Jig, "ENCLOSURE DISPENSOR CAP JIG", "ENCLOSURE DISPENSOR CAP JIG (V1) ×6"), (cap.Kind, cap.Name, cap.Label));
+        Assert.Equal("1)  1. UPPER ARRAY ~ 5. SPK ASSY / 2) 7. AOI TEST 2", cap.Process);
+        Assert.Equal([1, 2, 7], cap.ProcessNos);
+        WorkingListItem bonding = items.Single(i => i.Id == "M2");
+        Assert.Equal(("BONDING", "SPK 안착단 본드 도포 / - SL233LF, VZ15-T2"), (bonding.Process, bonding.Note));
+        Assert.Equal("AIR LEAK TEST S.A(CP) ×2", items.Single(i => i.Id == "M3").Label);
+        // a tester without numbers keeps the process it is written for
+        WorkingListItem tester = items.Single(i => i.Id == "T1");
+        Assert.Equal(("AIR LEAK TEST", 0), (tester.Process, tester.ProcessNos.Count));
+        // the QM line's jigs are not on the line
+        Assert.DoesNotContain(items, i => i.Name == "DROP TEST JIG");
+        // nor the drawing transfer list
+        Assert.DoesNotContain(items, i => i.Name == "PLATE TRAY");
     }
 
     [Fact]
@@ -144,5 +172,13 @@ public sealed class WorkingProcessListServiceTests : IDisposable
         Assert.Contains(rows, r => r.No == "02" && r.Machine == "NON CONTACT DISPENSOR DT");
         Assert.Contains(rows, r => r.Jig.Contains("ENCLOSURE DISPENSOR JIG (V4)"));
         Assert.True(rows.Count >= 40);
+
+        fs.Position = 0;
+        List<WorkingListItem> items = WorkingProcessListService.ReadItems(fs);
+        Console.WriteLine($"items: {items.Count(i => i.Kind == WorkingListItem.Machine)} machines, "
+                          + $"{items.Count(i => i.Kind == WorkingListItem.Jig)} jigs, {items.Count(i => i.Kind == WorkingListItem.Tester)} testers");
+        Assert.Contains(items, i => i.Kind == WorkingListItem.Machine && i.Name == "IONIZER" && i.ProcessNos.SequenceEqual([1]));
+        Assert.Contains(items, i => i.Kind == WorkingListItem.Tester && i.Process == "AIR LEAK TEST");
+        Assert.InRange(items.Count(i => i.Kind == WorkingListItem.Machine), 20, 60);
     }
 }

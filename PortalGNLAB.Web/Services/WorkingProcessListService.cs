@@ -15,6 +15,15 @@ public sealed record WorkingProcessRow(
     string Id, string No, string Process, int? Workers, double? StdTime, string Machine, string Jig, string Tester,
     string Material, string Note);
 
+/// <summary>
+/// A machine, jig or tester of a JIG / Machine / Tester list workbook: its name, the text shown in a Process List cell
+/// (with version and quantity), the process it is written for, its process numbers and the note of its row.
+/// </summary>
+public sealed record WorkingListItem(string Id, string Kind, string Name, string Label, string Process, List<int> ProcessNos, string Note)
+{
+    public const string Machine = "machine", Jig = "jig", Tester = "tester";
+}
+
 public sealed record WorkingProcessList(List<WorkingProcessRow> Rows, int Revision, string UpdatedBy, DateTime? UpdatedAt, string Source);
 
 /// <summary>
@@ -92,7 +101,45 @@ public sealed partial class WorkingProcessListService(string? root = null)
     /// The processes of a JIG / Machine / Tester list workbook by process number: Machine List rows give the name and the
     /// machines, JIG LIST rows (with process ranges such as "1) 1 ~ 5 / 2) 7 ~ 9") the jigs, Tester List rows the testers.
     /// </summary>
-    public static List<WorkingProcessRow> ReadWorkbook(Stream xlsx)
+    public static List<WorkingProcessRow> ReadWorkbook(Stream xlsx) => JoinByNumber(ReadItems(xlsx));
+
+    /// <summary>The items of a list workbook joined into one row per process number (numbered names from the JIG LIST).</summary>
+    public static List<WorkingProcessRow> JoinByNumber(IReadOnlyList<WorkingListItem> items)
+    {
+        var byNo = new SortedDictionary<int, Proc>();
+        Proc At(int no) => byNo.TryGetValue(no, out Proc? p) ? p : byNo[no] = new Proc();
+        foreach (WorkingListItem item in items)
+        {
+            if (item.Kind == WorkingListItem.Jig)
+                // "1)  1. UPPER ARRAY ~ 5. SPK ASSY": names of the numbered processes
+                foreach (Match m in NumberedName().Matches(item.Process))
+                    At(int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture)).JigName ??= m.Groups[2].Value.Trim();
+            foreach (int no in item.ProcessNos)
+            {
+                Proc p = At(no);
+                if (item.Kind != WorkingListItem.Jig) p.Name ??= NullIfEmpty(item.Process);
+                (item.Kind switch { WorkingListItem.Machine => p.Machines, WorkingListItem.Jig => p.Jigs, _ => p.Testers }).Add(item.Label);
+                if (item.Note.Length > 0) p.Notes.Add(item.Note);
+            }
+        }
+        // a tester without process numbers goes to the processes of its name ("AIR LEAK TEST")
+        foreach (WorkingListItem t in items.Where(i => i.Kind == WorkingListItem.Tester && i.ProcessNos.Count == 0 && i.Process.Length > 0))
+            foreach (Proc p in byNo.Values.Where(p => string.Equals(p.Name ?? p.JigName, t.Process, StringComparison.OrdinalIgnoreCase)))
+                p.Testers.Add(t.Label);
+        if (byNo.Count == 0)
+            throw new ArgumentException("No Machine List, JIG LIST or Tester List sheet with process numbers was found in the workbook.");
+        return byNo.Select(kv => new WorkingProcessRow(
+            Guid.NewGuid().ToString("N")[..12], kv.Key.ToString("00", CultureInfo.InvariantCulture),
+            kv.Value.Name ?? kv.Value.JigName ?? "", null, null,
+            string.Join(", ", kv.Value.Machines.Distinct()), string.Join(", ", kv.Value.Jigs.Distinct()),
+            string.Join(", ", kv.Value.Testers.Distinct()), "", string.Join(" / ", kv.Value.Notes.Distinct()))).ToList();
+    }
+
+    /// <summary>
+    /// Every machine (Machine List), jig of the main line (JIG LIST) and tester (Tester List) of a list workbook with the
+    /// process it is written for and its process numbers; ids M1.., J1.., T1.. in the order of the sheets.
+    /// </summary>
+    public static List<WorkingListItem> ReadItems(Stream xlsx)
     {
         XLWorkbook book;
         try { book = new XLWorkbook(xlsx); }
@@ -102,13 +149,15 @@ public sealed partial class WorkingProcessListService(string? root = null)
         }
         using (book)
         {
-            var byNo = new SortedDictionary<int, Proc>();
-            var unnumbered = new List<(string Process, string Tester)>();
-            Proc At(int no) => byNo.TryGetValue(no, out Proc? p) ? p : byNo[no] = new Proc();
+            var items = new List<WorkingListItem>();
+            void Add(string kind, string name, string label, string process, string nos, string note) =>
+                items.Add(new WorkingListItem(kind[..1].ToUpperInvariant() + (items.Count(i => i.Kind == kind) + 1),
+                    kind, name, label, process, Numbers(nos), note));
 
             foreach (IXLWorksheet ws in book.Worksheets)
             {
-                if (Header(ws, "설비명", "MACHINE NAME") is { } mh)
+                // a Machine List has a process column; a drawing transfer list ("JIG & 설비명") has none
+                if (Header(ws, "설비명", "MACHINE NAME") is { } mh && Col(mh, "사용 공정", "사용공정", "USING THE PROCESS") > 0)
                 {
                     int cNo = Col(mh, "사용공정 번호", "PROCESS NO"), cName = Col(mh, "설비명", "MACHINE NAME"),
                         cProc = Col(mh, "사용 공정", "USING THE PROCESS)"), cQty = Col(mh, "소요 수량", "REQUIRED QUANTITY"),
@@ -117,14 +166,9 @@ public sealed partial class WorkingProcessListService(string? root = null)
                     {
                         string machine = Text(row, cName);
                         if (machine.Length == 0) continue;
-                        foreach (int no in Numbers(Text(row, cNo)))
-                        {
-                            Proc p = At(no);
-                            p.Name ??= NullIfEmpty(OneLine(Text(row, cProc)));
-                            string qty = Text(row, cQty);
-                            p.Machines.Add(qty is "" or "1" ? machine : $"{machine} ×{qty}");
-                            if (OneLine(Text(row, cNote)) is { Length: > 0 } note) p.Notes.Add(note);
-                        }
+                        string qty = Text(row, cQty);
+                        Add(WorkingListItem.Machine, machine, qty is "" or "1" ? machine : $"{machine} ×{qty}",
+                            OneLine(Text(row, cProc)), Text(row, cNo), OneLine(Text(row, cNote)));
                     }
                 }
                 else if (Header(ws, "JIG 및 소모성", "JIG & CONSUMABLE") is { } jh)
@@ -137,14 +181,11 @@ public sealed partial class WorkingProcessListService(string? root = null)
                         string jig = OneLine(Text(row, cJig));
                         string line = Text(row, cLine).ToUpperInvariant();
                         if (jig.Length == 0 || (line.Length > 0 && line != "MAIN")) continue;
-                        // "1)  1. UPPER ARRAY ~ 5. SPK ASSY": names of the numbered processes
-                        foreach (Match m in NumberedName().Matches(Text(row, cProc)))
-                            At(int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture)).JigName ??= m.Groups[2].Value.Trim();
                         string ver = cVer > 0 ? Text(row, cVer + 1) : "";
                         string mass = cMass > 0 ? Text(row, cMass) : "";
                         string label = jig + (ver.Length > 0 && !ver.StartsWith("20", StringComparison.Ordinal) ? $" ({ver})" : "")
                                        + (mass is "" or "0" or "-" ? "" : $" ×{mass}");
-                        foreach (int no in Numbers(Text(row, cNo))) At(no).Jigs.Add(label);
+                        Add(WorkingListItem.Jig, jig, label, OneLine(Text(row, cProc)), Text(row, cNo), "");
                     }
                 }
                 else if (Header(ws, "계측기명", "TESTER NAME") is { } th)
@@ -156,29 +197,12 @@ public sealed partial class WorkingProcessListService(string? root = null)
                         string name = OneLine(Text(row, cName));
                         if (name.Length == 0) continue;
                         string model = OneLine(Text(row, cModel));
-                        string label = model.Length > 0 ? $"{name} ({model})" : name;
-                        string proc = OneLine(Text(row, cProc));
-                        List<int> nos = Numbers(Text(row, cNo));
-                        if (nos.Count == 0 && proc.Length > 0) unnumbered.Add((proc, label));
-                        foreach (int no in nos)
-                        {
-                            At(no).Testers.Add(label);
-                            At(no).Name ??= NullIfEmpty(proc);
-                        }
+                        Add(WorkingListItem.Tester, name, model.Length > 0 ? $"{name} ({model})" : name,
+                            OneLine(Text(row, cProc)), Text(row, cNo), "");
                     }
                 }
             }
-            // a tester without process numbers goes to the processes of its name ("AIR LEAK TEST")
-            foreach ((string proc, string tester) in unnumbered)
-                foreach (Proc p in byNo.Values.Where(p => string.Equals(p.Name ?? p.JigName, proc, StringComparison.OrdinalIgnoreCase)))
-                    p.Testers.Add(tester);
-            if (byNo.Count == 0)
-                throw new ArgumentException("No Machine List, JIG LIST or Tester List sheet with process numbers was found in the workbook.");
-            return byNo.Select(kv => new WorkingProcessRow(
-                Guid.NewGuid().ToString("N")[..12], kv.Key.ToString("00", CultureInfo.InvariantCulture),
-                kv.Value.Name ?? kv.Value.JigName ?? "", null, null,
-                string.Join(", ", kv.Value.Machines.Distinct()), string.Join(", ", kv.Value.Jigs.Distinct()),
-                string.Join(", ", kv.Value.Testers.Distinct()), "", string.Join(" / ", kv.Value.Notes.Distinct()))).ToList();
+            return items;
         }
     }
 
