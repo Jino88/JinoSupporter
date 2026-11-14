@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { bmesApi, drawingApi, drawingsByName, drawingsOf, matchMaterial, qty, shiftCount, subGroupTree, suggestMaterials, visibleBom } from "./bmes";
 import type { BmesMaterial, BomResult, PdmRow, SubGroupNode } from "./bmes";
+import { useTr } from "./i18n";
 import ManualGroup from "./ManualGroup";
 import { MANUAL, emptyManual, isEmptyManual, keepSubTables, shownTable, type ManualGroup as ManualGroupData } from "./manual";
 import TempGroupEdit from "./TempGroupEdit";
@@ -257,6 +258,7 @@ export function ProcessTables(props: {
   /** Table picked first (tests); else the first offered. */
   initial?: string;
 }) {
+  const tr = useTr();
   // process table picked ("" = the model's, else a sub-group id; null = not picked yet)
   const [table, setTable] = useState<string | null>(props.initial ?? null);
   const subs = subPaths(props.temp);
@@ -266,8 +268,8 @@ export function ProcessTables(props: {
     <>
       {subs.length > 0 && (
         <div className="wk-tg-tables">
-          <span className="muted small">Processes and materials of</span>
-          {tbl.model && <button className={"wk-chip" + (tbl.at === "" ? " on" : "")} onClick={() => setTable("")}>Model {props.modelName}</button>}
+          <span className="muted small">{tr("Processes and materials of")}</span>
+          {tbl.model && <button className={"wk-chip" + (tbl.at === "" ? " on" : "")} onClick={() => setTable("")}>{tr("Model")} {props.modelName}</button>}
           {subs.map((s) => (
             <button key={s.id} className={"wk-chip" + (s.id === tbl.at ? " on" : "")} onClick={() => setTable(s.id)}>{s.path}</button>
           ))}

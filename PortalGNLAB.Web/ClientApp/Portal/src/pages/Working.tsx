@@ -28,14 +28,11 @@ import "./working/working.css";
 /** The pages of the top menu: Home and the MP issues of every model. */
 type HomeView = "home" | "mpissues";
 type Tab = "info" | "bom" | "plan" | "devissue" | "dev" | "review" | "all" | "setup" | "issue" | "docs" | "process" | "jigmc" | "ai";
-/** Categories of a model page and the tabs under each (BOM / Drawing, Process, JIG/MC List and AI have none). */
+/** Categories of a model page and the tabs under each (AI has none); what the model is made of is all under Model Info. */
 export const CATEGORIES: { label: string; tabs: [Tab, string][] }[] = [
-  { label: "Model Info", tabs: [["info", "Model Info"], ["docs", "Documents"]] },
-  { label: "BOM / Drawing", tabs: [["bom", "BOM / Drawing"]] },
+  { label: "Model Info", tabs: [["info", "Model Info"], ["docs", "Documents"], ["bom", "BOM / Drawing"], ["process", "Process"], ["jigmc", "JIG/MC List"]] },
   { label: "Development", tabs: [["plan", "Dev Plan"], ["devissue", "Dev Issue"], ["dev", "Dev History"], ["review", "Reviews"], ["all", "Timeline"]] },
   { label: "Mass Production", tabs: [["setup", "Plan"], ["issue", "Issues"]] },
-  { label: "Process", tabs: [["process", "Process"]] },
-  { label: "JIG/MC List", tabs: [["jigmc", "JIG/MC List"]] },
   { label: "AI", tabs: [["ai", "AI"]] },
 ];
 const categoryOf = (tab: Tab) => CATEGORIES.find((c) => c.tabs.some(([k]) => k === tab))!;

@@ -5,11 +5,11 @@ vi.mock("./working/ModelDocs", () => ({ default: () => null }));
 
 describe("Working model page menu", () => {
   const labels = CATEGORIES.map((c) => c.label);
-  it("has Model Info with Documents, then Process and JIG/MC List, and no Process List or Work Instructions", () => {
-    expect(labels).toEqual(["Model Info", "BOM / Drawing", "Development", "Mass Production", "Process", "JIG/MC List", "AI"]);
-    expect(CATEGORIES[0].tabs).toEqual([["info", "Model Info"], ["docs", "Documents"]]);
-    expect(CATEGORIES.find((c) => c.label === "Process")!.tabs).toEqual([["process", "Process"]]);
-    expect(CATEGORIES.find((c) => c.label === "JIG/MC List")!.tabs).toEqual([["jigmc", "JIG/MC List"]]);
+  it("has Model Info, Documents, BOM / Drawing, Process and JIG/MC List all under Model Info", () => {
+    expect(labels).toEqual(["Model Info", "Development", "Mass Production", "AI"]);
+    expect(CATEGORIES[0].tabs).toEqual([
+      ["info", "Model Info"], ["docs", "Documents"], ["bom", "BOM / Drawing"], ["process", "Process"], ["jigmc", "JIG/MC List"],
+    ]);
   });
   it("opens the old ?tab=instruction on Documents and keeps the other tabs", () => {
     expect(tabOfQuery("instruction")).toBe("docs");

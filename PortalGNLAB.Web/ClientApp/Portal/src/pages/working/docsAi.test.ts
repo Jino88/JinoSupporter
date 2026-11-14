@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ManualGroup } from "./manual";
 import type { ProcessRow } from "./processList";
-import { MAX_DOC_BYTES, docKind, docLinks, isWorkbook, jigSummary, needsReplaceConfirm, processSummary, readProcessAnswer, runJig, runProcess, sortDocs } from "./docsAi";
+import { MAX_DOC_BYTES, docKind, docLinks, elapsedText, isWorkbook, jigSummary, needsReplaceConfirm, processSummary, readProcessAnswer, runJig, runProcess, sortDocs } from "./docsAi";
 
 const proc = (id: string) => ({ id, type: "SUB", name: id, localName: "", ngItems: [], materials: [{ material: "M1", qtyPerUnit: 1 }] });
 const group = (n: number): ManualGroup => ({ materials: [], processes: Array.from({ length: n }, (_, i) => proc(`p${i}`)) }) as unknown as ManualGroup;
@@ -12,6 +12,9 @@ describe("summaries", () => {
   it("words the results", () => {
     expect(processSummary({ processes: 3, materials: 5, note: "", model: "", saved: true })).toBe("Process: 3 processes, 5 materials");
     expect(jigSummary({ processes: 4, jigKinds: 2, note: "", unmatched: 0, saved: true })).toBe("JIG/MC List: 4 processes, 2 JIG kinds");
+  });
+  it("shows how long a step has run", () => {
+    expect([elapsedText(0), elapsedText(9_999), elapsedText(65_000), elapsedText(-5)]).toEqual(["0:00", "0:09", "1:05", "0:00"]);
   });
   it("accepts only xlsx / xlsm", () => {
     expect(isWorkbook({ name: "a.XLSM" })).toBe(true);

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { workingApi } from "./api";
 import { ProcessTables } from "./BmesPanel";
+import { useTr } from "./i18n";
 import { readManual, readSubManual, type ManualGroup } from "./manual";
 import { readTempGroup } from "./tempGroup";
 import type { WorkingModel } from "./types";
@@ -16,6 +17,7 @@ export default function ProcessTab(props: {
   onError: (e: unknown) => void;
 }) {
   const { model } = props;
+  const tr = useTr();
   const read = (m: WorkingModel) => ({ manual: readManual(m.info.manualGroup), sub: readSubManual(m.info.subManual) });
   const [value, setValue] = useState(read(model));
   const [busy, setBusy] = useState(false);
@@ -29,7 +31,7 @@ export default function ProcessTab(props: {
       const m = await workingApi.saveModel(model.name, { ...model.info, manualGroup: value.manual, subManual: value.sub }, model.revision);
       setValue(read(m));
       props.onSaved(m);
-      setSaved("Saved.");
+      setSaved(tr("Saved."));
       window.setTimeout(() => setSaved(""), 2500);
     } catch (e) { props.onError(e); } finally { setBusy(false); }
   };
@@ -37,12 +39,12 @@ export default function ProcessTab(props: {
   return (
     <section className="card pi-sec wk-info-sec">
       <div className="pi-sec-h">
-        <h2>Process</h2>
+        <h2>{tr("Process")}</h2>
         <div className="pi-legend">
-          {dirty && <span className="pi-dirty">Unsaved</span>}
+          {dirty && <span className="pi-dirty">{tr("Unsaved")}</span>}
           {saved && <span className="pi-msg">{saved}</span>}
-          {model.updatedAt && <span>Updated {model.updatedAt.slice(0, 16).replace("T", " ")} by {model.updatedBy || "—"}</span>}
-          <button className="btn sm primary" disabled={!dirty || busy} onClick={save}>{busy ? "Saving…" : "Save"}</button>
+          {model.updatedAt && <span>{tr("Updated")} {model.updatedAt.slice(0, 16).replace("T", " ")} · {model.updatedBy || "—"}</span>}
+          <button className="btn sm primary" disabled={!dirty || busy} onClick={save}>{busy ? tr("Saving…") : tr("Save")}</button>
         </div>
       </div>
       <div className="pi-sec-b">
