@@ -27,6 +27,8 @@ export interface PlaceEntry {
   severity: string; result: string; phase: string; category: string; process: string; cause: string;
   /** Pictures sent with the text (0 = the first) that belong to this entry; saved with it. */
   images: number[];
+  /** Issue: the existing issue it goes under as a sub-issue, or "". */
+  parentId: string;
 }
 export interface PlaceAnswer {
   info: Partial<Record<InfoKey, string>>;
@@ -57,6 +59,7 @@ export function placeRequest(text: string, today: string, info: ModelInfo, entri
     })),
     entries: entries.map((e) => ({
       id: e.id, kind: e.kind, stage: e.kind === "issue" ? (mp.has(e.id) ? "mp" : "dev") : "", seq: e.seq, date: e.date, title: e.title, status: e.status,
+      parentId: e.parentId ?? "",
     })),
   };
 }
@@ -94,6 +97,7 @@ export function readPlaceAnswer(v: unknown): PlaceAnswer {
       date: str(e.date), title: str(e.title), body: str(e.body), owner: str(e.owner), due: str(e.due),
       severity: str(e.severity), result: str(e.result), phase: str(e.phase), category: str(e.category), process: str(e.process), cause: str(e.cause),
       images: [...new Set((Array.isArray(e.images) ? e.images : []).filter((n): n is number => Number.isInteger(n) && n >= 0))],
+      parentId: e.kind === "issue" ? str(e.parentId) : "",
     })),
     note: str(a.note),
     model: str(a.model),
@@ -140,9 +144,10 @@ const qtyText = (qty: Record<string, number>) =>
  * Every item of the answer to show and pick: Model Info fields that change, Dev Plan events (new, or an existing one whose
  * name or days change), their Material Plan / Making Plan rows (new, or quantities of a row there changed), their tasks
  * (new or changed) and tasks taken out, and the new entries. An existing event with nothing of its own changing has no
- * item; its rows and tasks stand alone. With a target only the items of its places are given.
+ * item; its rows and tasks stand alone. A sub-issue names the issue (of <entries>) it goes under. With a target only the
+ * items of its places are given.
  */
-export function placeItems(answer: PlaceAnswer, info: ModelInfo, target?: AiTarget): PlaceItem[] {
+export function placeItems(answer: PlaceAnswer, info: ModelInfo, target?: AiTarget, entries: Entry[] = []): PlaceItem[] {
   const out: PlaceItem[] = [];
   for (const k of INFO_KEYS) {
     const to = answer.info[k];
@@ -194,7 +199,9 @@ export function placeItems(answer: PlaceAnswer, info: ModelInfo, target?: AiTarg
   });
   answer.entries.forEach((e, i) => {
     const pics = e.images.length ? `${e.images.length} picture${e.images.length > 1 ? "s" : ""}` : "";
-    const bits = [e.date, e.owner, e.kind === "issue" ? [e.severity, e.due && `due ${e.due}`].filter(Boolean).join(" · ") : e.kind === "review" ? e.result : "", pics];
+    const parent = e.parentId ? entries.find((x) => x.id === e.parentId) : undefined;
+    const under = e.parentId ? `Sub-issue of ${parent ? `No. ${parent.seq} ${parent.title}` : "an issue"}` : "";
+    const bits = [under, e.date, e.owner, e.kind === "issue" ? [e.severity, e.due && `due ${e.due}`].filter(Boolean).join(" · ") : e.kind === "review" ? e.result : "", pics];
     out.push({ key: `entry.${i}`, place: target === "personal" ? "My Plans" : placeOf(e), change: false, title: e.title, detail: bits.filter(Boolean).join(" · ") });
   });
   return target ? out.filter((i) => TARGET_PLACES[target].includes(i.place)) : out;
@@ -268,6 +275,7 @@ export function applyPlace(info: ModelInfo, answer: PlaceAnswer, picked: Set<str
       status: issue ? "Open" : "", severity: issue ? e.severity : "", result: e.kind === "review" ? e.result || "Pass" : "",
       owner: e.owner, due: issue ? e.due : "", phase: issue ? (e.stage === "mp" ? "MP" : e.phase) : "",
       category: issue ? e.category : "", process: issue ? e.process : "", cause: issue ? e.cause : "", doneDate: "", finalResult: "",
+      ...(issue && e.parentId ? { parentId: e.parentId } : {}),
     };
   });
   return { info: changed ? next : null, entries, pictures: kept.map((e) => e.images) };

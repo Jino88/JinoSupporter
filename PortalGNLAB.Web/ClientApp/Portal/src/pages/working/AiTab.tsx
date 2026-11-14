@@ -66,7 +66,7 @@ export default function AiTab(props: {
   const { model, target } = props;
   // My Plans is kept under a model of the user's id, which is not a name to show
   const about = target === "personal" ? "your plans" : model.name;
-  const first = props.initial ? { answer: props.initial, items: placeItems(props.initial, model.info, target), revision: model.revision, pictures: [] } : null;
+  const first = props.initial ? { answer: props.initial, items: placeItems(props.initial, model.info, target, props.entries), revision: model.revision, pictures: [] } : null;
   const [text, setText] = useState("");
   const [pictures, setPictures] = useState<File[]>([]);
   const [busy, setBusy] = useState<AbortController | null>(null);
@@ -96,7 +96,7 @@ export default function AiTab(props: {
       const answer = readPlaceAnswer(await workingApi.placeAi(model.name, placeRequest(text, props.today, model.info, props.entries, images, target), ctl.signal));
       // a picture number AI made up is left out
       answer.entries = answer.entries.map((e) => ({ ...e, images: e.images.filter((n) => n < pictures.length) }));
-      const items = placeItems(answer, model.info, target);
+      const items = placeItems(answer, model.info, target, props.entries);
       setAsked({ answer, items, revision: model.revision, pictures });
       setPicked(new Set(items.map((i) => i.key)));
     } catch (e) {

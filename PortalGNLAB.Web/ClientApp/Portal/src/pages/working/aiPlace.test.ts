@@ -102,6 +102,25 @@ describe("AI placement answer", () => {
     expect(req.entries.map((e) => [e.id, e.stage])).toEqual([["a", "dev"], ["b", "mp"], ["c", ""]]);
   });
 
+  it("sends each issue's parent and saves an issue AI put under an existing one as its sub-issue", () => {
+    const entries = [
+      { id: "a", kind: "issue", seq: 1, date: "2026-11-01", title: "AI 과제", status: "Open", phase: "" },
+      { id: "s", kind: "issue", seq: 2, date: "2026-11-02", title: "Sub", status: "Open", phase: "", parentId: "a" },
+    ] as Entry[];
+    expect(placeRequest("t", "2026-11-12", info, entries).entries.map((e) => [e.id, e.parentId])).toEqual([["a", ""], ["s", "a"]]);
+    const a = readPlaceAnswer({ entries: [
+      { kind: "issue", stage: "dev", title: "GN-06", parentId: "a" },
+      { kind: "issue", stage: "dev", title: "GN-07", parentId: "gone" },
+      { kind: "issue", stage: "dev", title: "Top" },
+      { kind: "dev", title: "History", parentId: "a" },
+    ] });
+    expect(a.entries.map((e) => e.parentId)).toEqual(["a", "gone", "", ""]);
+    const items = placeItems(a, info, "devissue", entries);
+    expect(items.map((i) => i.detail)).toEqual(["Sub-issue of No. 1 AI 과제", "Sub-issue of an issue", ""]);
+    const put = applyPlace(info, a, all(placeItems(a, info, undefined, entries)), "2026-11-12");
+    expect(put.entries.map((e) => [e.title, e.parentId])).toEqual([["GN-06", "a"], ["GN-07", "gone"], ["Top", undefined], ["History", undefined]]);
+  });
+
   it("with a target, asks for it and lists only the items of its places", () => {
     expect(placeRequest("t", "2026-11-12", info, [], [], "devissue").target).toBe("devissue");
     expect("target" in placeRequest("t", "2026-11-12", info, [])).toBe(false);

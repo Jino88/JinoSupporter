@@ -152,6 +152,38 @@ public sealed class WorkingPlaceAiServiceTests
     }
 
     [Fact]
+    public void ParseAnswer_SubIssueKeepsParentOfAnExistingTopIssueAndTakesItsStage()
+    {
+        PlaceAiRequest req = Request();
+        req.Entries =
+        [
+            new PlaceAiEntryContext { Id = "i1", Kind = "issue", Stage = "dev", Seq = 1, Title = "AI 과제" },
+            new PlaceAiEntryContext { Id = "i2", Kind = "issue", Stage = "mp", Seq = 2, Title = "Line" },
+            new PlaceAiEntryContext { Id = "i3", Kind = "issue", Stage = "dev", Seq = 3, Title = "Sub", ParentId = "i1" },
+            new PlaceAiEntryContext { Id = "d1", Kind = "dev", Seq = 1, Title = "History" },
+        ];
+        const string answer = """
+            {"entries":[
+              {"kind":"issue","stage":"dev","title":"GN-06","parentId":" i1 "},
+              {"kind":"issue","stage":"mp","phase":"MP","title":"GN-08","parentId":"i1"},
+              {"kind":"issue","stage":"dev","phase":"DR","title":"GN-09","parentId":"i2"},
+              {"kind":"issue","title":"under a sub-issue","parentId":"i3"},
+              {"kind":"issue","title":"under a history","parentId":"d1"},
+              {"kind":"issue","title":"unknown","parentId":"zz"},
+              {"kind":"dev","title":"not an issue","parentId":"i1"}
+            ]}
+            """;
+        List<PlaceAiEntry> e = WorkingPlaceAiService.ParseAnswer(answer, req).Entries;
+        Assert.Equal(["i1", "i1", "i2", "", "", "", ""], e.Select(x => x.ParentId));
+        Assert.Equal(["dev", ""], [e[1].Stage, e[1].Phase]);
+        Assert.Equal(["mp", "MP"], [e[2].Stage, e[2].Phase]);
+
+        // the model is told how to read and answer a sub-issue
+        Assert.Contains("\"parentId\"", WorkingPlaceAiService.Instructions);
+        Assert.Contains("sub-issue", WorkingPlaceAiService.Instructions);
+    }
+
+    [Fact]
     public async Task PlaceAsync_EmptyTextAndNoPictureIsRejected()
     {
         var svc = new WorkingPlaceAiService(null!);

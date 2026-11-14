@@ -104,6 +104,8 @@ public sealed class PlaceAiEntryContext
     public string Date { get; set; } = "";
     public string Title { get; set; } = "";
     public string Status { get; set; } = "";
+    /// <summary>Issue: the issue it is a sub-issue of, or "".</summary>
+    public string ParentId { get; set; } = "";
 }
 
 public sealed class PlaceAiInfo
@@ -132,6 +134,8 @@ public sealed class PlaceAiEntry
     public string Category { get; set; } = "";
     public string Process { get; set; } = "";
     public string Cause { get; set; } = "";
+    /// <summary>Issue: the id of an existing issue (not itself a sub-issue) this one is a sub-issue of, or "".</summary>
+    public string ParentId { get; set; } = "";
     /// <summary>0-based numbers of the request pictures that are evidence for this entry.</summary>
     [JsonConverter(typeof(PlaceAiIntListConverter))]
     public List<int> Images { get; set; } = [];
@@ -363,7 +367,7 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         {
             Info = target.Length == 0 ? NormalizeInfo(plan?.Info, current) : [],
             Events = target is "" or "plan" ? NormalizeEvents(plan?.Events, known, today) : [],
-            Entries = target == "plan" ? [] : NormalizeEntries(entries, today, request?.Images?.Count ?? 0),
+            Entries = target == "plan" ? [] : NormalizeEntries(entries, today, request?.Images?.Count ?? 0, request?.Entries),
             Note = (plan?.Note ?? "").Trim(),
         };
     }
@@ -510,8 +514,12 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         return map;
     }
 
-    private static List<PlaceAiEntry> NormalizeEntries(List<PlaceAiEntry>? entries, string today, int imageCount)
+    private static List<PlaceAiEntry> NormalizeEntries(List<PlaceAiEntry>? entries, string today, int imageCount, List<PlaceAiEntryContext>? known)
     {
+        // a sub-issue goes only under an issue there already that is not a sub-issue itself (one level)
+        var parents = new Dictionary<string, PlaceAiEntryContext>(StringComparer.Ordinal);
+        foreach (PlaceAiEntryContext? c in known ?? [])
+            if (c is not null && c.Kind == "issue" && !string.IsNullOrWhiteSpace(c.Id) && string.IsNullOrWhiteSpace(c.ParentId)) parents[c.Id.Trim()] = c;
         var result = new List<PlaceAiEntry>();
         foreach (PlaceAiEntry? e in entries ?? [])
         {
@@ -544,6 +552,13 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
                 entry.Category = (e.Category ?? "").Trim();
                 entry.Process = (e.Process ?? "").Trim();
                 entry.Cause = (e.Cause ?? "").Trim();
+                if (parents.TryGetValue((e.ParentId ?? "").Trim(), out PlaceAiEntryContext? parent))
+                {
+                    // a sub-issue is listed with its issue, so it takes the stage of that issue
+                    entry.ParentId = parent.Id.Trim();
+                    if (string.Equals(parent.Stage, "mp", StringComparison.OrdinalIgnoreCase)) { entry.Stage = "mp"; entry.Phase = "MP"; }
+                    else if (entry.Stage == "mp") { entry.Stage = "dev"; entry.Phase = ""; }
+                }
             }
             else if (kind == "review")
             {
@@ -589,7 +604,7 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         current state as JSON ({"today":"yyyy-MM-dd","info":{"customer","build","phase","owner","line","sopTarget",
         "note"},"events":[{"id","name","start","end","tasks":[{"id","name","start","end","owner","done"}],
         "rows":[{"id","name","group","qty":{"yyyy-MM-dd":number}}]}],
-        "entries":[{"id","kind","stage","seq","date","title","status"}]}) and the user's text. The text may contain
+        "entries":[{"id","kind","stage","seq","date","title","status","parentId"}]}) and the user's text. The text may contain
         cells copied from Excel (tab separated). Read it and put each piece of information in the most fitting place:
         - Model Info: customer, build, phase (ER, DR, DV, PV or MP), owner (the PM in charge), line, sopTarget
           (yyyy-MM-dd) and a free note.
@@ -620,12 +635,17 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         - entries, kind "issue": a problem. In development (stage "dev", phase ER/DR/DV/PV or "") a defect or design
           problem; in mass production (stage "mp", phase "MP") a mass-production problem.
           severity is Critical, Major or Minor; category, process and cause are short texts; due is a date.
+          An issue can have sub-issues (one level): an issue whose parentId is "" is shown to the user as No. <seq>,
+          and its sub-issues as No. <seq>.1, <seq>.2 ... When the user asks to put something under an existing issue
+          (e.g. "1번 항목의 sub issue로", "sub-issue of No. 1", "1. 하위로"), make each piece an issue with
+          "parentId" = the id of that issue (the issue with parentId "" and that seq); otherwise parentId is "".
+          Never use a sub-issue (parentId not "") as a parent.
         - entries, kind "review": the result of a review or meeting; result is Pass, Conditional or Fail.
 
         Answer ONLY one JSON object, no other text:
         {"info":{only the fields to change},"events":[{"id","name","start","end","tasks":[{"id","name","start","end","owner","done"}],
         "rows":[{"id","name","group","qty":{"yyyy-MM-dd":number}}],"removeTasks":["task id"]}],
-        "entries":[{"kind","stage","date","title","body","owner","due","severity","result","phase","category","process","cause","images":[0]}],
+        "entries":[{"kind","stage","date","title","body","owner","due","severity","result","phase","category","process","cause","parentId","images":[0]}],
         "note":"..."}
         - rows: the row id of an existing row (or "" for a new row), and in qty only the dates to set now (0 clears
           that day). "removeTasks" is [] when no task moves.
