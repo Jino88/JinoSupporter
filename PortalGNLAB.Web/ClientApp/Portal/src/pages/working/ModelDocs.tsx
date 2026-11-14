@@ -1,11 +1,12 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import WorkInstructionTab from "./WorkInstructionTab";
+import { useTr } from "./i18n";
 import { workingApi } from "./api";
 import { loadInstructions, uploadInstructions } from "./workInstruction";
 import { readManual } from "./manual";
 import { processListApi } from "./processList";
 import {
-  KIND_TEXT, NOTHING_TO_DO, docKind, docLinks, errorText, isWorkbook, jigSummary, manualAiFromInstructions, processSummary, runJig, runProcess, sortDocs,
+  KIND_TEXT, NOTHING_TO_DO, docKind, elapsedText, docLinks, errorText, isWorkbook, jigSummary, manualAiFromInstructions, processSummary, runJig, runProcess, sortDocs,
   type DocKind, type DocsResult, type FoundKind,
 } from "./docsAi";
 import type { WorkingModel } from "./types";
@@ -13,19 +14,20 @@ import "./modelDocs.css";
 
 /** The relation the documents make: each process of the line with its materials (Process) and its machine and JIGs (JIG/MC List). */
 export function DocLinks(props: { result: DocsResult }) {
+  const tr = useTr();
   const links = docLinks(props.result.process?.group, props.result.jig?.rows);
   if (!links.length) return null;
   const both = links.filter((l) => l.inProcess && l.inJig).length;
   return (
     <div className="wk-docs-links">
-      <div className="small"><b>How the documents relate</b> · {both} of {links.length} processes are in both Process and JIG/MC List</div>
+      <div className="small"><b>{tr("How the documents relate")}</b> · {both} / {links.length} {tr("processes are in both Process and JIG/MC List")}</div>
       <table className="wk-it">
-        <thead><tr><th>No.</th><th className="l">Process</th><th className="l">Materials (Process)</th><th className="l">Machine</th><th className="l">JIG</th></tr></thead>
+        <thead><tr><th>No.</th><th className="l">{tr("Process")}</th><th className="l">{tr("Materials (Process)")}</th><th className="l">{tr("Machine")}</th><th className="l">JIG</th></tr></thead>
         <tbody>
           {links.map((l, i) => (
             <tr key={i} className={l.inProcess && l.inJig ? "" : "wk-docs-half"}>
               <td>{l.no}</td>
-              <td className="l"><b>{l.process}</b>{!l.inJig && <span className="muted"> · not in JIG/MC List</span>}{!l.inProcess && <span className="muted"> · not in Process</span>}</td>
+              <td className="l"><b>{l.process}</b>{!l.inJig && <span className="muted"> · {tr("not in JIG/MC List")}</span>}{!l.inProcess && <span className="muted"> · {tr("not in Process")}</span>}</td>
               <td className="l">{l.materials.join(", ")}</td>
               <td className="l wk-docs-pre">{l.machine}</td>
               <td className="l wk-docs-pre">{l.jigs.join("\n")}</td>
@@ -48,12 +50,22 @@ export default function ModelDocs(props: {
   onDocsSaved?: () => void;
 }) {
   const { model } = props;
+  const tr = useTr();
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const [found, setFound] = useState<{ name: string; kind: DocKind }[]>([]);
   const [skipped, setSkipped] = useState<string[]>([]);
   const [result, setResult] = useState<DocsResult | null>(null);
   const [fresh, setFresh] = useState(0);
+  // when the current step began, and a clock that shows it is still going
+  const [since, setSince] = useState(0);
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    if (!busy) return;
+    const t = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, [busy]);
+  const step = (text: string) => { setStatus(text); setSince(Date.now()); setNow(Date.now()); };
   const pick = useRef<HTMLInputElement>(null);
 
   const run = async (files: File[]) => {
@@ -64,7 +76,7 @@ export default function ModelDocs(props: {
     setBusy(true);
     try {
       // what each document is
-      setStatus("Reading what each document is…");
+      step("Reading what each document is…");
       const kinds: ({ file: File } & FoundKind)[] = [];
       for (const f of books) kinds.push({ file: f, ...(await docKind(model.name, f)) });
       setFound(kinds.map((k) => ({ name: k.file.name, kind: k.kind })));
@@ -73,7 +85,7 @@ export default function ModelDocs(props: {
 
       // the Work Instructions first: the Process table and the line order of the JIG/MC List come from them
       if (docs.instructions) {
-        setStatus(`Keeping the Work Instructions ${docs.instructions.name}…`);
+        step(`Keeping the Work Instructions ${docs.instructions.name}…`);
         await uploadInstructions(model.name, docs.instructions);
         setFresh((n) => n + 1);
       }
@@ -82,7 +94,7 @@ export default function ModelDocs(props: {
 
       const out: DocsResult = {};
       if (hasInstructions) {
-        setStatus("Process: the AI is reading the Work Instructions…");
+        step("Process: the AI is reading the Work Instructions (about 1 minute)…");
         try {
           out.process = await runProcess({
             hasInstructions,
@@ -95,7 +107,7 @@ export default function ModelDocs(props: {
       }
       if (docs.jig) {
         const jig = docs.jig;
-        setStatus("JIG/MC List: the AI is putting the machines and JIGs on the processes (1-3 minutes)…");
+        step("JIG/MC List: the AI is putting the machines and JIGs on the processes (1-3 minutes)…");
         try {
           out.jig = await runJig({
             match: () => processListApi.aiMatch(model.name, jig),
@@ -114,42 +126,41 @@ export default function ModelDocs(props: {
   return (
     <div className="wk-docs">
       <section className="card pi-sec">
-        <div className="pi-sec-h"><h3>Documents</h3></div>
+        <div className="pi-sec-h"><h3>{tr("Documents")}</h3></div>
         <div className="pi-sec-b">
-          <input ref={pick} type="file" accept=".xlsx,.xlsm" multiple hidden aria-label="Documents of the model"
+          <input ref={pick} type="file" accept=".xlsx,.xlsm" multiple hidden aria-label={tr("Documents of the model")}
             onChange={(e) => { const list = [...(e.target.files ?? [])]; e.target.value = ""; if (list.length) void run(list); }} />
           <div className="wk-docs-bar">
             <button type="button" className="btn primary wk-docs-ai" disabled={busy} onClick={() => pick.current?.click()}>
-              {busy ? "AI is working…" : "✦ AI: read the documents"}
+              {busy ? tr("AI is working…") : tr("✦ AI: read the documents")}
             </button>
             <span className="small muted">
-              Pick every document of the model at once (Work Instructions, JIG / Machine / Tester list). AI finds what each is,
-              makes the Process table and the JIG/MC List from them, and shows how they relate.
+              {tr("Pick every document of the model at once (Work Instructions, JIG / Machine / Tester list). AI finds what each is, makes the Process table and the JIG/MC List from them, and shows how they relate.")}
             </span>
           </div>
-          {status && <div className="small wk-docs-status" role="status">{status}</div>}
+          {status && <div className="small wk-docs-status" role="status">{tr(status)}{busy && since > 0 && ` ${elapsedText(now - since)}`}</div>}
           {found.length > 0 && (
             <ul className="small wk-docs-found">
-              {found.map((f, i) => <li key={i}><b>{f.name}</b> → {KIND_TEXT[f.kind]}</li>)}
+              {found.map((f, i) => <li key={i}><b>{f.name}</b> → {tr(KIND_TEXT[f.kind])}</li>)}
             </ul>
           )}
-          {skipped.length > 0 && <div className="small muted">Not used: {skipped.join(", ")}</div>}
+          {skipped.length > 0 && <div className="small muted">{tr("Not used")}: {skipped.join(", ")}</div>}
           {result && (
             <div className="small wk-docs-result">
               {result.process && (
                 <div>
-                  <b>{processSummary(result.process)}</b>{result.process.saved ? " · saved" : " · not saved"}
+                  <b>{tr(processSummary(result.process))}</b> · {tr(result.process.saved ? "saved" : "not saved")}
                   {result.process.note && <span className="muted"> · {result.process.note}</span>}
-                  {" "}<button type="button" className="btn sm" onClick={() => props.onOpen("process")}>Open Process</button>
+                  {" "}<button type="button" className="btn sm" onClick={() => props.onOpen("process")}>{tr("Open Process")}</button>
                 </div>
               )}
               {result.processError && <div className="pi-dirty">Process: {result.processError}</div>}
               {result.jig && (
                 <div>
-                  <b>{jigSummary(result.jig)}</b>{result.jig.saved ? " · saved" : " · not saved"}
-                  {result.jig.unmatched > 0 && <span className="muted"> · {result.jig.unmatched} items not put on a process</span>}
+                  <b>{tr(jigSummary(result.jig))}</b> · {tr(result.jig.saved ? "saved" : "not saved")}
+                  {result.jig.unmatched > 0 && <span className="muted"> · {result.jig.unmatched} {tr("items not put on a process")}</span>}
                   {result.jig.note && <span className="muted"> · {result.jig.note}</span>}
-                  {" "}<button type="button" className="btn sm" onClick={() => props.onOpen("jigmc")}>Open JIG/MC List</button>
+                  {" "}<button type="button" className="btn sm" onClick={() => props.onOpen("jigmc")}>{tr("Open JIG/MC List")}</button>
                 </div>
               )}
               {result.jigError && <div className="pi-dirty">JIG/MC List: {result.jigError}</div>}

@@ -29,7 +29,7 @@ describe("Model Info › Documents", () => {
     ];
     const out = renderToStaticMarkup(<DocLinks result={{ process: { processes: 2, materials: 1, note: "", model: "", saved: true, group },
       jig: { processes: 2, jigKinds: 1, note: "", unmatched: 0, saved: true, rows } }} />);
-    expect(out).toContain("1 of 3 processes are in both Process and JIG/MC List");
+    expect(out).toContain("1 / 3 processes are in both Process and JIG/MC List");
     expect(out).toMatch(/<b>Xếp UPPER<\/b><\/td><td class="l">UPPER CASE<\/td><td class="l wk-docs-pre">IONIZER<\/td><td class="l wk-docs-pre">CAP JIG<\/td>/);
     expect(out).toContain("<b>DRY</b><span class=\"muted\"> · not in Process</span>");
     expect(out).toContain("<b>Kiểm tra</b><span class=\"muted\"> · not in JIG/MC List</span>");

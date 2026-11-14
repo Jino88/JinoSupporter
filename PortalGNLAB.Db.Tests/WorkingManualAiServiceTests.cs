@@ -21,12 +21,41 @@ public sealed class WorkingManualAiServiceTests
         Assert.Contains("{\"order\":1,\"code\":\"C-01\",\"name\":\"Xếp UPPER\",\"ctq\":false,\"parts\":[{\"name\":\"UPPER CASE\",\"spec\":\"SM-G778B\",\"qty\":\"1\"}],"
             + "\"tools\":[{\"name\":\"Ionizer\",\"note\":\"\"}],\"keyPoints\":[\"Không trầy xước\"]}", text);
         Assert.Contains("\"name\":\"Bôi keo tổ hợp SPK\",\"ctq\":true,\"parts\":[{\"name\":\"Keo SL233LF\",\"spec\":\"\",\"qty\":\"0.02g\"}]", text);
-        // the glue a process uses is in its tools with the product in the note: sent with the note, and asked for as a material
+        // the tools are sent with their notes (the tape, cushion and glue of a process are named there)
         Assert.Contains("\"tools\":[{\"name\":\"Keo\",\"note\":\"SL233LF ( Sử dụng trong vòng 24 giờ)\"}]", text);
         Assert.Contains("the part number in spec", text);
-        Assert.Contains("glue / bond, tape, cushion", text);
+        Assert.Contains("the tape, cushion or other part that stays on the product", text);
+        // the glue is not a material
+        Assert.Contains("Not materials: glue / bond", text);
+        Assert.Contains("not for one that only inspects it", text);
         Assert.Contains("keeps its id, type and NG items", text);
         Assert.True(WorkingManualAiService.InstructionsMaxOutputTokens > WorkingManualAiService.MaxOutputTokens);
+    }
+
+    [Fact]
+    public void WithoutGlue_TakesTheBondOfTheWorkInstructionsOutOfTheTable()
+    {
+        // as in the real Work Instructions: Keo in the tools with the product in the note, once as a part
+        var doc = new InstructionDoc("pvr.xlsx", DateTime.UtcNow, "u", 1, [],
+        [
+            new("A", "A1", "Bôi keo", null, null, "1", false, [new("", "Keo", "SR4060 ( Sử dụng trong vòng 24 giờ)", "")],
+                [new("1", "Keo", "SL233LF ( Sử dụng trong vòng 24 giờ)"), new("2", "Lượng keo", "3.0-3.5 mg"), new("3", "Keo", "3777 (PUR)  ( Sử dụng )")], [], []),
+        ]);
+        Assert.Equal(["SR4060", "SL233LF", "3777"], WorkingManualAiService.GlueOf(doc));
+        var group = new ManualAiGroup
+        {
+            Materials = ["ENCLOSURE-G778B-UPPER", "SL-233LF", "SR4060", "3777 (PUR)", "TAPE-G778B"],
+            Processes =
+            [
+                new ManualAiProcess { Name = "Bôi keo", Materials = [new() { Material = "ENCLOSURE-G778B-UPPER" }, new() { Material = "SL233LF" }, new() { Material = "3777 (PUR)" }] },
+                new ManualAiProcess { Name = "Dán tape", Materials = [new() { Material = "TAPE-G778B" }] },
+            ],
+        };
+        ManualAiGroup g = WorkingManualAiService.WithoutGlue(group, doc);
+        Assert.Equal(["ENCLOSURE-G778B-UPPER", "TAPE-G778B"], g.Materials);
+        Assert.Equal(["ENCLOSURE-G778B-UPPER"], g.Processes[0].Materials.Select(m => m.Material));
+        Assert.Equal(["TAPE-G778B"], g.Processes[1].Materials.Select(m => m.Material));
+        Assert.Equal("Bôi keo", g.Processes[0].Name);
     }
 
     [Fact]
@@ -106,6 +135,25 @@ public sealed class WorkingManualAiServiceTests
         Assert.Equal("VISUAL", n.Processes[1].Type);
         Assert.Empty(n.Processes[1].NgItems);
         Assert.Empty(n.Processes[1].Materials);
+    }
+
+    [Fact]
+    public void Normalize_OneMaterialWrittenTwoWaysKeepsTheFirstName()
+    {
+        // as the AI wrote them for the real Work Instructions: SL-233LF next to SL233LF, extra spaces around a hyphen
+        var group = new ManualAiGroup
+        {
+            Materials = ["ENCLOSURE-G778B-LOWER", "SL233LF"],
+            Processes =
+            [
+                new ManualAiProcess { Name = "A", Materials = [new() { Material = "SL-233LF", QtyPerUnit = 1 }, new() { Material = "ENCLOSURE-G778B - LOWER", QtyPerUnit = 1 }] },
+                new ManualAiProcess { Name = "B", Materials = [new() { Material = "Screen  -X526B-BOTTOM", QtyPerUnit = 1 }, new() { Material = "Screen -X526B-BOTTOM", QtyPerUnit = 2 }] },
+            ],
+        };
+        ManualAiGroup n = WorkingManualAiService.Normalize(group);
+        Assert.Equal(["ENCLOSURE-G778B-LOWER", "SL233LF", "Screen -X526B-BOTTOM"], n.Materials);
+        Assert.Equal(["SL233LF", "ENCLOSURE-G778B-LOWER"], n.Processes[0].Materials.Select(m => m.Material));
+        Assert.Equal("Screen -X526B-BOTTOM", Assert.Single(n.Processes[1].Materials).Material);
     }
 
     [Fact]

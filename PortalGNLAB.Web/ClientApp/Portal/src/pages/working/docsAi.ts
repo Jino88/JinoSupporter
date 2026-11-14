@@ -36,6 +36,12 @@ export const processSummary = (r: ProcessResult) => `Process: ${r.processes} pro
 export const jigSummary = (r: JigResult) => `JIG/MC List: ${r.processes} processes, ${r.jigKinds} JIG kinds`;
 export const jigCounts = (rows: ProcessRow[]) => ({ processes: rows.length, jigKinds: jigTotals(rows).kinds });
 
+/** How long a step has run, for the status line (m:ss). */
+export const elapsedText = (ms: number) => {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+};
+
 export const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 export const NOTHING_TO_DO = "Upload the Work Instructions, or choose a JIG / Machine / Tester workbook (.xlsx / .xlsm), first.";
 export const isWorkbook = (file: { name: string } | null | undefined) => !!file && /\.(xlsx|xlsm)$/i.test(file.name);

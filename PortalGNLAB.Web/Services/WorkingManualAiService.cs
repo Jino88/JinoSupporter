@@ -78,12 +78,58 @@ public sealed class WorkingManualAiService(CodexApiService codex)
     /// The process table made from the Work Instructions of the model (Model Info › Documents): a process per instruction
     /// sheet in line order with its parts as materials, existing processes of the same name kept with their NG items.
     /// </summary>
-    public Task<ManualAiResult> FromInstructionsAsync(string modelName, ManualAiGroup? group, InstructionDoc? doc, CancellationToken ct = default)
+    public async Task<ManualAiResult> FromInstructionsAsync(string modelName, ManualAiGroup? group, InstructionDoc? doc, CancellationToken ct = default)
     {
         if (doc is not { Processes.Count: > 0 })
             throw new ArgumentException("Upload the Work Instructions of the model first (Model Info › Documents).");
         // a table of every sheet is long (60+ processes with their materials and NG items): room for all of it
-        return EditAsync(modelName, new ManualAiRequest(InstructionsRequest(doc), group), ct, InstructionsMaxOutputTokens);
+        ManualAiResult r = await EditAsync(modelName, new ManualAiRequest(InstructionsRequest(doc), group), ct, InstructionsMaxOutputTokens);
+        return r with { Group = WithoutGlue(r.Group, doc) };
+    }
+
+    /// <summary>The names a work instruction gives the glue (bond) a process uses, in its tools or parts (Keo · SL233LF).</summary>
+    private static readonly string[] GlueNames = ["keo", "keo dán", "bond", "glue", "adhesive", "epoxy", "본드", "접착제"];
+
+    /// <summary>The glue of the Work Instructions (material keys): the product in the note of a tool or part named as glue.</summary>
+    public static HashSet<string> GlueOf(InstructionDoc doc)
+    {
+        var glue = new HashSet<string>();
+        void Add(string name, string product)
+        {
+            if (!GlueNames.Contains(name.Trim().ToLowerInvariant())) return;
+            string code = product.Split('(')[0].Trim();   // "SL233LF ( Sử dụng trong vòng 24 giờ)" → SL233LF
+            if (code.Length > 0) glue.Add(MaterialKey(code));
+        }
+        foreach (InstructionProcess p in doc.Processes)
+        {
+            foreach (InstructionTool t in p.Tools) Add(t.Name, t.Note);
+            foreach (InstructionPart x in p.Parts) Add(x.Name, x.Spec);
+        }
+        return glue;
+    }
+
+    /// <summary>
+    /// The table without the glue of the Work Instructions: a bond is not a material of the process table, whatever the AI
+    /// answered and whatever an earlier table kept ("3777 (PUR)" goes with 3777).
+    /// </summary>
+    public static ManualAiGroup WithoutGlue(ManualAiGroup group, InstructionDoc doc)
+    {
+        HashSet<string> glue = GlueOf(doc);
+        if (glue.Count == 0) return group;
+        bool IsGlue(string m)
+        {
+            string k = MaterialKey(m);
+            return glue.Contains(k) || glue.Any(g => k.StartsWith(g + "(", StringComparison.Ordinal));
+        }
+        return new ManualAiGroup
+        {
+            Materials = [.. group.Materials.Where(m => !IsGlue(m))],
+            Processes = [.. group.Processes.Select(p => new ManualAiProcess
+            {
+                Id = p.Id, Type = p.Type, Name = p.Name, LocalName = p.LocalName, NgItems = p.NgItems,
+                Materials = [.. p.Materials.Where(u => !IsGlue(u.Material))],
+            })],
+        };
     }
 
     public const int MaxOutputTokens = 16000, InstructionsMaxOutputTokens = 32000;
@@ -109,12 +155,13 @@ public sealed class WorkingManualAiService(CodexApiService codex)
             - The materials of a process are what goes into the product there, each with qtyPerUnit:
               * its parts: material = the part number in spec (ENCLOSURE-G778B-UPPER, BRS-181389S08ZZ, TAPE-G778B_R0),
                 or the part name when spec is not a part number; qtyPerUnit = the number in qty (1 when there is none).
-              * the glue / bond, tape, cushion or other consumable that stays on the product, from its tools: name like
-                Keo, Băng dính, Tape, Cushion, Bond, 본드, 접착제, 테이프 with the product in note. material = the product
-                name or code in note without remarks in brackets (Keo · "SL233LF ( Sử dụng trong vòng 24 giờ)" → SL233LF);
-                qtyPerUnit 1.
-              Not materials: machines, jigs, needles, settings (pressure, amount, temperature, time), cleaning cloths,
-              swabs, finger cots, alcohol, pens, header rows of the part list (Tên gọi, Ghi chú).
+              * the tape, cushion or other part that stays on the product, from its tools: name like Băng dính, Tape,
+                Cushion, 테이프 with the product in note. material = the product name or code in note without remarks in
+                brackets; qtyPerUnit 1. Only for a process that attaches it, not for one that only inspects it.
+              Write a material the same way every time (one spelling, not also with other spaces or hyphens).
+              Not materials: glue / bond (Keo, Bond, Glue, Adhesive, 본드, 접착제 and their products such as SL233LF,
+              SR4060), machines, jigs, needles, settings (pressure, amount, temperature, time), cleaning cloths, swabs,
+              finger cots, alcohol, pens, header rows of the part list (Tên gọi, Ghi chú).
               Every material goes in the group's materials list once, with the same name in every process.
             - type: MAIN for the main assembly line processes, FUNCTION for function / electrical tests, VISUAL for
               visual or appearance inspection, SUB for sub-assembly and anything else.
@@ -152,15 +199,27 @@ public sealed class WorkingManualAiService(CodexApiService codex)
         catch (JsonException) { throw new ArgumentException(fail); }
     }
 
-    /// <summary>Cleans a group: type, trimmed strings, no empty/duplicate items, qty &gt; 0, process materials listed.</summary>
+    /// <summary>A material told apart from others regardless of case, spaces and hyphens (SL-233LF is SL233LF).</summary>
+    public static string MaterialKey(string material) =>
+        new string(material.Where(c => !char.IsWhiteSpace(c) && c != '-').ToArray()).ToUpperInvariant();
+
+    /// <summary>
+    /// Cleans a group: type, trimmed strings, no empty/duplicate items, qty &gt; 0, process materials listed; a material
+    /// written another way (case, spaces, hyphens) takes the name it has first in the list.
+    /// </summary>
     public static ManualAiGroup Normalize(ManualAiGroup? group)
     {
         var materials = new List<string>();
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        void AddMaterial(string? m)
+        var named = new Dictionary<string, string>();
+        string AddMaterial(string? m)
         {
-            string t = (m ?? "").Trim();
-            if (t.Length > 0 && seen.Add(t)) materials.Add(t);
+            string t = string.Join(' ', (m ?? "").Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+            if (t.Length == 0) return "";
+            string key = MaterialKey(t);
+            if (named.TryGetValue(key, out string? first)) return first;
+            named[key] = t;
+            materials.Add(t);
+            return t;
         }
         foreach (string? m in group?.Materials ?? []) AddMaterial(m);
 
@@ -180,11 +239,10 @@ public sealed class WorkingManualAiService(CodexApiService codex)
             var matSeen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (ManualAiMaterial? m in p.Materials ?? [])
             {
-                string name = (m?.Material ?? "").Trim();
+                string name = AddMaterial(m?.Material);
                 if (name.Length == 0 || !matSeen.Add(name)) continue;
                 double q = m!.QtyPerUnit;
                 mats.Add(new ManualAiMaterial { Material = name, QtyPerUnit = double.IsFinite(q) && q > 0 ? q : 1 });
-                AddMaterial(name);
             }
             processes.Add(new ManualAiProcess
             {
