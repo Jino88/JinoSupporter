@@ -10,7 +10,7 @@ const entry = (name: string, entryId: string) => `${model(name)}/entries/${encod
 const logs = (name: string, entryId: string) => `${entry(name, entryId)}/logs`;
 
 /** Multipart POST (toolSend is JSON only); XMLHttpRequest so a long video upload can show how far it is (0–1). */
-function upload<T>(path: string, form: FormData, onProgress?: (done: number) => void): Promise<T> {
+export function upload<T>(path: string, form: FormData, onProgress?: (done: number) => void): Promise<T> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", toolPath(path));
