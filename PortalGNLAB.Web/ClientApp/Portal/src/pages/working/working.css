@@ -119,11 +119,14 @@ table.wk-it td.act .wk-link + .wk-link { margin-left: 8px; }
 .wk-it-final, .wk-it-detail { white-space: pre-wrap !important; min-width: 160px; }
 .wk-it-sub > td { background: #fbfcfe; padding: 10px 16px 14px 34px; text-align: left; white-space: normal; }
 .wk-it-empty { padding: 24px !important; color: var(--muted); }
-.wk-if { grid-template-columns: repeat(4, minmax(0, 1fr)); text-align: left; }
-.wk-if-main { grid-column: 1 / -1; display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 14px; align-items: start; }
-.wk-if-side { display: flex; flex-direction: column; gap: 10px; }
-.wk-if-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr); gap: 10px 14px; align-items: stretch; }
-.wk-if-body .wk-ta, .wk-if-body .wk-paste { flex: 1; }
+/* Issue form: classification, owner and dates (label beside the box) | issue and detail | files | final result */
+.wk-if { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; text-align: left; }
+.wk-if-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.wk-if-fields { gap: 6px; }
+.wk-if-fields .wk-f { flex-direction: row; align-items: center; gap: 8px; }
+.wk-if-fields .wk-f > label { flex: none; width: 92px; }
+.wk-if .wk-f.grow { flex: 1; }
+.wk-if .wk-f.grow > .wk-ta, .wk-if .wk-f.grow > .wk-paste { flex: 1; }
 
 /* Progress notes: one row per note in the issue's columns, then a row to add one. */
 tr.wk-it-log td { background: #fbfcfe; font-size: 11.5px; padding-top: 5px; padding-bottom: 5px; }
@@ -177,7 +180,7 @@ tr.wk-it-sub.child > td { box-shadow: inset 3px 0 0 var(--accent); }
 .wk-upload-bar { flex: 1; max-width: 320px; height: 6px; border-radius: 3px; background: #fff; overflow: hidden; }
 .wk-upload-bar > span { display: block; height: 100%; background: var(--accent); transition: width .2s; }
 .wk-tag { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 5px; background: #f1f5f9; color: #475569; }
-@media (max-width: 1000px) { .wk-if, .wk-if-main, .wk-if-body { grid-template-columns: 1fr; } }
+@media (max-width: 1000px) { .wk-if { grid-template-columns: 1fr; } }
 /* Model Info: BMES model group and BOM (BmesPanel.tsx). */
 .wk-bmes { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
 .wk-bmes-h { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
