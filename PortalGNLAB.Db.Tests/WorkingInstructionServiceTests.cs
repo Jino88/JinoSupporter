@@ -79,7 +79,8 @@ public sealed class WorkingInstructionServiceTests(Xunit.Abstractions.ITestOutpu
     [Fact]
     public void DocumentKind_TellsWorkInstructionsFromAJigListAndFromAnythingElse()
     {
-        string Kind(string path) { using FileStream fs = File.OpenRead(path); return WorkingDocumentKind.Of(fs); }
+        WorkingDocumentKind.Found Find(string path) { using FileStream fs = File.OpenRead(path); return WorkingDocumentKind.Of(fs); }
+        string Kind(string path) => Find(path).Kind;
 
         // Work Instructions, even with a sheet named "JIG List" that is not a list of the line
         Assert.Equal(WorkingDocumentKind.Instructions,
@@ -96,6 +97,20 @@ public sealed class WorkingInstructionServiceTests(Xunit.Abstractions.ITestOutpu
         string junk = Path.Combine(dir, "junk.xlsx");
         File.WriteAllText(junk, "hello");
         Assert.Equal(WorkingDocumentKind.Unknown, Kind(junk));
+
+        // an encrypted (DRM) workbook says why it is not used
+        string drm = Path.Combine(dir, "drm.xlsx");
+        File.WriteAllBytes(drm, [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1, 0, 0]);
+        Assert.Equal((WorkingDocumentKind.Unknown, "This workbook is encrypted (DRM) and cannot be opened. Upload a decrypted file."),
+            (Find(drm).Kind, Find(drm).Reason));
+    }
+
+    [Fact]
+    public void DocumentKind_TakesWorkbooksAsLargeAsTheWorkInstructions()
+    {
+        // Work Instructions with their pictures are often 50-100 MB; a smaller limit cut the upload ("Failed to fetch")
+        Assert.True(WorkingDocumentKind.MaxUploadBytes >= WorkingInstructionService.MaxUploadBytes);
+        Assert.True(WorkingDocumentKind.MaxUploadBytes >= WorkingProcessListService.MaxUploadBytes);
     }
 
     [Fact]
@@ -113,6 +128,9 @@ public sealed class WorkingInstructionServiceTests(Xunit.Abstractions.ITestOutpu
         File.WriteAllBytes(drm, [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1, 0, 0]);
         var ex = Assert.Throws<ArgumentException>(() => WorkingInstructionService.ParseFile(drm));
         Assert.Contains("Upload a decrypted file", ex.Message);
+        // the company DRM wraps the workbook in a "<DOCUMENT" header
+        File.WriteAllText(drm, "<DOCUMENT SECURITY=\"x\">PK");
+        Assert.Contains("encrypted (DRM)", Assert.Throws<ArgumentException>(() => WorkingInstructionService.ParseFile(drm)).Message);
         string junk = Path.Combine(dir, "junk.xlsx");
         File.WriteAllText(junk, "hello");
         Assert.Throws<ArgumentException>(() => WorkingInstructionService.ParseFile(junk));

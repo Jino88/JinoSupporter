@@ -98,9 +98,10 @@ public sealed class WorkingInstructionService(string? root = null)
 
     public static InstructionDoc ParseFile(string path)
     {
-        byte[] head = new byte[4];
-        using (var fs = File.OpenRead(path)) _ = fs.Read(head, 0, 4);
-        if (head[0] == 0xD0 && head[1] == 0xCF && head[2] == 0x11 && head[3] == 0xE0)
+        byte[] head = new byte[9];
+        using (var fs = File.OpenRead(path)) _ = fs.Read(head, 0, head.Length);
+        // an Office-encrypted file, or a DRM wrapper that starts with "<DOCUMENT"
+        if ((head[0] == 0xD0 && head[1] == 0xCF && head[2] == 0x11 && head[3] == 0xE0) || Encoding.ASCII.GetString(head) == "<DOCUMENT")
             throw new ArgumentException("This workbook is encrypted (DRM) and cannot be opened. Upload a decrypted file.");
         if (head[0] != 'P' || head[1] != 'K')
             throw new ArgumentException("This is not an Excel workbook (.xlsx).");

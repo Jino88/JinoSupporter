@@ -1,7 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ManualGroup } from "./manual";
 import type { ProcessRow } from "./processList";
-import { docLinks, isWorkbook, jigSummary, needsReplaceConfirm, processSummary, readProcessAnswer, runJig, runProcess, sortDocs } from "./docsAi";
+import { MAX_DOC_BYTES, docKind, docLinks, isWorkbook, jigSummary, needsReplaceConfirm, processSummary, readProcessAnswer, runJig, runProcess, sortDocs } from "./docsAi";
 
 const proc = (id: string) => ({ id, type: "SUB", name: id, localName: "", ngItems: [], materials: [{ material: "M1", qtyPerUnit: 1 }] });
 const group = (n: number): ManualGroup => ({ materials: [], processes: Array.from({ length: n }, (_, i) => proc(`p${i}`)) }) as unknown as ManualGroup;
@@ -90,9 +90,10 @@ describe("several documents at once", () => {
     const d = sortDocs([
       { file: f("jig.xlsx"), kind: "jig-list" }, { file: f("pvr.xlsx"), kind: "instructions" },
       { file: f("old pvr.xlsx"), kind: "instructions" }, { file: f("note.xlsx"), kind: "unknown" },
+      { file: f("drm.xlsx"), kind: "unknown", reason: "This workbook is encrypted (DRM)." },
     ]);
     expect([d.instructions?.name, d.jig?.name]).toEqual(["pvr.xlsx", "jig.xlsx"]);
-    expect(d.skipped).toEqual(["old pvr.xlsx (another Work Instructions)", "note.xlsx (not recognized)"]);
+    expect(d.skipped).toEqual(["old pvr.xlsx (another Work Instructions)", "note.xlsx (not recognized)", "drm.xlsx (This workbook is encrypted (DRM).)"]);
     expect(sortDocs([])).toEqual({ skipped: [] });
   });
 
@@ -107,5 +108,29 @@ describe("several documents at once", () => {
       ["", "Kiểm tra", ["M1"], [], true, false],
     ]);
     expect(docLinks(undefined, undefined)).toEqual([]);
+  });
+});
+
+describe("what a document is (server)", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const file = (name: string, size: number) => Object.defineProperty(new File(["x"], name), "size", { value: size });
+  const reply = (status: number, body: unknown) => vi.fn(async () => new Response(JSON.stringify(body), { status }));
+
+  it("reads the kind and why a workbook is not used", async () => {
+    vi.stubGlobal("fetch", reply(200, { kind: "instructions", reason: "" }));
+    expect(await docKind("M", file("pvr.xlsx", 76 * 1024 * 1024))).toEqual({ kind: "instructions" });
+    vi.stubGlobal("fetch", reply(200, { kind: "unknown", reason: "This workbook is encrypted (DRM)." }));
+    expect(await docKind("M", file("drm.xlsx", 10))).toEqual({ kind: "unknown", reason: "This workbook is encrypted (DRM)." });
+    vi.stubGlobal("fetch", reply(400, { error: "Choose an Excel workbook." }));
+    await expect(docKind("M", file("a.xlsx", 10))).rejects.toThrow("a.xlsx: Choose an Excel workbook.");
+  });
+
+  it("does not send a workbook too large, and names the file when the connection is cut", async () => {
+    const send = vi.fn(async () => { throw new TypeError("Failed to fetch"); });
+    vi.stubGlobal("fetch", send);
+    expect(await docKind("M", file("huge.xlsx", MAX_DOC_BYTES + 1))).toEqual({ kind: "unknown", reason: "larger than 100 MB" });
+    expect(send).not.toHaveBeenCalled();
+    await expect(docKind("M", file("pvr.xlsx", 10))).rejects.toThrow(
+      "pvr.xlsx could not be sent to the server (Failed to fetch). Check that the server is running, then try again.");
   });
 });
