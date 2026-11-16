@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  blankEvent, blankRow, blankTask, addBomRows, addSubTask, bomRowNames, calendarDays, eventSpan, groupSpan, inSpan, monthDayText, monthRuns, moveInGroup, moveTask, moveTo, planProblem,
+  actualSpan, markDone, blankEvent, blankRow, blankTask, addBomRows, addSubTask, bomRowNames, calendarDays, eventSpan, groupSpan, inSpan, monthDayText, monthRuns, moveInGroup, moveTask, moveTo, planProblem,
   progress, planDays, readDevPlan, readMonthDay, readQty, readYearMonthDay, removeTask, rowTotal, setQty, taskTree,
 } from "./plan";
 import type { PlanEvent, PlanTask } from "./plan";
@@ -166,5 +166,32 @@ describe("development plan", () => {
       expect(p.events[0].tasks.map((x) => [x.id, x.parentId ?? ""])).toEqual([["A", ""], ["a1", "A"], ["B", ""], ["z", ""]]);
       expect("parentId" in p.events[0].tasks[0]).toBe(false);
     });
+  });
+});
+
+describe("actual start and end of a task", () => {
+  const t = (f: Record<string, unknown>) => ({ ...blankTask(), name: "T", ...f });
+  it("are kept when saved and read back, dropped when not dates", () => {
+    const p = readDevPlan({ events: [{ name: "E", tasks: [{ id: "a", name: "A", actualStart: "2026-11-18", actualEnd: "2026-11-20" }, { id: "b", name: "B", actualStart: "x", actualEnd: "" }] }] });
+    expect(p.events[0].tasks[0]).toMatchObject({ actualStart: "2026-11-18", actualEnd: "2026-11-20" });
+    expect("actualStart" in p.events[0].tasks[1] || "actualEnd" in p.events[0].tasks[1]).toBe(false);
+  });
+
+  it("take the days the task really took: still going = up to today, only an end = that day, sub-tasks for a task without its own", () => {
+    const today = "2026-11-16";
+    expect(actualSpan([], t({ actualStart: "2026-11-10", actualEnd: "2026-11-12" }), today)).toEqual(["2026-11-10", "2026-11-12"]);
+    expect(actualSpan([], t({ actualStart: "2026-11-10" }), today)).toEqual(["2026-11-10", "2026-11-16"]);
+    expect(actualSpan([], t({ actualStart: "2026-11-20" }), today)).toEqual(["2026-11-20", "2026-11-20"]);
+    expect(actualSpan([], t({ actualEnd: "2026-11-12" }), today)).toEqual(["2026-11-12", "2026-11-12"]);
+    expect(actualSpan([], t({}), today)).toBeNull();
+    const parent = t({ id: "p" });
+    const kids = [t({ id: "k1", parentId: "p", actualStart: "2026-11-03", actualEnd: "2026-11-05" }), t({ id: "k2", parentId: "p", actualStart: "2026-11-04", actualEnd: "2026-11-09" })];
+    expect(actualSpan([parent, ...kids], parent, today)).toEqual(["2026-11-03", "2026-11-09"]);
+  });
+
+  it("ticking done gives today as the actual end when there is none, never overwriting one", () => {
+    expect(markDone(t({}), true, "2026-11-16")).toMatchObject({ done: true, actualEnd: "2026-11-16" });
+    expect(markDone(t({ actualEnd: "2026-11-12" }), true, "2026-11-16").actualEnd).toBe("2026-11-12");
+    expect(markDone(t({ done: true, actualEnd: "2026-11-12" }), false, "2026-11-16")).toMatchObject({ done: false, actualEnd: "2026-11-12" });
   });
 });

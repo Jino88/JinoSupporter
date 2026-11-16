@@ -4,7 +4,7 @@ import { useTr } from "./i18n";
 import { setupApi } from "./setup";
 import {
   barAt, devPlans, hasOpen, issueRows, labelSide, modelRow, mpPlans, shortDate, slashDate, timelineMonths, timelineRange,
-  type EventBrief, type IssueRow, type ModelLoad, type PlanBrief, type TaskBrief,
+  type Actual, type EventBrief, type IssueRow, type ModelLoad, type PlanBrief, type TaskBrief,
 } from "./homeSummary";
 import { noteParts, type IssueStage } from "./logic";
 
@@ -235,22 +235,43 @@ function StageIssues(props: { stage: IssueStage; loads: ModelLoad[]; today: stri
 const tint = (color: string, alpha: string) => (/^#[0-9a-f]{6}$/i.test(color) ? color + alpha : color);
 const taskSpanText = (t: TaskBrief) => (t.span ? `${slashDate(t.span[0]).slice(5)}${t.span[1] !== t.span[0] ? ` – ${slashDate(t.span[1]).slice(5)}` : ""}` : "");
 
-/** A bar on the timeline with its days written beside it (labelSide). */
+/** The actual days as written beside a bar: "Act. 11/18 – 11/20", "Act. 11/18 –" while still going. */
+const actualText = (a: Actual) =>
+  `Act. ${slashDate(a.span[0]).slice(5)}${a.going ? " –" : a.span[1] !== a.span[0] ? ` – ${slashDate(a.span[1]).slice(5)}` : ""}`;
+
+/**
+ * A bar on the timeline with its days written beside it (labelSide), and under it a thin line of the days it really took
+ * (green, red when it ended or still goes after the planned end); the words go beside both.
+ */
 function Bar(props: {
-  className: string; bar: { left: number; width: number }; text: string; title: string; style: CSSProperties; children?: ReactNode;
+  className: string; bar: { left: number; width: number } | null; text: string; title: string; style: CSSProperties; children?: ReactNode;
+  actual?: { bar: { left: number; width: number }; of: Actual };
 }) {
-  const { bar, text, title } = props;
-  const side = labelSide(bar);
+  const { bar, title, actual } = props;
+  const both = [bar, actual?.bar].filter((b): b is { left: number; width: number } => !!b);
+  const left = Math.min(...both.map((b) => b.left)), right = Math.max(...both.map((b) => b.left + b.width));
+  const side = labelSide({ left, width: right - left });
+  const act = actual && <span className={"wk-hm-act" + (actual.of.over ? " over" : "")}>{actualText(actual.of)}</span>;
+  const words = <>{props.text}{props.text && act && " · "}{act}</>;
   return (
     <>
-      <span className={props.className} style={{ ...props.style, left: `${bar.left}%`, width: `${bar.width}%` }} title={title}>
-        {props.children}{side === "in" && <span className="wk-hm-btext">{text}</span>}
-      </span>
-      {side === "right" && <span className="wk-hm-blabel" style={{ left: `calc(${bar.left + bar.width}% + 6px)` }} title={title}>{text}</span>}
-      {side === "left" && <span className="wk-hm-blabel" style={{ right: `calc(${100 - bar.left}% + 6px)` }} title={title}>{text}</span>}
+      {bar && (
+        <span className={props.className} style={{ ...props.style, left: `${bar.left}%`, width: `${bar.width}%` }} title={title}>
+          {props.children}{side === "in" && <span className="wk-hm-btext">{words}</span>}
+        </span>
+      )}
+      {actual && (
+        <span className={"wk-hm-abar" + (actual.of.over ? " over" : "") + (actual.of.going ? " going" : "")}
+          style={{ left: `${actual.bar.left}%`, width: `${actual.bar.width}%` }} title={`${title} · ${actualText(actual.of)}`} />
+      )}
+      {side === "right" && <span className="wk-hm-blabel" style={{ left: `calc(${right}% + 6px)` }} title={title}>{words}</span>}
+      {side === "left" && <span className="wk-hm-blabel" style={{ right: `calc(${100 - left}% + 6px)` }} title={title}>{words}</span>}
     </>
   );
 }
+
+/** Where the actual days of an event or task go on the timeline. */
+const actualBar = (a: Actual | undefined, range: { from: string; days: number } | null) => (a && range ? { bar: barAt(a.span, range), of: a } : undefined);
 
 /**
  * The plans on one timeline: a header line per model (what is under way, what is next, late tasks, tasks done), a bar per
@@ -315,9 +336,9 @@ function PlanTimeline(props: { kind: "dev" | "mp"; plans: PlanBrief[]; today: st
                       {e.total > 0 && <span className="wk-hm-count">{e.done}/{e.total}</span>}
                       <span className={"wk-hm-st " + e.state}>{tr(STATE_LABEL[e.state])}</span>
                     </div>
-                    {track(bar && (
+                    {track((bar || e.actual) && (
                       <Bar className={"wk-hm-bar " + e.state} bar={bar} title={title} style={{ background: tint(e.color, "33"), borderColor: e.color }}
-                        text={spanText(e)}>
+                        text={bar ? spanText(e) : ""} actual={actualBar(e.actual, range)}>
                         {e.total > 0 && <span className="wk-hm-fill" style={{ width: `${(e.done / e.total) * 100}%`, background: e.color }} />}
                       </Bar>
                     ))}
@@ -334,8 +355,8 @@ function PlanTimeline(props: { kind: "dev" | "mp"; plans: PlanBrief[]; today: st
                           {t.late && <span className="wk-hm-st late">{tr("Late")}</span>}
                           {!t.span && <span className="wk-hm-st undated">{tr("No date")}</span>}
                         </div>
-                        {track(tb && (
-                          <Bar className={"wk-hm-tbar " + state} bar={tb} text={taskSpanText(t)} title={`${t.name}: ${taskSpanText(t)}${t.owner ? ` · ${t.owner}` : ""}${t.done ? " · done" : ""}`}
+                        {track((tb || t.actual) && (
+                          <Bar className={"wk-hm-tbar " + state} bar={tb} text={taskSpanText(t)} actual={actualBar(t.actual, range)} title={`${t.name}: ${taskSpanText(t)}${t.owner ? ` · ${t.owner}` : ""}${t.done ? " · done" : ""}`}
                             style={t.done ? { background: e.color, borderColor: e.color } : { background: tint(e.color, "26"), borderColor: e.color }} />
                         ))}
                       </div>
