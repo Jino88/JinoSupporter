@@ -4,10 +4,11 @@ import { aiPictures } from "./aiPlace";
 import { useTr } from "./i18n";
 import {
   MAX_REQUEST_PICTURE_BYTES, METHODS, REQUEST_KINDS, blankItem, blankRequest, checkOf, commonModel, dotDate, drawingApi, drawingKey, matchText, orderOf, otherVersions, readRequest,
-  requestApi, requestFields, requestProblem, requestTitle, totals, uncheckedNos, withModel,
+  requestApi, requestFields, requestFileName, requestProblem, requestTitle, totals, uncheckedNos, withModel,
   type DrawingCheck, type RequestFields, type RequestItem, type WorkingRequest,
 } from "./request";
 import { Thumbs, dataUrl } from "./SetupAi";
+import { downloadBlob } from "../../toolsApi";
 import "./request.css";
 
 /**
@@ -30,6 +31,7 @@ export default function RequestPage(props: {
   const [form, setForm] = useState<RequestFields>(() => (first ? readRequest(first, props.today) : blankRequest(props.today)));
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [problem, setProblem] = useState("");
   // AI box: what is pasted, the pictures, the run going on and what AI said last
   const [text, setText] = useState("");
@@ -92,6 +94,12 @@ export default function RequestPage(props: {
       setList((cur) => [saved, ...(cur ?? []).filter((r) => r.id !== saved.id)]);
       setId(saved.id); setForm(readRequest(saved, props.today)); setDirty(false);
     } catch (e) { setProblem(e instanceof Error ? e.message : String(e)); } finally { setSaving(false); }
+  };
+  /** The form as it is on the screen (saved or not) downloaded as an .xlsx. */
+  const exportExcel = async () => {
+    setExporting(true); setProblem("");
+    try { downloadBlob(await requestApi.exportXlsx(form), requestFileName(form)); }
+    catch (e) { setProblem(e instanceof Error ? e.message : String(e)); } finally { setExporting(false); }
   };
   const remove = async () => {
     if (!id || !window.confirm(tr("Delete this request?"))) return;
@@ -201,6 +209,9 @@ export default function RequestPage(props: {
         <div className="rq-bar rq-noprint">
           <button className="btn sm primary" disabled={saving || (!dirty && !!id)} onClick={() => void save()}>{saving ? tr("Saving…") : tr("Save")}</button>
           <button className="btn sm" onClick={() => window.print()}>{tr("Print")}</button>
+          <button className="btn sm" disabled={exporting} onClick={() => void exportExcel()} title="Download the form as Excel (.xlsx)">
+            {exporting ? tr("Exporting…") : tr("Export Excel")}
+          </button>
           {id && <button className="btn sm danger" onClick={() => void remove()}>{tr("Delete")}</button>}
           {dirty && <span className="pi-dirty small">{tr("Not saved")}</span>}
           {problem && <span className="pi-dirty small" role="alert">{problem}</span>}
