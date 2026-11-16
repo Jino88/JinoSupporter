@@ -3,7 +3,7 @@ import { aiPictures } from "./aiPlace";
 import { setupApi, type SetupRow } from "./setup";
 import { readSetupAnswer, setupAiItems, setupAiRequest, splitSetupAi, type SetupAiAnswer } from "./setupAiRows";
 
-const dataUrl = (f: File) => new Promise<string>((resolve, reject) => {
+export const dataUrl = (f: File) => new Promise<string>((resolve, reject) => {
   const r = new FileReader();
   r.onload = () => resolve(String(r.result));
   r.onerror = () => reject(new Error(`${f.name || "A picture"} could not be read.`));
@@ -11,7 +11,7 @@ const dataUrl = (f: File) => new Promise<string>((resolve, reject) => {
 });
 
 /** Small previews of the pictures waiting to be sent, each with its number and a remove button. */
-function Thumbs(props: { files: File[]; onRemove?: (i: number) => void }) {
+export function Thumbs(props: { files: File[]; onRemove?: (i: number) => void }) {
   const urls = useMemo(() => props.files.map((f) => URL.createObjectURL(f)), [props.files]);
   useEffect(() => () => urls.forEach((u) => URL.revokeObjectURL(u)), [urls]);
   return (

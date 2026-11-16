@@ -1,0 +1,66 @@
+/* Working > Request: the PROCESSING REQUEST form (looks like the paper form, prints as it) */
+.rq-page { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 14px; align-items: start; }
+.rq-list { padding: 10px; display: flex; flex-direction: column; gap: 4px; max-height: calc(100vh - 160px); overflow: auto; }
+.rq-list-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.rq-list-h h2 { margin: 0; font-size: 14px; }
+.rq-li { display: flex; flex-direction: column; gap: 2px; text-align: left; border: 1px solid transparent; background: none; border-radius: 8px; padding: 6px 8px; cursor: pointer; font: inherit; font-size: 12.5px; }
+.rq-li:hover { background: #f8fafc; }
+.rq-li.on { background: var(--accent-soft); border-color: var(--accent); }
+.rq-main { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.rq-ai { padding: 12px 14px; }
+.rq-ai-h { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rq-ai .wk-ai-text { min-height: 80px; }
+.rq-said { margin: 10px 0 0; }
+.rq-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+.rq-sheet { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px; overflow-x: auto; }
+.rq-form { width: 100%; min-width: 980px; border-collapse: collapse; table-layout: fixed; font-size: 13px; color: #111; }
+.rq-form th, .rq-form td { border: 1px solid #1f2937; padding: 0; height: 34px; text-align: center; vertical-align: middle; font-weight: 400; }
+.rq-form .rq-l { padding: 4px 6px; line-height: 1.3; }
+.rq-form .rq-s { height: 30px; }
+.rq-sign td { height: 58px; }
+.rq-title { font-size: 20px; font-weight: 800 !important; letter-spacing: .3px; }
+.rq-u { text-decoration: underline; font-weight: 700; }
+.rq-b, .rq-b input, .rq-in.rq-b { font-weight: 700; }
+.rq-head th { font-weight: 700; height: 40px; line-height: 1.2; background: #f8fafc; }
+.rq-total td { font-weight: 700; background: #f8fafc; height: 28px; }
+
+.rq-in { width: 100%; height: 100%; min-height: 32px; border: 0; background: transparent; text-align: center; font: inherit; color: inherit; padding: 2px 6px; box-sizing: border-box; }
+.rq-in:hover { background: #f8fafc; }
+.rq-in:focus { outline: 2px solid var(--accent); outline-offset: -2px; background: #fff; }
+.rq-in::placeholder { color: #cbd5e1; font-weight: 400; }
+.rq-num { -moz-appearance: textfield; }
+.rq-num::-webkit-inner-spin-button { display: none; }
+.rq-part { font-size: 30px; min-height: 52px; }
+.rq-big { font-size: 18px; min-height: 44px; }
+.rq-code { font-size: 16px; font-weight: 800; }
+.rq-date { font-weight: 700; }
+/* an empty date shows nothing (not yyyy-mm-dd) until it is clicked */
+.rq-date[value=""]:not(:focus)::-webkit-datetime-edit { color: transparent; }
+
+.rq-methods { padding: 4px 12px !important; }
+.rq-method { display: inline-flex; align-items: center; gap: 8px; margin-right: 48px; cursor: pointer; }
+.rq-method input { position: absolute; opacity: 0; pointer-events: none; }
+.rq-box { width: 22px; height: 22px; border: 1.5px solid #1f2937; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; }
+.rq-method input:focus-visible + .rq-box { outline: 2px solid var(--accent); }
+.rq-mname { border: 1px solid #cbd5e1; padding: 2px 12px; font-family: "Times New Roman", serif; font-size: 12px; }
+.rq-method input:checked ~ .rq-mname { font-weight: 700; }
+
+.rq-no { position: relative; }
+.rq-x { position: absolute; left: 2px; top: 50%; transform: translateY(-50%); border: 0; background: none; color: #dc2626; cursor: pointer; font-size: 15px; opacity: 0; }
+.rq-item:hover .rq-x, .rq-x:focus { opacity: 1; }
+.rq-add { margin-top: 8px; }
+.rq-print { display: none; }
+
+/* the CSS is bundled for every page: printing hides the rest only while a request form is on the page */
+@media print {
+  html:has(.rq-sheet), body:has(.rq-sheet) { background: #fff !important; }
+  body:has(.rq-sheet) * { visibility: hidden; }
+  body:has(.rq-sheet) .rq-sheet, body:has(.rq-sheet) .rq-sheet * { visibility: visible; }
+  .rq-sheet { position: absolute; left: 0; top: 0; width: 100%; border: 0; padding: 0; overflow: visible; }
+  .rq-form { min-width: 0; }
+  .rq-noprint { display: none !important; }
+  .rq-print { display: inline; }
+  .rq-head th, .rq-total td { background: none; }
+  .rq-in::placeholder { color: transparent; }
+}
