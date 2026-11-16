@@ -80,6 +80,29 @@
 .rq-pick-t tr:hover td { background: #f8fafc; }
 .rq-pick-t .mono { font-family: ui-monospace, Consolas, monospace; white-space: nowrap; }
 
+/* Working > Request Total: every JIG (name and drawing no) by model */
+.rt-page { display: flex; flex-direction: column; gap: 12px; }
+.rt-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 10px 14px; }
+.rt-f { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.rt-q { width: 220px; }
+.rt-count { margin-left: auto; }
+.rt-empty { padding: 16px; }
+.rt-models { display: flex; flex-wrap: wrap; gap: 8px; }
+.rt-model { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 14px; min-width: 150px; }
+.rt-model-n { font-weight: 700; font-size: 13px; }
+.rt-model-t { font-size: 22px; font-weight: 800; color: var(--accent-ink); }
+.rt-sheet { padding: 0; overflow: auto; max-height: calc(100vh - 300px); }
+.rt-t { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.rt-t th, .rt-t td { border-bottom: 1px solid #f1f5f9; padding: 5px 8px; text-align: center; white-space: nowrap; }
+.rt-t thead th { position: sticky; top: 0; z-index: 1; background: #f8fafc; font-weight: 700; border-bottom: 1px solid var(--line); }
+.rt-t tfoot td { position: sticky; bottom: 0; background: #f8fafc; font-weight: 700; border-top: 1px solid var(--line); }
+.rt-t .rt-name { text-align: left; white-space: normal; min-width: 220px; }
+.rt-t .rt-m { min-width: 90px; }
+.rt-t .rt-tot { font-weight: 800; background: #f8fafc; }
+.rt-t .mono { font-family: ui-monospace, Consolas, monospace; }
+.rt-t tbody tr:hover td { background: #f8fafc; }
+.rt-common td.rt-name { font-weight: 600; }
+
 /* the CSS is bundled for every page: printing hides the rest only while a request form is on the page */
 @media print {
   html:has(.rq-sheet), body:has(.rq-sheet) { background: #fff !important; }

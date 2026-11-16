@@ -15,6 +15,7 @@ import Working from "./pages/Working";
 import WorkingPersonal from "./pages/WorkingPersonal";
 import WorkingGraphMaker from "./pages/WorkingGraphMaker";
 import WorkingRequest from "./pages/WorkingRequest";
+import WorkingRequestTotal from "./pages/WorkingRequestTotal";
 import QrSummary from "./pages/QrSummary";
 import QrBakoData from "./pages/QrBakoData";
 import QrAirleakData from "./pages/QrAirleakData";
@@ -52,6 +53,7 @@ const pages: Record<string, { title: string; render: (menu: MenuItem[], user: Po
   "/working/personal": { title: "Personal", render: (_menu, user) => <WorkingPersonal user={user} /> },
   "/working/graph-maker": { title: "Graphmaker", render: () => <WorkingGraphMaker /> },
   "/working/request": { title: "Request", render: () => <WorkingRequest /> },
+  "/working/request-total": { title: "Request Total", render: () => <WorkingRequestTotal /> },
   "/qr/summary": { title: "QR SUMMARY", render: () => <QrSummary /> },
   "/qr/bako-data": { title: "QR BAKO DATA", render: () => <QrBakoData /> },
   "/qr/airleak-data": { title: "QR AIRLEAK DATA", render: () => <QrAirleakData /> },
