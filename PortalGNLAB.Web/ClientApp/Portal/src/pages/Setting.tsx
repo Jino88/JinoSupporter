@@ -5,6 +5,7 @@ import {
   type CodexView,
   type Credentials,
   type HistoryView,
+  type JigDrawingDb,
   type MaterialView,
   type PathsView,
   type QrDb,
@@ -78,6 +79,7 @@ export default function Setting() {
           </div>
           <QrDbCard initial={view.qrDb} />
           <QrModelsCard initial={view.qrModels.codes} path={view.qrModels.path} />
+          {view.jigDrawingDb && <JigDrawingDbCard initial={view.jigDrawingDb} />}
         </>
       )}
 
@@ -330,6 +332,54 @@ function QrDbCard({ initial }: { initial: QrDb }) {
         </button>
         <button type="button" className="btn sm" disabled={busy !== ""} onClick={() => void run("test")}>
           {busy === "test" ? "Testing..." : "Test Connection"}
+        </button>
+        <Note msg={msg} />
+      </div>
+    </section>
+  );
+}
+
+/** Working > Request checks the drawing numbers in this DB and suggests them from a JIG / equipment name. */
+export function JigDrawingDbCard({ initial }: { initial: JigDrawingDb }) {
+  const [db, setDb] = useState(initial);
+  const [path, setPath] = useState(initial.path);
+  const [busy, setBusy] = useState<"" | "save" | "test">("");
+  const [msg, setMsg] = useState<Msg>(null);
+
+  async function run(action: "save" | "test") {
+    setBusy(action);
+    setMsg(null);
+    try {
+      const r = action === "save" ? { ...(await settingApi.saveJigDrawingDb(path)), error: false } : await settingApi.testJigDrawingDb(path);
+      setDb(r.jigDrawingDb);
+      setPath(r.jigDrawingDb.path);
+      setMsg({ text: r.message, error: r.error });
+    } catch (e) {
+      setMsg({ text: errText(e), error: true });
+    } finally {
+      setBusy("");
+    }
+  }
+
+  return (
+    <section className="card">
+      <h2>JIG/MC Drawing DB</h2>
+      <label className="set-field">
+        <span>DB folder or file</span>
+        <span className="set-secret">
+          <input className="inp sm mono" value={path} placeholder={db.defaultPath} aria-label="JIG/MC drawing DB path" onChange={(e) => setPath(e.target.value)} />
+          <button type="button" className="btn sm" onClick={() => setPath(db.defaultPath)}>Default</button>
+        </span>
+      </label>
+      <div className="muted small set-paths">
+        Used by Working › Request (drawing no check and suggestions). DB file: <code>{db.resolved || "not found"}</code>
+      </div>
+      <div className="set-actions">
+        <button type="button" className="btn sm primary" disabled={busy !== ""} onClick={() => void run("save")}>
+          {busy === "save" ? "Saving..." : "Save"}
+        </button>
+        <button type="button" className="btn sm" disabled={busy !== ""} onClick={() => void run("test")}>
+          {busy === "test" ? "Testing..." : "Test"}
         </button>
         <Note msg={msg} />
       </div>

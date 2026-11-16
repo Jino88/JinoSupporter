@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  blankRequest, commonModel, count, dotDate, isoDate, orderOf, readRequest, requestFields, requestProblem, requestTitle, toSave, totals,
+  blankRequest, checkOf, commonModel, count, dotDate, drawingKey, drawingNosOf, isoDate, matchText, orderOf, readRequest, requestFields,
+  requestProblem, requestTitle, toSave, totals, uncheckedNos, withModel,
 } from "./request";
 
 const item = (name: string, lineSpec: number, stock: number, order = 0, model = "SM-A386TOP") =>
@@ -68,5 +69,25 @@ describe("processing request", () => {
     expect(commonModel([item("A", 1, 0, 0, "X"), item("B", 1, 0, 0, "SM-A386TOP"), item("C", 1, 0, 0, "SM-A386TOP")])).toBe("SM-A386TOP");
     expect(commonModel([])).toBe("");
     expect(requestTitle({ ...blankRequest(""), deptCode: "ME-2611004", partName: "SM-A386TOP" })).toBe("ME-2611004 · SM-A386TOP");
+  });
+});
+
+describe("model above the rows and drawing numbers", () => {
+  it("puts the model into the rows without one, or into every row", () => {
+    const rows = [item("A", 1, 0, 0, ""), item("B", 1, 0, 0, "X")];
+    expect(withModel(rows, " MSU-L15S10-20 ").map((i) => i.model)).toEqual(["MSU-L15S10-20", "X"]);
+    expect(withModel(rows, "MSU-L15S10-20", true).map((i) => i.model)).toEqual(["MSU-L15S10-20", "MSU-L15S10-20"]);
+  });
+
+  it("asks the drawing DB once per drawing number and only for the ones not known", () => {
+    const rows = [{ ...item("A", 1, 0), drawingNo: "BJGP26-22-T-0001-00" }, { ...item("B", 1, 0), drawingNo: " bjgp26-22-t-0001-00 " },
+      { ...item("C", 1, 0), drawingNo: "" }, { ...item("D", 1, 0), drawingNo: "BJKP18-08-I-0000-00" }];
+    expect(drawingNosOf(rows)).toEqual(["BJGP26-22-T-0001-00", "BJKP18-08-I-0000-00"]);
+    const known = new Map([[drawingKey("BJGP26-22-T-0001-00"), { drawingNo: "BJGP26-22-T-0001-00", status: "missing" as const, match: null }]]);
+    expect(uncheckedNos(rows, known)).toEqual(["BJKP18-08-I-0000-00"]);
+    expect(checkOf(" bjgp26-22-t-0001-00", known)?.status).toBe("missing");
+    expect(checkOf("", known)).toBeUndefined();
+    expect(matchText({ drawingNo: "BJKP18-08-I-0000-00", name: "CD LASER GUIDE BASE", model: "BRS-161242", category: "MC" }))
+      .toBe("BJKP18-08-I-0000-00 · CD LASER GUIDE BASE · BRS-161242 · MC");
   });
 });

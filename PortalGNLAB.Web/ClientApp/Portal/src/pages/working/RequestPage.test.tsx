@@ -40,4 +40,29 @@ describe("Request page", () => {
     expect(html).toMatch(/<tr class="rq-total"><td colSpan="5">Total<\/td><td>51<\/td><td>4<\/td><td>47<\/td>/i);
     expect(html).toContain("Delete");
   });
+
+  it("has the model above the rows and marks drawing numbers the drawing DB does not have; an empty one can be picked", () => {
+    const rows = {
+      ...saved,
+      items: [
+        { ...saved.items[0], drawingNo: "BJKP18-08-I-0000-00" },
+        { ...saved.items[1], drawingNo: "BJXX99-00-Z-0000-00" },
+        { ...saved.items[2], drawingNo: "" },
+      ],
+    };
+    const html = renderToStaticMarkup(<RequestPage today="2026-11-16" onError={() => {}} initial={[rows]} openId="r1" checked={[
+      { drawingNo: "BJKP18-08-I-0000-00", status: "found", match: { drawingNo: "BJKP18-08-I-0000-00", name: "CD LASER GUIDE BASE", model: "BRS-161242", category: "MC" } },
+      { drawingNo: "BJXX99-00-Z-0000-00", status: "missing", match: null },
+    ]} />);
+    expect(html).toContain('aria-label="Model of the rows"');
+    expect(html).toContain("Fill empty rows");
+    expect(html).toContain('class="rq-dwg ok" title="BJKP18-08-I-0000-00 · CD LASER GUIDE BASE · BRS-161242 · MC"');
+    expect(html).toContain('class="rq-dwg miss" title="Not in the JIG/MC drawing DB"');
+    expect(html).toContain("1 not in the drawing DB");
+    expect(html).toContain("1 without a drawing no");
+    // the missing one and the empty one can be looked up; the one found cannot
+    expect(html).toContain('aria-label="Find the drawing no of row 2"');
+    expect(html).toContain('aria-label="Find the drawing no of row 3"');
+    expect(html).not.toContain('aria-label="Find the drawing no of row 1"');
+  });
 });
