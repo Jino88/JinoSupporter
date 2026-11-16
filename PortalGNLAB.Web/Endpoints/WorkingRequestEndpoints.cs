@@ -23,6 +23,21 @@ public static class WorkingRequestEndpoints
             var result = await ai.FillAsync(body, cts.Token);
             return Results.Ok(new { request = result.Request, note = result.Note, model = result.Model });
         }).WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(40L * 1024 * 1024)); // up to 6 pasted pictures as base64
+        // Drawing No lookup in the JIG/MC drawing DB (read-only); never throws, a missing DB comes back as ok=false
+        api.MapPost("/requests/drawings/check", (DrawingCheckBody body, JigDrawingDbService db) =>
+        {
+            var r = db.Check((body.DrawingNos ?? []).Take(JigDrawingDbService.MaxCheck));
+            return Results.Ok(new { ok = r.Ok, error = r.Error, path = r.Path, results = r.Results });
+        });
+        api.MapPost("/requests/drawings/suggest", (DrawingSuggestBody body, JigDrawingDbService db) =>
+        {
+            var r = db.Suggest(body.Name, body.Model, body.Limit ?? 10);
+            return Results.Ok(new { ok = r.Ok, error = r.Error, path = r.Path, suggestions = r.Suggestions });
+        });
         return api;
     }
+
+    public sealed record DrawingCheckBody(string[]? DrawingNos);
+
+    public sealed record DrawingSuggestBody(string? Name, string? Model, int? Limit);
 }

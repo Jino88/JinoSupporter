@@ -159,3 +159,46 @@ export const requestApi = {
   ai: (body: { text: string; today: string; kind: string; current: RequestFields; images: { name: string; dataUrl: string }[] }, signal?: AbortSignal) =>
     toolSend<{ request: unknown; note: string; model: string }>(`${base}/ai`, { ...body, current: toSave(body.current) }, "POST", signal),
 };
+
+/** The model typed once above the rows put into the rows: those without one, or every row. */
+export const withModel = (items: RequestItem[], model: string, every = false): RequestItem[] =>
+  items.map((i) => (every || !i.model.trim() ? { ...i, model: model.trim() } : i));
+
+// ── Drawing numbers checked in the JIG/MC drawing DB (Setting › JIG/MC Drawing DB) ──
+
+/** found: the drawing is there; revision: only another revision of it (same base) is; missing: not there at all. */
+export type DrawingStatus = "found" | "revision" | "missing";
+export interface DrawingMatch { drawingNo: string; name: string; model: string; category: string; latest?: number }
+export interface DrawingCheck { drawingNo: string; status: DrawingStatus; match: DrawingMatch | null }
+export interface DrawingSuggestion extends DrawingMatch { assy: number; score: number }
+
+/** One drawing number written another way (case, spaces) is the same. */
+export const drawingKey = (no: string) => no.trim().toUpperCase();
+
+/** The drawing numbers of the rows, each once, in row order. */
+export function drawingNosOf(items: RequestItem[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const i of items) {
+    const k = drawingKey(i.drawingNo);
+    if (k && !seen.has(k)) { seen.add(k); out.push(i.drawingNo.trim()); }
+  }
+  return out;
+}
+
+/** The numbers not checked yet (the ones known are not asked again). */
+export const uncheckedNos = (items: RequestItem[], known: Map<string, DrawingCheck>) =>
+  drawingNosOf(items).filter((no) => !known.has(drawingKey(no)));
+
+/** The check of a row: its drawing number looked up in what the DB answered (undefined until it answered). */
+export const checkOf = (no: string, known: Map<string, DrawingCheck>) => (drawingKey(no) ? known.get(drawingKey(no)) : undefined);
+
+/** A short line about the drawing the DB has for a row (name, model, category). */
+export const matchText = (m: DrawingMatch | null) => (m ? [m.drawingNo, m.name, m.model, m.category].filter(Boolean).join(" · ") : "");
+
+export const drawingApi = {
+  check: (drawingNos: string[], signal?: AbortSignal) =>
+    toolSend<{ ok: boolean; error: string; path: string; results: DrawingCheck[] }>(`${base}/drawings/check`, { drawingNos }, "POST", signal),
+  suggest: (name: string, model: string, signal?: AbortSignal) =>
+    toolSend<{ ok: boolean; error: string; path: string; suggestions: DrawingSuggestion[] }>(`${base}/drawings/suggest`, { name, model, limit: 12 }, "POST", signal),
+};

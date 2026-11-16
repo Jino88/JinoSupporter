@@ -1,9 +1,11 @@
 import { useEffect, useState, type ClipboardEvent, type DragEvent, type ReactNode } from "react";
+import DrawingPicker from "./DrawingPicker";
 import { aiPictures } from "./aiPlace";
 import { useTr } from "./i18n";
 import {
-  METHODS, REQUEST_KINDS, blankItem, blankRequest, commonModel, dotDate, orderOf, readRequest, requestApi, requestFields, requestProblem,
-  requestTitle, totals, type RequestFields, type RequestItem, type WorkingRequest,
+  METHODS, REQUEST_KINDS, blankItem, blankRequest, checkOf, commonModel, dotDate, drawingApi, drawingKey, matchText, orderOf, readRequest,
+  requestApi, requestFields, requestProblem, requestTitle, totals, uncheckedNos, withModel,
+  type DrawingCheck, type RequestFields, type RequestItem, type WorkingRequest,
 } from "./request";
 import { Thumbs, dataUrl } from "./SetupAi";
 import "./request.css";
@@ -18,6 +20,8 @@ export default function RequestPage(props: {
   initial?: WorkingRequest[];
   /** The request open at first (else a new one). */
   openId?: string;
+  /** Drawing numbers already checked (tests); else asked of the drawing DB as they are typed. */
+  checked?: DrawingCheck[];
 }) {
   const tr = useTr();
   const [list, setList] = useState<WorkingRequest[] | null>(props.initial ?? null);
@@ -32,6 +36,27 @@ export default function RequestPage(props: {
   const [pictures, setPictures] = useState<File[]>([]);
   const [busy, setBusy] = useState<AbortController | null>(null);
   const [said, setSaid] = useState<{ note: string; model: string } | null>(null);
+  // the model typed once above the rows, the drawing numbers the drawing DB answered for (by drawingKey), what went
+  // wrong reaching the DB, and the row whose drawing number is being picked from the suggestions
+  const [model, setModel] = useState("");
+  const [checks, setChecks] = useState<Map<string, DrawingCheck>>(() => new Map((props.checked ?? []).map((c) => [drawingKey(c.drawingNo), c])));
+  const [dbProblem, setDbProblem] = useState("");
+  const [picking, setPicking] = useState<number | null>(null);
+
+  // the drawing numbers not checked yet are asked of the drawing DB a moment after typing stops
+  const asking = uncheckedNos(form.items, checks).join("\n");
+  useEffect(() => {
+    if (!asking || props.checked) return;
+    const ctl = new AbortController();
+    const t = window.setTimeout(() => {
+      drawingApi.check(asking.split("\n"), ctl.signal).then((r) => {
+        if (!r.ok) { setDbProblem(r.error || "The drawing DB could not be opened."); return; }
+        setDbProblem("");
+        setChecks((cur) => { const n = new Map(cur); for (const c of r.results) n.set(drawingKey(c.drawingNo), c); return n; });
+      }, (e) => { if (!ctl.signal.aborted) setDbProblem(e instanceof Error ? e.message : String(e)); });
+    }, 600);
+    return () => { window.clearTimeout(t); ctl.abort(); };
+  }, [asking]);
 
   useEffect(() => {
     if (props.initial) return;
@@ -42,7 +67,12 @@ export default function RequestPage(props: {
 
   const change = (f: Partial<RequestFields>) => { setForm((cur) => ({ ...cur, ...f })); setDirty(true); setProblem(""); };
   const changeItem = (n: number, f: Partial<RequestItem>) => change({ items: form.items.map((i, k) => (k === n ? { ...i, ...f } : i)) });
-  const addItem = () => change({ items: [...form.items, blankItem(form.items.length + 1, commonModel(form.items) || form.partName)] });
+  const addItem = () => change({ items: [...form.items, blankItem(form.items.length + 1, model.trim() || commonModel(form.items) || form.partName)] });
+  /** The model above the rows put into the rows without one (or every row); the part name too when it has none. */
+  const putModel = (every: boolean) => {
+    if (!model.trim()) return;
+    change({ items: withModel(form.items, model, every), ...(form.partName.trim() ? {} : { partName: model.trim() }) });
+  };
   const removeItem = (n: number) => change({ items: form.items.filter((_, k) => k !== n).map((i, k) => ({ ...i, no: k + 1 })) });
 
   const leave = () => !dirty || window.confirm(tr("Discard the unsaved changes?"));
@@ -101,6 +131,10 @@ export default function RequestPage(props: {
   };
 
   const sum = totals(form.items);
+  const states = form.items.map((i) => checkOf(i.drawingNo, checks)?.status);
+  const missing = states.filter((x) => x === "missing").length;
+  const revised = states.filter((x) => x === "revision").length;
+  const noDrawing = form.items.filter((i) => i.name.trim() && !i.drawingNo.trim()).length;
   const field = (k: keyof RequestFields, cls = "", ph = "") => (
     <input className={"rq-in " + cls} value={form[k] as string} placeholder={ph} aria-label={k} onChange={(e) => change({ [k]: e.target.value })} />
   );
@@ -172,6 +206,26 @@ export default function RequestPage(props: {
         </div>
 
         <div className="rq-sheet">
+          <div className="rq-tools rq-noprint">
+            <label className="rq-model">
+              <b>{tr("Model")}</b>
+              <input className="inp sm" value={model} placeholder="e.g. MSU-L15S10-20" aria-label="Model of the rows"
+                onChange={(e) => setModel(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") putModel(false); }} />
+            </label>
+            <button className="btn sm" disabled={!model.trim() || !form.items.length} onClick={() => putModel(false)}
+              title="Put the model into the rows that have none">{tr("Fill empty rows")}</button>
+            <button className="btn sm" disabled={!model.trim() || !form.items.length} onClick={() => putModel(true)}
+              title="Put the model into every row">{tr("All rows")}</button>
+            <span className="rq-dwg-sum">
+              {dbProblem ? <span className="pi-dirty small" role="alert">Drawing DB: {dbProblem}</span> : (
+                <>
+                  {missing > 0 && <span className="rq-tag miss">{missing} {tr("not in the drawing DB")}</span>}
+                  {revised > 0 && <span className="rq-tag rev">{revised} {tr("other revision")}</span>}
+                  {noDrawing > 0 && <span className="rq-tag none">{noDrawing} {tr("without a drawing no (click the magnifier to pick)")}</span>}
+                </>
+              )}
+            </span>
+          </div>
           <table className="rq-form">
             <colgroup>{[110, 223, 182, 182, 191, 87, 85, 87, 173, 169, 170, 169, 170].map((w, i) => <col key={i} style={{ width: `${w / 19.98}%` }} />)}</colgroup>
             <tbody>
@@ -254,7 +308,13 @@ export default function RequestPage(props: {
                       onChange={(e) => changeItem(n, { order: Math.max(0, Number(e.target.value) || 0) })} />
                     <span className="rq-print">{orderOf(i)}</span>
                   </td>
-                  <td colSpan={2}><input className="rq-in" value={i.drawingNo} aria-label={`Drawing no ${n + 1}`} onChange={(e) => changeItem(n, { drawingNo: e.target.value })} /></td>
+                  <td colSpan={2} className={"rq-dwg" + dwgClass(checkOf(i.drawingNo, checks))} title={dwgTitle(checkOf(i.drawingNo, checks))}>
+                    <input className="rq-in" value={i.drawingNo} aria-label={`Drawing no ${n + 1}`} onChange={(e) => changeItem(n, { drawingNo: e.target.value })} />
+                    {(!i.drawingNo.trim() || checkOf(i.drawingNo, checks)?.status === "missing") && i.name.trim() && (
+                      <button className="rq-find rq-noprint" aria-label={`Find the drawing no of row ${n + 1}`} title="Pick a drawing no from the drawing DB"
+                        onClick={() => setPicking(n)}>&#128269;</button>
+                    )}
+                  </td>
                   <td><input className="rq-in" value={i.picture} aria-label={`Picture ${n + 1}`} onChange={(e) => changeItem(n, { picture: e.target.value })} /></td>
                   <td colSpan={2}><input className="rq-in" value={i.note} aria-label={`Note ${n + 1}`} onChange={(e) => changeItem(n, { note: e.target.value })} /></td>
                 </tr>
@@ -267,9 +327,23 @@ export default function RequestPage(props: {
             </tbody>
           </table>
           <button className="btn sm rq-add rq-noprint" onClick={addItem}>+ {tr("Add row")}</button>
+          {picking !== null && form.items[picking] && (
+            <DrawingPicker item={form.items[picking]} model={form.items[picking].model || model}
+              onPick={(m) => {
+                changeItem(picking, { drawingNo: m.drawingNo });
+                setChecks((cur) => new Map(cur).set(drawingKey(m.drawingNo), { drawingNo: m.drawingNo, status: "found", match: m }));
+                setPicking(null);
+              }}
+              onClose={() => setPicking(null)} />
+          )}
         </div>
       </div>
     </div>
   );
 }
 
+/** How the drawing-number cell looks: red when the DB has no such drawing, amber when only another revision. */
+const dwgClass = (c: DrawingCheck | undefined) => (c?.status === "missing" ? " miss" : c?.status === "revision" ? " rev" : c?.status === "found" ? " ok" : "");
+const dwgTitle = (c: DrawingCheck | undefined) =>
+  !c ? undefined : c.status === "missing" ? "Not in the JIG/MC drawing DB"
+    : c.status === "revision" ? `Only another revision is in the drawing DB: ${matchText(c.match)}` : matchText(c.match);

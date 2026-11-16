@@ -95,6 +95,15 @@ export interface SettingView {
   aiProviders: AiProviders | null;
   qrDb: QrDb | null;
   qrModels: QrModelsView | null;
+  /** Working > Request: where the JIG/MC drawing DB is (admin only; left out by an older server). */
+  jigDrawingDb?: JigDrawingDb | null;
+}
+
+/** The JIG/MC drawing DB: the folder or file typed, the default, and the DB file it comes to ("" when none is there). */
+export interface JigDrawingDb {
+  path: string;
+  defaultPath: string;
+  resolved: string;
 }
 
 export interface AppPathResult {
@@ -167,6 +176,8 @@ export const settingApi = {
   saveAiProviders: (body: { codexCliEnabled: boolean; codexApiEnabled: boolean }) => post<AiProviders>("/ai-providers", body),
   saveQrDb: (body: QrDb) => post<{ qrDb: QrDb; message: string }>("/qr-db", body),
   testQrDb: (body: QrDb) => post<{ qrDb: QrDb; message: string; error: boolean }>("/qr-db/test", body),
+  saveJigDrawingDb: (path: string) => post<{ jigDrawingDb: JigDrawingDb; message: string }>("/jig-drawing-db", { path }),
+  testJigDrawingDb: (path: string) => post<{ jigDrawingDb: JigDrawingDb; message: string; error: boolean }>("/jig-drawing-db/test", { path }),
   saveQrModels: (codes: QrModelCode[]) => post<QrModelsView>("/qr-model-codes", codes),
   saveAppPath: (dbRootDirectory: string) => post<AppPathResult>("/app-path", { dbRootDirectory }),
   saveCredentials: (body: { loginId: string; password: string }) => post<{ message: string }>("/credentials", body),
