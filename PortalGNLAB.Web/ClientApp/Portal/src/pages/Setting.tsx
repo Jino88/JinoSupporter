@@ -13,6 +13,7 @@ import {
   type SettingView,
 } from "../settingApi";
 import { defaultHistoryFrom, modelOptions, workFolders } from "../settingLogic";
+import PlanVocabCard from "./PlanVocabCard";
 import "../setting.css";
 
 /** Port of Components/Pages/BmesSettingPage.razor (/setting). */
@@ -80,6 +81,7 @@ export default function Setting() {
           <QrDbCard initial={view.qrDb} />
           <QrModelsCard initial={view.qrModels.codes} path={view.qrModels.path} />
           {view.jigDrawingDb && <JigDrawingDbCard initial={view.jigDrawingDb} />}
+          <PlanVocabCard />
         </>
       )}
 
