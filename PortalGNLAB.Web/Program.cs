@@ -174,6 +174,7 @@ builder.Services.AddSingleton(new WorkingInstructionService());
 // Working > Request: JIG / MC processing requests (AI fills the form from pasted lists / pictures).
 builder.Services.AddSingleton(new WorkingRequestService());
 builder.Services.AddSingleton<JigDrawingDbService>();
+builder.Services.AddSingleton<WorkingPlanVocabService>();
 builder.Services.AddScoped<WorkingRequestAiService>();
 builder.Services.AddSingleton<WorkingTranslationService>();
 // Team memo display translation (EN/KO/VI via Codex Luna, cached in the memo DB).
@@ -751,6 +752,7 @@ static string PrepareAskHistoryHtml(string html)
 
 app.MapPortalShell();
 app.MapWorking();
+app.MapWorkingPlanVocab();
 
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode();
