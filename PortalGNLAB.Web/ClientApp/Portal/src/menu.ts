@@ -72,6 +72,9 @@ export const WORKING_PERSONAL = "working-personal";
 /** AI Graphmaker under Working (pages/WorkingGraphMaker.tsx); like Personal it comes with the Working menu. */
 export const WORKING_GRAPH = "working-graph";
 
+/** JIG/MC processing requests under Working (pages/WorkingRequest.tsx); like Personal it comes with the Working menu. */
+export const WORKING_REQUEST = "working-request";
+
 export interface RailTileInfo {
   icon: string;
   label: string;
@@ -94,6 +97,7 @@ const RAIL_TILES: Record<string, RailTileInfo> = {
   working: { icon: "briefcase", label: "Common" },
   [WORKING_PERSONAL]: { icon: "worker", label: "Personal" },
   [WORKING_GRAPH]: { icon: "trend", label: "Graph" },
+  [WORKING_REQUEST]: { icon: "list", label: "Request" },
   translate: { icon: "translate", label: "Translate" },
   "review-report": { icon: "write", label: "Write" },
   "bmes-setting": { icon: "gear", label: "Setting" },
@@ -134,6 +138,7 @@ export function buildRail(items: MenuItem[]): RailEntry[] {
   const working = byId.get("working");
   if (working) byId.set(WORKING_PERSONAL, { ...working, id: WORKING_PERSONAL, label: "Personal", href: "/app/working/personal", react: true });
   if (working) byId.set(WORKING_GRAPH, { ...working, id: WORKING_GRAPH, label: "Graphmaker", href: "/app/working/graph-maker", react: true });
+  if (working) byId.set(WORKING_REQUEST, { ...working, id: WORKING_REQUEST, label: "Request", href: "/app/working/request", react: true });
   const tiles = (ids: string[]): RailTile[] =>
     ids.flatMap((id) => {
       const item = byId.get(id);
@@ -153,7 +158,7 @@ export function buildRail(items: MenuItem[]): RailEntry[] {
       { title: "Setting Model", tiles: tiles(BMES_SETTING_MODEL) },
     ]),
     ...single(["bmes-daily-report"]),
-    ...group("working", "briefcase", "Working", "Working", [{ tiles: tiles(["working", WORKING_PERSONAL, WORKING_GRAPH]) }]),
+    ...group("working", "briefcase", "Working", "Working", [{ tiles: tiles(["working", WORKING_PERSONAL, WORKING_GRAPH, WORKING_REQUEST]) }]),
     ...group("qr", "qr", "QR", "QR inspection data", [{ tiles: tiles(QR_MAIN) }]),
     ...sep(single(TOOLS)),
     ...sep([...single(["bmes-setting"]), ...single(ADMIN)]),

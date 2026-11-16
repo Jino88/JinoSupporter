@@ -6,7 +6,6 @@ import { BomPanel } from "./working/BmesPanel";
 import ModelDocs from "./working/ModelDocs";
 import ProcessListTab from "./working/ProcessListTab";
 import ProcessTab from "./working/ProcessTab";
-import RequestPage from "./working/RequestPage";
 import SetupAi from "./working/SetupAi";
 import type { AiTarget } from "./working/aiPlace";
 import { workingApi } from "./working/api";
@@ -26,9 +25,8 @@ import TreeManager from "./working/TreeManager";
 import { phaseName, type Entry, type GroupsResponse, type WorkingModel } from "./working/types";
 import "./working/working.css";
 
-/** The pages of the top menu: Home, the Dev and MP issues of every model, and the processing requests (JIG/MC). */
-type HomeView = "home" | "devissues" | "mpissues" | "request";
-const HOME_VIEWS: HomeView[] = ["home", "devissues", "mpissues", "request"];
+/** The pages of the top menu: Home and the MP issues of every model. */
+type HomeView = "home" | "devissues" | "mpissues";
 type Tab = "info" | "bom" | "plan" | "devissue" | "dev" | "review" | "all" | "setup" | "issue" | "docs" | "process" | "jigmc" | "ai";
 /** Categories of a model page and the tabs under each (AI has none); what the model is made of is all under Model Info. */
 export const CATEGORIES: { label: string; tabs: [Tab, string][] }[] = [
@@ -82,8 +80,8 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
   const [closed, setClosed] = useState<Set<string>>(new Set());
   // Home opens when asked for or when no model is in the address
   const view = query.get("view");
-  const [home, setHome] = useState(HOME_VIEWS.includes(view as HomeView) || !query.get("model"));
-  const [homeView, setHomeView] = useState<HomeView>(HOME_VIEWS.includes(view as HomeView) ? (view as HomeView) : "home");
+  const [home, setHome] = useState(view === "home" || view === "devissues" || view === "mpissues" || !query.get("model"));
+  const [homeView, setHomeView] = useState<HomeView>(view === "devissues" || view === "mpissues" ? view : "home");
   const [selected, setSelected] = useState<string | null>(home ? null : query.get("model"));
   const [tab, setTab] = useState<Tab>(tabOfQuery(query.get("tab")));
   const [model, setModel] = useState<WorkingModel | null>(null);
@@ -208,7 +206,7 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
       <header className="page-head">
         <h1>Working</h1>
         <nav className="wk-menu" aria-label="Working">
-          {([["home", "Home"], ["devissues", "Dev Issues"], ["mpissues", "MP Issues"], ["request", "Request"]] as [HomeView, string][]).map(([v, label]) => (
+          {([["home", "Home"], ["devissues", "Dev Issues"], ["mpissues", "MP Issues"]] as [HomeView, string][]).map(([v, label]) => (
             <button key={v} className={home && homeView === v ? "on" : ""} aria-current={home && homeView === v ? "page" : undefined}
               onClick={() => goHome(v)}>{tr(label)}</button>
           ))}
@@ -222,8 +220,7 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
       </header>
       {error && <div className="alert" role="alert">{error}</div>}
 
-      {/* a request is not of a model: the model list steps aside for the wide form */}
-      <div className={"wk-lay" + (home && homeView === "request" ? " wk-solo" : "")}>
+      <div className="wk-lay">
         <aside className="card wk-side">
           <div className="wk-side-h">
             <div className="wk-side-t">
@@ -252,10 +249,8 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
         )}
 
         <section className="wk-main">
-          {home && homeView === "request" ? (
-            <RequestPage today={today} onError={fail} />
-          ) : home ? (
-            <Home models={homeModels} today={today} onOpen={openFromHome} view={homeView === "request" ? "home" : homeView} />
+          {home ? (
+            <Home models={homeModels} today={today} onOpen={openFromHome} view={homeView} />
           ) : !selected ? (
             <div className="card pi-empty">{tr("Pick a model on the left.")}</div>
           ) : (
