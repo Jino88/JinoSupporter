@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   blankRequest, checkOf, commonModel, count, dotDate, drawingKey, drawingNosOf, isoDate, matchText, orderOf, readRequest, requestFields,
-  requestProblem, requestTitle, toSave, totals, uncheckedNos, withModel,
+  requestFileName, requestProblem, requestTitle, toSave, totals, uncheckedNos, withModel,
 } from "./request";
 
 const item = (name: string, lineSpec: number, stock: number, order = 0, model = "SM-A386TOP") =>
@@ -63,6 +63,13 @@ describe("processing request", () => {
     expect(requestProblem(f)).toMatch(/part name/);
     expect(requestProblem({ ...f, partName: "SM-A386TOP" })).toMatch(/at least one item/);
     expect(requestProblem({ ...f, partName: "SM-A386TOP", items: [item("MAIN 1 JIG-Y", 40, 0)] })).toBe("");
+  });
+
+  it("names the exported .xlsx by the dept code (else the part) and the request date, safe as a file name", () => {
+    const r = blankRequest("2026-11-05");
+    expect(requestFileName({ ...r, deptCode: "ME-2611004", partName: "SM-A386TOP" })).toBe("Request_ME-2611004_20261105.xlsx");
+    expect(requestFileName({ ...r, partName: "SM A386/TOP" })).toBe("Request_SM-A386-TOP_20261105.xlsx");
+    expect(requestFileName({ ...r, requestDate: "" })).toBe("Request.xlsx");
   });
 
   it("takes the model most rows are for as the part name", () => {

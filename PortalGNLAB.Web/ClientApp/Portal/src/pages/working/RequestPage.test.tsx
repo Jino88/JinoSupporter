@@ -41,6 +41,8 @@ describe("Request page", () => {
     expect(html).toContain('placeholder="6"');
     expect(html).toMatch(/<tr class="rq-total"><td colSpan="5">Total<\/td><td>51<\/td><td>4<\/td><td>47<\/td>/i);
     expect(html).toContain("Delete");
+    // the form downloaded as an .xlsx, next to Print
+    expect(html).toMatch(/>Print<\/button><button class="btn sm" title="Download the form as Excel \(\.xlsx\)">Export Excel<\/button>/);
   });
 
   it("has the model above the rows and marks drawing numbers the drawing DB does not have; an empty one can be picked", () => {

@@ -160,7 +160,14 @@ export const requestApi = {
   /** The form filled by AI from what was pasted (nothing saved). */
   ai: (body: { text: string; today: string; kind: string; current: RequestFields; images: { name: string; dataUrl: string }[] }, signal?: AbortSignal) =>
     toolSend<{ request: unknown; note: string; model: string }>(`${base}/ai`, { ...body, current: toSave(body.current) }, "POST", signal),
+  /** The form as it is (saved or not) as an .xlsx laid out like the paper form. */
+  exportXlsx: (f: RequestFields) => toolSend<Blob>(`${base}/export`, toSave(f)),
 };
+
+/** The name of the exported .xlsx: Request_<dept code or part>_<request date>.xlsx, without characters a file name cannot have. */
+export const requestFileName = (r: RequestFields) =>
+  ["Request", r.deptCode.trim() || r.partName.trim() || r.equipmentName.trim(), isoDate(r.requestDate).replace(/-/g, "")]
+    .filter(Boolean).join("_").replace(/[\\/:*?"<>|\s]+/g, "-") + ".xlsx";
 
 /** The model typed once above the rows put into the rows: those without one, or every row. */
 export const withModel = (items: RequestItem[], model: string, every = false): RequestItem[] =>

@@ -15,6 +15,9 @@ public static class WorkingRequestEndpoints
             svc.Update(id, body, user.Identity?.Name ?? "") is { } r ? Results.Ok(r) : Results.NotFound());
         api.MapDelete("/requests/{id}", (string id, WorkingRequestService svc) =>
             svc.Delete(id) ? Results.NoContent() : Results.NotFound());
+        // the form as it is on the screen (saved or not) as an .xlsx laid out like the paper form
+        api.MapPost("/requests/export", (WorkingRequestSave body) =>
+            Results.File(WorkingRequestExcelExporter.Export(body), BrowserDownload.XlsxContentType, "Request.xlsx"));
         // AI input: the form filled from pasted text / pictures; nothing is saved here
         api.MapPost("/requests/ai", async (RequestAiRequest body, WorkingRequestAiService ai, HttpContext http) =>
         {
