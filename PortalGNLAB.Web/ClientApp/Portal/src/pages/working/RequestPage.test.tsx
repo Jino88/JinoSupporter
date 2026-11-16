@@ -26,6 +26,8 @@ describe("Request page", () => {
     expect(html).toContain(">2026.11.05<");
     // every row of the form fills the 13 columns of the paper form
     expect(html.match(/<col /g)).toHaveLength(13);
+    // printed with the margins only: portrait or landscape is the print dialog's choice, not forced by the page
+    expect(html).toContain("<style>@page { margin: 8mm; }</style>");
   });
 
   it("opens a saved request: list line, header fields, rows with the order made from line and stock, totals", () => {

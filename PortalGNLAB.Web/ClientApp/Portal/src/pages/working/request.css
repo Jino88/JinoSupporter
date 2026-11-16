@@ -124,3 +124,7 @@
   .rq-dwg.miss .rq-in { color: inherit; font-weight: inherit; }
   .rq-in::placeholder { color: transparent; }
 }
+/* A4 portrait (194mm = 733px inside the margins) is narrower than the form (980px): the whole form smaller, laid out the same */
+@media print and (orientation: portrait) {
+  .rq-form { min-width: 980px; zoom: .74; }
+}
