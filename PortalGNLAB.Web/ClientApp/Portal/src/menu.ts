@@ -103,7 +103,7 @@ const RAIL_TILES: Record<string, RailTileInfo> = {
   [WORKING_REQUEST]: { icon: "list", label: "Request" },
   [WORKING_REQUEST_TOTAL]: { icon: "grid", label: "Req. Total" },
   translate: { icon: "translate", label: "Translate" },
-  "review-report": { icon: "write", label: "Write" },
+  "review-report": { icon: "write", label: "Make Report" },
   "bmes-setting": { icon: "gear", label: "Setting" },
   "admin-users": { icon: "users", label: "Users" },
   "admin-ai-usages": { icon: "gauge", label: "AI Usage" },
@@ -133,7 +133,9 @@ export type RailEntry =
 const BMES_MAIN = ["ng-rate", "bmes-f-cost", "report", "bmes-worker-status", "bmes-test5"];
 const BMES_SETTING_MODEL = ["bmes-make-model-group", "bmes-routing-table", "bmes-reason-table"];
 const QR_MAIN = ["qr-summary", "qr-bako-data", "qr-airleak-data", "qr-gauss-data"];
-const TOOLS = ["translate", "review-report"];
+const TOOLS = ["translate"];
+/** Under Working: the Working pages, and Make Report (the review report writer) shown with its own permission. */
+const WORKING = ["working", WORKING_PERSONAL, WORKING_GRAPH, WORKING_REQUEST, WORKING_REQUEST_TOTAL, "review-report"];
 const ADMIN = ["admin-users", "admin-ai-usages", "test-excel-converter", "admin-db-query"];
 
 /** Rail layout of NavMenu.razor, limited to the menus the server sent (= the role's permissions). */
@@ -163,7 +165,7 @@ export function buildRail(items: MenuItem[]): RailEntry[] {
       { title: "Setting Model", tiles: tiles(BMES_SETTING_MODEL) },
     ]),
     ...single(["bmes-daily-report"]),
-    ...group("working", "briefcase", "Working", "Working", [{ tiles: tiles(["working", WORKING_PERSONAL, WORKING_GRAPH, WORKING_REQUEST, WORKING_REQUEST_TOTAL]) }]),
+    ...group("working", "briefcase", "Working", "Working", [{ tiles: tiles(WORKING) }]),
     ...group("qr", "qr", "QR", "QR inspection data", [{ tiles: tiles(QR_MAIN) }]),
     ...sep(single(TOOLS)),
     ...sep([...single(["bmes-setting"]), ...single(ADMIN)]),
