@@ -396,6 +396,16 @@ table.wk-dp-tasks .inp.sm.wk-dp-owner { width: 90px; }
 /* date box (DateBox.tsx): typed as yyMMdd */
 .wk-datebox { width: 96px; font-variant-numeric: tabular-nums; }
 .wk-datebox.sm, table.wk-dp-tasks .wk-datebox.sm { width: 80px; }
+/* standard names: a task picked from the list with its detail beside it, the tidy-up of names of their own */
+.wk-dp-name { display: flex; gap: 6px; }
+.wk-dp-name select { flex: 0 0 auto; width: auto; max-width: 180px; }
+.wk-dp-form .wk-dp-qty { width: 110px; }
+.wk-dp-adds { display: flex; gap: 8px; }
+.wk-dp-tidy { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; background: #fafbff; }
+.wk-dp-tidy-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.wk-dp-tidy .wk-it tr.muted td { color: var(--muted); }
+.wk-dp-tidy .wk-it select, .wk-dp-tidy .wk-it input { width: 100%; }
+.wk-dp-tidy-f { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
 table.wk-dp-tasks td.wk-dp-real { color: #15803d; white-space: nowrap; }
 table.wk-dp-tasks td.wk-dp-real.late { color: #b91c1c; font-weight: 600; }
 table.wk-dp-tasks td.wk-dp-grip { width: 14px; padding-right: 0; color: var(--faint); cursor: grab; user-select: none; }

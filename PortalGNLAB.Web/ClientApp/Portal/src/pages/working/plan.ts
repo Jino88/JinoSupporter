@@ -14,6 +14,9 @@ export interface PlanTask {
   /** yyyy-MM-dd the task really started and ended; absent or "" when not known yet. */
   actualStart?: string;
   actualEnd?: string;
+  /** Code of the standard task it is (planVocab) and what is particular to this one ("300ea Bringup"); the name is made of both. */
+  code?: string;
+  detail?: string;
   /** Id of the task it is a sub-task of (one level only); absent for a task of the event itself. */
   parentId?: string;
 }
@@ -45,6 +48,9 @@ export interface PlanEvent {
   rows: QtyRow[];
   /** Product whose BOM materials were put into the Material Plan once ("" = not yet), so rows deleted stay deleted. */
   bomFrom: string;
+  /** Code of the standard stage it is (ER, DV1, PV ...) and its quantity ("1.2k"); the name is made of both. */
+  stage?: string;
+  qty?: string;
 }
 
 export interface DevPlan {
@@ -277,11 +283,15 @@ export function readDevPlan(v: unknown): DevPlan {
       end: str(e.end),
       color: str(e.color) || COLORS[i % COLORS.length],
       bomFrom: str(e.bomFrom),
+      ...(str(e.stage) ? { stage: str(e.stage) } : {}),
+      ...(str(e.qty) ? { qty: str(e.qty) } : {}),
       tasks: taskTree(list(e.tasks).filter((t) => t && typeof t === "object").map((t) => ({
         id: str(t.id) || newId(), name: str(t.name), start: str(t.start), end: str(t.end),
         owner: str(t.owner), done: t.done === true, note: str(t.note),
         ...(isDate(str(t.actualStart)) ? { actualStart: str(t.actualStart) } : {}),
         ...(isDate(str(t.actualEnd)) ? { actualEnd: str(t.actualEnd) } : {}),
+        ...(str(t.code) ? { code: str(t.code) } : {}),
+        ...(str(t.detail) ? { detail: str(t.detail) } : {}),
         ...(str(t.parentId) ? { parentId: str(t.parentId) } : {}),
       }))),
       rows: list(e.rows).filter((r) => r && typeof r === "object").map((r) => ({

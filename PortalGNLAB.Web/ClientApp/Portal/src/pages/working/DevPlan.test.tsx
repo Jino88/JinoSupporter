@@ -1,7 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { addDays } from "./dates";
-import DevPlan, { EventEdit, Gantt } from "./DevPlan";
+import DevPlan, { EventEdit, Gantt, TaskEdit, TidyNames } from "./DevPlan";
+import { tidyRows } from "./planNames";
+import { DEFAULT_VOCAB } from "./planVocab";
 import type { PlanEvent } from "./plan";
 
 const event = (f: Partial<PlanEvent>): PlanEvent =>
@@ -74,5 +76,49 @@ describe("actual days in the detailed schedule", () => {
     expect(table).toMatch(/<th class="fit">Start<\/th><th class="fit">End<\/th><th class="fit">Actual start<\/th><th class="fit">Actual end<\/th>/);
     expect(table).toContain('<td>2026-11-12</td><td class="wk-dp-real">2026-11-11</td><td class="wk-dp-real late">2026-11-14</td>');
     expect(table).toContain('<td>2026-11-20</td><td class="wk-dp-real">—</td><td class="wk-dp-real">—</td>');
+  });
+});
+
+describe("standard names in the Dev Plan", () => {
+  const sel = (html: string, label: string) => new RegExp(`<select[^>]*aria-label="${label}"[^>]*>[^]*?</select>`).exec(html)?.[0] ?? "";
+  it("picks an event's stage from the list with its quantity, or a name of its own as Other", () => {
+    const er = renderToStaticMarkup(<EventEdit value={event({ name: "ER (1.2k)", stage: "ER", qty: "1.2k" })} onKeep={() => {}} onCancel={() => {}} />);
+    expect(sel(er, "Stage")).toMatch(/<option value="ER" selected="">ER<\/option>[^]*<option value="">Other \(own name\)<\/option>/);
+    expect(er).toMatch(/aria-label="Quantity" value="1.2k"/);
+    expect(er).not.toContain('aria-label="Event name"');
+    const own = renderToStaticMarkup(<EventEdit value={event({ name: "DR build" })} onKeep={() => {}} onCancel={() => {}} />);
+    expect(sel(own, "Stage")).toContain('<option value="" selected="">Other (own name)</option>');
+    expect(own).toMatch(/aria-label="Event name" value="DR build"/);
+  });
+
+  it("picks a task from the standard tasks with a detail, or a name of its own", () => {
+    const t = { id: "t", name: "Sample shipment · 300ea", start: "", end: "", owner: "", done: false, note: "", code: "sample-send", detail: "300ea" };
+    const std = renderToStaticMarkup(<table><tbody><TaskEdit value={t} vocab={DEFAULT_VOCAB} onKeep={() => {}} onCancel={() => {}} /></tbody></table>);
+    expect(sel(std, "Standard task")).toContain('<option value="sample-send" selected="">Sample shipment</option>');
+    expect(std).toMatch(/aria-label="Detail" value="300ea"/);
+    const own = renderToStaticMarkup(<table><tbody><TaskEdit value={{ ...t, name: "Report", code: undefined, detail: undefined }} vocab={DEFAULT_VOCAB} onKeep={() => {}} onCancel={() => {}} /></tbody></table>);
+    expect(sel(own, "Standard task")).toContain('<option value="" selected="">Other (own name)</option>');
+    expect(own).toMatch(/aria-label="Task name" value="Report"/);
+  });
+
+  const plan = { events: [{ ...event({ id: "e1", name: "DV1 (1.2k)", stage: "DV1", qty: "1.2k" }), tasks: [
+    { id: "a", name: "Line ready", start: "", end: "", owner: "", done: false, note: "", code: "line-ready" },
+    { id: "b", name: "GN 자재 도착", start: "", end: "", owner: "", done: false, note: "" },
+  ] }] };
+  const html = renderToStaticMarkup(<DevPlan onDirty={() => {}} onSaved={() => {}} onError={() => {}} vocab={DEFAULT_VOCAB}
+    model={{ name: "M", revision: 1, updatedAt: "", updatedBy: "", info: { devPlan: plan } }} />);
+
+  it("offers the standard tasks of the event's stage it does not have yet", () => {
+    expect(html).toMatch(/title="Material in, Sample making, Sample shipment">\+ Standard tasks of DV1 \(3\)<\/button>/);
+  });
+
+  it("counts the names of their own and opens their tidy-up", () => {
+    expect(html).toMatch(/>Standard names <span class="cnt">1<\/span><\/button>/);
+    const rows = tidyRows(plan as never, DEFAULT_VOCAB);
+    const t = renderToStaticMarkup(<TidyNames rows={rows} vocab={DEFAULT_VOCAB} onRows={() => {}} onApply={() => {}} onCancel={() => {}} />);
+    expect(t).toContain("<td class=\"l\">GN 자재 도착</td>");
+    expect(sel(t, "Standard name of GN 자재 도착")).toContain('<option value="material-in" selected="">Material in</option>');
+    expect(t).toMatch(/aria-label="Detail of GN 자재 도착" value="GN"/);
+    expect(t).toContain(">Apply 1</button>");
   });
 });

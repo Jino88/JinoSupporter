@@ -11,6 +11,8 @@ import {
   markDone, planDays, planProblem, progress, readDevPlan, readQty, removeTask, rowTotal, setQty, taskSpan,
 } from "./plan";
 import type { DevPlan as Plan, PlanEvent, PlanTask, QtyGroup, QtyRow } from "./plan";
+import { applyTidy, freeEvent, freeTask, itemOf, templateTasks, tidyRows, withCode, withStage, type TidyRow } from "./planNames";
+import { DEFAULT_VOCAB, planVocabApi, type PlanVocab } from "./planVocab";
 import type { WorkingModel } from "./types";
 
 interface Row { id: string; label: string; sub: string; span: [string, string] | null; color: string; done?: boolean; child?: boolean }
@@ -219,14 +221,23 @@ function QtyRows(props: {
   );
 }
 
-/** Name, dates and color of an event being added or changed. */
-export function EventEdit(props: { value: PlanEvent; onKeep: (e: PlanEvent) => void; onCancel: () => void }) {
+/** Stage (a standard one with its quantity, or a name of its own), dates and color of an event being added or changed. */
+export function EventEdit(props: { value: PlanEvent; onKeep: (e: PlanEvent) => void; onCancel: () => void; vocab?: PlanVocab }) {
+  const vocab = props.vocab ?? DEFAULT_VOCAB;
   const [e, setE] = useState(props.value);
-  const problem = planProblem(e);
+  const stage = itemOf(e.stage, vocab.stages);
+  const kept = stage ? withStage(e, stage, (e.qty ?? "").trim()) : { ...e, name: e.name.trim() };
+  const problem = planProblem(kept);
   return (
     <div className="wk-dp-form">
-      <input className="inp sm" value={e.name} placeholder="Event, e.g. DR build" autoFocus aria-label="Event name"
-        onChange={(x) => setE({ ...e, name: x.target.value })} />
+      <select className="inp sm" value={stage?.code ?? ""} aria-label="Stage"
+        onChange={(x) => { const s = itemOf(x.target.value, vocab.stages); setE(s ? withStage(e, s, e.qty ?? "") : freeEvent(e)); }}>
+        {vocab.stages.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
+        <option value="">Other (own name)</option>
+      </select>
+      {stage
+        ? <input className="inp sm wk-dp-qty" value={e.qty ?? ""} placeholder="Qty, e.g. 1.2k" aria-label="Quantity" onChange={(x) => setE(withStage(e, stage, x.target.value))} />
+        : <input className="inp sm" value={e.name} placeholder="Event, e.g. DR build" autoFocus aria-label="Event name" onChange={(x) => setE({ ...e, name: x.target.value })} />}
       <DateBox className="sm" value={e.start} label="Start" onChange={(start) => setE({ ...e, start })} />
       <span className="muted">–</span>
       <DateBox className="sm" value={e.end} label="End" onChange={(end) => setE({ ...e, end })} />
@@ -237,17 +248,19 @@ export function EventEdit(props: { value: PlanEvent; onKeep: (e: PlanEvent) => v
         ))}
       </span>
       <span className="muted small">No dates = from its tasks.</span>
-      {problem && e.name.trim() && <span className="pi-dirty small">{problem}</span>}
+      {problem && kept.name && <span className="pi-dirty small">{problem}</span>}
       <button className="btn sm" onClick={props.onCancel}>Cancel</button>
-      <button className="btn sm primary" disabled={!!problem} onClick={() => props.onKeep({ ...e, name: e.name.trim() })}>Keep</button>
+      <button className="btn sm primary" disabled={!!problem} onClick={() => props.onKeep(kept)}>Keep</button>
     </div>
   );
 }
 
 /** One task of the detailed schedule being added or changed. */
-function TaskEdit(props: { value: PlanTask; onKeep: (t: PlanTask) => void; onCancel: () => void }) {
+export function TaskEdit(props: { value: PlanTask; onKeep: (t: PlanTask) => void; onCancel: () => void; vocab: PlanVocab }) {
   const [t, setT] = useState(props.value);
-  const problem = planProblem(t) || (t.actualStart && t.actualEnd && t.actualEnd < t.actualStart ? "Actual end is before actual start." : "");
+  const std = itemOf(t.code, props.vocab.tasks);
+  const kept = std ? withCode(t, std, (t.detail ?? "").trim()) : { ...t, name: t.name.trim() };
+  const problem = planProblem(kept) || (t.actualStart && t.actualEnd && t.actualEnd < t.actualStart ? "Actual end is before actual start." : "");
   const set = (f: Partial<PlanTask>) => setT({ ...t, ...f });
   return (
     <tr className={"wk-dp-edit" + (t.parentId ? " sub" : "")}>
@@ -255,7 +268,16 @@ function TaskEdit(props: { value: PlanTask; onKeep: (t: PlanTask) => void; onCan
       <td><input type="checkbox" checked={t.done} aria-label="Done" onChange={(x) => setT(markDone(t, x.target.checked, localToday()))} /></td>
       <td className="l">
         {t.parentId && <span className="wk-dp-sub">↳</span>}
-        <input className="inp sm" value={t.name} placeholder={t.parentId ? "Sub-task" : "Task"} autoFocus onChange={(x) => set({ name: x.target.value })} />
+        <span className="wk-dp-name">
+          <select className="inp sm" value={std?.code ?? ""} aria-label="Standard task"
+            onChange={(x) => { const i = itemOf(x.target.value, props.vocab.tasks); setT(i ? withCode(t, i, t.detail ?? "") : freeTask(t)); }}>
+            <option value="">Other (own name)</option>
+            {props.vocab.tasks.map((i) => <option key={i.code} value={i.code}>{i.name}</option>)}
+          </select>
+          {std
+            ? <input className="inp sm" value={t.detail ?? ""} placeholder="Detail, e.g. 300ea Bringup" aria-label="Detail" onChange={(x) => setT(withCode(t, std, x.target.value))} />
+            : <input className="inp sm" value={t.name} placeholder={t.parentId ? "Sub-task" : "Task"} autoFocus aria-label="Task name" onChange={(x) => set({ name: x.target.value })} />}
+        </span>
       </td>
       <td><DateBox className="sm" value={t.start} label="Start" onChange={(start) => set({ start })} /></td>
       <td><DateBox className="sm" value={t.end} label="End" onChange={(end) => set({ end })} /></td>
@@ -264,9 +286,9 @@ function TaskEdit(props: { value: PlanTask; onKeep: (t: PlanTask) => void; onCan
       <td><input className="inp sm wk-dp-owner" value={t.owner} placeholder="Owner" onChange={(x) => set({ owner: x.target.value })} /></td>
       <td className="l"><input className="inp sm" value={t.note} placeholder="Note" onChange={(x) => set({ note: x.target.value })} /></td>
       <td className="act">
-        {problem && t.name.trim() && <div className="pi-dirty small">{problem}</div>}
+        {problem && kept.name && <div className="pi-dirty small">{problem}</div>}
         <button className="btn sm" onClick={props.onCancel}>Cancel</button>{" "}
-        <button className="btn sm primary" disabled={!!problem} onClick={() => props.onKeep({ ...t, name: t.name.trim(), owner: t.owner.trim(), note: t.note.trim() })}>Keep</button>
+        <button className="btn sm primary" disabled={!!problem} onClick={() => props.onKeep({ ...kept, owner: t.owner.trim(), note: t.note.trim() })}>Keep</button>
       </td>
     </tr>
   );
@@ -281,9 +303,14 @@ export default function DevPlan(props: {
   onDirty: (dirty: boolean) => void;
   onSaved: (model: WorkingModel) => void;
   onError: (e: unknown) => void;
+  /** Standard names (tests); else asked of the server. */
+  vocab?: PlanVocab;
 }) {
   const tr = useTr();
   const { model } = props;
+  const [vocab, setVocab] = useState<PlanVocab>(props.vocab ?? DEFAULT_VOCAB);
+  useEffect(() => { if (!props.vocab) planVocabApi.get().then(setVocab, () => { /* the default list stays */ }); }, []);
+  const [tidy, setTidy] = useState<TidyRow[] | null>(null);
   const savedPlan = useMemo(() => readDevPlan(model.info.devPlan), [model]);
   const [plan, setPlan] = useState<Plan>(savedPlan);
   const [selected, setSelected] = useState(savedPlan.events[0]?.id ?? "");
@@ -342,6 +369,8 @@ export default function DevPlan(props: {
     } catch (e) { props.onError(e); } finally { setBusy(false); }
   };
 
+  const freeNames = events.reduce((n, e) => n + (e.stage ? 0 : 1) + e.tasks.filter((t) => !t.code).length, 0);
+  const standard = ev ? templateTasks(ev, vocab) : [];
   const rows: Row[] = events.map((e) => {
     const [done, all] = progress(e);
     return { id: e.id, label: e.name, sub: dates(eventSpan(e)) + (all ? ` · ${done}/${all}` : ""), span: eventSpan(e), color: e.color };
@@ -370,12 +399,17 @@ export default function DevPlan(props: {
         <div className="pi-legend">
           {dirty && <span className="pi-dirty">Unsaved</span>}
           {msg && <span className="pi-msg">{msg}</span>}
+          {freeNames > 0 && (
+            <button className="btn sm" disabled={!!tidy} title="Give the events and tasks written in their own words the standard names"
+              onClick={() => setTidy(tidyRows(plan, vocab))}>{tr("Standard names")} <span className="cnt">{freeNames}</span></button>
+          )}
           <button className="btn sm" disabled={!!editEvent} onClick={() => setEditEvent(blankEvent(events.length))}>+ Event</button>
           <button className="btn sm primary" disabled={!dirty || busy} onClick={save}>{busy ? "Saving…" : "Save"}</button>
         </div>
       </div>
       <div className="pi-sec-b">
-        {editEvent && <EventEdit key={editEvent.id} value={editEvent} onKeep={keepEvent} onCancel={() => setEditEvent(null)} />}
+        {tidy && <TidyNames rows={tidy} vocab={vocab} onRows={setTidy} onApply={() => { setPlan(applyTidy(plan, tidy, vocab)); setTidy(null); }} onCancel={() => setTidy(null)} />}
+        {editEvent && <EventEdit key={editEvent.id} value={editEvent} onKeep={keepEvent} onCancel={() => setEditEvent(null)} vocab={vocab} />}
         {!events.length && !editEvent && <div className="muted">No event yet. Add the events of the development (ER, DR, DV, PV builds, tooling, …) with + Event.</div>}
         {events.length > 0 && (days.length
           ? <Gantt rows={rows} days={days} selected={selected} onPick={pick} expand={qty || undefined} />
@@ -407,7 +441,7 @@ export default function DevPlan(props: {
               </thead>
               <tbody>
                 {shownTasks.map((t) => (editTask?.id === t.id
-                  ? <TaskEdit key={t.id} value={editTask} onKeep={keepTask} onCancel={() => setEditTask(null)} />
+                  ? <TaskEdit key={t.id} value={editTask} onKeep={keepTask} onCancel={() => setEditTask(null)} vocab={vocab} />
                   : (
                     <tr key={t.id} className={(t.parentId ? "sub" : "") + (t.done ? " done" : "") + (dropOn === t.id && dragTask ? (ev.tasks.findIndex((y) => y.id === dragTask) < ev.tasks.indexOf(t) ? " drop-below" : " drop-above") : "")}
                       draggable={!editTask} onDragStart={(x) => { x.dataTransfer.effectAllowed = "move"; x.dataTransfer.setData("text/plain", t.name); setDragTask(t.id); }}
@@ -435,14 +469,69 @@ export default function DevPlan(props: {
                       </td>
                     </tr>
                   )))}
-                {newTask && !editTask!.parentId && <TaskEdit key={editTask!.id} value={editTask!} onKeep={keepTask} onCancel={() => setEditTask(null)} />}
+                {newTask && !editTask!.parentId && <TaskEdit key={editTask!.id} value={editTask!} onKeep={keepTask} onCancel={() => setEditTask(null)} vocab={vocab} />}
                 {!ev.tasks.length && !newTask && <tr><td colSpan={10} className="wk-it-empty">No detailed schedule yet.</td></tr>}
               </tbody>
             </table>
-            {!editTask && <button className="btn sm wk-dp-add" onClick={() => setEditTask(blankTask())}>+ Task</button>}
+            {!editTask && (
+              <div className="wk-dp-adds">
+                <button className="btn sm wk-dp-add" onClick={() => setEditTask(blankTask())}>+ Task</button>
+                {standard.length > 0 && (
+                  <button className="btn sm wk-dp-add" title={standard.map((t) => t.name).join(", ")} onClick={() => setTasks([...ev.tasks, ...standard])}>
+                    + {tr("Standard tasks of")} {itemOf(ev.stage, vocab.stages)?.name} ({standard.length})
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
     </section>
+  );
+}
+
+/**
+ * The events and tasks written in their own words, each with the standard name it looks like (chosen or changed here) and
+ * its quantity or detail; applying renames the ones given a standard name and leaves the others as they are.
+ */
+export function TidyNames(props: { rows: TidyRow[]; vocab: PlanVocab; onRows: (rows: TidyRow[]) => void; onApply: () => void; onCancel: () => void }) {
+  const tr = useTr();
+  const set = (key: string, f: Partial<TidyRow>) => props.onRows(props.rows.map((r) => (r.key === key ? { ...r, ...f } : r)));
+  const chosen = props.rows.filter((r) => r.code).length;
+  return (
+    <div className="wk-dp-tidy">
+      <div className="wk-dp-tidy-h">
+        <b>{tr("Standard names")}</b>
+        <span className="muted small">{tr("Each name written in its own words, with the standard name it looks like. Change what is wrong; the rest of the name stays as the detail.")}</span>
+      </div>
+      <table className="wk-it">
+        <thead><tr><th className="fit"></th><th className="l">{tr("Written")}</th><th className="l">{tr("Standard name")}</th><th className="l">{tr("Quantity / detail")}</th></tr></thead>
+        <tbody>
+          {props.rows.map((r) => {
+            const items = r.kind === "event" ? props.vocab.stages : props.vocab.tasks;
+            return (
+              <tr key={r.key} className={r.code ? "" : "muted"}>
+                <td className="muted small">{r.kind === "event" ? tr("Event") : tr("Task")}</td>
+                <td className="l">{r.from}</td>
+                <td className="l">
+                  <select className="inp sm" value={r.code} aria-label={`Standard name of ${r.from}`} onChange={(x) => set(r.key, { code: x.target.value })}>
+                    <option value="">{tr("Keep as written")}</option>
+                    {items.map((i) => <option key={i.code} value={i.code}>{i.name}</option>)}
+                  </select>
+                </td>
+                <td className="l">
+                  <input className="inp sm" value={r.detail} disabled={!r.code} aria-label={`Detail of ${r.from}`} onChange={(x) => set(r.key, { detail: x.target.value })} />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <div className="wk-dp-tidy-f">
+        <button className="btn sm" onClick={props.onCancel}>Cancel</button>
+        <button className="btn sm primary" disabled={!chosen} onClick={props.onApply}>{tr("Apply")} {chosen}</button>
+        <span className="muted small">{tr("Not saved until Save.")}</span>
+      </div>
+    </div>
   );
 }
