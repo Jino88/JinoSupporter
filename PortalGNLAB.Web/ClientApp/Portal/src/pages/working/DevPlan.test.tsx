@@ -60,3 +60,19 @@ describe("sub-tasks in the detailed schedule", () => {
       .toEqual(["SETUP 11-30 – 12-02", "Line A child 11-30 – 12-01", "Line B child 12-02", "GN parts 11-27"]);
   });
 });
+
+describe("actual days in the detailed schedule", () => {
+  const html = renderToStaticMarkup(<DevPlan onDirty={() => {}} onSaved={() => {}} onError={() => {}} model={{
+    name: "M", revision: 1, updatedAt: "", updatedBy: "", info: { devPlan: { events: [{ ...event({ name: "LPR" }), tasks: [
+      { id: "a", name: "Jig ready", start: "2026-11-10", end: "2026-11-12", owner: "", done: true, note: "", actualStart: "2026-11-11", actualEnd: "2026-11-14" },
+      { id: "b", name: "Report", start: "2026-11-19", end: "2026-11-20", owner: "", done: false, note: "" },
+    ] }] } },
+  }} />);
+  const table = html.slice(html.indexOf("wk-dp-tasks"));
+
+  it("has Actual start and Actual end beside the planned days, an end after the plan in red", () => {
+    expect(table).toMatch(/<th class="fit">Start<\/th><th class="fit">End<\/th><th class="fit">Actual start<\/th><th class="fit">Actual end<\/th>/);
+    expect(table).toContain('<td>2026-11-12</td><td class="wk-dp-real">2026-11-11</td><td class="wk-dp-real late">2026-11-14</td>');
+    expect(table).toContain('<td>2026-11-20</td><td class="wk-dp-real">—</td><td class="wk-dp-real">—</td>');
+  });
+});

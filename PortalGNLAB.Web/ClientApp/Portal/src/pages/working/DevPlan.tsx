@@ -8,7 +8,7 @@ import { bmesApi } from "./bmes";
 import type { BomRow } from "./bmes";
 import {
   COLORS, QTY_GROUPS, addBomRows, addSubTask, blankEvent, blankRow, blankTask, calendarDays, eventSpan, groupSpan, inSpan, bomRowNames, monthRuns, moveInGroup, moveTask,
-  planDays, planProblem, progress, readDevPlan, readQty, removeTask, rowTotal, setQty, taskSpan,
+  markDone, planDays, planProblem, progress, readDevPlan, readQty, removeTask, rowTotal, setQty, taskSpan,
 } from "./plan";
 import type { DevPlan as Plan, PlanEvent, PlanTask, QtyGroup, QtyRow } from "./plan";
 import type { WorkingModel } from "./types";
@@ -247,18 +247,20 @@ export function EventEdit(props: { value: PlanEvent; onKeep: (e: PlanEvent) => v
 /** One task of the detailed schedule being added or changed. */
 function TaskEdit(props: { value: PlanTask; onKeep: (t: PlanTask) => void; onCancel: () => void }) {
   const [t, setT] = useState(props.value);
-  const problem = planProblem(t);
+  const problem = planProblem(t) || (t.actualStart && t.actualEnd && t.actualEnd < t.actualStart ? "Actual end is before actual start." : "");
   const set = (f: Partial<PlanTask>) => setT({ ...t, ...f });
   return (
     <tr className={"wk-dp-edit" + (t.parentId ? " sub" : "")}>
       <td></td>
-      <td><input type="checkbox" checked={t.done} aria-label="Done" onChange={(x) => set({ done: x.target.checked })} /></td>
+      <td><input type="checkbox" checked={t.done} aria-label="Done" onChange={(x) => setT(markDone(t, x.target.checked, localToday()))} /></td>
       <td className="l">
         {t.parentId && <span className="wk-dp-sub">↳</span>}
         <input className="inp sm" value={t.name} placeholder={t.parentId ? "Sub-task" : "Task"} autoFocus onChange={(x) => set({ name: x.target.value })} />
       </td>
       <td><DateBox className="sm" value={t.start} label="Start" onChange={(start) => set({ start })} /></td>
       <td><DateBox className="sm" value={t.end} label="End" onChange={(end) => set({ end })} /></td>
+      <td><DateBox className="sm" value={t.actualStart ?? ""} label="Actual start" onChange={(actualStart) => set({ actualStart })} /></td>
+      <td><DateBox className="sm" value={t.actualEnd ?? ""} label="Actual end" onChange={(actualEnd) => set({ actualEnd })} /></td>
       <td><input className="inp sm wk-dp-owner" value={t.owner} placeholder="Owner" onChange={(x) => set({ owner: x.target.value })} /></td>
       <td className="l"><input className="inp sm" value={t.note} placeholder="Note" onChange={(x) => set({ note: x.target.value })} /></td>
       <td className="act">
@@ -401,7 +403,7 @@ export default function DevPlan(props: {
             )}
             <table className="wk-it wk-dp-tasks">
               <thead>
-                <tr><th className="fit"></th>{(["Done", "Task", "Start", "End", "Owner", "Note"] as const).map((h) => <th key={h} className={h === "Task" || h === "Note" ? "l" : "fit"}>{tr(h)}</th>)}<th className="fit"></th></tr>
+                <tr><th className="fit"></th>{(["Done", "Task", "Start", "End", "Actual start", "Actual end", "Owner", "Note"] as const).map((h) => <th key={h} className={h === "Task" || h === "Note" ? "l" : "fit"}>{tr(h)}</th>)}<th className="fit"></th></tr>
               </thead>
               <tbody>
                 {shownTasks.map((t) => (editTask?.id === t.id
@@ -418,10 +420,12 @@ export default function DevPlan(props: {
                       onDrop={(x) => { x.preventDefault(); if (dragTask) setTasks(moveTask(ev.tasks, dragTask, t.id)); endDrag(); }}
                       onDragEnd={endDrag}>
                       <td className="wk-dp-grip" title="Drag to move">⠿</td>
-                      <td><input type="checkbox" checked={t.done} aria-label={`${t.name} done`} onChange={(x) => setTasks(ev.tasks.map((y) => (y.id === t.id ? { ...y, done: x.target.checked } : y)))} /></td>
+                      <td><input type="checkbox" checked={t.done} aria-label={`${t.name} done`} onChange={(x) => setTasks(ev.tasks.map((y) => (y.id === t.id ? markDone(y, x.target.checked, localToday()) : y)))} /></td>
                       <td className="l">{t.parentId && <span className="wk-dp-sub">↳</span>}<b>{tr(t.name)}</b></td>
                       <td>{t.start || "—"}</td>
                       <td>{t.end || "—"}</td>
+                      <td className="wk-dp-real">{t.actualStart || "—"}</td>
+                      <td className={"wk-dp-real" + (t.actualEnd && t.end && t.actualEnd > t.end ? " late" : "")}>{t.actualEnd || "—"}</td>
                       <td>{t.owner || "—"}</td>
                       <td className="l muted">{tr(t.note)}</td>
                       <td className="act">
@@ -432,7 +436,7 @@ export default function DevPlan(props: {
                     </tr>
                   )))}
                 {newTask && !editTask!.parentId && <TaskEdit key={editTask!.id} value={editTask!} onKeep={keepTask} onCancel={() => setEditTask(null)} />}
-                {!ev.tasks.length && !newTask && <tr><td colSpan={8} className="wk-it-empty">No detailed schedule yet.</td></tr>}
+                {!ev.tasks.length && !newTask && <tr><td colSpan={10} className="wk-it-empty">No detailed schedule yet.</td></tr>}
               </tbody>
             </table>
             {!editTask && <button className="btn sm wk-dp-add" onClick={() => setEditTask(blankTask())}>+ Task</button>}

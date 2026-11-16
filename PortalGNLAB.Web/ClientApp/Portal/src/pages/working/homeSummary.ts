@@ -2,7 +2,7 @@
 // (the Setup Plan of each model).
 import { addDays } from "./dates";
 import { isLate, isLogLate, isOpenIssue, issuesOfStage, issueTree, notesInOrder, type GroupNode, type IssueStage } from "./logic";
-import { eventSpan, groupSpan, progress, readDevPlan } from "./plan";
+import { actualSpan, eventSpan, groupSpan, progress, readDevPlan } from "./plan";
 import { setupEvents, type SetupRow } from "./setup";
 import { phaseName, type Entry, type EntryLog, type ModelInfo, type WorkingModel } from "./types";
 
@@ -45,7 +45,19 @@ export interface TaskBrief {
   owner: string;
   /** A sub-task, shown under its task. */
   sub?: boolean;
+  /** The days it really took (actual start to actual end, or to today while still going); absent before it starts. */
+  actual?: Actual;
 }
+
+/** What really happened against the plan: the days, ended (or still going) after the planned end, not ended yet. */
+export interface Actual {
+  span: [string, string];
+  over: boolean;
+  going: boolean;
+}
+
+const actualOf = (span: [string, string] | null, plan: [string, string] | null, going: boolean): Actual | undefined =>
+  span ? { span, over: !!plan && span[1] > plan[1], going } : undefined;
 
 export interface EventBrief {
   id: string;
@@ -59,6 +71,8 @@ export interface EventBrief {
   state: EventState;
   /** Every task of the event, in the order of the plan. */
   tasks: TaskBrief[];
+  /** From the first actual start of its tasks to the last actual end (today while one is still going). */
+  actual?: Actual;
 }
 
 export interface PlanBrief {
@@ -87,10 +101,23 @@ export function planBrief(name: string, path: string[], info: ModelInfo, today: 
     const [done, total] = progress(ev);
     const tasks = ev.tasks.map((t): TaskBrief => {
       const s = groupSpan(ev.tasks, t);
-      return { id: t.id, name: t.name || "(no name)", span: s, done: t.done, late: !t.done && !!s && s[1] < today, owner: t.owner, ...(t.parentId ? { sub: true } : {}) };
+      const kids = ev.tasks.filter((c) => c.parentId === t.id);
+      const going = [t, ...kids].some((x) => !!x.actualStart && !x.actualEnd && !x.done);
+      const actual = actualOf(actualSpan(ev.tasks, t, today), s, going);
+      return {
+        id: t.id, name: t.name || "(no name)", span: s, done: t.done, late: !t.done && !!s && s[1] < today, owner: t.owner,
+        ...(t.parentId ? { sub: true } : {}), ...(actual ? { actual } : {}),
+      };
     });
     const lateTasks = tasks.filter((t) => t.late).length;
-    return { id: ev.id, name: ev.name || "(no name)", color: ev.color, span, done, total, lateTasks, state: eventState(span, done, total, today), tasks };
+    const acts = tasks.filter((t) => !t.sub && t.actual).map((t) => t.actual!);
+    const actual = acts.length
+      ? actualOf([acts.map((a) => a.span[0]).sort()[0], acts.map((a) => a.span[1]).sort().at(-1)!], span, acts.some((a) => a.going))
+      : undefined;
+    return {
+      id: ev.id, name: ev.name || "(no name)", color: ev.color, span, done, total, lateTasks, state: eventState(span, done, total, today), tasks,
+      ...(actual ? { actual } : {}),
+    };
   });
   const upcoming = events.filter((e) => e.state === "upcoming").sort((a, b) => a.span![0].localeCompare(b.span![0]));
   return {
@@ -136,7 +163,8 @@ export function mpPlans(loads: ModelLoad[], today: string): PlanBrief[] {
  * Output: first and last day and the number of days, or null without any dated event.
  */
 export function timelineRange(plans: PlanBrief[], today: string, pad = 3): { from: string; to: string; days: number } | null {
-  const spans = plans.flatMap((p) => p.events.flatMap((e) => [e.span, ...e.tasks.map((t) => t.span)])).filter((s): s is [string, string] => !!s);
+  const spans = plans.flatMap((p) => p.events.flatMap((e) => [e.span, e.actual?.span, ...e.tasks.flatMap((t) => [t.span, t.actual?.span])]))
+    .filter((s): s is [string, string] => !!s);
   if (!spans.length) return null;
   const from = addDays([today, ...spans.map((s) => s[0])].sort()[0], -pad);
   const to = addDays([today, ...spans.map((s) => s[1])].sort().at(-1)!, pad);

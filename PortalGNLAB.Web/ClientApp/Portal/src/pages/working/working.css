@@ -396,6 +396,8 @@ table.wk-dp-tasks .inp.sm.wk-dp-owner { width: 90px; }
 /* date box (DateBox.tsx): typed as yyMMdd */
 .wk-datebox { width: 96px; font-variant-numeric: tabular-nums; }
 .wk-datebox.sm, table.wk-dp-tasks .wk-datebox.sm { width: 80px; }
+table.wk-dp-tasks td.wk-dp-real { color: #15803d; white-space: nowrap; }
+table.wk-dp-tasks td.wk-dp-real.late { color: #b91c1c; font-weight: 600; }
 table.wk-dp-tasks td.wk-dp-grip { width: 14px; padding-right: 0; color: var(--faint); cursor: grab; user-select: none; }
 table.wk-dp-tasks tr[draggable="true"]:hover td.wk-dp-grip { color: var(--muted); }
 table.wk-dp-tasks tr.drop-above > td { box-shadow: inset 0 2px 0 var(--accent); }
@@ -491,6 +493,13 @@ table.wk-gantt .wk-qty-in { padding: 4px 3px; font-size: 11px; }
 .wk-hm-bar { height: 20px; border-radius: 6px; box-shadow: 0 1px 2px rgba(15, 23, 42, .12); }
 .wk-hm-tbar { height: 10px; border-radius: 999px; }
 .wk-hm-tbar.late { border: 1.5px solid #ef4444 !important; }
+/* what really happened: a thin line under the planned bar, green when it ended on plan, red when after it */
+.wk-hm-abar { position: absolute; bottom: 1px; height: 4px; min-width: 4px; border-radius: 999px; background: #16a34a; z-index: 1; }
+.wk-hm-row.ev .wk-hm-abar { bottom: 0; height: 5px; }
+.wk-hm-abar.over { background: #dc2626; }
+.wk-hm-abar.going { background: repeating-linear-gradient(90deg, #16a34a 0 6px, #86efac 6px 9px); }
+.wk-hm-act { color: #15803d; }
+.wk-hm-act.over { color: #b91c1c; }
 .wk-hm-bar.late { box-shadow: 0 0 0 2px #fecaca; }
 .wk-hm-bar.done { opacity: .6; }
 .wk-hm-fill { position: absolute; left: 0; top: 0; bottom: 0; opacity: .9; }

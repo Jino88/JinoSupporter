@@ -150,4 +150,25 @@ describe("Working Home", () => {
     expect(html).toContain("↳ QM stock shared</span></td><td class=\"l detail\">Order qty to discuss</td>");
     expect(html).toContain("↳ Old note</span></td><td class=\"l detail\">second line</td>");
   });
+
+  it("draws the actual days under the planned ones: green on plan, red after the planned end, still going up to today", () => {
+    const task = (id: string, name: string, start: string, end: string, f: Record<string, unknown> = {}) => ({ id, name, start, end, owner: "", done: false, note: "", ...f });
+    const html = renderToStaticMarkup(<Home models={[]} today="2026-11-16" onOpen={() => {}} initial={[
+      load("MSM-G778B", { phase: "PV", devPlan: { events: [{ ...event("LPR", "2026-11-10", "2026-11-20"), tasks: [
+        task("a", "Jig ready", "2026-11-10", "2026-11-12", { done: true, actualStart: "2026-11-10", actualEnd: "2026-11-12" }),
+        task("b", "Material in", "2026-11-11", "2026-11-13", { done: true, actualStart: "2026-11-12", actualEnd: "2026-11-15" }),
+        task("c", "Assy", "2026-11-14", "2026-11-18", { actualStart: "2026-11-14" }),
+        task("d", "Report", "2026-11-19", "2026-11-20"),
+      ] }] } }),
+    ]} />);
+    expect(html).toMatch(/class="wk-hm-abar"[^>]*title="Jig ready: 11\/10 – 11\/12 · done · Act. 11\/10 – 11\/12"/);
+    expect(html).toMatch(/class="wk-hm-abar over"[^>]*title="Material in[^"]*Act. 11\/12 – 11\/15"/);
+    expect(html).toMatch(/class="wk-hm-abar going"[^>]*title="Assy[^"]*Act. 11\/14 –"/);
+    expect(html).toContain('11/11 – 11/13 · <span class="wk-hm-act over">Act. 11/12 – 11/15</span>');
+    expect(html).toContain('11/10 – 11/12 · <span class="wk-hm-act">Act. 11/10 – 11/12</span>');
+    // no actual days, no line
+    expect(html.match(/class="wk-hm-abar/g)).toHaveLength(4); // 3 tasks + the event
+    // the event: from the first actual start of its tasks, still going while one is
+    expect(html).toContain('2026/11/10 – 11/20 · <span class="wk-hm-act">Act. 11/10 –</span>');
+  });
 });

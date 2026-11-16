@@ -11,6 +11,9 @@ export interface PlanTask {
   owner: string;
   done: boolean;
   note: string;
+  /** yyyy-MM-dd the task really started and ended; absent or "" when not known yet. */
+  actualStart?: string;
+  actualEnd?: string;
   /** Id of the task it is a sub-task of (one level only); absent for a task of the event itself. */
   parentId?: string;
 }
@@ -180,6 +183,27 @@ export function groupSpan(tasks: PlanTask[], t: PlanTask): [string, string] | nu
   return spans.length ? [spans.map((x) => x[0]).sort()[0], spans.map((x) => x[1]).sort().at(-1)!] : null;
 }
 
+/**
+ * The days a task really took: its actual start to its actual end; started and not ended yet = up to today (still going);
+ * only an end = that day. A task with sub-tasks and no dates of its own: from the first of theirs to the last.
+ */
+export function actualSpan(tasks: PlanTask[], t: PlanTask, today: string): [string, string] | null {
+  const own = (x: PlanTask): [string, string] | null => {
+    const s = x.actualStart && isDate(x.actualStart) ? x.actualStart : "", e = x.actualEnd && isDate(x.actualEnd) ? x.actualEnd : "";
+    if (!s && !e) return null;
+    const from = s || e, to = e || (today > from ? today : from);
+    return to < from ? [to, from] : [from, to];
+  };
+  const mine = own(t);
+  if (mine || t.parentId) return mine;
+  const spans = tasks.filter((c) => c.parentId === t.id).map(own).filter((x): x is [string, string] => !!x);
+  return spans.length ? [spans.map((x) => x[0]).sort()[0], spans.map((x) => x[1]).sort().at(-1)!] : null;
+}
+
+/** Ticking a task done gives it today as its actual end when it has none. */
+export const markDone = (t: PlanTask, done: boolean, today: string): PlanTask =>
+  (!done || t.actualEnd ? { ...t, done } : { ...t, done, actualEnd: today });
+
 /** Tasks done out of all, for the event row. */
 export const progress = (ev: PlanEvent) => [ev.tasks.filter((t) => t.done).length, ev.tasks.length] as const;
 
@@ -255,7 +279,10 @@ export function readDevPlan(v: unknown): DevPlan {
       bomFrom: str(e.bomFrom),
       tasks: taskTree(list(e.tasks).filter((t) => t && typeof t === "object").map((t) => ({
         id: str(t.id) || newId(), name: str(t.name), start: str(t.start), end: str(t.end),
-        owner: str(t.owner), done: t.done === true, note: str(t.note), ...(str(t.parentId) ? { parentId: str(t.parentId) } : {}),
+        owner: str(t.owner), done: t.done === true, note: str(t.note),
+        ...(isDate(str(t.actualStart)) ? { actualStart: str(t.actualStart) } : {}),
+        ...(isDate(str(t.actualEnd)) ? { actualEnd: str(t.actualEnd) } : {}),
+        ...(str(t.parentId) ? { parentId: str(t.parentId) } : {}),
       }))),
       rows: list(e.rows).filter((r) => r && typeof r === "object").map((r) => ({
         id: str(r.id) || newId(),
