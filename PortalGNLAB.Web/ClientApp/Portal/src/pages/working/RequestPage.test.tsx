@@ -78,4 +78,13 @@ describe("Request page", () => {
     // the only version: nothing to offer
     expect(html).not.toContain("drawing no of row 2");
   });
+
+  it("prints the drawing no and the whole note as text, not the boxes (the note wraps instead of being cut)", () => {
+    const note = "Process: 1–5, 7–9, 17–23; design transfer 8, 12";
+    const rows = { ...saved, items: [{ ...saved.items[0], drawingNo: "BJJ2605-MO-05-A00-02", note }] };
+    const html = renderToStaticMarkup(<RequestPage today="2026-11-16" onError={() => {}} initial={[rows]} openId="r1" />);
+    expect(html).toContain('<input class="rq-in rq-noprint" aria-label="Drawing no 1" value="BJJ2605-MO-05-A00-02"/><span class="rq-print">BJJ2605-MO-05-A00-02</span>');
+    expect(html).toContain(`<input class="rq-in rq-note rq-noprint" title="${note}" aria-label="Note 1" value="${note}"/>`);
+    expect(html).toContain(`<span class="rq-print rq-print-wrap">${note}</span>`);
+  });
 });
