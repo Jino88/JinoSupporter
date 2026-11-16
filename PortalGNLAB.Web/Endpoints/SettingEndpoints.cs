@@ -14,6 +14,8 @@ public static class SettingEndpoints
 {
     public sealed record CodexSave(string ApiKey, string TranslateModel, string TranslateEffort, string ReportModel, string ReportEffort);
 
+    public sealed record JigDrawingDbSave(string? Path);
+
     public sealed record AiProvidersSave(bool CodexCliEnabled, bool CodexApiEnabled);
 
     public sealed record QrDbSave(
@@ -110,7 +112,7 @@ public static class SettingEndpoints
         });
 
         api.MapGet("", (ClaimsPrincipal user, AppPathsService paths, NgRateSettingsService ngRate, WebRepository repo,
-            HistoryCacheJobService history, AiProviderSettingsService ai, QrModelCodeService qrCodes) =>
+            HistoryCacheJobService history, AiProviderSettingsService ai, QrModelCodeService qrCodes, JigDrawingDbService jigDb) =>
         {
             NgRateSettingsSnapshot snap = ngRate.GetSnapshot();
             bool admin = IsAdmin(user);
@@ -125,7 +127,23 @@ public static class SettingEndpoints
                 aiProviders = admin ? ai.GetSnapshot() : null,
                 qrDb = admin ? QrDbView(paths.Current) : null,
                 qrModels = admin ? QrModelsView(qrCodes) : null,
+                jigDrawingDb = admin ? jigDb.View() : null,
             });
+        });
+
+        api.MapPost("/jig-drawing-db", (JigDrawingDbSave body, ClaimsPrincipal user, JigDrawingDbService jigDb) =>
+        {
+            if (!IsAdmin(user)) return AdminOnly();
+            jigDb.SavePath(body.Path);
+            return Results.Ok(new { jigDrawingDb = jigDb.View(), message = "JIG/MC drawing DB path saved." });
+        });
+
+        api.MapPost("/jig-drawing-db/test", (JigDrawingDbSave body, ClaimsPrincipal user, JigDrawingDbService jigDb) =>
+        {
+            if (!IsAdmin(user)) return AdminOnly();
+            jigDb.SavePath(body.Path);
+            var (ok, message) = jigDb.Test();
+            return Results.Ok(new { jigDrawingDb = jigDb.View(), message, error = !ok });
         });
 
         // ── Admin cards ───────────────────────────────────────────────────────────────
