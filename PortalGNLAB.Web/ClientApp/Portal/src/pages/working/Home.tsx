@@ -3,10 +3,10 @@ import { workingApi } from "./api";
 import { useTr } from "./i18n";
 import { setupApi } from "./setup";
 import {
-  barAt, devPlans, hasOpen, labelSide, modelRow, mpIssueRows, mpPlans, shortDate, slashDate, timelineMonths, timelineRange,
-  type EventBrief, type ModelLoad, type MpIssueRow, type PlanBrief, type TaskBrief,
+  barAt, devPlans, hasOpen, issueRows, labelSide, modelRow, mpPlans, shortDate, slashDate, timelineMonths, timelineRange,
+  type EventBrief, type IssueRow, type ModelLoad, type PlanBrief, type TaskBrief,
 } from "./homeSummary";
-import { noteParts } from "./logic";
+import { noteParts, type IssueStage } from "./logic";
 
 const STATE_LABEL: Record<EventBrief["state"], string> = { done: "Done", now: "Now", upcoming: "Next", late: "Late", undated: "No date" };
 /** Models loaded at the same time, so a long tree does not send every request at once. */
@@ -41,9 +41,9 @@ async function loadAll(models: { name: string; path: string[] }[], onCount: (n: 
 export default function Home(props: {
   models: { name: string; path: string[] }[] | null;
   today: string;
-  onOpen: (model: string, tab: "info" | "plan" | "setup" | "issue") => void;
-  /** Home itself, or the MP issues of every model. */
-  view?: "home" | "mpissues";
+  onOpen: (model: string, tab: "info" | "plan" | "setup" | "devissue" | "issue") => void;
+  /** Home itself, or the Dev issues or MP issues of every model. */
+  view?: "home" | "devissues" | "mpissues";
   /** Already loaded (tests and the page reopening); loaded here when left out. */
   initial?: ModelLoad[];
 }) {
@@ -64,7 +64,9 @@ export default function Home(props: {
   if (!loads) {
     return <div className="card pi-empty">{props.models ? `Loading models… ${count} / ${props.models.length}` : "Loading…"}</div>;
   }
-  if (props.view === "mpissues") return <MpIssues loads={loads} today={props.today} onOpen={props.onOpen} />;
+  if (props.view === "devissues" || props.view === "mpissues") {
+    return <StageIssues key={props.view} stage={props.view === "devissues" ? "dev" : "mp"} loads={loads} today={props.today} onOpen={props.onOpen} />;
+  }
   const { plans, noPlan } = devPlans(loads, props.today);
   const mp = mpPlans(loads, props.today);
   const rows = loads.map((l) => modelRow(l, props.today));
@@ -145,19 +147,26 @@ export default function Home(props: {
   );
 }
 
+/** Per stage: the heading, the model tab a model opens on, and the text when there is nothing to show. */
+const STAGE_LIST: Record<IssueStage, { title: string; tab: "devissue" | "issue"; tabName: string; none: string; noneOpen: string }> = {
+  dev: { title: "Dev Issues", tab: "devissue", tabName: "Dev Issue", none: "No model has a Dev issue yet.", noneOpen: "No open Dev issue." },
+  mp: { title: "MP Issues", tab: "issue", tabName: "Issues", none: "No model has an MP issue yet.", noneOpen: "No open MP issue." },
+};
+
 /**
- * The Mass Production issues of every model in one list, the open ones first (or all of them); under each issue its notes
- * not done and its open sub-issues (all of them with All), each with its notes not done.
+ * The Development or Mass Production issues of every model in one list, the open ones first (or all of them); under each
+ * issue its notes not done and its open sub-issues (all of them with All), each with its notes not done.
  */
-function MpIssues(props: { loads: ModelLoad[]; today: string; onOpen: (model: string, tab: "issue") => void }) {
+function StageIssues(props: { stage: IssueStage; loads: ModelLoad[]; today: string; onOpen: (model: string, tab: "devissue" | "issue") => void }) {
   const tr = useTr();
   const [all, setAll] = useState(false);
-  const rows = mpIssueRows(props.loads, props.today);
+  const list = STAGE_LIST[props.stage];
+  const rows = issueRows(props.loads, props.today, props.stage);
   const issues = rows.flatMap((r) => [r, ...r.subs]);
   const open = issues.filter((r) => r.open);
   const shown = all ? rows : rows.filter(hasOpen);
   const late = open.filter((r) => r.late).length;
-  const notes = (r: MpIssueRow, sub: boolean) => r.openNotes.map(({ no, log, late: isLateNow }) => (
+  const notes = (r: IssueRow, sub: boolean) => r.openNotes.map(({ no, log, late: isLateNow }) => (
     <tr key={log.id} className={"note" + (sub ? " deep" : "")}>
       <td></td>
       <td className="num">{no}</td>
@@ -171,12 +180,12 @@ function MpIssues(props: { loads: ModelLoad[]; today: string; onOpen: (model: st
       <td colSpan={2}></td>
     </tr>
   ));
-  const issueRow = (r: MpIssueRow, sub: boolean) => {
+  const issueRow = (r: IssueRow, sub: boolean) => {
     const { model, issue: e, open: isOpen, late: isLateNow } = r;
     return (
       <Fragment key={model + e.id}>
         <tr className={[sub && "sub", !isOpen && "done"].filter(Boolean).join(" ") || undefined}>
-          <td>{!sub && <button className="wk-hm-link" onClick={() => props.onOpen(model, "issue")} title="Open the model's Issues">{model}</button>}</td>
+          <td>{!sub && <button className="wk-hm-link" onClick={() => props.onOpen(model, list.tab)} title={`Open the model's ${list.tabName}`}>{model}</button>}</td>
           <td className="num">{r.no}</td>
           <td>{tr(e.category)}</td>
           <td>{tr(e.process)}</td>
@@ -199,7 +208,7 @@ function MpIssues(props: { loads: ModelLoad[]; today: string; onOpen: (model: st
   return (
     <section className="card pi-sec">
       <div className="pi-sec-h">
-        <h2>{tr("MP Issues")}<span className="cnt">{open.length}</span></h2>
+        <h2>{tr(list.title)}<span className="cnt">{open.length}</span></h2>
         <div className="pi-legend">
           {late > 0 && <span className="wk-open">{late} {tr("late")}</span>}
           <button className={"wk-chip" + (all ? "" : " on")} onClick={() => setAll(false)}>{tr("Open")} {open.length}</button>
@@ -207,7 +216,7 @@ function MpIssues(props: { loads: ModelLoad[]; today: string; onOpen: (model: st
         </div>
       </div>
       <div className="pi-sec-b wk-hm-models">
-        {!shown.length ? <div className="muted small">{tr(all ? "No model has an MP issue yet." : "No open MP issue.")}</div> : (
+        {!shown.length ? <div className="muted small">{tr(all ? list.none : list.noneOpen)}</div> : (
           <table className="grid wk-hm-issues">
             <thead>
               <tr>

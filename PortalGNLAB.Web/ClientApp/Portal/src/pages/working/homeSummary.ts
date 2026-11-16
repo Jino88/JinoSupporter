@@ -1,7 +1,7 @@
 // Home of Working: a summary of every model, the development plans of the models in development first, then the MP plans
 // (the Setup Plan of each model).
 import { addDays } from "./dates";
-import { isLate, isLogLate, isOpenIssue, issuesOfStage, issueTree, notesInOrder, type GroupNode } from "./logic";
+import { isLate, isLogLate, isOpenIssue, issuesOfStage, issueTree, notesInOrder, type GroupNode, type IssueStage } from "./logic";
 import { eventSpan, groupSpan, progress, readDevPlan } from "./plan";
 import { setupEvents, type SetupRow } from "./setup";
 import { phaseName, type Entry, type EntryLog, type ModelInfo, type WorkingModel } from "./types";
@@ -219,8 +219,8 @@ export interface OpenNote {
   late: boolean;
 }
 
-/** An MP issue of a model for the MP Issues list, with its sub-issues (none for a sub-issue) and the notes not done. */
-export interface MpIssueRow {
+/** An issue of a model for the Dev Issues or MP Issues list, with its sub-issues (none for a sub-issue) and the notes not done. */
+export interface IssueRow {
   model: string;
   path: string[];
   /** No. as the Issues tab shows it: the number, or issue No.sub-issue No. for a sub-issue. */
@@ -228,30 +228,31 @@ export interface MpIssueRow {
   issue: Entry;
   open: boolean;
   late: boolean;
-  subs: MpIssueRow[];
+  subs: IssueRow[];
   openNotes: OpenNote[];
 }
 
 /** Whether an issue or one of its sub-issues is open (an issue stays in the open list while a sub-issue is open). */
-export const hasOpen = (r: MpIssueRow) => r.open || r.subs.some((s) => s.open);
+export const hasOpen = (r: IssueRow) => r.open || r.subs.some((s) => s.open);
 
 /**
- * The Mass Production issues of every model (raised in MP or on a Setup Plan row), each with its sub-issues and the notes
- * not done: issues with something open first, late ones first among them, then in the order of the models and by number.
+ * The issues of a stage of every model (Development, or Mass Production: raised in MP or on a Setup Plan row), each with its
+ * sub-issues and the notes not done: issues with something open first, late ones first among them, then in the order of
+ * the models and by number.
  */
-export function mpIssueRows(loads: ModelLoad[], today: string): MpIssueRow[] {
-  const row = (l: ModelLoad, issue: Entry, no: string, subs: MpIssueRow[]): MpIssueRow => ({
+export function issueRows(loads: ModelLoad[], today: string, stage: IssueStage): IssueRow[] {
+  const row = (l: ModelLoad, issue: Entry, no: string, subs: IssueRow[]): IssueRow => ({
     model: l.name, path: l.path, no, issue, open: isOpenIssue(issue), late: isLate(issue, today), subs,
     openNotes: notesInOrder(issue.logs ?? []).flatMap((log, i) => (log.doneDate ? [] : [{ no: `${no}-${i + 1}`, log, late: isLogLate(log, today) }])),
   });
   const rows = loads.flatMap((l, at) => {
-    const { top, subs } = issueTree(issuesOfStage(l.entries, "mp"));
+    const { top, subs } = issueTree(issuesOfStage(l.entries, stage));
     return top.map((issue) => {
       const no = String(issue.seq || "—");
       return { ...row(l, issue, no, (subs.get(issue.id) ?? []).map((c, i) => row(l, c, `${no}.${i + 1}`, []))), at };
     });
   });
-  const late = (r: MpIssueRow) => r.late || r.subs.some((s) => s.late);
+  const late = (r: IssueRow) => r.late || r.subs.some((s) => s.late);
   rows.sort((a, b) => Number(!hasOpen(a)) - Number(!hasOpen(b)) || Number(!late(a)) - Number(!late(b)) || a.at - b.at || a.issue.seq - b.issue.seq);
   return rows.map(({ at: _at, ...r }) => r);
 }

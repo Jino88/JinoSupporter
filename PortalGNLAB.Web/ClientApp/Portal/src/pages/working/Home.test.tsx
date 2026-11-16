@@ -100,6 +100,21 @@ describe("Working Home", () => {
     expect(html).toContain(">Open 1</button><button class=\"wk-chip\">All 2</button>");
   });
 
+  it("shows the Dev issues of every model as their own page, opening a model on its Dev Issue tab", () => {
+    const issue = (id: string, seq: number, title: string, x: object = {}) => ({ id, seq, title, kind: "issue", status: "Open", doneDate: "", due: "", phase: "DV",
+      body: "", owner: "Kim", date: "2026-11-02", category: "Quality", process: "SPK Assy", cause: "", finalResult: "", logs: [], ...x });
+    const html = renderToStaticMarkup(<Home models={[]} today="2026-11-11" view="devissues" onOpen={() => {}} initial={[
+      { ...load("MSM-DV", { phase: "DV" }), entries: [issue("1", 1, "Speaker buzz"), issue("2", 2, "MP one", { phase: "MP" }), issue("3", 3, "Setup one", { setupRowId: "r1" })] as never },
+    ]} />);
+    expect(html).toContain(">Dev Issues<");
+    expect(html).not.toContain(">MP Issues<");
+    expect(html).toContain("<b>Speaker buzz</b>");
+    expect(html).not.toContain("MP one");
+    expect(html).not.toContain("Setup one");
+    expect(html).toContain("title=\"Open the model&#x27;s Dev Issue\">MSM-DV</button>");
+    expect(html).toContain(">Open 1</button><button class=\"wk-chip\">All 1</button>");
+  });
+
   it("shows under an MP issue its notes not done and its open sub-issues", () => {
     const note = (id: string, text: string, x: object = {}) => ({ id, text, date: "2026-11-03", createdAt: "2026-11-03", owner: "Lee", due: "", doneDate: "", createdBy: "a", ...x });
     const issue = (id: string, seq: number, title: string, x: object = {}) => ({ id, seq, title, kind: "issue", status: "Open", doneDate: "", due: "", phase: "MP",

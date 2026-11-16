@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { barAt, devPlans, hasOpen, labelSide, modelRow, mpIssueRows, mpPlans, planBrief, timelineMonths, timelineRange, treeModels, type ModelLoad } from "./homeSummary";
+import { barAt, devPlans, hasOpen, issueRows, labelSide, modelRow, mpPlans, planBrief, timelineMonths, timelineRange, treeModels, type ModelLoad } from "./homeSummary";
 import type { SetupRow } from "./setup";
 import type { Entry, ModelInfo } from "./types";
 
@@ -111,28 +111,41 @@ describe("Home summary", () => {
 
   it("lists the MP issues of every model: open first, late first among them, then model order and number", () => {
     const issue = (x: Partial<Entry>): Partial<Entry> => ({ kind: "issue", status: "Open", doneDate: "", due: "", phase: "MP", seq: 1, ...x });
-    const rows = mpIssueRows([
+    const rows = issueRows([
       load("A", { phase: "MP" }, [
         issue({ id: "a1", seq: 1, doneDate: "2026-11-05", status: "Closed" }), issue({ id: "a2", seq: 2 }), issue({ id: "a3", seq: 3, phase: "DV" }),
       ]),
       load("B", { phase: "PV" }, [issue({ id: "b1", seq: 1, phase: "PV", setupRowId: "r1", due: "2026-11-01" }), { id: "b2", kind: "dev" }]),
-    ], today);
+    ], today, "mp");
     expect(rows.map((r) => [r.model, r.issue.id, r.open, r.late])).toEqual([
       ["B", "b1", true, true], ["A", "a2", true, false], ["A", "a1", false, false],
+    ]);
+  });
+
+  it("lists the Dev issues of every model: issues out of MP and off the Setup Plan, with their sub-issues", () => {
+    const issue = (x: Partial<Entry>): Partial<Entry> => ({ kind: "issue", status: "Open", doneDate: "", due: "", phase: "DV", seq: 1, ...x });
+    const rows = issueRows([
+      load("A", { phase: "DV" }, [
+        issue({ id: "a1", seq: 1 }), issue({ id: "a2", seq: 2, phase: "MP" }), issue({ id: "a3", seq: 3, parentId: "a1", phase: "MP" }),
+      ]),
+      load("B", { phase: "PV" }, [issue({ id: "b1", seq: 1, phase: "PV", due: "2026-11-01" }), issue({ id: "b2", seq: 2, setupRowId: "r1" })]),
+    ], today, "dev");
+    expect(rows.map((r) => [r.model, r.issue.id, r.late, r.subs.map((s) => s.issue.id)])).toEqual([
+      ["B", "b1", true, []], ["A", "a1", false, ["a3"]],
     ]);
   });
 
   it("puts the sub-issues and the notes not done under their MP issue, numbered as the Issues tab does", () => {
     const note = (id: string, date: string, x: object = {}) => ({ id, date, createdAt: date, text: id, owner: "", due: "", doneDate: "", ...x });
     const issue = (x: Partial<Entry>): Partial<Entry> => ({ kind: "issue", status: "Open", doneDate: "", due: "", phase: "MP", seq: 1, logs: [], ...x });
-    const rows = mpIssueRows([
+    const rows = issueRows([
       load("A", { phase: "MP" }, [
         issue({ id: "p", seq: 1, doneDate: "2026-11-05", logs: [note("n2", "2026-11-03"), note("n1", "2026-11-01", { doneDate: "2026-11-02" })] as never }),
         issue({ id: "k2", seq: 3, parentId: "p", logs: [note("m1", "2026-11-04", { due: "2026-11-10" })] as never }),
         issue({ id: "k1", seq: 2, parentId: "p", doneDate: "2026-11-06" }),
         issue({ id: "q", seq: 4, doneDate: "2026-11-06" }),
       ]),
-    ], today);
+    ], today, "mp");
     // a closed issue with an open sub-issue comes before an issue with nothing open
     expect(rows.map((r) => [r.issue.id, r.no, hasOpen(r)])).toEqual([["p", "1", true], ["q", "4", false]]);
     const [p] = rows;

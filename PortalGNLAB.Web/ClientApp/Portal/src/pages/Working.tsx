@@ -26,7 +26,7 @@ import { phaseName, type Entry, type GroupsResponse, type WorkingModel } from ".
 import "./working/working.css";
 
 /** The pages of the top menu: Home and the MP issues of every model. */
-type HomeView = "home" | "mpissues";
+type HomeView = "home" | "devissues" | "mpissues";
 type Tab = "info" | "bom" | "plan" | "devissue" | "dev" | "review" | "all" | "setup" | "issue" | "docs" | "process" | "jigmc" | "ai";
 /** Categories of a model page and the tabs under each (AI has none); what the model is made of is all under Model Info. */
 export const CATEGORIES: { label: string; tabs: [Tab, string][] }[] = [
@@ -79,8 +79,9 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
   const [filter, setFilter] = useState("");
   const [closed, setClosed] = useState<Set<string>>(new Set());
   // Home opens when asked for or when no model is in the address
-  const [home, setHome] = useState(query.get("view") === "home" || query.get("view") === "mpissues" || !query.get("model"));
-  const [homeView, setHomeView] = useState<HomeView>(query.get("view") === "mpissues" ? "mpissues" : "home");
+  const view = query.get("view");
+  const [home, setHome] = useState(view === "home" || view === "devissues" || view === "mpissues" || !query.get("model"));
+  const [homeView, setHomeView] = useState<HomeView>(view === "devissues" || view === "mpissues" ? view : "home");
   const [selected, setSelected] = useState<string | null>(home ? null : query.get("model"));
   const [tab, setTab] = useState<Tab>(tabOfQuery(query.get("tab")));
   const [model, setModel] = useState<WorkingModel | null>(null);
@@ -205,7 +206,7 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
       <header className="page-head">
         <h1>Working</h1>
         <nav className="wk-menu" aria-label="Working">
-          {([["home", "Home"], ["mpissues", "MP Issues"]] as [HomeView, string][]).map(([v, label]) => (
+          {([["home", "Home"], ["devissues", "Dev Issues"], ["mpissues", "MP Issues"]] as [HomeView, string][]).map(([v, label]) => (
             <button key={v} className={home && homeView === v ? "on" : ""} aria-current={home && homeView === v ? "page" : undefined}
               onClick={() => goHome(v)}>{tr(label)}</button>
           ))}
