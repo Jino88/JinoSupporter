@@ -1,4 +1,4 @@
-import { appPath, buildRail, groupActive, groupMenu, ICON_PATHS, isActive, isChromeHidden, railTile, WORKING_GRAPH, WORKING_PERSONAL, WORKING_REQUEST } from "./menu";
+import { appPath, buildRail, groupActive, groupMenu, ICON_PATHS, isActive, isChromeHidden, railTile, WORKING_GRAPH, WORKING_PERSONAL, WORKING_REQUEST, WORKING_REQUEST_TOTAL } from "./menu";
 import type { MenuItem } from "./api";
 
 const item = (id: string, group: string, href: string, react = false): MenuItem => ({ id, label: id, group, href, react });
@@ -60,7 +60,7 @@ describe("railTile", () => {
   it("has an SVG path for every icon used", () => {
     for (const id of ["ng-rate", "bmes-f-cost", "report", "bmes-worker-status", "bmes-test5", "bmes-make-model-group",
       "bmes-routing-table", "bmes-reason-table", "qr-summary", "qr-bako-data", "qr-airleak-data", "qr-gauss-data",
-      "bmes-daily-report", "working", WORKING_PERSONAL, WORKING_GRAPH, WORKING_REQUEST, "translate", "review-report", "bmes-setting", "admin-users", "admin-ai-usages",
+      "bmes-daily-report", "working", WORKING_PERSONAL, WORKING_GRAPH, WORKING_REQUEST, WORKING_REQUEST_TOTAL, "translate", "review-report", "bmes-setting", "admin-users", "admin-ai-usages",
       "test-excel-converter", "admin-db-query"]) {
       expect(ICON_PATHS[railTile(id)!.icon]).toBeTruthy();
     }
@@ -100,6 +100,7 @@ describe("buildRail", () => {
     expect(g.sections[0].tiles.map((t) => [t.label, t.item.id, t.item.href, t.item.react])).toEqual([
       ["Common", "working", "/app/working", true], ["Personal", WORKING_PERSONAL, "/app/working/personal", true],
       ["Graph", WORKING_GRAPH, "/app/working/graph-maker", true], ["Request", WORKING_REQUEST, "/app/working/request", true],
+      ["Req. Total", WORKING_REQUEST_TOTAL, "/app/working/request-total", true],
     ]);
     expect(groupActive(g, "/app/working/personal")).toBe(true);
     expect(groupActive(g, "/app/working/request")).toBe(true);
