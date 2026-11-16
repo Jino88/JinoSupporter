@@ -148,8 +148,9 @@ export default function RequestPage(props: {
 
   return (
     <div className="rq-page">
-      {/* the paper size of the form when it is printed (only while this page is open) */}
-      <style>{"@page { size: A4 landscape; margin: 8mm; }"}</style>
+      {/* the margins of the form when it is printed (only while this page is open); the paper and its direction are the
+          print dialog's, a portrait page getting the form smaller (request.css) */}
+      <style>{"@page { margin: 8mm; }"}</style>
       <aside className="card rq-list rq-noprint">
         <div className="rq-list-h">
           <h2>{tr("Requests")}</h2>
