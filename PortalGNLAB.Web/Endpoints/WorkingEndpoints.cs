@@ -251,6 +251,7 @@ public static class WorkingEndpoints
 
         // Process List (공정편성 LIST) and Work Instructions (작업지도서) of a model
         api.MapWorkingProcessList();
+        api.MapWorkingRequests();
         api.MapWorkingInstructions();
 
         return app;
