@@ -22,7 +22,7 @@ public static class WorkingRequestEndpoints
             cts.CancelAfter(TimeSpan.FromMinutes(3));
             var result = await ai.FillAsync(body, cts.Token);
             return Results.Ok(new { request = result.Request, note = result.Note, model = result.Model });
-        }).WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(40L * 1024 * 1024)); // up to 6 pasted pictures as base64
+        }).WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(170L * 1024 * 1024)); // up to 6 pictures of 20 MB as base64
         // Drawing No lookup in the JIG/MC drawing DB (read-only); never throws, a missing DB comes back as ok=false
         api.MapPost("/requests/drawings/check", (DrawingCheckBody body, JigDrawingDbService db) =>
         {

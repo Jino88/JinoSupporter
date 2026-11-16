@@ -65,4 +65,17 @@ describe("Request page", () => {
     expect(html).toContain('aria-label="Find the drawing no of row 3"');
     expect(html).not.toContain('aria-label="Find the drawing no of row 1"');
   });
+
+  it("offers the other versions (-00, -01 …) of a drawing number the DB has", () => {
+    const v = (no: string, latest = 0) => ({ drawingNo: no, name: "LASER MARKING ARRAY JIG", model: "MSM-G778B", category: "JIG", latest });
+    const rows = { ...saved, items: [{ ...saved.items[0], drawingNo: "BJJ2605-MO-05-A00-02" }, { ...saved.items[1], drawingNo: "BJJ2605-MO-07-A00-00" }] };
+    const html = renderToStaticMarkup(<RequestPage today="2026-11-16" onError={() => {}} initial={[rows]} openId="r1" checked={[
+      { drawingNo: "BJJ2605-MO-05-A00-02", status: "found", match: v("BJJ2605-MO-05-A00-02"),
+        versions: [v("BJJ2605-MO-05-A00-00"), v("BJJ2605-MO-05-A00-02"), v("BJJ2605-MO-05-A00-05", 1)] },
+      { drawingNo: "BJJ2605-MO-07-A00-00", status: "found", match: v("BJJ2605-MO-07-A00-00"), versions: [v("BJJ2605-MO-07-A00-00", 1)] },
+    ]} />);
+    expect(html).toContain('aria-label="Other versions of the drawing no of row 1" title="Other versions in the drawing DB: BJJ2605-MO-05-A00-00, BJJ2605-MO-05-A00-05"');
+    // the only version: nothing to offer
+    expect(html).not.toContain("drawing no of row 2");
+  });
 });

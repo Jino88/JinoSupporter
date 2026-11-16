@@ -260,9 +260,10 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
         return new PlaceAiResult(plan.Info, plan.Events, plan.Entries, plan.Note, $"{model} · {Effort}");
     }
 
-    /// <summary>Checks the request pictures (count, type, base64, size) and returns them ready to send.</summary>
-    public static List<PlaceAiPicture> ReadImages(List<PlaceAiImage>? images)
+    /// <summary>Checks the request pictures (count, type, base64, size up to <paramref name="maxBytes"/>, 5 MB when left out) and returns them ready to send.</summary>
+    public static List<PlaceAiPicture> ReadImages(List<PlaceAiImage>? images, int maxBytes = MaxImageBytes)
     {
+        string tooLarge = $"A picture is larger than {maxBytes / (1024 * 1024)} MB.";
         var result = new List<PlaceAiPicture>();
         if (images is null || images.Count == 0) return result;
         if (images.Count > MaxImages) throw new ArgumentException("Up to 6 pictures can be sent.");
@@ -273,11 +274,11 @@ public sealed class WorkingPlaceAiService(CodexApiService codex)
             if (!ImageTypes.Contains(type)) throw new ArgumentException("Only PNG, JPEG, GIF or WebP pictures can be read.");
             string b64 = m.Groups[2].Value.Trim();
             // the base64 length gives the decoded size, so a huge string is rejected before it is decoded
-            if (b64.Length / 4 * 3 > MaxImageBytes + 3) throw new ArgumentException("A picture is larger than 5 MB.");
+            if (b64.Length / 4 * 3 > maxBytes + 3) throw new ArgumentException(tooLarge);
             byte[] bytes = new byte[b64.Length / 4 * 3 + 3];
             if (!Convert.TryFromBase64String(b64, bytes, out int written) || written == 0)
                 throw new ArgumentException("A picture could not be read. Paste it again.");
-            if (written > MaxImageBytes) throw new ArgumentException("A picture is larger than 5 MB.");
+            if (written > maxBytes) throw new ArgumentException(tooLarge);
             string name = (img!.Name ?? "").Trim();
             result.Add(new PlaceAiPicture(name.Length > 0 ? name : $"picture-{result.Count + 1}", type, b64));
         }

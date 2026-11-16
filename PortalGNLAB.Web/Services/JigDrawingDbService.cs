@@ -5,7 +5,8 @@ namespace PortalGNLAB.Web.Services;
 
 public sealed record JigDrawingMatch(string DrawingNo, string Name, string Model, string Category, int Latest);
 
-public sealed record JigDrawingCheckItem(string DrawingNo, string Status, JigDrawingMatch? Match);
+/// <summary>One drawing number checked; <paramref name="Versions"/> = every revision of its base in the DB (-00, -01 …), oldest first.</summary>
+public sealed record JigDrawingCheckItem(string DrawingNo, string Status, JigDrawingMatch? Match, List<JigDrawingMatch> Versions);
 
 public sealed record JigDrawingCheckResult(bool Ok, string Error, string Path, List<JigDrawingCheckItem> Results);
 
@@ -134,18 +135,22 @@ public sealed class JigDrawingDbService
             foreach (string req in requested)
             {
                 string key = req.ToUpperInvariant();
-                if (key.Length == 0) { results.Add(new(req, "missing", null)); continue; }
-                if (exact.TryGetValue(key, out var hit)) { results.Add(new(req, "found", hit)); continue; }
-                if (byBase.TryGetValue(BaseOf(key), out var sibs) && sibs.Count > 0)
+                if (key.Length == 0) { results.Add(new(req, "missing", null, [])); continue; }
+                List<JigDrawingMatch> versions = byBase.TryGetValue(BaseOf(key), out var sibs)
+                    ? sibs.Select(s => s.M).DistinctBy(m => m.DrawingNo.ToUpperInvariant())
+                        .OrderBy(m => m.DrawingNo, StringComparer.OrdinalIgnoreCase).ToList()
+                    : [];
+                if (exact.TryGetValue(key, out var hit)) { results.Add(new(req, "found", hit, versions)); continue; }
+                if (sibs is { Count: > 0 })
                 {
                     JigDrawingMatch best = sibs.Select(s => s.M)
                         .OrderByDescending(m => m.Latest == 1)
                         .ThenByDescending(m => m.DrawingNo, StringComparer.OrdinalIgnoreCase)
                         .First();
-                    results.Add(new(req, "revision", best));
+                    results.Add(new(req, "revision", best, versions));
                     continue;
                 }
-                results.Add(new(req, "missing", null));
+                results.Add(new(req, "missing", null, []));
             }
             return new(true, "", file, results);
         }
@@ -190,9 +195,16 @@ public sealed class JigDrawingDbService
                     cmd.Parameters.AddWithValue("@t" + i, "%" + tokens[i].Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_") + "%");
                     likes.Add($"UPPER(name) LIKE @t{i} ESCAPE '\\'");
                 }
+                // a model given: only the drawings of that model
+                string ofModel = "";
+                if (wantModel.Length > 0)
+                {
+                    cmd.Parameters.AddWithValue("@m", wantModel);
+                    ofModel = " AND UPPER(TRIM(model)) = @m";
+                }
                 cmd.CommandText = $"""
                     SELECT drawing_no, base, name, model, category, assy, latest FROM drawings
-                    WHERE {string.Join(" OR ", likes)} LIMIT 20000;
+                    WHERE ({string.Join(" OR ", likes)}){ofModel} LIMIT 20000;
                     """;
                 using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
@@ -205,7 +217,6 @@ public sealed class JigDrawingDbService
                 var rowTokens = Tokens(x.Name).ToHashSet();
                 double score = (double)tokens.Count(rowTokens.Contains) / tokens.Count * 100;
                 if (rowTokens.Count > 0) score -= Math.Min(10, (rowTokens.Count - tokens.Count(rowTokens.Contains)) * 1.0); // extra words
-                if (wantModel.Length > 0 && string.Equals(x.Model.Trim(), wantModel, StringComparison.OrdinalIgnoreCase)) score += 20;
                 if (wantsJig && x.Cat == "JIG") score += 10;
                 if (x.Latest == 1) score += 5;
                 if (x.Assy == 1) score += 3;

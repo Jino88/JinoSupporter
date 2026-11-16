@@ -3,7 +3,7 @@ import DrawingPicker from "./DrawingPicker";
 import { aiPictures } from "./aiPlace";
 import { useTr } from "./i18n";
 import {
-  METHODS, REQUEST_KINDS, blankItem, blankRequest, checkOf, commonModel, dotDate, drawingApi, drawingKey, matchText, orderOf, readRequest,
+  MAX_REQUEST_PICTURE_BYTES, METHODS, REQUEST_KINDS, blankItem, blankRequest, checkOf, commonModel, dotDate, drawingApi, drawingKey, matchText, orderOf, otherVersions, readRequest,
   requestApi, requestFields, requestProblem, requestTitle, totals, uncheckedNos, withModel,
   type DrawingCheck, type RequestFields, type RequestItem, type WorkingRequest,
 } from "./request";
@@ -104,7 +104,7 @@ export default function RequestPage(props: {
 
   /** Pictures pasted or dropped are kept to send; a text paste goes on into the box. */
   const addPictures = (files: File[]) => {
-    const r = aiPictures(files, pictures.length);
+    const r = aiPictures(files, pictures.length, MAX_REQUEST_PICTURE_BYTES);
     if (r.problem) setProblem(r.problem);
     else if (r.files.length) { setProblem(""); setPictures((cur) => [...cur, ...r.files]); }
     return r.files.length > 0 || !!r.problem;
@@ -310,8 +310,12 @@ export default function RequestPage(props: {
                   </td>
                   <td colSpan={2} className={"rq-dwg" + dwgClass(checkOf(i.drawingNo, checks))} title={dwgTitle(checkOf(i.drawingNo, checks))}>
                     <input className="rq-in" value={i.drawingNo} aria-label={`Drawing no ${n + 1}`} onChange={(e) => changeItem(n, { drawingNo: e.target.value })} />
-                    {(!i.drawingNo.trim() || checkOf(i.drawingNo, checks)?.status === "missing") && i.name.trim() && (
+                    {(!i.drawingNo.trim() || checkOf(i.drawingNo, checks)?.status === "missing") && i.name.trim() ? (
                       <button className="rq-find rq-noprint" aria-label={`Find the drawing no of row ${n + 1}`} title="Pick a drawing no from the drawing DB"
+                        onClick={() => setPicking(n)}>&#128269;</button>
+                    ) : otherVersions(i.drawingNo, checkOf(i.drawingNo, checks)).length > 0 && (
+                      <button className="rq-find rq-noprint" aria-label={`Other versions of the drawing no of row ${n + 1}`}
+                        title={`Other versions in the drawing DB: ${otherVersions(i.drawingNo, checkOf(i.drawingNo, checks)).map((v) => v.drawingNo).join(", ")}`}
                         onClick={() => setPicking(n)}>&#128269;</button>
                     )}
                   </td>
@@ -329,9 +333,13 @@ export default function RequestPage(props: {
           <button className="btn sm rq-add rq-noprint" onClick={addItem}>+ {tr("Add row")}</button>
           {picking !== null && form.items[picking] && (
             <DrawingPicker item={form.items[picking]} model={form.items[picking].model || model}
+              versions={checkOf(form.items[picking].drawingNo, checks)?.versions}
               onPick={(m) => {
+                // a version picked keeps the versions of its base, so the others can still be found from it
+                const versions = checkOf(form.items[picking].drawingNo, checks)?.versions?.some((v) => drawingKey(v.drawingNo) === drawingKey(m.drawingNo))
+                  ? checkOf(form.items[picking].drawingNo, checks)?.versions : undefined;
                 changeItem(picking, { drawingNo: m.drawingNo });
-                setChecks((cur) => new Map(cur).set(drawingKey(m.drawingNo), { drawingNo: m.drawingNo, status: "found", match: m }));
+                setChecks((cur) => new Map(cur).set(drawingKey(m.drawingNo), { drawingNo: m.drawingNo, status: "found", match: m, versions }));
                 setPicking(null);
               }}
               onClose={() => setPicking(null)} />
