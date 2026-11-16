@@ -67,7 +67,10 @@
 .rq-dwg.rev { background: #fef3c7; }
 .rq-find { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 6px; cursor: pointer; font-size: 12px; padding: 1px 5px; }
 .rq-find:hover { background: #dbeafe; }
-.rq-dwg:has(.rq-find) .rq-in { padding-right: 32px; }
+/* room for the 🔍 on every row, so the numbers line up whether or not a row has one */
+.rq-dwg .rq-in { padding-right: 32px; }
+/* a note longer than its box starts at the same place on every row */
+.rq-note { text-align: left; }
 
 /* the drawing numbers suggested for a row */
 .rq-pick { width: min(860px, 94vw); max-height: 84vh; overflow: auto; padding: 14px 16px; }
@@ -115,6 +118,8 @@
   .rq-form { min-width: 0; }
   .rq-noprint { display: none !important; }
   .rq-print { display: inline; }
+  /* a long note wraps on paper instead of being cut */
+  .rq-print-wrap { display: block; padding: 3px 6px; line-height: 1.3; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }
   .rq-head th, .rq-total td, .rq-dwg.miss, .rq-dwg.rev { background: none; }
   .rq-dwg.miss .rq-in { color: inherit; font-weight: inherit; }
   .rq-in::placeholder { color: transparent; }

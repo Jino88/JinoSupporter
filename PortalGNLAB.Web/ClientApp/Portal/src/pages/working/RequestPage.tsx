@@ -309,7 +309,8 @@ export default function RequestPage(props: {
                     <span className="rq-print">{orderOf(i)}</span>
                   </td>
                   <td colSpan={2} className={"rq-dwg" + dwgClass(checkOf(i.drawingNo, checks))} title={dwgTitle(checkOf(i.drawingNo, checks))}>
-                    <input className="rq-in" value={i.drawingNo} aria-label={`Drawing no ${n + 1}`} onChange={(e) => changeItem(n, { drawingNo: e.target.value })} />
+                    <input className="rq-in rq-noprint" value={i.drawingNo} aria-label={`Drawing no ${n + 1}`} onChange={(e) => changeItem(n, { drawingNo: e.target.value })} />
+                    <span className="rq-print">{i.drawingNo}</span>
                     {(!i.drawingNo.trim() || checkOf(i.drawingNo, checks)?.status === "missing") && i.name.trim() ? (
                       <button className="rq-find rq-noprint" aria-label={`Find the drawing no of row ${n + 1}`} title="Pick a drawing no from the drawing DB"
                         onClick={() => setPicking(n)}>&#128269;</button>
@@ -320,7 +321,10 @@ export default function RequestPage(props: {
                     )}
                   </td>
                   <td><input className="rq-in" value={i.picture} aria-label={`Picture ${n + 1}`} onChange={(e) => changeItem(n, { picture: e.target.value })} /></td>
-                  <td colSpan={2}><input className="rq-in" value={i.note} aria-label={`Note ${n + 1}`} onChange={(e) => changeItem(n, { note: e.target.value })} /></td>
+                  <td colSpan={2}>
+                    <input className="rq-in rq-note rq-noprint" value={i.note} title={i.note} aria-label={`Note ${n + 1}`} onChange={(e) => changeItem(n, { note: e.target.value })} />
+                    <span className="rq-print rq-print-wrap">{i.note}</span>
+                  </td>
                 </tr>
               ))}
               {form.items.length > 1 && (
