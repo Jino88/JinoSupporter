@@ -4,6 +4,8 @@ import { getJson, toolPath, toolSend } from "../../toolsApi";
 
 export const REQUEST_KINDS = ["JIG/MC"] as const;
 export const METHODS = [["new", "New"], ["repair", "Repair"], ["scrap", "Scrap (Báo phế)"]] as const;
+/** A picture of the list sent to AI may be up to 20 MB (WorkingRequestAiService.MaxImageBytes); other AI inputs keep 5 MB. */
+export const MAX_REQUEST_PICTURE_BYTES = 20 * 1024 * 1024;
 export type Method = (typeof METHODS)[number][0];
 
 export interface RequestItem {
@@ -169,7 +171,8 @@ export const withModel = (items: RequestItem[], model: string, every = false): R
 /** found: the drawing is there; revision: only another revision of it (same base) is; missing: not there at all. */
 export type DrawingStatus = "found" | "revision" | "missing";
 export interface DrawingMatch { drawingNo: string; name: string; model: string; category: string; latest?: number }
-export interface DrawingCheck { drawingNo: string; status: DrawingStatus; match: DrawingMatch | null }
+/** <versions>: every revision of the number's base in the DB (-00, -01 …), oldest first. */
+export interface DrawingCheck { drawingNo: string; status: DrawingStatus; match: DrawingMatch | null; versions?: DrawingMatch[] }
 export interface DrawingSuggestion extends DrawingMatch { assy: number; score: number }
 
 /** One drawing number written another way (case, spaces) is the same. */
@@ -192,6 +195,10 @@ export const uncheckedNos = (items: RequestItem[], known: Map<string, DrawingChe
 
 /** The check of a row: its drawing number looked up in what the DB answered (undefined until it answered). */
 export const checkOf = (no: string, known: Map<string, DrawingCheck>) => (drawingKey(no) ? known.get(drawingKey(no)) : undefined);
+
+/** The revisions of a row's drawing number other than the one written (none until the DB answered). */
+export const otherVersions = (no: string, check: DrawingCheck | undefined): DrawingMatch[] =>
+  (check?.versions ?? []).filter((v) => drawingKey(v.drawingNo) !== drawingKey(no));
 
 /** A short line about the drawing the DB has for a row (name, model, category). */
 export const matchText = (m: DrawingMatch | null) => (m ? [m.drawingNo, m.name, m.model, m.category].filter(Boolean).join(" · ") : "");

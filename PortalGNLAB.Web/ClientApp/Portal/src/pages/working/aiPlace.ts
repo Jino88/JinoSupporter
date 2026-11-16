@@ -315,20 +315,20 @@ export function withNewParent(e: EntryFields, ids: string[]): EntryFields {
   return id ? { ...rest, parentId: id } : rest;
 }
 
-/** Pictures AI can read: PNG, JPEG, GIF or WebP, 5 MB or less each, 6 at most with the ones already there. */
+/** Pictures AI can read: PNG, JPEG, GIF or WebP, 5 MB or less each (<maxBytes>), 6 at most with the ones already there. */
 export const AI_PICTURE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 export const MAX_AI_PICTURES = 6;
 export const MAX_AI_PICTURE_BYTES = 5 * 1024 * 1024;
 
 /**
  * The pictures among pasted or dropped files (other files are ignored so a text paste still works), or a problem when
- * one cannot be sent. <have> = pictures already waiting.
+ * one cannot be sent. <have> = pictures already waiting; <maxBytes> = the largest picture (the Request AI takes 20 MB).
  */
-export function aiPictures<F extends { name: string; type: string; size: number }>(files: F[], have: number): { files: F[]; problem: string } {
+export function aiPictures<F extends { name: string; type: string; size: number }>(files: F[], have: number, maxBytes = MAX_AI_PICTURE_BYTES): { files: F[]; problem: string } {
   const pics = files.filter((f) => f.type.startsWith("image/"));
   for (const f of pics) {
     if (!AI_PICTURE_TYPES.includes(f.type)) return { files: [], problem: `${f.name || "This picture"} is not PNG, JPEG, GIF or WebP.` };
-    if (f.size > MAX_AI_PICTURE_BYTES) return { files: [], problem: `${f.name || "This picture"} is larger than 5 MB.` };
+    if (f.size > maxBytes) return { files: [], problem: `${f.name || "This picture"} is larger than ${maxBytes / (1024 * 1024)} MB.` };
   }
   if (have + pics.length > MAX_AI_PICTURES) return { files: [], problem: `Up to ${MAX_AI_PICTURES} pictures can be sent.` };
   return { files: pics, problem: "" };

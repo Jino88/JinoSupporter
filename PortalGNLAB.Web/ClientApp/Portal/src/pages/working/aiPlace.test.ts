@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { aiPictures, applyPlace, placeItems, placeRequest, readPlaceAnswer, withNewParent } from "./aiPlace";
 import { readDevPlan } from "./plan";
 import type { Entry, ModelInfo } from "./types";
+import { MAX_REQUEST_PICTURE_BYTES } from "./request";
 
 const info: ModelInfo = {
   customer: "Apple", phase: "Proto", owner: "Kim",
@@ -192,6 +193,13 @@ describe("AI placement answer", () => {
     expect(aiPictures([f("d.png", "image/png", 6 * 1024 * 1024)], 0).problem).toBe("d.png is larger than 5 MB.");
     expect(aiPictures([f("e.png", "image/png"), f("g.png", "image/png")], 5).problem).toBe("Up to 6 pictures can be sent.");
     expect(aiPictures([f("notes.txt", "text/plain")], 6)).toEqual({ files: [], problem: "" });
+  });
+
+  it("lets the Request AI take pictures up to 20 MB", () => {
+    const f = (name: string, size: number) => ({ name, type: "image/png", size });
+    expect(MAX_REQUEST_PICTURE_BYTES).toBe(20 * 1024 * 1024);
+    expect(aiPictures([f("list.png", 15 * 1024 * 1024)], 0, MAX_REQUEST_PICTURE_BYTES).problem).toBe("");
+    expect(aiPictures([f("list.png", 21 * 1024 * 1024)], 0, MAX_REQUEST_PICTURE_BYTES).problem).toBe("list.png is larger than 20 MB.");
   });
 
   it("puts quantities into the Material Plan and Making Plan of an event and takes out the tasks moved there", () => {

@@ -29,6 +29,8 @@ public sealed record RequestAiResult(WorkingRequestSave Request, string Note, st
 public sealed partial class WorkingRequestAiService(CodexApiService codex)
 {
     public const string Effort = "medium";
+    /// <summary>A picture of a JIG/MC list may be up to 20 MB (the other AI inputs keep 5 MB).</summary>
+    public const int MaxImageBytes = 20 * 1024 * 1024;
 
     private static readonly JsonSerializerOptions Json = new()
     {
@@ -40,7 +42,7 @@ public sealed partial class WorkingRequestAiService(CodexApiService codex)
     public async Task<RequestAiResult> FillAsync(RequestAiRequest body, CancellationToken ct = default)
     {
         string request = body.Text?.Trim() ?? "";
-        List<PlaceAiPicture> pictures = WorkingPlaceAiService.ReadImages(body.Images);
+        List<PlaceAiPicture> pictures = WorkingPlaceAiService.ReadImages(body.Images, MaxImageBytes);
         if (request.Length == 0 && pictures.Count == 0) throw new ArgumentException("Type or paste what to put in.");
         if (!codex.IsConfigured) throw new ArgumentException("Codex API is not configured. Set the API key in Setting.");
 

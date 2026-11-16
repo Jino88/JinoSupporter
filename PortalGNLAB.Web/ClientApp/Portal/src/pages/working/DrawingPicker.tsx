@@ -1,20 +1,24 @@
 import { useEffect, useState } from "react";
 import { useTr } from "./i18n";
-import { drawingApi, type DrawingMatch, type DrawingSuggestion, type RequestItem } from "./request";
+import { drawingApi, drawingKey, type DrawingMatch, type DrawingSuggestion, type RequestItem } from "./request";
 
 /**
- * The drawing numbers the JIG/MC drawing DB has for a row's JIG / equipment name (and its model), best first; one is picked
- * for the row. The name can be changed and searched again.
+ * The drawing numbers the JIG/MC drawing DB has for a row's JIG / equipment name (of its model only), best first; one is
+ * picked for the row. The name can be changed and searched again. The other versions of the row's drawing number come first.
  */
 export default function DrawingPicker(props: {
   item: RequestItem; model: string; onPick: (m: DrawingMatch) => void; onClose: () => void;
+  /** Every version of the row's drawing number (-00, -01 …) the DB has. */
+  versions?: DrawingMatch[];
   /** Already found (tests); else asked of the drawing DB. */
   initial?: DrawingSuggestion[];
 }) {
   const tr = useTr();
   const [name, setName] = useState(props.item.name);
   const [asked, setAsked] = useState(props.initial ? props.item.name : "");
-  const [list, setList] = useState<DrawingSuggestion[] | null>(props.initial ?? null);
+  // nothing to search with no name (the versions alone are shown)
+  const [list, setList] = useState<DrawingSuggestion[] | null>(props.initial ?? (props.item.name.trim() ? null : []));
+  const others = (props.versions ?? []).some((v) => drawingKey(v.drawingNo) !== drawingKey(props.item.drawingNo));
   const [problem, setProblem] = useState("");
 
   const search = (q: string) => {
@@ -44,6 +48,30 @@ export default function DrawingPicker(props: {
           <h2>{tr("Pick a drawing no")} · {props.item.no}. {props.item.name}</h2>
           <button className="btn sm" aria-label="Close" onClick={props.onClose}>×</button>
         </div>
+        {others && (
+          <>
+            <div className="small rq-pick-h">{tr("Versions of this drawing no in the DB")}</div>
+            <table className="rq-pick-t">
+              <thead><tr><th>Drawing no</th><th>Name</th><th>Model</th><th>Kind</th><th /></tr></thead>
+              <tbody>
+                {props.versions!.map((v) => {
+                  const now = drawingKey(v.drawingNo) === drawingKey(props.item.drawingNo);
+                  return (
+                    <tr key={v.drawingNo} className={now ? "rq-pick-now" : ""}>
+                      <td className="mono">{v.drawingNo}{v.latest === 1 && <span className="rq-tag none">latest</span>}</td>
+                      <td>{v.name}</td>
+                      <td>{v.model}</td>
+                      <td>{v.category}</td>
+                      <td>{now ? <span className="muted small">{tr("in the row")}</span>
+                        : <button className="btn sm primary" aria-label={`Pick ${v.drawingNo}`} onClick={() => props.onPick(v)}>{tr("Pick")}</button>}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div className="small rq-pick-h">{tr("Or find it by name")}</div>
+          </>
+        )}
         <div className="rq-pick-q">
           <input className="inp sm" value={name} aria-label="JIG / equipment name to search" onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") search(name); }} />
@@ -52,7 +80,9 @@ export default function DrawingPicker(props: {
         </div>
         {problem && <div className="pi-dirty small" role="alert">Drawing DB: {problem}</div>}
         {list === null ? <div className="muted small rq-pick-wait">{tr("Searching the drawing DB…")}</div>
-          : !list.length ? (!problem && <div className="muted small rq-pick-wait">{tr("No drawing in the DB looks like this name. Change the name and search again.")}</div>)
+          : !list.length ? (!problem && <div className="muted small rq-pick-wait">{props.model
+            ? tr("No drawing of this model in the DB looks like this name. Change the name and search again.")
+            : tr("No drawing in the DB looks like this name. Change the name and search again.")}</div>)
           : (
             <table className="rq-pick-t">
               <thead><tr><th>Drawing no</th><th>Name</th><th>Model</th><th>Kind</th><th /></tr></thead>

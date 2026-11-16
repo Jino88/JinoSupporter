@@ -46,7 +46,7 @@ const pages: Record<string, { title: string; render: (menu: MenuItem[], user: Po
   "/admin/db-query": { title: "DB Query", render: () => <AdminDbQuery /> },
   "/admin/test-excel-converter": { title: "Test Excel Converter", render: () => <TestExcelConverter /> },
   "/tools/translate": { title: "Translate", render: () => <Translate /> },
-  "/tools/review-report": { title: "Review Report", render: () => <ReviewReport /> },
+  "/tools/review-report": { title: "Make Report", render: () => <ReviewReport /> },
   "/tools/graph-maker": { title: "Graph Maker", render: () => <GraphMaker /> },
   "/working": { title: "Working", render: () => <Working /> },
   // comes with the Working menu (menu.ts WORKING_PERSONAL), so it is opened by whoever may open Working

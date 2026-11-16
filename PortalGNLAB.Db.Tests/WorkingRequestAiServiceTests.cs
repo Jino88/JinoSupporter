@@ -91,4 +91,19 @@ public sealed class WorkingRequestAiServiceTests
         var ai = new WorkingRequestAiService(null!);
         await Assert.ThrowsAsync<ArgumentException>(() => ai.FillAsync(new RequestAiRequest { Text = "  " }));
     }
+
+    private static PlaceAiImage Pic(int bytes) =>
+        new() { Name = "list.png", DataUrl = $"data:image/png;base64,{Convert.ToBase64String(new byte[bytes])}" };
+
+    [Fact]
+    public async Task FillAsync_TakesPicturesUpTo20MB()
+    {
+        var ai = new WorkingRequestAiService(null!);
+        // a 20 MB picture passes the check and goes on to the AI (no AI here: it stops there)
+        await Assert.ThrowsAsync<NullReferenceException>(() => ai.FillAsync(new RequestAiRequest { Images = [Pic(20 * 1024 * 1024)] }));
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => ai.FillAsync(new RequestAiRequest { Images = [Pic(20 * 1024 * 1024 + 1)] }));
+        Assert.Equal("A picture is larger than 20 MB.", ex.Message);
+        // the other AI inputs keep 5 MB
+        Assert.Throws<ArgumentException>(() => WorkingPlaceAiService.ReadImages([Pic(5 * 1024 * 1024 + 1)]));
+    }
 }

@@ -74,28 +74,31 @@
 .rq-pick-q { display: flex; align-items: center; gap: 8px; margin: 8px 0 10px; }
 .rq-pick-q input { flex: 1; }
 .rq-pick-wait { padding: 12px 0; }
+.rq-pick-h { font-weight: 700; margin: 10px 0 4px; }
+.rq-pick-t tr.rq-pick-now td { background: #eff6ff; }
 .rq-pick-t { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .rq-pick-t th { text-align: left; font-weight: 700; background: #f8fafc; border-bottom: 1px solid var(--line); padding: 6px 8px; }
 .rq-pick-t td { border-bottom: 1px solid #f1f5f9; padding: 5px 8px; vertical-align: middle; }
 .rq-pick-t tr:hover td { background: #f8fafc; }
 .rq-pick-t .mono { font-family: ui-monospace, Consolas, monospace; white-space: nowrap; }
 
-/* Working > Request Total: every JIG (name and drawing no) by model */
+/* Working > Request Total: every JIG (name and drawing no) by model. The cards are .card.rt-*: the bundle puts the padding of
+   .card after these rules, and a padded sheet left its sticky head 18px down with the rows showing above it. */
 .rt-page { display: flex; flex-direction: column; gap: 12px; }
-.rt-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 10px 14px; }
+.card.rt-bar { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 10px 14px; }
 .rt-f { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
 .rt-q { width: 220px; }
 .rt-count { margin-left: auto; }
-.rt-empty { padding: 16px; }
+.card.rt-empty { margin: 0; padding: 16px; }
 .rt-models { display: flex; flex-wrap: wrap; gap: 8px; }
-.rt-model { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 14px; min-width: 150px; }
+.card.rt-model { margin: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 14px; min-width: 150px; }
 .rt-model-n { font-weight: 700; font-size: 13px; }
 .rt-model-t { font-size: 22px; font-weight: 800; color: var(--accent-ink); }
-.rt-sheet { padding: 0; overflow: auto; max-height: calc(100vh - 300px); }
+.card.rt-sheet { margin: 0; padding: 0; overflow: auto; max-height: calc(100vh - 300px); }
 .rt-t { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .rt-t th, .rt-t td { border-bottom: 1px solid #f1f5f9; padding: 5px 8px; text-align: center; white-space: nowrap; }
 .rt-t thead th { position: sticky; top: 0; z-index: 1; background: #f8fafc; font-weight: 700; border-bottom: 1px solid var(--line); }
-.rt-t tfoot td { position: sticky; bottom: 0; background: #f8fafc; font-weight: 700; border-top: 1px solid var(--line); }
+.rt-t tfoot td { position: sticky; bottom: 0; z-index: 1; background: #f8fafc; font-weight: 700; border-top: 1px solid var(--line); }
 .rt-t .rt-name { text-align: left; white-space: normal; min-width: 220px; }
 .rt-t .rt-m { min-width: 90px; }
 .rt-t .rt-tot { font-weight: 800; background: #f8fafc; }

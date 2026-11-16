@@ -53,6 +53,11 @@ public sealed class JigDrawingDbServiceTests : IDisposable
         Assert.Equal("CD LASER GUIDE BASE", r.Results[0].Match!.Name);
         Assert.Equal("BJKP18-08-I-0000-00", r.Results[1].Match!.DrawingNo); // latest=1 of the base
         Assert.Null(r.Results[2].Match);
+        // every revision of the base comes with the number, so the screen can offer the other ones
+        Assert.Equal(["BJKP18-08-I-0000-00", "BJKP18-08-I-0000-01"], r.Results[0].Versions.Select(v => v.DrawingNo));
+        Assert.Equal(["BJKP18-08-I-0000-00", "BJKP18-08-I-0000-01"], r.Results[1].Versions.Select(v => v.DrawingNo));
+        Assert.Empty(r.Results[2].Versions);
+        Assert.Equal(["BJGP26-22-T-0001-00"], Service(_dir).Check(["BJGP26-22-T-0001-00"]).Results[0].Versions.Select(v => v.DrawingNo));
     }
 
     [Fact]
@@ -65,7 +70,7 @@ public sealed class JigDrawingDbServiceTests : IDisposable
     }
 
     [Fact]
-    public void Suggest_RanksByTokens_DedupesBase_ModelBonus()
+    public void Suggest_RanksByTokens_DedupesBase_OnlyTheModel()
     {
         MakeDb();
         var svc = Service(Path.Combine(_dir, "ORIGINAL_DRAWING.db"));
@@ -76,9 +81,10 @@ public sealed class JigDrawingDbServiceTests : IDisposable
         Assert.DoesNotContain(r.Suggestions, s => s.DrawingNo.StartsWith("ZZ1"));
         Assert.Equal(r.Suggestions.OrderByDescending(s => s.Score).Select(s => s.DrawingNo), r.Suggestions.Select(s => s.DrawingNo));
 
-        // model bonus lifts the matching model above an otherwise equal drawing
-        var withModel = svc.Suggest("DOME LASER GUIDE BASE", "OTHER-1");
-        Assert.Equal("BJKP18-09-I-0000-00", withModel.Suggestions[0].DrawingNo);
+        // with a model only the drawings of that model (any case or spaces) come back
+        var withModel = svc.Suggest("DOME LASER GUIDE BASE", " other-1 ");
+        Assert.Equal(["BJKP18-09-I-0000-00"], withModel.Suggestions.Select(s => s.DrawingNo));
+        Assert.Empty(svc.Suggest("UNRELATED PART", "BRS-161242").Suggestions);
     }
 
     [Fact]

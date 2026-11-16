@@ -46,7 +46,7 @@ describe("railTile", () => {
   it("maps menu ids to the Blazor rail icon and short label", () => {
     expect(railTile("ng-rate")).toEqual({ icon: "trend", label: "NG Rate" });
     expect(railTile("bmes-test5")).toEqual({ icon: "cube", label: "BOM" });
-    expect(railTile("review-report")).toEqual({ icon: "write", label: "Write" });
+    expect(railTile("review-report")).toEqual({ icon: "write", label: "Make Report" });
     expect(railTile("admin-ai-usages")).toEqual({ icon: "gauge", label: "AI Usage" });
     expect(railTile("bmes-setting")).toEqual({ icon: "gear", label: "Setting" });
   });
@@ -80,7 +80,7 @@ describe("buildRail", () => {
 
   it("lays out the rail like NavMenu.razor", () => {
     const rail = buildRail(all);
-    expect(shape(rail)).toEqual(["bmes", "Daily", "working", "qr", "-", "Translate", "Write", "-", "Setting", "Users", "AI Usage", "Excel", "DB"]);
+    expect(shape(rail)).toEqual(["bmes", "Daily", "working", "qr", "-", "Translate", "-", "Setting", "Users", "AI Usage", "Excel", "DB"]);
     const bmes = rail[0];
     if (bmes.kind !== "group") throw new Error("expected group");
     expect(bmes.sections.map((s) => s.title ?? null)).toEqual([null, "Setting Model"]);
@@ -106,6 +106,22 @@ describe("buildRail", () => {
     expect(groupActive(g, "/app/working/request")).toBe(true);
     // no Working permission, no Personal either
     expect(buildRail([item("translate", "T", "/app/tools/translate", true)]).some((e) => e.kind === "group" && e.key === "working")).toBe(false);
+  });
+
+  it("puts Make Report (the review report writer) under Working, with its own permission", () => {
+    const working = (items: MenuItem[]) => buildRail(items).find((e) => e.kind === "group" && e.key === "working");
+    const g = working(all);
+    if (g?.kind !== "group") throw new Error("expected group");
+    const last = g.sections[0].tiles.at(-1)!;
+    expect([last.label, last.icon, last.item.id, last.item.href]).toEqual(["Make Report", "write", "review-report", "/x/review-report"]);
+    // the review report alone still shows it; Working alone does not
+    const only = working([item("review-report", "T", "/app/tools/review-report", true)]);
+    if (only?.kind !== "group") throw new Error("expected group");
+    expect(only.sections[0].tiles.map((t) => t.label)).toEqual(["Make Report"]);
+    expect(groupActive(only, "/app/tools/review-report")).toBe(true);
+    const noReport = working([item("working", "Working", "/app/working", true)]);
+    if (noReport?.kind !== "group") throw new Error("expected group");
+    expect(noReport.sections[0].tiles.some((t) => t.item.id === "review-report")).toBe(false);
   });
 
   it("shows the Graph tile only with the Working permission", () => {
