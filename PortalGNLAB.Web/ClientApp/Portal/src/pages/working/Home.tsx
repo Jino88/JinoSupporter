@@ -13,6 +13,16 @@ const STATE_LABEL: Record<EventBrief["state"], string> = { done: "Done", now: "N
 /** Models loaded at the same time, so a long tree does not send every request at once. */
 const AT_ONCE = 6;
 
+/** The events whose tasks are folded away, kept in the browser by "kind|model|event" (all unfolded at first). */
+const FOLD_KEY = "working.home.folded";
+const savedFolds = (): string[] => {
+  try {
+    const v = JSON.parse(localStorage.getItem(FOLD_KEY) ?? "[]");
+    return Array.isArray(v) ? v.filter((k): k is string => typeof k === "string") : [];
+  } catch { return []; }
+};
+const saveFolds = (keys: Set<string>) => { try { localStorage.setItem(FOLD_KEY, JSON.stringify([...keys])); } catch { /* private mode */ } };
+
 const spanText = (e: EventBrief) => (e.span ? `${slashDate(e.span[0])}${e.span[1] !== e.span[0] ? ` – ${slashDate(e.span[1]).slice(5)}` : ""}` : "No date");
 
 /** Every model's information and entries, a few at a time; a model that fails keeps its error and the others go on. */
@@ -47,6 +57,8 @@ export default function Home(props: {
   view?: "home" | "devissues" | "mpissues";
   /** Already loaded (tests and the page reopening); loaded here when left out. */
   initial?: ModelLoad[];
+  /** The events folded at first, "kind|model|event" (tests); else the ones folded last time in this browser. */
+  folded?: string[];
 }) {
   const tr = useTr();
   const [loads, setLoads] = useState<ModelLoad[] | null>(props.initial ?? null);
@@ -83,7 +95,7 @@ export default function Home(props: {
           </div>
         </div>
         <div className="pi-sec-b">
-          {plans.length ? <PlanTimeline kind="dev" plans={plans} today={props.today} onOpen={props.onOpen} /> : (
+          {plans.length ? <PlanTimeline kind="dev" plans={plans} today={props.today} onOpen={props.onOpen} folded={props.folded} /> : (
             <div className="muted small">{tr("No model in development has a Dev Plan yet. Add events in a model's Development › Dev Plan.")}</div>
           )}
           {noPlan.length > 0 && (
@@ -103,7 +115,7 @@ export default function Home(props: {
           </div>
         </div>
         <div className="pi-sec-b">
-          {mp.length ? <PlanTimeline kind="mp" plans={mp} today={props.today} onOpen={props.onOpen} /> : (
+          {mp.length ? <PlanTimeline kind="mp" plans={mp} today={props.today} onOpen={props.onOpen} folded={props.folded} /> : (
             <div className="muted small">{tr("No model has an MP plan yet. Add processes in a model's Mass Production › Plan.")}</div>
           )}
         </div>
@@ -278,9 +290,19 @@ const actualBar = (a: Actual | undefined, range: { from: string; days: number } 
  * The plans on one timeline: a header line per model (what is under way, what is next, late tasks, tasks done), a bar per
  * event with how much of it is done, and a thin bar per task under it; months shaded in turn and today marked.
  */
-function PlanTimeline(props: { kind: "dev" | "mp"; plans: PlanBrief[]; today: string; onOpen: (model: string, tab: "plan" | "setup") => void }) {
+function PlanTimeline(props: {
+  kind: "dev" | "mp"; plans: PlanBrief[]; today: string; onOpen: (model: string, tab: "plan" | "setup") => void; folded?: string[];
+}) {
   const mp = props.kind === "mp";
   const tr = useTr();
+  // an event's tasks folded away under it (by its arrow), remembered in the browser
+  const [folded, setFolded] = useState<Set<string>>(() => new Set(props.folded ?? savedFolds()));
+  const toggle = (k: string) => setFolded((cur) => {
+    const n = new Set(cur);
+    if (!n.delete(k)) n.add(k);
+    saveFolds(n);
+    return n;
+  });
   const range = timelineRange(props.plans, props.today);
   const months = range ? timelineMonths(range) : [];
   const todayAt = range ? barAt([props.today, props.today], range) : null;
@@ -328,10 +350,16 @@ function PlanTimeline(props: { kind: "dev" | "mp"; plans: PlanBrief[]; today: st
             {p.events.map((e) => {
               const bar = e.span && range ? barAt(e.span, range) : null;
               const title = `${e.name}: ${spanText(e)}${e.total ? ` · ${e.done}/${e.total} tasks done` : ""}`;
+              const fk = `${props.kind}|${p.name}|${e.id}`, shut = e.tasks.length > 0 && folded.has(fk);
               return (
                 <div key={e.id} className="wk-hm-event">
                   <div className="wk-hm-row ev">
                     <div className="wk-hm-label">
+                      {e.tasks.length > 0 ? (
+                        <button className={"wk-hm-fold" + (shut ? " shut" : "")} aria-expanded={!shut} onClick={() => toggle(fk)}
+                          aria-label={`${shut ? "Unfold" : "Fold"} the ${mp ? "processes" : "tasks"} of ${e.name}`}
+                          title={tr(shut ? (mp ? "Show the processes" : "Show the tasks") : (mp ? "Hide the processes" : "Hide the tasks"))}>▾</button>
+                      ) : <span className="wk-hm-fold none" />}
                       <span className="wk-hm-dot" style={{ background: e.color }} />
                       <span className="wk-hm-ev" title={e.name}>{tr(e.name)}</span>
                       {e.total > 0 && <span className="wk-hm-count">{e.done}/{e.total}</span>}
@@ -344,7 +372,7 @@ function PlanTimeline(props: { kind: "dev" | "mp"; plans: PlanBrief[]; today: st
                       </Bar>
                     ))}
                   </div>
-                  {e.tasks.map((t) => {
+                  {!shut && e.tasks.map((t) => {
                     const tb = t.span && range ? barAt(t.span, range) : null;
                     const state = t.done ? "done" : t.late ? "late" : "open";
                     return (

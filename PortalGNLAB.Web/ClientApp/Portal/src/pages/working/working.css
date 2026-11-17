@@ -478,6 +478,11 @@ table.wk-gantt .wk-qty-in { padding: 4px 3px; font-size: 11px; }
 .wk-hm-row.task.sub .wk-hm-label { padding-left: 46px; font-size: 11px; }
 .wk-hm-row:not(.head):hover .wk-hm-label { background: #f8fafc; }
 .wk-hm-dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.wk-hm-fold { flex: none; width: 16px; height: 16px; margin-left: -6px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--muted);
+  font-size: 11px; line-height: 16px; cursor: pointer; transition: transform .12s; }
+button.wk-hm-fold:hover { background: #eef2f7; color: var(--ink); }
+.wk-hm-fold.shut { transform: rotate(-90deg); }
+.wk-hm-fold.none { cursor: default; }
 .wk-hm-ev, .wk-hm-task { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .wk-hm-ev { color: var(--ink); }
 .wk-hm-row.task.done .wk-hm-task { color: var(--faint); text-decoration: line-through; }
