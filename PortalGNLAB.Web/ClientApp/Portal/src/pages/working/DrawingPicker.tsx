@@ -4,7 +4,8 @@ import { drawingApi, drawingKey, type DrawingMatch, type DrawingSuggestion, type
 
 /**
  * The drawing numbers the JIG/MC drawing DB has for a row's JIG / equipment name (of its model only), best first; one is
- * picked for the row. The name can be changed and searched again. The other versions of the row's drawing number come first.
+ * picked for the row. A row with no name is searched by its drawing number (or the part typed), of any model. The text can be
+ * changed and searched again. The other versions of the row's drawing number come first.
  */
 export default function DrawingPicker(props: {
   item: RequestItem; model: string; onPick: (m: DrawingMatch) => void; onClose: () => void;
@@ -14,10 +15,12 @@ export default function DrawingPicker(props: {
   initial?: DrawingSuggestion[];
 }) {
   const tr = useTr();
-  const [name, setName] = useState(props.item.name);
-  const [asked, setAsked] = useState(props.initial ? props.item.name : "");
-  // nothing to search with no name (the versions alone are shown)
-  const [list, setList] = useState<DrawingSuggestion[] | null>(props.initial ?? (props.item.name.trim() ? null : []));
+  // the row's name, or its drawing number when it has no name
+  const first = props.item.name.trim() ? props.item.name : props.item.drawingNo;
+  const [name, setName] = useState(first);
+  const [asked, setAsked] = useState(props.initial ? first : "");
+  // nothing to search with neither (the versions alone are shown)
+  const [list, setList] = useState<DrawingSuggestion[] | null>(props.initial ?? (first.trim() ? null : []));
   const others = (props.versions ?? []).some((v) => drawingKey(v.drawingNo) !== drawingKey(props.item.drawingNo));
   const [problem, setProblem] = useState("");
 
@@ -25,7 +28,7 @@ export default function DrawingPicker(props: {
     if (!q.trim()) return;
     setAsked(q); setList(null); setProblem("");
   };
-  useEffect(() => { if (!props.initial) search(props.item.name); }, []);
+  useEffect(() => { if (!props.initial) search(first); }, []);
   useEffect(() => {
     if (!asked || props.initial) return;
     const ctl = new AbortController();
@@ -45,7 +48,7 @@ export default function DrawingPicker(props: {
     <div className="modal-back rq-noprint" onClick={(e) => { if (e.target === e.currentTarget) props.onClose(); }}>
       <div className="modal rq-pick" role="dialog" aria-modal="true" aria-label="Pick a drawing no">
         <div className="wk-ai-pop-h">
-          <h2>{tr("Pick a drawing no")} · {props.item.no}. {props.item.name}</h2>
+          <h2>{tr("Pick a drawing no")} · {props.item.no}. {props.item.name.trim() || props.item.drawingNo}</h2>
           <button className="btn sm" aria-label="Close" onClick={props.onClose}>×</button>
         </div>
         {others && (
@@ -69,11 +72,11 @@ export default function DrawingPicker(props: {
                 })}
               </tbody>
             </table>
-            <div className="small rq-pick-h">{tr("Or find it by name")}</div>
+            <div className="small rq-pick-h">{tr("Or find it by name or drawing no")}</div>
           </>
         )}
         <div className="rq-pick-q">
-          <input className="inp sm" value={name} aria-label="JIG / equipment name to search" onChange={(e) => setName(e.target.value)}
+          <input className="inp sm" value={name} aria-label="Name or drawing no to search" placeholder="Name or drawing no" onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") search(name); }} />
           <button className="btn sm primary" disabled={!name.trim()} onClick={() => search(name)}>{tr("Search")}</button>
           {props.model && <span className="muted small">{tr("Model")}: {props.model}</span>}
@@ -81,8 +84,8 @@ export default function DrawingPicker(props: {
         {problem && <div className="pi-dirty small" role="alert">Drawing DB: {problem}</div>}
         {list === null ? <div className="muted small rq-pick-wait">{tr("Searching the drawing DB…")}</div>
           : !list.length ? (!problem && <div className="muted small rq-pick-wait">{props.model
-            ? tr("No drawing of this model in the DB looks like this name. Change the name and search again.")
-            : tr("No drawing in the DB looks like this name. Change the name and search again.")}</div>)
+            ? tr("No drawing of this model in the DB looks like this name or drawing no. Change it and search again.")
+            : tr("No drawing in the DB looks like this name or drawing no. Change it and search again.")}</div>)
           : (
             <table className="rq-pick-t">
               <thead><tr><th>Drawing no</th><th>Name</th><th>Model</th><th>Kind</th><th /></tr></thead>

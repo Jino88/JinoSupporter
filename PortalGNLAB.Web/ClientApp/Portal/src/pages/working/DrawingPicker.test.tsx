@@ -19,11 +19,21 @@ describe("drawing no picker", () => {
     expect(html).toContain(">ASSY<");
   });
 
+  it("searches a row with no name by the drawing no typed", () => {
+    const item = { ...blankItem(1), drawingNo: "BJJ2610-SP-58" };
+    const html = renderToStaticMarkup(<DrawingPicker item={item} model="" onPick={() => {}} onClose={() => {}} initial={[
+      { drawingNo: "BJJ2610-SP-58-A00-00", name: "SPRING HOLDER JIG", model: "MSM-G778B", category: "JIG", assy: 0, latest: 1, score: 90 },
+    ]} />);
+    expect(html).toContain("1. BJJ2610-SP-58<");
+    expect(html).toContain('aria-label="Name or drawing no to search" placeholder="Name or drawing no" value="BJJ2610-SP-58"');
+    expect(html).toContain("SPRING HOLDER JIG");
+  });
+
   it("says so when the DB has nothing like the name", () => {
     const html = renderToStaticMarkup(<DrawingPicker item={{ ...blankItem(1), name: "ZZZ" }} model="" onPick={() => {}} onClose={() => {}} initial={[]} />);
-    expect(html).toContain("No drawing in the DB looks like this name.");
+    expect(html).toContain("No drawing in the DB looks like this name or drawing no.");
     const ofModel = renderToStaticMarkup(<DrawingPicker item={{ ...blankItem(1), name: "ZZZ" }} model="MSM-G778B" onPick={() => {}} onClose={() => {}} initial={[]} />);
-    expect(ofModel).toContain("No drawing of this model in the DB looks like this name.");
+    expect(ofModel).toContain("No drawing of this model in the DB looks like this name or drawing no.");
   });
 
   it("shows the versions of the row's drawing number first, the one in the row not to pick again", () => {
@@ -37,7 +47,7 @@ describe("drawing no picker", () => {
     expect(html).not.toContain('aria-label="Pick BJJ2605-MO-05-A00-02"');
     expect(html).toMatch(/<tr class="rq-pick-now"><td class="mono">BJJ2605-MO-05-A00-02<\/td>/);
     expect(html).toContain("BJJ2605-MO-05-A00-05<span class=\"rq-tag none\">latest</span>");
-    expect(html.indexOf("Versions of this drawing no")).toBeLessThan(html.indexOf("Or find it by name"));
+    expect(html.indexOf("Versions of this drawing no")).toBeLessThan(html.indexOf("Or find it by name or drawing no"));
     // with no other version there is no version list
     expect(renderToStaticMarkup(<DrawingPicker item={item} model="" onPick={() => {}} onClose={() => {}} initial={[]} versions={[v("BJJ2605-MO-05-A00-02")]} />))
       .not.toContain("Versions of this drawing no");
