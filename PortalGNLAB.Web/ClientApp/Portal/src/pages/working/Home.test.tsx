@@ -61,6 +61,30 @@ describe("Working Home", () => {
     expect(html).toMatch(/class="wk-hm-bar [a-z]+"[^>]*>.*?<\/span><span class="wk-hm-blabel"[^>]*>2026\/11\/18 – 11\/21<\/span>/);
   });
 
+  it("folds the tasks of an event away under its arrow, the others staying open", () => {
+    const task = (id: string, name: string) => ({ id, name, start: "2026-11-19", end: "2026-11-19", owner: "", done: false, note: "" });
+    const loads = [load("MSM-G778B", { phase: "PV", devPlan: { events: [
+      { ...event("LPR", "2026-11-17", "2026-11-20"), tasks: [task("a", "SEVT AUDIT")] },
+      { ...event("PV", "2026-11-30", "2026-12-11"), tasks: [task("b", "SETUP"), task("c", "R&D Business Trip")] },
+      event("MP", "2026-12-07", "2026-12-07"),
+    ] } })];
+    const open = renderToStaticMarkup(<Home models={[]} today="2026-11-17" onOpen={() => {}} initial={loads} folded={[]} />);
+    expect(open).toContain('aria-expanded="true" aria-label="Fold the tasks of LPR"');
+    expect(open).toContain('aria-label="Fold the tasks of PV"');
+    // an event with no task has nothing to fold
+    expect(open).not.toContain("tasks of MP");
+    expect(open).toContain(">SEVT AUDIT<");
+    expect(open).toContain(">SETUP<");
+
+    const shut = renderToStaticMarkup(<Home models={[]} today="2026-11-17" onOpen={() => {}} initial={loads} folded={["dev|MSM-G778B|PV"]} />);
+    expect(shut).toContain('class="wk-hm-fold shut" aria-expanded="false" aria-label="Unfold the tasks of PV"');
+    expect(shut).not.toContain(">SETUP<");
+    expect(shut).not.toContain(">R&amp;D Business Trip<");
+    // the event row itself and its count stay; LPR keeps its task
+    expect(shut).toContain('<span class="wk-hm-count">0/2</span>');
+    expect(shut).toContain(">SEVT AUDIT<");
+  });
+
   it("says no model in development has a plan yet", () => {
     const html = renderToStaticMarkup(<Home models={[]} today="2026-11-11" onOpen={() => {}} initial={[load("A", { phase: "DR" })]} />);
     expect(html).toContain("No model in development has a Dev Plan yet");
