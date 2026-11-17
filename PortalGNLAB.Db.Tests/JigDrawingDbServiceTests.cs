@@ -88,6 +88,23 @@ public sealed class JigDrawingDbServiceTests : IDisposable
     }
 
     [Fact]
+    public void Suggest_ByDrawingNo_ExactFirstThenStartingWith_AnyModel()
+    {
+        MakeDb();
+        var svc = Service(_dir);
+        // the whole number: that one first, of any model (the row's model is not asked)
+        var exact = svc.Suggest(" bjkp18-08-i-0000-01 ", "MSU-L15S10-20");
+        Assert.True(exact.Ok);
+        Assert.Equal("BJKP18-08-I-0000-01", exact.Suggestions[0].DrawingNo);
+        Assert.Equal("CD LASER GUIDE BASE", exact.Suggestions[0].Name);
+        // a part of it: every drawing that has it, latest first
+        Assert.Equal(["BJKP18-08-I-0000-00", "BJKP18-09-I-0000-00", "BJKP18-08-I-0000-01"],
+            svc.Suggest("BJKP18", null).Suggestions.Select(s => s.DrawingNo));
+        // a name is still searched by its words
+        Assert.Contains("BJKP18", svc.Suggest("CD LASER GUIDE BASE", null).Suggestions[0].DrawingNo);
+    }
+
+    [Fact]
     public void Suggest_JigNameFavorsJigCategory_AndTest_ReportsCounts()
     {
         MakeDb();

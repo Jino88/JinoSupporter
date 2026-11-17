@@ -324,7 +324,7 @@ export default function RequestPage(props: {
                   <td colSpan={2} className={"rq-dwg" + dwgClass(checkOf(i.drawingNo, checks))} title={dwgTitle(checkOf(i.drawingNo, checks))}>
                     <input className="rq-in rq-noprint" value={i.drawingNo} aria-label={`Drawing no ${n + 1}`} onChange={(e) => changeItem(n, { drawingNo: e.target.value })} />
                     <span className="rq-print">{i.drawingNo}</span>
-                    {(!i.drawingNo.trim() || checkOf(i.drawingNo, checks)?.status === "missing") && i.name.trim() ? (
+                    {canFind(i, checkOf(i.drawingNo, checks)) ? (
                       <button className="rq-find rq-noprint" aria-label={`Find the drawing no of row ${n + 1}`} title="Pick a drawing no from the drawing DB"
                         onClick={() => setPicking(n)}>&#128269;</button>
                     ) : otherVersions(i.drawingNo, checkOf(i.drawingNo, checks)).length > 0 && (
@@ -355,7 +355,8 @@ export default function RequestPage(props: {
                 // a version picked keeps the versions of its base, so the others can still be found from it
                 const versions = checkOf(form.items[picking].drawingNo, checks)?.versions?.some((v) => drawingKey(v.drawingNo) === drawingKey(m.drawingNo))
                   ? checkOf(form.items[picking].drawingNo, checks)?.versions : undefined;
-                changeItem(picking, { drawingNo: m.drawingNo });
+                // a row with no name takes the drawing's name
+                changeItem(picking, { drawingNo: m.drawingNo, ...(form.items[picking].name.trim() ? {} : { name: m.name }) });
                 setChecks((cur) => new Map(cur).set(drawingKey(m.drawingNo), { drawingNo: m.drawingNo, status: "found", match: m, versions }));
                 setPicking(null);
               }}
@@ -366,6 +367,13 @@ export default function RequestPage(props: {
     </div>
   );
 }
+
+/**
+ * A row can be searched in the drawing DB by its name when it has no drawing number or one the DB does not have, and by
+ * the drawing number typed (whole or part) when it has no name; picking fills the name too.
+ */
+const canFind = (i: RequestItem, c: DrawingCheck | undefined) =>
+  i.name.trim() ? !i.drawingNo.trim() || c?.status === "missing" : !!i.drawingNo.trim();
 
 /** How the drawing-number cell looks: red when the DB has no such drawing, amber when only another revision. */
 const dwgClass = (c: DrawingCheck | undefined) => (c?.status === "missing" ? " miss" : c?.status === "revision" ? " rev" : c?.status === "found" ? " ok" : "");

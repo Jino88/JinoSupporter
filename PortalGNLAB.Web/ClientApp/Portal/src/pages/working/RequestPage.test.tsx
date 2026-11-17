@@ -80,6 +80,24 @@ describe("Request page", () => {
     expect(html).not.toContain('aria-label="Find the drawing no of row 1"');
   });
 
+  it("lets a row be searched by its drawing no alone when it has no name", () => {
+    const found = { drawingNo: "BJJ2610-SP-58-A00-00", name: "LASER MARKING JIG", model: "MSU-L15S10-20", category: "JIG", latest: 1 };
+    const rows = { ...saved, items: [
+      { ...saved.items[0], name: "", drawingNo: "BJJ2610-SP-58" },
+      { ...saved.items[1], name: "", drawingNo: "" },
+      { ...saved.items[2], name: "", drawingNo: "BJJ2610-SP-58-A00-00" },
+    ] };
+    const html = renderToStaticMarkup(<RequestPage today="2026-11-16" onError={() => {}} initial={[rows]} openId="r1" checked={[
+      { drawingNo: "BJJ2610-SP-58", status: "missing", match: null },
+      { drawingNo: "BJJ2610-SP-58-A00-00", status: "found", match: found, versions: [found] },
+    ]} />);
+    expect(html).toContain('aria-label="Find the drawing no of row 1"');
+    // nothing typed: nothing to search
+    expect(html).not.toContain('aria-label="Find the drawing no of row 2"');
+    // a drawing no the DB has, with no name: still searched by it (to pick it and take its name)
+    expect(html).toContain('aria-label="Find the drawing no of row 3"');
+  });
+
   it("offers the other versions (-00, -01 …) of a drawing number the DB has", () => {
     const v = (no: string, latest = 0) => ({ drawingNo: no, name: "LASER MARKING ARRAY JIG", model: "MSM-G778B", category: "JIG", latest });
     const rows = { ...saved, items: [{ ...saved.items[0], drawingNo: "BJJ2605-MO-05-A00-02" }, { ...saved.items[1], drawingNo: "BJJ2605-MO-07-A00-00" }] };

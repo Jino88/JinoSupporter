@@ -185,6 +185,10 @@ public sealed class JigDrawingDbService
         bool wantsJig = (name ?? "").Contains("JIG", StringComparison.OrdinalIgnoreCase);
         try
         {
+            // a drawing number (or part of one) typed: the drawings whose number has it, of any model
+            var byNo = SuggestByNumber(file, (name ?? "").Trim(), limit);
+            if (byNo.Count > 0) return new(true, "", file, byNo);
+
             var rows = new List<(string No, string Base, string Name, string Model, string Cat, int Assy, int Latest)>();
             using (SqliteConnection conn = OpenReadOnly(file))
             using (SqliteCommand cmd = conn.CreateCommand())
@@ -234,5 +238,35 @@ public sealed class JigDrawingDbService
             return new(true, "", file, scored);
         }
         catch (Exception ex) { return new(false, ex.Message, file, []); }
+    }
+
+    /// <summary>
+    /// The drawings whose number has the text typed (one word with a digit, e.g. BJJ2610-SP-58), the exact one first, then
+    /// those starting with it, latest first. A drawing number is the same in every model, so the model is not asked.
+    /// </summary>
+    private static List<JigDrawingSuggestion> SuggestByNumber(string file, string text, int limit)
+    {
+        string q = text.ToUpperInvariant();
+        if (q.Length < 3 || q.Any(char.IsWhiteSpace) || !q.Any(char.IsDigit)) return [];
+        var rows = new List<JigDrawingSuggestion>();
+        using SqliteConnection conn = OpenReadOnly(file);
+        using SqliteCommand cmd = conn.CreateCommand();
+        cmd.Parameters.AddWithValue("@q", "%" + q.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_") + "%");
+        cmd.CommandText = """
+            SELECT drawing_no, name, model, category, assy, latest FROM drawings
+            WHERE UPPER(drawing_no) LIKE @q ESCAPE '\' LIMIT 2000;
+            """;
+        using SqliteDataReader r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            string no = Str(r, 0);
+            string up = no.ToUpperInvariant();
+            double score = up == q ? 100 : up.StartsWith(q, StringComparison.Ordinal) ? 90 : 80;
+            rows.Add(new(no, Str(r, 1), Str(r, 2), Str(r, 3), r.IsDBNull(4) ? 0 : r.GetInt32(4), r.IsDBNull(5) ? 0 : r.GetInt32(5), score));
+        }
+        return rows.DistinctBy(s => s.DrawingNo.ToUpperInvariant())
+            .OrderByDescending(s => s.Score).ThenByDescending(s => s.Latest)
+            .ThenBy(s => s.DrawingNo, StringComparer.OrdinalIgnoreCase)
+            .Take(limit).ToList();
     }
 }
