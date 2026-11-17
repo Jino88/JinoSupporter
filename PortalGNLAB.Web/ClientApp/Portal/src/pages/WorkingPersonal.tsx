@@ -1,3 +1,4 @@
+import { userName } from "../userNames";
 import { useEffect, useState } from "react";
 import type { PortalUser } from "../api";
 import { localToday } from "./working/dates";
@@ -50,7 +51,7 @@ export function PersonalPage(props: {
       <header className="page-head">
         <h1>Working · Personal</h1>
         <nav className="wk-menu" aria-label="Working">
-          <span className="muted small">{tr("Only you can see these plans.")} ({props.user})</span>
+          <span className="muted small">{tr("Only you can see these plans.")} ({userName(props.user)})</span>
           <span className="wk-lang" role="group" aria-label="Language">
             {props.lang && props.waiting > 0 && <span className="muted small" title="AI is translating the rest">Translating {props.waiting}…</span>}
             {LANGS.map(([k, label]) => (

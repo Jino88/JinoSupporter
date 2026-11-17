@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { PortalUser } from "./api";
+import { userName } from "./userNames";
 import { groupActive, ICON_PATHS, isActive, type RailEntry, type RailTile } from "./menu";
 import { menuClick, navigate } from "./nav";
 
@@ -61,8 +62,8 @@ export default function Rail({ entries, pathname, user }: { entries: RailEntry[]
           })}
         </nav>
 
-        <div className="rail-user" title={`Signed in as ${user.name} (${user.role})`}>
-          <span className="rail-avatar">{initials(user.name)}</span>
+        <div className="rail-user" title={`Signed in as ${userName(user.name)} (ID ${user.name}, ${user.role})`}>
+          <span className="rail-avatar">{initials(userName(user.name))}</span>
           <span className="rail-role">{user.role}</span>
           <form method="post" action="/auth/logout">
             <button type="submit" className="rail-signout" title="Sign out" aria-label="Sign out">

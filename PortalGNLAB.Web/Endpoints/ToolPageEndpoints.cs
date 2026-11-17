@@ -136,7 +136,7 @@ public static class ToolPageEndpoints
     }
 
     private static async Task<IResult> ReportActionAsync(
-        string action, ReportInput body, ReviewReportService service, HttpContext context)
+        string action, ReportInput body, ReviewReportService service, WebRepository repo, HttpContext context)
     {
         var report = body.Report;
         var existing = string.IsNullOrEmpty(report.Id) ? null : service.Get(report.Id);
@@ -168,7 +168,7 @@ public static class ToolPageEndpoints
             case "markdown":
                 return Results.Ok(new { text = ReviewReportService.ToMarkdown(report) });
             case "export":
-                return Results.File(ReviewReportService.ExportXlsx(report),
+                return Results.File(ReviewReportService.ExportXlsx(report, PortalShellEndpoints.NameLookup(repo.GetAllUsers())),
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "review-report.xlsx");
             case "save":
                 break;

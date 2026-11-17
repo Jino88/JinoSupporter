@@ -1,3 +1,4 @@
+import { userName } from "../../userNames";
 import { Fragment, useEffect, useState, type ClipboardEvent, type DragEvent, type ReactNode } from "react";
 import DateBox from "./DateBox";
 import { shortDate } from "./homeSummary";
@@ -190,7 +191,7 @@ function LogRow(props: { no: string; log: EntryLog; today: string; busy: boolean
       <td colSpan={4}></td>
       <td className="l wk-it-title"><div className="wk-text">{tr(line)}</div><Thumbs images={log.images ?? []} onOpen={props.onOpen} /></td>
       <td className="l wk-it-detail">{tr(detail)}</td>
-      <td>{log.owner || <span className="muted" title="Written by">{log.createdBy}</span>}</td>
+      <td>{log.owner || <span className="muted" title="Written by">{userName(log.createdBy)}</span>}</td>
       <td>{shortDate(log.date)}</td>
       <td className={late ? "late" : ""}>{log.due && shortDate(log.due)}{late && <span className="wk-late">Late</span>}</td>
       <td><DoneCell doneDate={log.doneDate ?? ""} /></td>
@@ -510,7 +511,7 @@ export default function IssueTable(props: {
         <div className="wk-viewer" role="dialog" aria-label={isVideo(viewer.contentType) ? "Video" : "Picture"} onClick={() => setViewer(null)}>
           <div onClick={(ev) => ev.stopPropagation()}>
             <div className="wk-viewer-h">
-              <span>{viewer.fileName} · {(viewer.size / 1024 / 1024).toFixed(1)} MB · {viewer.createdBy}</span>
+              <span>{viewer.fileName} · {(viewer.size / 1024 / 1024).toFixed(1)} MB · {userName(viewer.createdBy)}</span>
               {!isVideo(viewer.contentType) && <a href={workingApi.imageUrl(viewer.id)} target="_blank" rel="noreferrer">Open original</a>}
               <a href={workingApi.imageUrl(viewer.id)} download={viewer.fileName}>Download</a>
               <button className="btn sm" onClick={() => setViewer(null)}>Close</button>

@@ -1,3 +1,4 @@
+import { userName } from "../../userNames";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { memoApi } from "../../teamMemoApi";
 import {
@@ -172,7 +173,7 @@ export default function Workspace({ board = false }: { board?: boolean }) {
   const display = useCallback(
     (u: string) =>
       view?.users.find((x) => x.username.toLowerCase() === u.toLowerCase())
-        ?.displayName ?? u,
+        ?.displayName ?? userName(u),
     [view],
   );
   const folders = useMemo(

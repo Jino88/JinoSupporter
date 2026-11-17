@@ -611,7 +611,7 @@ public sealed class ReviewReportService(CodexApiService codex, WebRepository rep
     private static readonly XLColor TestYellow = XLColor.FromHtml("#FFFF00");
     private static readonly XLColor RateRed = XLColor.FromHtml("#FF0000");
 
-    public static byte[] ExportXlsx(ReviewReport report)
+    public static byte[] ExportXlsx(ReviewReport report, Func<string, string>? nameOf = null)
     {
         ReviewReportDoc doc = report.Doc ?? new ReviewReportDoc();
         List<ReviewReportResultTable> tables = ResultTables(doc);
@@ -644,7 +644,7 @@ public sealed class ReviewReportService(CodexApiService codex, WebRepository rep
         title.Style.Font.FontSize = 24;
         title.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         title.Style.Alignment.WrapText = true;
-        (string Key, string Value)[] info = [("Dept", doc.Dept), ("Date", doc.ReportDate), ("Marker", FirstNonBlank(doc.Maker, report.CreatedBy))];
+        (string Key, string Value)[] info = [("Dept", doc.Dept), ("Date", doc.ReportDate), ("Marker", FirstNonBlank(doc.Maker, nameOf?.Invoke(report.CreatedBy) ?? report.CreatedBy))];
         for (int i = 0; i < info.Length; i++)
         {
             var key = ws.Cell(row + i, last - 1);

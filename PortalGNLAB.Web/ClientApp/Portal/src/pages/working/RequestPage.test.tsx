@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { setUserNames } from "../../userNames";
 import { blankRequest, type WorkingRequest } from "./request";
 import RequestPage from "./RequestPage";
 
@@ -15,6 +16,15 @@ const saved: WorkingRequest = {
 };
 
 describe("Request page", () => {
+  afterEach(() => setUserNames({}));
+
+  it("shows who saved a request by name, not by ID", () => {
+    setUserNames({ jino: "Byun Jinho" });
+    const html = renderToStaticMarkup(<RequestPage today="2026-11-16" onError={() => {}} initial={[saved]} openId="r1" />);
+    expect(html).toContain("3 items · Byun Jinho");
+    expect(html).not.toContain("3 items · jino");
+  });
+
   it("has the AI box for a pasted list or pictures and the empty paper form", () => {
     const html = renderToStaticMarkup(<RequestPage today="2026-11-05" onError={() => {}} initial={[]} />);
     expect(html).toContain('aria-label="List to make the request of"');

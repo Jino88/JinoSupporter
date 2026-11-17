@@ -1,3 +1,4 @@
+import { userName } from "../../userNames";
 import { useEffect, useState, type ClipboardEvent } from "react";
 import { memoApi } from "../../teamMemoApi";
 import {
@@ -12,7 +13,7 @@ import type { AiSummary, Attachment, Memo, MemoView, Translate } from "./types";
 import type { MemoTranslator } from "./translator";
 export function Avatar({
   name,
-  display = name,
+  display = userName(name),
 }: {
   name: string;
   display?: string;
@@ -93,7 +94,7 @@ export function Attachments({
         >
           <div onClick={(e) => e.stopPropagation()}>
             <p>
-              {viewer.fileName} · {size(viewer.size)} · {viewer.author} ·{" "}
+              {viewer.fileName} · {size(viewer.size)} · {userName(viewer.author)} ·{" "}
               {stamp(viewer.createdAt)}
             </p>
             <a href={memoApi.attachment(viewer.id, true)}>Download</a>{" "}
@@ -244,7 +245,7 @@ export function AiSummaryPanel({
           <span className="memo-late">Outdated</span>
         )}
         <small>
-          {summary.aiSummaryBy} · {ago(summary.aiSummaryAt)} ·{" "}
+          {userName(summary.aiSummaryBy)} · {ago(summary.aiSummaryAt)} ·{" "}
           {summary.aiSummaryModel}
         </small>
         <button
@@ -254,7 +255,7 @@ export function AiSummaryPanel({
           {busy
             ? "Summarizing..."
             : running
-              ? `${running} is summarizing...`
+              ? `${userName(running)} is summarizing...`
               : summary.aiSummary
                 ? "Regenerate"
                 : "Generate"}

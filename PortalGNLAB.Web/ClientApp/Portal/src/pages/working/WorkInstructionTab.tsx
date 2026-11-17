@@ -1,3 +1,4 @@
+import { userName } from "../../userNames";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { downloadBlob } from "../../toolsApi";
 import { useTr } from "./i18n";
@@ -69,7 +70,7 @@ export function InstructionBody(props: {
     <>
       <div className="wi-file">
         <b>{doc.fileName}</b>
-        <span className="muted">{whenText(doc.uploadedAt)} · {doc.uploadedBy} · {sizeText(doc.size)}</span>
+        <span className="muted">{whenText(doc.uploadedAt)} · {userName(doc.uploadedBy)} · {sizeText(doc.size)}</span>
         <span className="btns">
           <button className="btn sm" disabled={props.busy} onClick={props.onPick}>{props.busy ? tr("Reading…") : tr("Replace")}</button>
           <button className="btn sm" disabled={props.busy} onClick={props.onDownload}>{tr("Download")}</button>

@@ -1,3 +1,4 @@
+import { userName } from "../../userNames";
 import { useEffect, useState, type ClipboardEvent, type DragEvent, type ReactNode } from "react";
 import DrawingPicker from "./DrawingPicker";
 import { aiPictures } from "./aiPlace";
@@ -169,7 +170,7 @@ export default function RequestPage(props: {
         {list?.map((r) => (
           <button key={r.id} className={"rq-li" + (r.id === id ? " on" : "")} onClick={() => r.id !== id && open(r)}>
             <b>{requestTitle(r)}</b>
-            <span className="muted small">{[r.kind, dotDate(r.requestDate), `${r.items.length} items`, r.updatedBy].filter(Boolean).join(" · ")}</span>
+            <span className="muted small">{[r.kind, dotDate(r.requestDate), `${r.items.length} items`, userName(r.updatedBy)].filter(Boolean).join(" · ")}</span>
           </button>
         ))}
       </aside>

@@ -1,3 +1,4 @@
+import { userName } from "../../userNames";
 import { useState } from "react";
 import DateBox from "./DateBox";
 import { useTr } from "./i18n";
@@ -128,7 +129,7 @@ export default function EntryList(props: {
                     <div className="wk-meta">
                       {e.owner && <span>{OWNER[e.kind]} {e.owner}</span>}
                       {e.kind === "issue" && e.due && <span>Due {e.due}</span>}
-                      <span>Written by {e.createdBy || "—"}{e.updatedAt !== e.createdAt && e.updatedBy ? ` · edited by ${e.updatedBy}` : ""}</span>
+                      <span>Written by {userName(e.createdBy) || "—"}{e.updatedAt !== e.createdAt && e.updatedBy ? ` · edited by ${userName(e.updatedBy)}` : ""}</span>
                       {e.kind === "issue" ? (
                         <button className="wk-link" onClick={() => props.onOpenIssues(e)}>Open in Issues ({e.logs?.length ?? 0} notes)</button>
                       ) : (
