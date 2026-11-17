@@ -1,3 +1,4 @@
+import { userName } from "../../userNames";
 import { Fragment, useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { workingApi } from "./api";
 import { useTr } from "./i18n";
@@ -173,7 +174,7 @@ function StageIssues(props: { stage: IssueStage; loads: ModelLoad[]; today: stri
       <td colSpan={2}></td>
       <td className="l"><span className="wk-hm-sub">↳ {tr(noteParts(log).line)}</span></td>
       <td className="l detail">{tr(noteParts(log).detail)}</td>
-      <td>{log.owner || <span className="muted" title="Written by">{log.createdBy}</span>}</td>
+      <td>{log.owner || <span className="muted" title="Written by">{userName(log.createdBy)}</span>}</td>
       <td>{shortDate(log.date)}</td>
       <td className={isLateNow ? "late" : ""}>{log.due && shortDate(log.due)}{isLateNow && <span className="wk-late">{tr("Late")}</span>}</td>
       <td><span className="wk-st open">{tr("Open")}</span></td>

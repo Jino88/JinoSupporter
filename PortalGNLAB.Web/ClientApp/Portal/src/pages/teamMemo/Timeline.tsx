@@ -1,3 +1,4 @@
+import { userName } from "../../userNames";
 import { useState } from "react";
 import { memoApi } from "../../teamMemoApi";
 import { ago, newestFirst, stamp, today } from "./logic";
@@ -457,7 +458,7 @@ function Thread({
             <b>
               {view.users.find(
                 (u) => u.username.toLowerCase() === c.author.toLowerCase(),
-              )?.displayName ?? c.author}
+              )?.displayName ?? userName(c.author)}
             </b>
             {c.isResult && <strong>RESULT</strong>}
             <time title={c.createdAt}>

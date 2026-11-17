@@ -1,3 +1,4 @@
+import { userName } from "../../userNames";
 import { useEffect, useState } from "react";
 import { workingApi } from "./api";
 import { ProcessTables } from "./BmesPanel";
@@ -43,7 +44,7 @@ export default function ProcessTab(props: {
         <div className="pi-legend">
           {dirty && <span className="pi-dirty">{tr("Unsaved")}</span>}
           {saved && <span className="pi-msg">{saved}</span>}
-          {model.updatedAt && <span>{tr("Updated")} {model.updatedAt.slice(0, 16).replace("T", " ")} · {model.updatedBy || "—"}</span>}
+          {model.updatedAt && <span>{tr("Updated")} {model.updatedAt.slice(0, 16).replace("T", " ")} · {userName(model.updatedBy) || "—"}</span>}
           <button className="btn sm primary" disabled={!dirty || busy} onClick={save}>{busy ? tr("Saving…") : tr("Save")}</button>
         </div>
       </div>

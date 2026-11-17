@@ -1,3 +1,4 @@
+import { userName } from "../../userNames";
 import { useEffect, useState, type DragEvent, type KeyboardEvent } from "react";
 import { toolSend } from "../../toolsApi";
 import {
@@ -648,7 +649,7 @@ export default function ReportPreview({
             <div className="report-head-label">Marker</div>
             <div>
               <Editable
-                value={d.maker || report.createdBy}
+                value={d.maker || userName(report.createdBy)}
                 editable={editable}
                 placeholder="-"
                 onCommit={(maker) => set({ maker })}

@@ -24,7 +24,7 @@
         <table class="table usr-table mb-0">
             <thead>
                 <tr>
-                    <th>Username</th>
+                    <th>ID</th>
                     <th>Name</th>
                     <th>Role</th>
                     <th>Created</th>
@@ -93,8 +93,8 @@
     <div class="card-body">
         <div class="row g-2 align-items-end">
             <div class="col-auto">
-                <label class="form-label">Username</label>
-                <input @bind="_newUsername" class="form-control form-control-sm" placeholder="username" />
+                <label class="form-label">ID</label>
+                <input @bind="_newUsername" class="form-control form-control-sm" placeholder="ID" />
             </div>
             <div class="col-auto">
                 <label class="form-label">Name</label>
@@ -310,7 +310,7 @@
     private void AddUser()
     {
         _addError = string.Empty;
-        if (string.IsNullOrWhiteSpace(_newUsername)) { _addError = "Username required."; return; }
+        if (string.IsNullOrWhiteSpace(_newUsername)) { _addError = "ID required."; return; }
         if (string.IsNullOrWhiteSpace(_newPassword)) { _addError = "Password required."; return; }
         try
         {
@@ -321,7 +321,7 @@
         }
         catch (Exception ex)
         {
-            _addError = ex.Message.Contains("UNIQUE") ? "Username already exists." : ex.Message;
+            _addError = ex.Message.Contains("UNIQUE") ? "ID already exists." : ex.Message;
         }
     }
 

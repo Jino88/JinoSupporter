@@ -36,7 +36,7 @@ public static class AdminUserEndpoints
     /// <summary>Checks a new user. Returns the error text to show, or null when it can be added.</summary>
     public static string? ValidateNewUser(NewUser user)
     {
-        if (string.IsNullOrWhiteSpace(user.Username)) return "Username required.";
+        if (string.IsNullOrWhiteSpace(user.Username)) return "ID required.";
         if (string.IsNullOrWhiteSpace(user.Password)) return "Password required.";
         if (!AppRoles.All.Contains(user.Role)) return "Unknown role.";
         return null;
@@ -69,7 +69,7 @@ public static class AdminUserEndpoints
         admin.MapPost("/users", (NewUser body, WebRepository repo) =>
         {
             if (ValidateNewUser(body) is { } error) return Results.BadRequest(new { error });
-            if (repo.GetUser(body.Username.Trim()) is not null) return Results.BadRequest(new { error = "Username already exists." });
+            if (repo.GetUser(body.Username.Trim()) is not null) return Results.BadRequest(new { error = "ID already exists." });
             repo.AddUser(body.Username.Trim(), AuthService.HashPassword(body.Password), body.Role, body.DisplayName.Trim());
             return Results.NoContent();
         });

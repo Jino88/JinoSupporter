@@ -61,7 +61,7 @@ export default function AdminUsersPage() {
 
   async function addUser() {
     setAddError(null);
-    if (!newUser.username.trim()) return setAddError("Username required.");
+    if (!newUser.username.trim()) return setAddError("ID required.");
     if (!newUser.password.trim()) return setAddError("Password required.");
     try {
       await api.admin.addUser(newUser);
@@ -105,7 +105,7 @@ export default function AdminUsersPage() {
         <table className="grid">
           <thead>
             <tr>
-              <th>Username</th>
+              <th>ID</th>
               <th>Name</th>
               <th>Role</th>
               <th>Created</th>
@@ -176,7 +176,7 @@ export default function AdminUsersPage() {
                     className="btn sm danger"
                     disabled={isSelf(u)}
                     onClick={() => {
-                      if (window.confirm(`Remove user ${u.username}?`)) change(() => api.admin.removeUser(u.id));
+                      if (window.confirm(`Remove user ${u.displayName || u.username} (ID ${u.username})?`)) change(() => api.admin.removeUser(u.id));
                     }}
                   >
                     Remove
@@ -192,8 +192,8 @@ export default function AdminUsersPage() {
         <h2>Add User</h2>
         <div className="form-row">
           <label>
-            Username
-            <input className="inp sm" placeholder="username" value={newUser.username}
+            ID
+            <input className="inp sm" placeholder="ID" value={newUser.username}
               onChange={(e) => setNewUser({ ...newUser, username: e.target.value })} />
           </label>
           <label>
@@ -268,7 +268,7 @@ export default function AdminUsersPage() {
       {resetTarget && (
         <div className="modal-back" onClick={() => setResetTarget(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>Reset Password — {resetTarget.username}</h2>
+            <h2>Reset Password — {resetTarget.displayName || resetTarget.username} (ID {resetTarget.username})</h2>
             <input className="inp" type="password" placeholder="New password" autoFocus value={resetPassword}
               onChange={(e) => setResetPassword(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && confirmReset()} />

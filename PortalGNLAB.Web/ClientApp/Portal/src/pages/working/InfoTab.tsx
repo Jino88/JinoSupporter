@@ -1,3 +1,4 @@
+import { userName } from "../../userNames";
 import { useEffect, useState } from "react";
 import { workingApi } from "./api";
 import BmesPanel from "./BmesPanel";
@@ -58,7 +59,7 @@ export default function InfoTab(props: {
           <div className="pi-legend">
             {dirty && <span className="pi-dirty">Unsaved</span>}
             {saved && <span className="pi-msg">{saved}</span>}
-            {model.updatedAt && <span>Updated {model.updatedAt.slice(0, 16).replace("T", " ")} by {model.updatedBy || "—"}</span>}
+            {model.updatedAt && <span>Updated {model.updatedAt.slice(0, 16).replace("T", " ")} by {userName(model.updatedBy) || "—"}</span>}
             <button className="btn sm primary" disabled={!dirty || busy} onClick={save}>{busy ? "Saving…" : "Save"}</button>
           </div>
         </div>

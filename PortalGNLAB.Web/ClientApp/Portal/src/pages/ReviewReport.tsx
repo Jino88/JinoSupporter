@@ -1,3 +1,4 @@
+import { userName } from "../userNames";
 import { useEffect, useRef, useState } from "react";
 import {
   downloadBlob,
@@ -269,7 +270,7 @@ export default function ReviewReport() {
               >
                 <strong>{item.title}</strong>
                 <span className="muted small">
-                  {item.createdBy} ·{" "}
+                  {userName(item.createdBy)} ·{" "}
                   {item.updatedAt.slice(0, 16).replace("T", " ")}
                 </span>
               </button>

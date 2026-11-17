@@ -1,3 +1,4 @@
+import { userName } from "../../userNames";
 import { useEffect, useRef, useState } from "react";
 import { useTr } from "./i18n";
 import { BASIS_TEXT, addJig, blankRow, jigTotals, lineCount, nextNo, normalizeList, normalizeRow, processListApi, removeJig, rowsProblem, setJig } from "./processList";
@@ -214,7 +215,7 @@ export default function ProcessListTab(props: {
         <h2>JIG/MC List</h2>
         {list.updatedAt && (
           <span className="muted small">
-            {list.source && <><b>{list.source}</b> · </>}{stamp(list.updatedAt)} · {list.updatedBy}
+            {list.source && <><b>{list.source}</b> · </>}{stamp(list.updatedAt)} · {userName(list.updatedBy)}
           </span>
         )}
       </div>

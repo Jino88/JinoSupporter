@@ -107,6 +107,8 @@ export interface AdminUsersView {
 
 export const api = {
   me: () => getJson<PortalUser>("/api/portal/me"),
+  /** ID → name of every user (userNames.ts). */
+  userNames: () => getJson<Record<string, string>>("/api/portal/user-names"),
   menu: () => getJson<MenuItem[]>("/api/portal/menu"),
   pcDownload: () => getJson<PcDownload | null>("/api/portal/pc-download"),
   admin: {

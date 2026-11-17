@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { api, type MenuItem, type PortalUser } from "./api";
+import { setUserNames } from "./userNames";
 import { appPath, buildRail, isChromeHidden } from "./menu";
 import Rail from "./Rail";
 import Home from "./pages/Home";
@@ -90,8 +91,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    Promise.all([api.me(), api.menu()])
-      .then(([me, items]) => {
+    // Without the names the screens still work and show the IDs.
+    Promise.all([api.me(), api.menu(), api.userNames().catch(() => ({}))])
+      .then(([me, items, names]) => {
+        setUserNames(names);
         setUser(me);
         setMenu(items);
       })

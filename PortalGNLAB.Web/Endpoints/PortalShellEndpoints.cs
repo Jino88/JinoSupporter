@@ -65,6 +65,22 @@ public static class PortalShellEndpoints
 
     public sealed record PortalUser(string Name, string Role);
 
+    /// <summary>
+    /// ID (Username) → name of every user, so screens and reports show the name; a user with no name keeps the ID.
+    /// </summary>
+    public static Dictionary<string, string> UserNames(IEnumerable<UserRecord> users) =>
+        users.GroupBy(u => u.Username, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => NameOf(g.First()), StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Name of an ID; an unknown ID (a deleted user, "unknown") is shown as it is.</summary>
+    public static Func<string, string> NameLookup(IEnumerable<UserRecord> users)
+    {
+        var names = UserNames(users);
+        return id => names.TryGetValue(id.Trim(), out string? name) ? name : id;
+    }
+
+    public static string NameOf(UserRecord u) => string.IsNullOrWhiteSpace(u.DisplayName) ? u.Username : u.DisplayName.Trim();
+
     public sealed record PortalMenuItem(string Id, string Label, string Group, string Href, bool React);
 
     public sealed record PortalDownloadAsset(string FileName, long SizeBytes, string SizeText, string Url);
@@ -105,6 +121,8 @@ public static class PortalShellEndpoints
 
         api.MapGet("/me", (ClaimsPrincipal user) =>
             new PortalUser(user.Identity?.Name ?? "", user.FindFirst(ClaimTypes.Role)?.Value ?? ""));
+
+        api.MapGet("/user-names", (WebRepository repo) => UserNames(repo.GetAllUsers()));
 
         api.MapGet("/menu", (ClaimsPrincipal user, MenuPermissionService perms) =>
             MenuFor(user.FindFirst(ClaimTypes.Role)?.Value ?? "", perms.IsAllowed));

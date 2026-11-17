@@ -1,3 +1,4 @@
+import { userName } from "../../userNames";
 import { useEffect, useRef, useState } from "react";
 import { memoApi } from "../../teamMemoApi";
 import { ago, headerDiffers, today, weekdays } from "./logic";
@@ -43,7 +44,7 @@ export default function MemoDetail({
   const dirty = headerDiffers(draft, original);
   const display = (u: string) =>
     view.users.find((x) => x.username.toLowerCase() === u.toLowerCase())
-      ?.displayName ?? u;
+      ?.displayName ?? userName(u);
   async function run(action: () => Promise<void>) {
     setBusy(true);
     setError("");
