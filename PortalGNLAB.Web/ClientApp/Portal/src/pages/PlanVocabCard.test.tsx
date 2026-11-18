@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { moveRow, PlanVocabEditor, splitList, toRows, toVocab } from "./PlanVocabCard";
+import { checkRows, moveRow, PlanVocabEditor, splitList, toRows, toVocab } from "./PlanVocabCard";
 import { DEFAULT_VOCAB } from "./working/planVocab";
 
 describe("Setting › Dev Plan standard names", () => {
@@ -33,6 +33,26 @@ describe("Setting › Dev Plan standard names", () => {
     const tasks = toRows(DEFAULT_VOCAB).tasks;
     const moved = moveRow(tasks, tasks.length - 1, 0);
     expect(toVocab([], moved).tasks.map((t) => t.code)).toEqual([tasks[tasks.length - 1].code, ...tasks.slice(0, -1).map((t) => t.code)]);
+  });
+
+  it("keeps a row written with only a name or only a code when saving, instead of the server dropping it", () => {
+    const tasks = toRows(DEFAULT_VOCAB).tasks;
+    const r = checkRows([], [...tasks, { code: "", name: "Mold Repair", aliases: "금형 수리", template: "" }, { code: "qa", name: " ", aliases: "", template: "" }, { code: " ", name: "", aliases: "", template: "" }]);
+    expect(r.error).toBeUndefined();
+    expect(r.filled).toBe(2);
+    expect(r.tasks.slice(-2)).toEqual([
+      { code: "mold-repair", name: "Mold Repair", aliases: "금형 수리", template: "" },
+      { code: "qa", name: "qa", aliases: "", template: "" },
+    ]);
+    expect(toVocab(r.stages, r.tasks).tasks.map((t) => t.code)).toContain("mold-repair");
+  });
+
+  it("stops the save on a repeated code, a row with only other names or an unknown template code", () => {
+    const row = (code: string, name = code, aliases = "", template = "") => ({ code, name, aliases, template });
+    expect(checkRows([], [row("a"), row("A")]).error).toContain('"A" is used twice');
+    expect(checkRows([], [row("", "", "x")]).error).toContain("only other names");
+    expect(checkRows([row("ER", "ER", "", "a, zz")], [row("a")]).error).toContain("zz");
+    expect(checkRows([row("ER", "ER", "", "A")], [row("a")]).error).toBeUndefined();
   });
 
   it("splits comma-separated text and drops blanks", () => {
