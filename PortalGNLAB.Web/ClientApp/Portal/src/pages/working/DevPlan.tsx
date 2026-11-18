@@ -8,11 +8,13 @@ import { bmesApi } from "./bmes";
 import type { BomRow } from "./bmes";
 import {
   COLORS, QTY_GROUPS, addBomRows, addSubTask, blankEvent, blankRow, blankTask, calendarDays, eventSpan, groupSpan, inSpan, bomRowNames, monthRuns, moveInGroup, moveTask,
-  markDone, planDays, planProblem, progress, readDevPlan, readQty, removeTask, rowTotal, setQty, taskSpan,
+  isMaterialTask, markDone, planDays, planProblem, progress, readDevPlan, readQty, removeTask, rowTotal, setQty, taskSpan,
 } from "./plan";
-import type { DevPlan as Plan, PlanEvent, PlanTask, QtyGroup, QtyRow } from "./plan";
+import type { DevPlan as Plan, PlanEvent, PlanTask, QtyGroup, QtyRow, TaskMaterial } from "./plan";
 import { applyTidy, freeEvent, freeTask, itemOf, templateTasks, tidyRows, withCode, withStage, type TidyRow } from "./planNames";
 import { DEFAULT_VOCAB, planVocabApi, type PlanVocab } from "./planVocab";
+import MaterialPick from "./MaterialPick";
+import { readMaterials, type MaterialList } from "./materialList";
 import type { WorkingModel } from "./types";
 
 interface Row { id: string; label: string; sub: string; span: [string, string] | null; color: string; done?: boolean; child?: boolean }
@@ -273,7 +275,32 @@ export function keptTask(t: PlanTask, vocab: PlanVocab): { task: PlanTask; probl
   const std = itemOf(t.code, vocab.tasks);
   const kept = std ? withCode(t, std, (t.detail ?? "").trim()) : { ...t, name: t.name.trim() };
   const problem = planProblem(kept) || (t.actualStart && t.actualEnd && t.actualEnd < t.actualStart ? "Actual end is before actual start." : "");
-  return { task: { ...kept, owner: t.owner.trim(), note: t.note.trim() }, problem };
+  // materials stay with a material task only
+  const { materials, ...rest } = kept;
+  return { task: { ...rest, ...(isMaterialTask(kept) && materials?.length ? { materials } : {}), owner: t.owner.trim(), note: t.note.trim() }, problem };
+}
+
+/** The task with these materials picked (none: the field goes). */
+export const withMaterials = (t: PlanTask, list: TaskMaterial[]): PlanTask => {
+  const { materials: _, ...rest } = t;
+  return list.length ? { ...rest, materials: list } : rest;
+};
+
+/** The materials picked for a task, shown under its name; a button to pick them on a material task. */
+export function TaskMaterials(props: { task: PlanTask; onPick?: () => void }) {
+  const tr = useTr();
+  const list = props.task.materials ?? [];
+  if (!isMaterialTask(props.task) && !list.length) return null;
+  return (
+    <span className="wk-dp-mats">
+      {list.map((m) => <span key={(m.code || m.name)} className="wk-dp-mat" title={m.name}>{m.code || m.name}</span>)}
+      {props.onPick && (
+        <button type="button" className="wk-link" title="Pick the materials of this task from Model Info › Material" onClick={props.onPick}>
+          {list.length ? tr("Change materials") : "+ " + tr("Materials")}
+        </button>
+      )}
+    </span>
+  );
 }
 
 /** The tasks one Edit opens together: a task with its sub-tasks, a sub-task alone. */
@@ -296,8 +323,14 @@ export function withRows(tasks: PlanTask[], rows: PlanTask[]): PlanTask[] {
  * One task of the detailed schedule being added or changed, a row of the table with its own Cancel and Keep; what is
  * typed is kept by the caller, so several rows (tasks, sub-tasks, new ones) can be open at once.
  */
-export function TaskEditRow(props: { value: PlanTask; onChange: (t: PlanTask) => void; onKeep: (t: PlanTask) => void; onCancel: () => void; vocab: PlanVocab }) {
+export function TaskEditRow(props: {
+  value: PlanTask; onChange: (t: PlanTask) => void; onKeep: (t: PlanTask) => void; onCancel: () => void; vocab: PlanVocab;
+  /** The model's material list (Model Info › Material) a material task picks from. */
+  materials?: MaterialList;
+}) {
   const t = props.value;
+  // choosing the material category opens the popup to pick its materials
+  const [picking, setPicking] = useState(false);
   const setT = props.onChange;
   const set = (f: Partial<PlanTask>) => setT({ ...t, ...f });
   const std = itemOf(t.code, props.vocab.tasks);
@@ -310,7 +343,12 @@ export function TaskEditRow(props: { value: PlanTask; onChange: (t: PlanTask) =>
         {t.parentId && <span className="wk-dp-sub">↳</span>}
         <span className="wk-dp-name">
           <select className="inp sm" value={std?.code ?? ""} aria-label="Standard task"
-            onChange={(x) => { const s = itemOf(x.target.value, props.vocab.tasks); setT(s ? withCode(t, s, t.detail ?? "") : freeTask(t)); }}>
+            onChange={(x) => {
+              const s = itemOf(x.target.value, props.vocab.tasks);
+              const n = s ? withCode(t, s, t.detail ?? "") : freeTask(t);
+              setT(n);
+              if (isMaterialTask(n) && !isMaterialTask(t)) setPicking(true);
+            }}>
             <option value="">Other (own name)</option>
             {props.vocab.tasks.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
           </select>
@@ -318,6 +356,11 @@ export function TaskEditRow(props: { value: PlanTask; onChange: (t: PlanTask) =>
             ? <input className="inp sm" value={t.detail ?? ""} placeholder="Detail, e.g. 300ea Bringup" aria-label="Detail" onChange={(x) => setT(withCode(t, std, x.target.value))} />
             : <input className="inp sm" value={t.name} placeholder={t.parentId ? "Sub-task" : "Task"} autoFocus={!t.name} aria-label="Task name" onChange={(x) => set({ name: x.target.value })} />}
         </span>
+        {isMaterialTask(t) && <TaskMaterials task={t} onPick={() => setPicking(true)} />}
+        {picking && (
+          <MaterialPick title={t.name || "Material in"} materials={props.materials ?? {}} value={t.materials ?? []}
+            onPick={(list) => { setT(withMaterials(t, list)); setPicking(false); }} onClose={() => setPicking(false)} />
+        )}
       </td>
       <td><DateBox className="sm" value={t.start} label="Start" onChange={(start) => set({ start })} /></td>
       <td><DateBox className="sm" value={t.end} label="End" onChange={(end) => set({ end })} /></td>
@@ -335,9 +378,9 @@ export function TaskEditRow(props: { value: PlanTask; onChange: (t: PlanTask) =>
 }
 
 /** One task edited on its own, keeping what is typed itself. */
-export function TaskEdit(props: { value: PlanTask; onKeep: (t: PlanTask) => void; onCancel: () => void; vocab: PlanVocab }) {
+export function TaskEdit(props: { value: PlanTask; onKeep: (t: PlanTask) => void; onCancel: () => void; vocab: PlanVocab; materials?: MaterialList }) {
   const [t, setT] = useState(props.value);
-  return <TaskEditRow value={t} onChange={setT} onKeep={props.onKeep} onCancel={props.onCancel} vocab={props.vocab} />;
+  return <TaskEditRow value={t} onChange={setT} onKeep={props.onKeep} onCancel={props.onCancel} vocab={props.vocab} materials={props.materials} />;
 }
 
 /** Waiting this long after the last change before saving it, so typing in the quantities is saved once. */
@@ -377,6 +420,9 @@ export default function DevPlan(props: {
   const [open, setOpenAll] = useState<Record<string, PlanTask[]>>({});
   const [showQty, setShowQty] = useState(false);
   const [dragTask, setDragTask] = useState("");
+  /** The task whose materials are being picked from its row. */
+  const [pickFor, setPickFor] = useState("");
+  const materials = useMemo(() => readMaterials(model.info.materials), [model]);
   const [dropOn, setDropOn] = useState("");
   const endDrag = () => { setDragTask(""); setDropOn(""); };
   const [busy, setBusy] = useState(false);
@@ -526,7 +572,7 @@ export default function DevPlan(props: {
                 {shownTasks.map((t) => {
                   const o = rowsOpen.find((x) => x.id === t.id);
                   return o
-                    ? <TaskEditRow key={t.id} value={o} vocab={vocab} onKeep={keepTask}
+                    ? <TaskEditRow key={t.id} value={o} vocab={vocab} materials={materials} onKeep={keepTask}
                       onChange={(n) => setOpen((list) => list.map((x) => (x.id === n.id ? n : x)))} onCancel={() => setOpen((list) => list.filter((x) => x.id !== t.id))} />
                     : (
                     <tr key={t.id} className={(t.parentId ? "sub" : "") + (t.done ? " done" : "") + (dropOn === t.id && dragTask ? (ev.tasks.findIndex((y) => y.id === dragTask) < ev.tasks.indexOf(t) ? " drop-below" : " drop-above") : "")}
@@ -541,7 +587,10 @@ export default function DevPlan(props: {
                       onDragEnd={endDrag}>
                       <td className="wk-dp-grip" title="Drag to move">⠿</td>
                       <td><input type="checkbox" checked={t.done} aria-label={`${t.name} done`} onChange={(x) => setTasks(ev.tasks.map((y) => (y.id === t.id ? markDone(y, x.target.checked, localToday()) : y)))} /></td>
-                      <td className="l">{t.parentId && <span className="wk-dp-sub">↳</span>}<b>{tr(t.name)}</b></td>
+                      <td className="l">
+                        {t.parentId && <span className="wk-dp-sub">↳</span>}<b>{tr(t.name)}</b>
+                        <TaskMaterials task={t} onPick={isMaterialTask(t) ? () => setPickFor(t.id) : undefined} />
+                      </td>
                       <td>{t.start || "—"}</td>
                       <td>{t.end || "—"}</td>
                       <td className="wk-dp-real">{t.actualStart || "—"}</td>
@@ -560,6 +609,13 @@ export default function DevPlan(props: {
                 {!shownTasks.length && <tr><td colSpan={10} className="wk-it-empty">No detailed schedule yet.</td></tr>}
               </tbody>
             </table>
+            {(() => {
+              const pt = ev.tasks.find((y) => y.id === pickFor);
+              return pt && (
+                <MaterialPick title={pt.name} materials={materials} value={pt.materials ?? []} onClose={() => setPickFor("")}
+                  onPick={(list) => { setTasks(ev.tasks.map((y) => (y.id === pt.id ? withMaterials(y, list) : y))); setPickFor(""); }} />
+              );
+            })()}
             <div className="wk-dp-adds">
               <button className="btn sm wk-dp-add" onClick={() => setOpen((list) => [...list, blankTask()])}>+ Task</button>
               {ev.tasks.length > 1 && ev.tasks.some((y) => !rowsOpen.some((x) => x.id === y.id)) && (

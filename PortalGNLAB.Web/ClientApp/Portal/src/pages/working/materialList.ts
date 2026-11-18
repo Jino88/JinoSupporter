@@ -120,3 +120,27 @@ export function readMaterials(v: unknown): MaterialList {
   }
   return out;
 }
+
+/** Key of a material across groups: its code, else its name (case and spaces aside). */
+export const materialKey = (m: { code: string; name: string }) => (m.code.trim() ? "c:" + norm(m.code) : "n:" + norm(m.name));
+
+/** A material of the list to pick, once for every group it is in (the first group's row kept). */
+export interface MaterialOption {
+  key: string;
+  groups: string[];
+  item: MaterialItem;
+}
+
+/** Every material of the model's list, each once, in list order, with the groups it is in. */
+export function materialOptions(list: MaterialList): MaterialOption[] {
+  const out: MaterialOption[] = [];
+  for (const g of Object.values(list)) {
+    for (const r of g.rows) {
+      if (!r.code.trim() && !r.name.trim()) continue;
+      const key = materialKey(r);
+      const had = out.find((o) => o.key === key);
+      if (had) { if (!had.groups.includes(g.label)) had.groups.push(g.label); } else out.push({ key, groups: [g.label], item: r });
+    }
+  }
+  return out;
+}

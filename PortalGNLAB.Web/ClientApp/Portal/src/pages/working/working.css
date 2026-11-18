@@ -610,3 +610,11 @@ table.wk-mat-t tr.mold-sample > td:nth-child(6) .inp { background: #fffbeb; colo
 .wk-mat-bom .wk-man-newmat { align-items: center; margin-top: 0; }
 .wk-mat-bom .wk-man-newmat label { white-space: nowrap; }
 .wk-mat-bom .mono { font-family: Consolas, monospace; }
+/* Dev Plan: the materials picked for a material task, and the popup to pick them */
+.wk-dp-mats { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-left: 8px; vertical-align: middle; }
+.wk-dp-mat { padding: 0 6px; border-radius: 9px; background: #eef2ff; color: #3730a3; font-size: 10.5px; line-height: 17px; font-family: Consolas, monospace; }
+.wk-dp-mats .wk-link { font-size: 11px; }
+.wk-mpick { width: min(820px, 94vw); max-height: 84vh; overflow: auto; padding: 14px 16px; }
+.wk-mpick .wk-mpick-q { margin: 6px 0 8px; }
+.wk-mpick-t .mono { font-family: Consolas, monospace; }
+.wk-mpick-t tr.gone td { color: var(--muted, #64748b); font-style: italic; }

@@ -19,7 +19,19 @@ export interface PlanTask {
   detail?: string;
   /** Id of the task it is a sub-task of (one level only); absent for a task of the event itself. */
   parentId?: string;
+  /** The materials of the model (Model Info › Material) picked for a material task; absent when none. */
+  materials?: TaskMaterial[];
 }
+
+/** A material picked for a task, as the Material tab of the model lists it. */
+export interface TaskMaterial {
+  code: string;
+  name: string;
+}
+
+/** Standard task whose materials are picked from the model's material list. */
+export const MATERIAL_TASK = "material-in";
+export const isMaterialTask = (t: PlanTask) => t.code === MATERIAL_TASK;
 
 /** Group of a quantity row: the materials to get in (from the BOM) or the stages to make (SPK Assy, Function, ...). */
 export type QtyGroup = "material" | "making";
@@ -270,6 +282,14 @@ export function planDays(events: PlanEvent[]): string[] {
   return calendarDays([...events.map(eventSpan), ...filled]);
 }
 
+/** The materials saved on a task, as `{ materials }`, or nothing when there are none. */
+function readTaskMaterials(v: unknown): { materials?: TaskMaterial[] } {
+  const str = (x: unknown) => (typeof x === "string" ? x.trim() : "");
+  const list = (Array.isArray(v) ? v : []).filter((m): m is Record<string, unknown> => !!m && typeof m === "object")
+    .map((m) => ({ code: str(m.code), name: str(m.name) })).filter((m) => m.code || m.name);
+  return list.length ? { materials: list } : {};
+}
+
 /** A saved plan read leniently (older or hand-edited JSON). */
 export function readDevPlan(v: unknown): DevPlan {
   const p = (v && typeof v === "object" ? v : {}) as { events?: unknown };
@@ -293,6 +313,7 @@ export function readDevPlan(v: unknown): DevPlan {
         ...(str(t.code) ? { code: str(t.code) } : {}),
         ...(str(t.detail) ? { detail: str(t.detail) } : {}),
         ...(str(t.parentId) ? { parentId: str(t.parentId) } : {}),
+        ...readTaskMaterials(t.materials),
       }))),
       rows: list(e.rows).filter((r) => r && typeof r === "object").map((r) => ({
         id: str(r.id) || newId(),
