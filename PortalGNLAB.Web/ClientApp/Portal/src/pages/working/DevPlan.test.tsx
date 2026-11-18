@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { addDays } from "./dates";
-import DevPlan, { EventEdit, Gantt, TaskEdit, TidyNames } from "./DevPlan";
+import DevPlan, { editGroup, EventEdit, Gantt, keptTask, TaskEdit, TaskEdits, TidyNames } from "./DevPlan";
 import { tidyRows } from "./planNames";
 import { DEFAULT_VOCAB } from "./planVocab";
 import type { PlanEvent } from "./plan";
@@ -54,6 +54,25 @@ describe("sub-tasks in the detailed schedule", () => {
   it("offers + Sub on a task only, not on a sub-task", () => {
     expect([...table.matchAll(/>\+ Sub</g)]).toHaveLength(2);
     expect(table).toMatch(/Line B<\/b>(?:(?!<tr)[^])*?<td class="act"><button class="wk-link">Edit</);
+  });
+
+  it("offers Edit all under the schedule, and Edit on a task opens it with its sub-tasks", () => {
+    expect(table).toContain(">Edit all</button>");
+    expect(table).toContain('title="Edit this task and its sub-tasks together">Edit</button>');
+    const tasks = [t("a", "SETUP", "", ""), t("b", "GN parts", "", ""), t("a1", "Line A", "", "", "a"), t("a2", "Line B", "", "", "a")];
+    expect(editGroup(tasks, "a").map((x) => x.id)).toEqual(["a", "a1", "a2"]);
+    expect(editGroup(tasks, "a2").map((x) => x.id)).toEqual(["a2"]);
+  });
+
+  it("edits several tasks at once with one Keep all, kept only when every row is right", () => {
+    const rows = [t("a", "SETUP", "2026-11-01", "2026-11-28"), t("a1", "Line A ", "", "", "a"), t("a2", "Line B", "", "", "a")];
+    const html = renderToStaticMarkup(<table><tbody><TaskEdits value={rows} vocab={DEFAULT_VOCAB} onKeep={() => {}} onCancel={() => {}} /></tbody></table>);
+    expect([...html.matchAll(/aria-label="Task name" value="([^"]*)"/g)].map((m) => m[1])).toEqual(["SETUP", "Line A ", "Line B"]);
+    expect([...html.matchAll(/>Cancel</g)]).toHaveLength(1);
+    expect(html).toMatch(/Line B"[^]*>Keep all \(3\)<\/button><\/td><\/tr><\/tbody>/);
+    expect(keptTask(rows[1], DEFAULT_VOCAB).task.name).toBe("Line A");
+    const wrong = renderToStaticMarkup(<table><tbody><TaskEdits value={[rows[0], { ...rows[1], start: "2026-12-05", end: "2026-12-01" }]} vocab={DEFAULT_VOCAB} onKeep={() => {}} onCancel={() => {}} /></tbody></table>);
+    expect(wrong).toMatch(/<button class="btn sm primary" disabled="">Keep all \(2\)<\/button>/);
   });
 
   it("puts the sub-tasks on the calendar under their task, the task over their days when it has none", () => {
