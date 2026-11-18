@@ -100,6 +100,9 @@ describe("Working Home", () => {
     expect(open).not.toContain("sub-tasks of Report");
     expect(open).not.toContain("sub-tasks of JIG arrive");
     expect(open).toContain('<div class="wk-hm-row task open sub">');
+    // a sub-task's bar is a thin filled line, set apart from its task's outlined bar
+    expect(open).toMatch(/class="wk-hm-tbar open sub" style="[^"]*background:#[0-9a-f]{6}80;border-color:transparent;/i);
+    expect(open).toMatch(/class="wk-hm-tbar open" style="[^"]*background:#[0-9a-f]{6}26;border-color:#[0-9a-f]{6};/i);
     expect(open).toContain(">JIG arrive<");
     expect(open).toContain(">Line 1 setup<");
 

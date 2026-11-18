@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { addDays } from "./dates";
-import DevPlan, { afterSave, autoSaveDue, editGroup, EventEdit, Gantt, keptTask, openRows, TaskEdit, TaskEditRow, TidyNames, withRows } from "./DevPlan";
+import DevPlan, { afterSave, autoSaveDue, editGroup, EventEdit, Gantt, keptTask, openRows, TaskEdit, TaskEditRow, TidyNames, tint, withRows } from "./DevPlan";
 import { tidyRows } from "./planNames";
 import { DEFAULT_VOCAB } from "./planVocab";
 import type { DevPlan as Plan, PlanEvent } from "./plan";
@@ -92,6 +92,23 @@ describe("sub-tasks in the detailed schedule", () => {
     const cal = html.slice(html.indexOf("Detailed schedule"), html.indexOf("wk-dp-tasks"));
     expect([...cal.matchAll(/<td class="nm( child)?">[^]*?<b class="">([^<]+)<\/b><small>([^<]*)<\/small>/g)].map((m) => `${m[2]}${m[1] ?? ""} ${m[3]}`))
       .toEqual(["SETUP 11-30 – 12-02", "Line A child 11-30 – 12-01", "Line B child 12-02", "GN parts 11-27"]);
+  });
+
+  it("draws a sub-task smaller, as a thin bar in a lighter shade of the event color", () => {
+    const rows = [
+      { id: "a", label: "JIG/MC", sub: "", color: "#4f46e5", span: ["2026-11-17", "2026-11-18"] as [string, string] },
+      { id: "a1", label: "JIG in", sub: "", color: "#4f46e5", span: ["2026-11-18", "2026-11-18"] as [string, string], child: true },
+    ];
+    const cal = renderToStaticMarkup(<Gantt rows={rows} days={["2026-11-17", "2026-11-18"]} />);
+    const [task, sub] = cal.split("<tr").filter((x) => x.includes('<td class="nm'));
+    expect(task).toContain('style="background:#4f46e5"');
+    expect(task).not.toContain('class="bar"');
+    expect(sub).toMatch(/^ class="[^"]*\bchild\b/);
+    expect(sub).toContain(`<i class="bar" style="background:${tint("#4f46e5", 0.45)}"></i>`);
+    expect(sub).not.toContain("#4f46e5");
+    expect(tint("#4f46e5", 0.45)).toBe("#9e99f1");
+    expect(tint("#000", 1)).toBe("#ffffff");
+    expect(tint("red", 0.5)).toBe("red");
   });
 });
 

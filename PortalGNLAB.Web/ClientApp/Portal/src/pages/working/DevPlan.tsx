@@ -19,6 +19,14 @@ interface Row { id: string; label: string; sub: string; span: [string, string] |
 
 export const dates = (span: [string, string] | null) => (span ? (span[0] === span[1] ? span[0].slice(5) : `${span[0].slice(5)} – ${span[1].slice(5)}`) : "no date");
 
+/** A hex color (#rgb or #rrggbb) mixed with white by `k` (0 = as is, 1 = white); any other color as is. */
+export function tint(color: string, k: number): string {
+  const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color);
+  if (!m) return color;
+  const hex = m[1].length === 3 ? [...m[1]].map((c) => c + c).join("") : m[1];
+  return "#" + [0, 2, 4].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * (1 - k) + 255 * k).toString(16).padStart(2, "0")).join("");
+}
+
 /**
  * Horizontal calendar: a column per day, a row per item, the days of each item filled in its color. `expand` (rows of
  * the same day columns) opens right under the selected row; its day columns are then wide enough for a quantity
@@ -46,13 +54,16 @@ export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; o
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
+          {rows.map((r) => {
+            // a sub-task: a smaller row with a thinner bar in a lighter shade of its task's color
+            const color = r.child ? tint(r.done ? "#94a3b8" : r.color, 0.45) : r.done ? "#94a3b8" : r.color;
+            return (
             <Fragment key={r.id}>
-              <tr className={(props.onPick ? "pick" : "") + (r.id === props.selected ? " on" : "") + (r.id === props.selected && props.expand ? " open" : "")}
+              <tr className={(props.onPick ? "pick" : "") + (r.child ? " child" : "") + (r.id === props.selected ? " on" : "") + (r.id === props.selected && props.expand ? " open" : "")}
                 onClick={props.onPick ? () => props.onPick!(r.id) : undefined}>
                 <td className={"nm" + (r.child ? " child" : "")}>
                   {props.onPick && <span className="tw">{r.id === props.selected && props.expand ? "▾" : "▸"}</span>}
-                  <span className="dot" style={{ background: r.color }} />
+                  <span className="dot" style={{ background: r.child ? color : r.color }} />
                   <b className={r.done ? "done" : ""}>{tr(r.label)}</b>
                   <small>{r.sub}</small>
                 </td>
@@ -60,12 +71,14 @@ export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; o
                   const on = inSpan(d, r.span);
                   const cls = "c" + (d === today ? " today" : weekday(d) % 6 === 0 ? " we" : "")
                     + (on ? " on" + (d === r.span![0] ? " s" : "") + (d === r.span![1] ? " e" : "") : "");
-                  return <td key={d} className={cls} style={on ? { background: r.done ? "#94a3b8" : r.color } : undefined} />;
+                  if (r.child) return <td key={d} className={cls}>{on && <i className="bar" style={{ background: color }} />}</td>;
+                  return <td key={d} className={cls} style={on ? { background: color } : undefined} />;
                 })}
               </tr>
               {r.id === props.selected && props.expand}
             </Fragment>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
