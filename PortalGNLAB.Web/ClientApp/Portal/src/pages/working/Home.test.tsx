@@ -85,6 +85,34 @@ describe("Working Home", () => {
     expect(shut).toContain(">SEVT AUDIT<");
   });
 
+  it("folds the sub-tasks of a task away under its own arrow, the task itself and the other tasks staying", () => {
+    const task = (id: string, name: string, parentId?: string) =>
+      ({ id, name, start: "2026-11-19", end: "2026-11-19", owner: "", done: false, note: "", ...(parentId ? { parentId } : {}) });
+    const loads = [load("MSM-G778B", { phase: "PV", devPlan: { events: [{ ...event("PV", "2026-11-17", "2026-11-30"), tasks: [
+      task("a", "JIG/MC Receive"), task("a1", "JIG arrive", "a"), task("a2", "MC arrive", "a"),
+      task("b", "SETUP"), task("b1", "Line 1 setup", "b"),
+      task("c", "Report"),
+    ] }] } })];
+    const open = renderToStaticMarkup(<Home models={[]} today="2026-11-17" onOpen={() => {}} initial={loads} folded={[]} />);
+    expect(open).toContain('class="wk-hm-fold t" aria-expanded="true" aria-label="Fold the sub-tasks of JIG/MC Receive"');
+    expect(open).toContain('aria-label="Fold the sub-tasks of SETUP"');
+    // a task without sub-tasks, or a sub-task, has nothing to fold
+    expect(open).not.toContain("sub-tasks of Report");
+    expect(open).not.toContain("sub-tasks of JIG arrive");
+    expect(open).toContain('<div class="wk-hm-row task open sub">');
+    expect(open).toContain(">JIG arrive<");
+    expect(open).toContain(">Line 1 setup<");
+
+    const shut = renderToStaticMarkup(<Home models={[]} today="2026-11-17" onOpen={() => {}} initial={loads} folded={["dev|MSM-G778B|PV|a"]} />);
+    expect(shut).toContain('class="wk-hm-fold t shut" aria-expanded="false" aria-label="Unfold the sub-tasks of JIG/MC Receive"');
+    expect(shut).not.toContain(">JIG arrive<");
+    expect(shut).not.toContain(">MC arrive<");
+    // the task stays with how many are hidden; SETUP keeps its sub-task, the event its count
+    expect(shut).toContain('>JIG/MC Receive</span><span class="wk-hm-count" title="Sub-tasks hidden">+2</span>');
+    expect(shut).toContain(">Line 1 setup<");
+    expect(shut).toContain('<span class="wk-hm-count">0/6</span>');
+  });
+
   it("says no model in development has a plan yet", () => {
     const html = renderToStaticMarkup(<Home models={[]} today="2026-11-11" onOpen={() => {}} initial={[load("A", { phase: "DR" })]} />);
     expect(html).toContain("No model in development has a Dev Plan yet");

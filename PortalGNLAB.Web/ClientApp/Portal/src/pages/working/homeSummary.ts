@@ -43,8 +43,8 @@ export interface TaskBrief {
   done: boolean;
   late: boolean;
   owner: string;
-  /** A sub-task, shown under its task. */
-  sub?: boolean;
+  /** Of a sub-task: the id of its task, shown (and folded away) under it. */
+  parent?: string;
   /** The days it really took (actual start to actual end, or to today while still going); absent before it starts. */
   actual?: Actual;
 }
@@ -106,11 +106,11 @@ export function planBrief(name: string, path: string[], info: ModelInfo, today: 
       const actual = actualOf(actualSpan(ev.tasks, t, today), s, going);
       return {
         id: t.id, name: t.name || "(no name)", span: s, done: t.done, late: !t.done && !!s && s[1] < today, owner: t.owner,
-        ...(t.parentId ? { sub: true } : {}), ...(actual ? { actual } : {}),
+        ...(t.parentId ? { parent: t.parentId } : {}), ...(actual ? { actual } : {}),
       };
     });
     const lateTasks = tasks.filter((t) => t.late).length;
-    const acts = tasks.filter((t) => !t.sub && t.actual).map((t) => t.actual!);
+    const acts = tasks.filter((t) => !t.parent && t.actual).map((t) => t.actual!);
     const actual = acts.length
       ? actualOf([acts.map((a) => a.span[0]).sort()[0], acts.map((a) => a.span[1]).sort().at(-1)!], span, acts.some((a) => a.going))
       : undefined;
