@@ -591,3 +591,22 @@ table.grid.wk-hm-issues td.detail { min-width: 260px; max-width: 420px; white-sp
 .wk-ai-pop-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
 .wk-ai-pop .wk-ai-pop-h h2 { margin: 0; }
 .wk-ai-pop-b { padding: 14px 16px 16px; overflow: auto; min-height: 0; }
+/* Material tab: the materials of each model group, with the mold each is made in */
+.wk-mat-sum { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 6px; }
+.wk-mat-kind { display: inline-block; padding: 1px 8px; border-radius: 999px; font-weight: 600; }
+.wk-mat-kind.mass { background: #dbeafe; color: #1e40af; }
+.wk-mat-kind.sample { background: #fef3c7; color: #92400e; }
+table.wk-mat-t { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.wk-mat-t th { text-align: left; padding: 4px 6px; font-size: 11px; color: var(--muted); border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.wk-mat-t td { padding: 3px 4px; border-bottom: 1px solid #eef2f7; }
+table.wk-mat-t td .inp { width: 100%; box-sizing: border-box; }
+table.wk-mat-t .n { width: 2.5rem; text-align: right; color: var(--muted); }
+table.wk-mat-t .q { width: 5rem; }
+table.wk-mat-t .wk-mat-unit { width: 4rem; }
+table.wk-mat-t tr.mold-mass > td:nth-child(6) .inp { background: #eff6ff; color: #1e40af; }
+table.wk-mat-t tr.mold-sample > td:nth-child(6) .inp { background: #fffbeb; color: #92400e; }
+.wk-mat-adds { margin-top: 8px; }
+.wk-mat-bom { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line-soft); }
+.wk-mat-bom .wk-man-newmat { align-items: center; margin-top: 0; }
+.wk-mat-bom .wk-man-newmat label { white-space: nowrap; }
+.wk-mat-bom .mono { font-family: Consolas, monospace; }
