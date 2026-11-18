@@ -34,6 +34,38 @@ export function moveRow<T>(rows: T[], from: number, to: number): T[] {
   return out;
 }
 
+const hasText = (r: VocabRow) => [r.code, r.name, r.aliases, r.template].some((s) => s.trim());
+
+/**
+ * The rows made ready to save, so nothing written is dropped by the server without a word: rows left fully blank go,
+ * a missing name is the code, a missing code is made from the name; a code used twice or a template code that is not a
+ * task is an error (the rows stay as written).
+ */
+export function checkRows(stages: VocabRow[], tasks: VocabRow[]): { stages: VocabRow[]; tasks: VocabRow[]; filled: number; error?: string } {
+  let filled = 0;
+  const fill = (rows: VocabRow[]) => rows.filter(hasText).map((r) => {
+    const code = r.code.trim() || r.name.trim().toLowerCase().replace(/\s+/g, "-");
+    const name = r.name.trim() || code;
+    if (code !== r.code.trim() || name !== r.name.trim()) filled++;
+    return { ...r, code, name };
+  });
+  const s = fill(stages), t = fill(tasks);
+  for (const [kind, rows] of [["stage", s], ["task", t]] as const) {
+    const seen = new Set<string>();
+    for (const r of rows) {
+      if (!r.code) return { stages: s, tasks: t, filled, error: `A ${kind} row has only other names; write its code or name.` };
+      if (seen.has(r.code.toLowerCase())) return { stages: s, tasks: t, filled, error: `The ${kind} code "${r.code}" is used twice.` };
+      seen.add(r.code.toLowerCase());
+    }
+  }
+  const taskCodes = new Set(t.map((r) => r.code.toLowerCase()));
+  for (const r of s) {
+    const unknown = splitList(r.template).filter((c) => !taskCodes.has(c.toLowerCase()));
+    if (unknown.length) return { stages: s, tasks: t, filled, error: `Stage ${r.code} starts with ${unknown.join(", ")}, which is not a task code.` };
+  }
+  return { stages: s, tasks: t, filled };
+}
+
 export function toVocab(stages: VocabRow[], tasks: VocabRow[]): PlanVocab {
   const item = (r: VocabRow) => ({ code: r.code.trim(), name: r.name.trim(), aliases: splitList(r.aliases) });
   return {
@@ -75,13 +107,19 @@ export function PlanVocabEditor({ initial }: { initial: PlanVocab }) {
   };
 
   async function save() {
+    // the server drops blank / repeated codes and unknown template codes, so those are filled in or stopped here first
+    const checked = checkRows(stages, tasks);
+    if (checked.error) {
+      setMsg({ text: checked.error + " Nothing was saved.", error: true });
+      return;
+    }
     setBusy(true);
     setMsg(null);
     try {
-      // the server drops blank / repeated codes and unknown template codes; show what it actually kept
-      const saved = await planVocabApi.save(toVocab(stages, tasks));
+      const saved = await planVocabApi.save(toVocab(checked.stages, checked.tasks));
       load(saved);
-      setMsg({ text: `${saved.stages.length} stage(s) and ${saved.tasks.length} task(s) saved.`, error: false });
+      const note = checked.filled ? ` A missing code or name was filled in on ${checked.filled} row(s).` : "";
+      setMsg({ text: `${saved.stages.length} stage(s) and ${saved.tasks.length} task(s) saved.${note}`, error: false });
     } catch (e) {
       setMsg({ text: errText(e), error: true });
     } finally {
@@ -150,7 +188,8 @@ export function PlanVocabEditor({ initial }: { initial: PlanVocab }) {
     <>
       <p className="muted small">
         One list for every model. A code is the fixed key kept in a plan; the name is what is shown and written. Other names are matched inside a name
-        (any case) to tidy up old plans. Save to apply; a blank or repeated code and a template code that is not a task are dropped.
+        (any case) to tidy up old plans. Save to apply; a missing code is made from the name (and a missing name is the code), and a repeated code or a template code that is not a
+        task stops the save.
       </p>
       <h3>Stages</h3>
       {table("stage", stages, setStages)}
