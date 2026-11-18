@@ -1,10 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { addDays } from "./dates";
-import DevPlan, { editGroup, EventEdit, Gantt, keptTask, TaskEdit, TaskEdits, TidyNames } from "./DevPlan";
+import DevPlan, { afterSave, autoSaveDue, editGroup, EventEdit, Gantt, keptTask, TaskEdit, TaskEdits, TidyNames } from "./DevPlan";
 import { tidyRows } from "./planNames";
 import { DEFAULT_VOCAB } from "./planVocab";
-import type { PlanEvent } from "./plan";
+import type { DevPlan as Plan, PlanEvent } from "./plan";
 
 const event = (f: Partial<PlanEvent>): PlanEvent =>
   ({ id: "e", name: "DR build", start: "", end: "", color: "#2563eb", tasks: [], rows: [], bomFrom: "", ...f });
@@ -139,5 +139,29 @@ describe("standard names in the Dev Plan", () => {
     expect(sel(t, "Standard name of GN 자재 도착")).toContain('<option value="material-in" selected="">Material in</option>');
     expect(t).toMatch(/aria-label="Detail of GN 자재 도착" value="GN"/);
     expect(t).toContain(">Apply 1</button>");
+  });
+});
+
+describe("saving the plan by itself", () => {
+  const saved: Plan = { events: [event({ id: "e1", name: "LPR" })] };
+  const changed: Plan = { events: [{ ...saved.events[0], tasks: [{ id: "a", name: "JIG/MC", start: "", end: "", owner: "", done: false, note: "" }] }] };
+
+  it("saves a changed plan without Save, but not an unchanged one, one already saving or the one that just failed", () => {
+    expect(autoSaveDue(changed, saved, false, "")).toBe(true);
+    expect(autoSaveDue({ events: [{ ...saved.events[0] }] }, saved, false, "")).toBe(false);
+    expect(autoSaveDue(changed, saved, true, "")).toBe(false);
+    expect(autoSaveDue(changed, saved, false, JSON.stringify(changed))).toBe(false);
+  });
+
+  it("keeps a change made while saving, to save it next", () => {
+    const kept: Plan = JSON.parse(JSON.stringify(changed));
+    expect(afterSave(changed, changed, kept)).toBe(kept);
+    const later: Plan = { events: [] };
+    expect(afterSave(later, changed, kept)).toBe(later);
+  });
+
+  it("no longer says a change waits for Save", () => {
+    const t = renderToStaticMarkup(<TidyNames rows={[]} vocab={DEFAULT_VOCAB} onRows={() => {}} onApply={() => {}} onCancel={() => {}} />);
+    expect(t).not.toContain("Not saved until Save.");
   });
 });
