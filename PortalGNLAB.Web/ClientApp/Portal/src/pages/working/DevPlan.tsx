@@ -325,6 +325,18 @@ export function TaskEdits(props: { value: PlanTask[]; onKeep: (list: PlanTask[])
   );
 }
 
+/** Waiting this long after the last change before saving it, so typing in the quantities is saved once. */
+export const AUTO_SAVE_MS = 800;
+
+/** Whether the plan as it is now is to be saved by itself: changed, nothing saving, and not the plan that just failed to save. */
+export const autoSaveDue = (plan: Plan, saved: Plan, busy: boolean, failed: string) => {
+  const now = JSON.stringify(plan);
+  return !busy && now !== JSON.stringify(saved) && now !== failed;
+};
+
+/** The plan after a save: the one the server kept, unless it was changed again while saving (that change is saved next). */
+export const afterSave = (current: Plan, sent: Plan, kept: Plan) => (current === sent ? kept : current);
+
 /**
  * Development plan of the model: the events on a horizontal calendar (a row per event, its days filled in), and under
  * it the detailed schedule of the event clicked. Kept in the model information (info.devPlan) and saved here.
@@ -356,8 +368,10 @@ export default function DevPlan(props: {
   const endDrag = () => { setDragTask(""); setDropOn(""); };
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  /** The plan (as JSON) whose save failed: not tried again by itself until it is changed. */
+  const [failed, setFailed] = useState("");
   const dirty = JSON.stringify(plan) !== JSON.stringify(savedPlan);
-  useEffect(() => props.onDirty(dirty), [dirty]);
+  useEffect(() => props.onDirty(dirty), [dirty, model]);
 
   const events = plan.events;
   const ev = events.find((e) => e.id === selected) ?? null;
@@ -399,15 +413,23 @@ export default function DevPlan(props: {
     setEditing(null);
   };
   const save = async () => {
+    const sent = plan;
     setBusy(true);
     try {
-      const m = await workingApi.saveModel(model.name, { ...model.info, devPlan: plan }, model.revision);
+      const m = await workingApi.saveModel(model.name, { ...model.info, devPlan: sent }, model.revision);
       props.onSaved(m);
-      setPlan(readDevPlan(m.info.devPlan));
+      setPlan((cur) => afterSave(cur, sent, readDevPlan(m.info.devPlan)));
+      setFailed("");
       setMsg("Saved.");
       window.setTimeout(() => setMsg(""), 2500);
-    } catch (e) { props.onError(e); } finally { setBusy(false); }
+    } catch (e) { setFailed(JSON.stringify(sent)); props.onError(e); } finally { setBusy(false); }
   };
+  // every change is saved by itself a moment later (a failed save waits for Save or the next change)
+  useEffect(() => {
+    if (!autoSaveDue(plan, savedPlan, busy, failed)) return;
+    const t = window.setTimeout(() => void save(), AUTO_SAVE_MS);
+    return () => window.clearTimeout(t);
+  }, [plan, savedPlan, busy, failed]);
 
   const freeNames = events.reduce((n, e) => n + (e.stage ? 0 : 1) + e.tasks.filter((t) => !t.code).length, 0);
   const standard = ev ? templateTasks(ev, vocab) : [];
@@ -438,14 +460,15 @@ export default function DevPlan(props: {
       <div className="pi-sec-h">
         <h2>{tr("Development plan")} <span className="cnt">{events.length}</span></h2>
         <div className="pi-legend">
-          {dirty && <span className="pi-dirty">Unsaved</span>}
-          {msg && <span className="pi-msg">{msg}</span>}
+          {dirty && (failed === JSON.stringify(plan) ? <span className="pi-dirty">{tr("Not saved")}</span> : <span className="pi-msg">{tr("Saving…")}</span>)}
+          {msg && !dirty && <span className="pi-msg">{msg}</span>}
           {freeNames > 0 && (
             <button className="btn sm" disabled={!!tidy} title="Give the events and tasks written in their own words the standard names"
               onClick={() => setTidy(tidyRows(plan, vocab))}>{tr("Standard names")} <span className="cnt">{freeNames}</span></button>
           )}
           <button className="btn sm" disabled={!!editEvent} onClick={() => setEditEvent(blankEvent(events.length))}>+ Event</button>
-          <button className="btn sm primary" disabled={!dirty || busy} onClick={save}>{busy ? "Saving…" : "Save"}</button>
+          <button className="btn sm primary" disabled={!dirty || busy} onClick={save}
+            title="Changes are saved by themselves; Save tries again after a failed save">{busy ? "Saving…" : "Save"}</button>
         </div>
       </div>
       <div className="pi-sec-b">
@@ -578,7 +601,7 @@ export function TidyNames(props: { rows: TidyRow[]; vocab: PlanVocab; onRows: (r
       <div className="wk-dp-tidy-f">
         <button className="btn sm" onClick={props.onCancel}>Cancel</button>
         <button className="btn sm primary" disabled={!chosen} onClick={props.onApply}>{tr("Apply")} {chosen}</button>
-        <span className="muted small">{tr("Not saved until Save.")}</span>
+        <span className="muted small">{tr("Saved by itself once applied.")}</span>
       </div>
     </div>
   );
