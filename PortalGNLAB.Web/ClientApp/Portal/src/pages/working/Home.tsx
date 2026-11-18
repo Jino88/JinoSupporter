@@ -13,7 +13,10 @@ const STATE_LABEL: Record<EventBrief["state"], string> = { done: "Done", now: "N
 /** Models loaded at the same time, so a long tree does not send every request at once. */
 const AT_ONCE = 6;
 
-/** The events whose tasks are folded away, kept in the browser by "kind|model|event" (all unfolded at first). */
+/**
+ * The events whose tasks are folded away ("kind|model|event") and the tasks whose sub-tasks are ("kind|model|event|task"),
+ * kept in the browser (all unfolded at first).
+ */
 const FOLD_KEY = "working.home.folded";
 const savedFolds = (): string[] => {
   try {
@@ -57,7 +60,7 @@ export default function Home(props: {
   view?: "home" | "devissues" | "mpissues";
   /** Already loaded (tests and the page reopening); loaded here when left out. */
   initial?: ModelLoad[];
-  /** The events folded at first, "kind|model|event" (tests); else the ones folded last time in this browser. */
+  /** The events ("kind|model|event") and tasks ("…|task") folded at first (tests); else the ones folded last time in this browser. */
   folded?: string[];
 }) {
   const tr = useTr();
@@ -372,14 +375,23 @@ function PlanTimeline(props: {
                       </Bar>
                     ))}
                   </div>
-                  {!shut && e.tasks.map((t) => {
+                  {!shut && e.tasks.filter((t) => !t.parent || !folded.has(`${fk}|${t.parent}`)).map((t) => {
                     const tb = t.span && range ? barAt(t.span, range) : null;
                     const state = t.done ? "done" : t.late ? "late" : "open";
+                    // a task's sub-tasks fold away under it the same way, by "kind|model|event|task"
+                    const subs = t.parent ? 0 : e.tasks.filter((c) => c.parent === t.id).length;
+                    const tk = `${fk}|${t.id}`, tshut = subs > 0 && folded.has(tk);
                     return (
-                      <div key={t.id} className={"wk-hm-row task " + state + (t.sub ? " sub" : "")}>
+                      <div key={t.id} className={"wk-hm-row task " + state + (t.parent ? " sub" : "")}>
                         <div className="wk-hm-label">
+                          {subs > 0 && (
+                            <button className={"wk-hm-fold t" + (tshut ? " shut" : "")} aria-expanded={!tshut} onClick={() => toggle(tk)}
+                              aria-label={`${tshut ? "Unfold" : "Fold"} the sub-tasks of ${t.name}`}
+                              title={tr(tshut ? "Show the sub-tasks" : "Hide the sub-tasks")}>▾</button>
+                          )}
                           <span className={"wk-hm-check " + state}>{t.done ? "✓" : ""}</span>
                           <span className="wk-hm-task" title={t.name}>{tr(t.name)}</span>
+                          {tshut && <span className="wk-hm-count" title={tr("Sub-tasks hidden")}>+{subs}</span>}
                           {t.owner && <span className="wk-hm-owner" title="Owner">{t.owner}</span>}
                           {t.late && <span className="wk-hm-st late">{tr("Late")}</span>}
                           {!t.span && <span className="wk-hm-st undated">{tr("No date")}</span>}

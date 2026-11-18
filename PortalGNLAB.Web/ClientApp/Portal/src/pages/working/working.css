@@ -483,6 +483,8 @@ table.wk-gantt .wk-qty-in { padding: 4px 3px; font-size: 11px; }
 button.wk-hm-fold:hover { background: #eef2f7; color: var(--ink); }
 .wk-hm-fold.shut { transform: rotate(-90deg); }
 .wk-hm-fold.none { cursor: default; }
+/* a task's arrow sits left of its check, so the checks stay in line */
+.wk-hm-fold.t { margin-left: -23px; }
 .wk-hm-ev, .wk-hm-task { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .wk-hm-ev { color: var(--ink); }
 .wk-hm-row.task.done .wk-hm-task { color: var(--faint); text-decoration: line-through; }
