@@ -25,6 +25,15 @@ export function toRows(vocab: PlanVocab): { stages: VocabRow[]; tasks: VocabRow[
   };
 }
 
+/** The rows with one (dragged) moved to the place of another (dropped on): after it going down, before it going up. */
+export function moveRow<T>(rows: T[], from: number, to: number): T[] {
+  if (from === to || from < 0 || to < 0 || from >= rows.length || to >= rows.length) return rows;
+  const out = [...rows];
+  const [row] = out.splice(from, 1);
+  out.splice(to, 0, row);
+  return out;
+}
+
 export function toVocab(stages: VocabRow[], tasks: VocabRow[]): PlanVocab {
   const item = (r: VocabRow) => ({ code: r.code.trim(), name: r.name.trim(), aliases: splitList(r.aliases) });
   return {
@@ -56,6 +65,8 @@ export function PlanVocabEditor({ initial }: { initial: PlanVocab }) {
   const [tasks, setTasks] = useState(start.tasks);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<Msg>(null);
+  /** The row being dragged by its grip, and the row it is over, within one table. */
+  const [drag, setDrag] = useState<{ kind: string; from: number; over: number } | null>(null);
 
   const load = (v: PlanVocab) => {
     const r = toRows(v);
@@ -85,6 +96,7 @@ export function PlanVocabEditor({ initial }: { initial: PlanVocab }) {
       <table className="set-table" style={{ maxWidth: "none" }} aria-label={isStage ? "Stages" : "Tasks"}>
         <thead>
           <tr>
+            <th style={{ width: "1rem" }}></th>
             <th style={{ width: "10rem" }}>Code</th>
             <th style={{ width: "12rem" }}>Name</th>
             <th>Other names (comma separated)</th>
@@ -95,11 +107,28 @@ export function PlanVocabEditor({ initial }: { initial: PlanVocab }) {
         <tbody>
           {rows.length === 0 && (
             <tr>
-              <td colSpan={isStage ? 5 : 4} className="muted small">None.</td>
+              <td colSpan={isStage ? 6 : 5} className="muted small">None.</td>
             </tr>
           )}
           {rows.map((row, i) => (
-            <tr key={i}>
+            <tr key={i}
+              className={drag?.kind === kind && drag.over === i && drag.from !== i ? (drag.from < i ? "drop-below" : "drop-above") : undefined}
+              onDragOver={(x) => {
+                if (drag?.kind !== kind) return;
+                x.preventDefault();
+                if (drag.over !== i) setDrag({ ...drag, over: i });
+              }}
+              onDrop={(x) => { x.preventDefault(); if (drag?.kind === kind) setRows(moveRow(rows, drag.from, i)); setDrag(null); }}>
+              {/* only the grip drags, so text in the boxes can still be selected */}
+              <td className="set-grip" title="Drag to move" aria-label={`Move ${kind} ${row.code || i + 1}`} draggable
+                onDragStart={(x) => {
+                  x.dataTransfer.effectAllowed = "move";
+                  x.dataTransfer.setData("text/plain", row.code);
+                  const tr = x.currentTarget.parentElement;
+                  if (tr) x.dataTransfer.setDragImage(tr, 8, 8);
+                  setDrag({ kind, from: i, over: i });
+                }}
+                onDragEnd={() => setDrag(null)}>⠿</td>
               <td><input className="inp sm mono" value={row.code} aria-label={`${kind} code`} onChange={(e) => update(i, { code: e.target.value })} /></td>
               <td><input className="inp sm" value={row.name} aria-label={`${kind} name`} onChange={(e) => update(i, { name: e.target.value })} /></td>
               <td><input className="inp sm" value={row.aliases} aria-label={`${kind} other names`} onChange={(e) => update(i, { aliases: e.target.value })} /></td>
