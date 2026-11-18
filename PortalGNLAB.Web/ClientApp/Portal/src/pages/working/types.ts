@@ -40,6 +40,8 @@ export interface ModelInfo {
   tempGroup?: unknown;
   /** Processes, NG items and materials of each sub-group of tempGroup, by sub-group id (manual.ts readSubManual). */
   subManual?: unknown;
+  /** Materials of each group of the model with their mold (mass production / sample) (materialList.ts). */
+  materials?: unknown;
   /** Development plan: events and their detailed schedule (plan.ts). */
   devPlan?: unknown;
 }

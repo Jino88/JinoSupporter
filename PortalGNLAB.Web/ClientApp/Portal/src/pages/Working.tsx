@@ -15,6 +15,7 @@ import Home from "./working/Home";
 import { LANGS, TranslationProvider, saveLang, savedLang, useTr, type Lang } from "./working/i18n";
 import { treeModels } from "./working/homeSummary";
 import InfoTab from "./working/InfoTab";
+import MaterialTab from "./working/MaterialTab";
 import IssueTable from "./working/IssueTable";
 import {
   buildTree, countByKind, filterTree, isOpenIssue, issuesOfStage, pathOf, replaceSome, sortEntries, type GroupNode, type IssueStage,
@@ -27,10 +28,10 @@ import "./working/working.css";
 
 /** The pages of the top menu: Home and the MP issues of every model. */
 type HomeView = "home" | "devissues" | "mpissues";
-type Tab = "info" | "bom" | "plan" | "devissue" | "dev" | "review" | "all" | "setup" | "issue" | "docs" | "process" | "jigmc" | "ai";
+type Tab = "info" | "bom" | "material" | "plan" | "devissue" | "dev" | "review" | "all" | "setup" | "issue" | "docs" | "process" | "jigmc" | "ai";
 /** Categories of a model page and the tabs under each (AI has none); what the model is made of is all under Model Info. */
 export const CATEGORIES: { label: string; tabs: [Tab, string][] }[] = [
-  { label: "Model Info", tabs: [["info", "Model Info"], ["docs", "Documents"], ["bom", "BOM / Drawing"], ["process", "Process"], ["jigmc", "JIG/MC List"]] },
+  { label: "Model Info", tabs: [["info", "Model Info"], ["docs", "Documents"], ["bom", "BOM / Drawing"], ["material", "Material"], ["process", "Process"], ["jigmc", "JIG/MC List"]] },
   { label: "Development", tabs: [["plan", "Dev Plan"], ["devissue", "Dev Issue"], ["dev", "Dev History"], ["review", "Reviews"], ["all", "Timeline"]] },
   { label: "Mass Production", tabs: [["setup", "Plan"], ["issue", "Issues"]] },
   { label: "AI", tabs: [["ai", "AI"]] },
@@ -305,6 +306,10 @@ function WorkingPage(props: { lang: Lang; waiting: number; onLang: (lang: Lang) 
                       onSaved={(m) => { setModel(m); setInfoDirty(false); }} onError={fail} />
                   )}
                   {tab === "bom" && <BomPanel key={selected} modelName={selected} saved={model.info.bmesMaterial ?? ""} onError={fail} />}
+                  {tab === "material" && (
+                    <MaterialTab key={selected} model={model} onDirty={setInfoDirty}
+                      onSaved={(m) => { setModel(m); setInfoDirty(false); }} onError={fail} />
+                  )}
                   {keepDocs(tab, docsFor, selected) && (
                     <div hidden={tab !== "docs"}>
                       <ModelDocs key={selected} model={model} onSaved={(m) => { setModel(m); setInfoDirty(false); }}
