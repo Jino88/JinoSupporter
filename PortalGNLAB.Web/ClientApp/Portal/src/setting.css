@@ -29,6 +29,10 @@
 .set-table th { text-align: left; font-size: 12px; padding: 4px 6px; border-bottom: 1px solid var(--line); }
 .set-table td { padding: 4px 6px; }
 .set-table .inp { width: 100%; }
+.set-table td.set-grip { padding-right: 0; color: #94a3b8; cursor: grab; user-select: none; }
+.set-table tr:hover td.set-grip { color: var(--muted); }
+.set-table tr.drop-above > td { box-shadow: inset 0 2px 0 var(--brand); }
+.set-table tr.drop-below > td { box-shadow: inset 0 -2px 0 var(--brand); }
 .set-material { line-height: 1.7; }
 .inp.mono { font-family: Consolas, monospace; }
 .inp.num { width: 90px; }
