@@ -266,63 +266,65 @@ export function keptTask(t: PlanTask, vocab: PlanVocab): { task: PlanTask; probl
 /** The tasks one Edit opens together: a task with its sub-tasks, a sub-task alone. */
 export const editGroup = (tasks: PlanTask[], id: string) => tasks.filter((t) => t.id === id || t.parentId === id);
 
-/** One task of the detailed schedule being added or changed. */
-export function TaskEdit(props: { value: PlanTask; onKeep: (t: PlanTask) => void; onCancel: () => void; vocab: PlanVocab }) {
-  return <TaskEdits value={[props.value]} onKeep={(list) => props.onKeep(list[0])} onCancel={props.onCancel} vocab={props.vocab} />;
+/** The open edit rows with more opened: a row already open stays as it is being typed. */
+export const openRows = (open: PlanTask[], more: PlanTask[]) => [...open, ...more.filter((t) => !open.some((o) => o.id === t.id))];
+
+/**
+ * The schedule with rows put in (open edit rows to show, or kept ones to save): a task already there in its place, a new
+ * task at the end, a new sub-task after the last sub-task of its parent.
+ */
+export function withRows(tasks: PlanTask[], rows: PlanTask[]): PlanTask[] {
+  let out = tasks.map((t) => rows.find((r) => r.id === t.id) ?? t);
+  for (const r of rows) if (!tasks.some((t) => t.id === r.id)) out = r.parentId ? addSubTask(out, r.parentId, r) : [...out, r];
+  return out;
 }
 
 /**
- * Tasks of the detailed schedule (one after another in the table) changed together, a row each, with one Cancel and
- * Keep on the last row; Keep keeps them all and is off while any row has a problem.
+ * One task of the detailed schedule being added or changed, a row of the table with its own Cancel and Keep; what is
+ * typed is kept by the caller, so several rows (tasks, sub-tasks, new ones) can be open at once.
  */
-export function TaskEdits(props: { value: PlanTask[]; onKeep: (list: PlanTask[]) => void; onCancel: () => void; vocab: PlanVocab }) {
-  const [list, setList] = useState(props.value);
-  const kept = list.map((t) => keptTask(t, props.vocab));
-  const bad = kept.some((k) => k.problem);
+export function TaskEditRow(props: { value: PlanTask; onChange: (t: PlanTask) => void; onKeep: (t: PlanTask) => void; onCancel: () => void; vocab: PlanVocab }) {
+  const t = props.value;
+  const setT = props.onChange;
+  const set = (f: Partial<PlanTask>) => setT({ ...t, ...f });
+  const std = itemOf(t.code, props.vocab.tasks);
+  const { task, problem } = keptTask(t, props.vocab);
   return (
-    <>
-      {list.map((t, i) => {
-        const setT = (n: PlanTask) => setList(list.map((x, j) => (j === i ? n : x)));
-        const set = (f: Partial<PlanTask>) => setT({ ...t, ...f });
-        const std = itemOf(t.code, props.vocab.tasks);
-        const { task, problem } = kept[i];
-        return (
-          <tr key={t.id} className={"wk-dp-edit" + (t.parentId ? " sub" : "")}>
-            <td></td>
-            <td><input type="checkbox" checked={t.done} aria-label="Done" onChange={(x) => setT(markDone(t, x.target.checked, localToday()))} /></td>
-            <td className="l">
-              {t.parentId && <span className="wk-dp-sub">↳</span>}
-              <span className="wk-dp-name">
-                <select className="inp sm" value={std?.code ?? ""} aria-label="Standard task"
-                  onChange={(x) => { const s = itemOf(x.target.value, props.vocab.tasks); setT(s ? withCode(t, s, t.detail ?? "") : freeTask(t)); }}>
-                  <option value="">Other (own name)</option>
-                  {props.vocab.tasks.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
-                </select>
-                {std
-                  ? <input className="inp sm" value={t.detail ?? ""} placeholder="Detail, e.g. 300ea Bringup" aria-label="Detail" onChange={(x) => setT(withCode(t, std, x.target.value))} />
-                  : <input className="inp sm" value={t.name} placeholder={t.parentId ? "Sub-task" : "Task"} autoFocus={i === 0} aria-label="Task name" onChange={(x) => set({ name: x.target.value })} />}
-              </span>
-            </td>
-            <td><DateBox className="sm" value={t.start} label="Start" onChange={(start) => set({ start })} /></td>
-            <td><DateBox className="sm" value={t.end} label="End" onChange={(end) => set({ end })} /></td>
-            <td><DateBox className="sm" value={t.actualStart ?? ""} label="Actual start" onChange={(actualStart) => set({ actualStart })} /></td>
-            <td><DateBox className="sm" value={t.actualEnd ?? ""} label="Actual end" onChange={(actualEnd) => set({ actualEnd })} /></td>
-            <td><input className="inp sm wk-dp-owner" value={t.owner} placeholder="Owner" onChange={(x) => set({ owner: x.target.value })} /></td>
-            <td className="l"><input className="inp sm" value={t.note} placeholder="Note" onChange={(x) => set({ note: x.target.value })} /></td>
-            <td className="act">
-              {problem && task.name && <div className="pi-dirty small">{problem}</div>}
-              {i === list.length - 1 && (
-                <>
-                  <button className="btn sm" onClick={props.onCancel}>Cancel</button>{" "}
-                  <button className="btn sm primary" disabled={bad} onClick={() => props.onKeep(kept.map((k) => k.task))}>{list.length > 1 ? `Keep all (${list.length})` : "Keep"}</button>
-                </>
-              )}
-            </td>
-          </tr>
-        );
-      })}
-    </>
+    <tr className={"wk-dp-edit" + (t.parentId ? " sub" : "")}>
+      <td></td>
+      <td><input type="checkbox" checked={t.done} aria-label="Done" onChange={(x) => setT(markDone(t, x.target.checked, localToday()))} /></td>
+      <td className="l">
+        {t.parentId && <span className="wk-dp-sub">↳</span>}
+        <span className="wk-dp-name">
+          <select className="inp sm" value={std?.code ?? ""} aria-label="Standard task"
+            onChange={(x) => { const s = itemOf(x.target.value, props.vocab.tasks); setT(s ? withCode(t, s, t.detail ?? "") : freeTask(t)); }}>
+            <option value="">Other (own name)</option>
+            {props.vocab.tasks.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
+          </select>
+          {std
+            ? <input className="inp sm" value={t.detail ?? ""} placeholder="Detail, e.g. 300ea Bringup" aria-label="Detail" onChange={(x) => setT(withCode(t, std, x.target.value))} />
+            : <input className="inp sm" value={t.name} placeholder={t.parentId ? "Sub-task" : "Task"} autoFocus={!t.name} aria-label="Task name" onChange={(x) => set({ name: x.target.value })} />}
+        </span>
+      </td>
+      <td><DateBox className="sm" value={t.start} label="Start" onChange={(start) => set({ start })} /></td>
+      <td><DateBox className="sm" value={t.end} label="End" onChange={(end) => set({ end })} /></td>
+      <td><DateBox className="sm" value={t.actualStart ?? ""} label="Actual start" onChange={(actualStart) => set({ actualStart })} /></td>
+      <td><DateBox className="sm" value={t.actualEnd ?? ""} label="Actual end" onChange={(actualEnd) => set({ actualEnd })} /></td>
+      <td><input className="inp sm wk-dp-owner" value={t.owner} placeholder="Owner" onChange={(x) => set({ owner: x.target.value })} /></td>
+      <td className="l"><input className="inp sm" value={t.note} placeholder="Note" onChange={(x) => set({ note: x.target.value })} /></td>
+      <td className="act">
+        {problem && task.name && <div className="pi-dirty small">{problem}</div>}
+        <button className="btn sm" onClick={props.onCancel}>Cancel</button>{" "}
+        <button className="btn sm primary" disabled={!!problem} onClick={() => props.onKeep(task)}>Keep</button>
+      </td>
+    </tr>
   );
+}
+
+/** One task edited on its own, keeping what is typed itself. */
+export function TaskEdit(props: { value: PlanTask; onKeep: (t: PlanTask) => void; onCancel: () => void; vocab: PlanVocab }) {
+  const [t, setT] = useState(props.value);
+  return <TaskEditRow value={t} onChange={setT} onKeep={props.onKeep} onCancel={props.onCancel} vocab={props.vocab} />;
 }
 
 /** Waiting this long after the last change before saving it, so typing in the quantities is saved once. */
@@ -358,10 +360,8 @@ export default function DevPlan(props: {
   const [plan, setPlan] = useState<Plan>(savedPlan);
   const [selected, setSelected] = useState(savedPlan.events[0]?.id ?? "");
   const [editEvent, setEditEvent] = useState<PlanEvent | null>(null);
-  const [editTask, setEditTask] = useState<PlanTask | null>(null);
-  /** The saved tasks being changed together (a task with its sub-tasks, or all of them). */
-  const [editing, setEditing] = useState<string[] | null>(null);
-  const changing = !!editTask || !!editing;
+  /** The edit rows open in each event (tasks being changed and new ones), as typed so far; any number at once. */
+  const [open, setOpenAll] = useState<Record<string, PlanTask[]>>({});
   const [showQty, setShowQty] = useState(false);
   const [dragTask, setDragTask] = useState("");
   const [dropOn, setDropOn] = useState("");
@@ -371,10 +371,17 @@ export default function DevPlan(props: {
   /** The plan (as JSON) whose save failed: not tried again by itself until it is changed. */
   const [failed, setFailed] = useState("");
   const dirty = JSON.stringify(plan) !== JSON.stringify(savedPlan);
-  useEffect(() => props.onDirty(dirty), [dirty, model]);
-
   const events = plan.events;
   const ev = events.find((e) => e.id === selected) ?? null;
+  const rowsOpen = ev ? open[ev.id] ?? [] : [];
+  const setOpen = (f: (list: PlanTask[]) => PlanTask[]) => {
+    if (!ev) return;
+    const id = ev.id;
+    setOpenAll((o) => ({ ...o, [id]: f(o[id] ?? []) }));
+  };
+  // rows not kept yet are not saved, so leaving the model with one open asks first
+  const notKept = events.reduce((n, e) => n + (open[e.id]?.length ?? 0), 0);
+  useEffect(() => props.onDirty(dirty || notKept > 0), [dirty, notKept, model]);
   const days = useMemo(() => planDays(events), [events]);
   const evDays = useMemo(() => (ev ? calendarDays([eventSpan(ev), ...ev.tasks.map(taskSpan)], 1) : []), [ev]);
 
@@ -403,14 +410,14 @@ export default function DevPlan(props: {
   const setTasks = (tasks: PlanTask[]) => ev && setEvents(events.map((x) => (x.id === ev.id ? { ...x, tasks } : x)));
   const keepTask = (t: PlanTask) => {
     if (!ev) return;
-    setTasks(ev.tasks.some((x) => x.id === t.id) ? ev.tasks.map((x) => (x.id === t.id ? t : x)) : t.parentId ? addSubTask(ev.tasks, t.parentId, t) : [...ev.tasks, t]);
-    setEditTask(null);
+    setTasks(withRows(ev.tasks, [t]));
+    setOpen((list) => list.filter((x) => x.id !== t.id));
   };
-  const keepTasks = (list: PlanTask[]) => {
-    if (!ev) return;
-    const by = new Map(list.map((t) => [t.id, t]));
-    setTasks(ev.tasks.map((x) => by.get(x.id) ?? x));
-    setEditing(null);
+  const keptOpen = rowsOpen.map((t) => keptTask(t, vocab));
+  const keepAll = () => {
+    if (!ev || keptOpen.some((k) => k.problem)) return;
+    setTasks(withRows(ev.tasks, keptOpen.map((k) => k.task)));
+    setOpen(() => []);
   };
   const save = async () => {
     const sent = plan;
@@ -437,21 +444,19 @@ export default function DevPlan(props: {
     const [done, all] = progress(e);
     return { id: e.id, label: e.name, sub: dates(eventSpan(e)) + (all ? ` · ${done}/${all}` : ""), span: eventSpan(e), color: e.color };
   });
-  const newTask = editTask && ev && !ev.tasks.some((t) => t.id === editTask.id);
-  // a new sub-task is typed in its place, right after the last sub-task of its parent
-  const shownTasks = ev && newTask && editTask?.parentId ? addSubTask(ev.tasks, editTask.parentId, editTask) : ev?.tasks ?? [];
+  // a new row is typed in its place: a sub-task right after the last sub-task of its parent, a task at the end
+  const shownTasks = ev ? withRows(ev.tasks, rowsOpen) : [];
   const dragged = ev?.tasks.find((t) => t.id === dragTask);
   const removeOne = (t: PlanTask) => {
     const subs = ev!.tasks.filter((y) => y.parentId === t.id).length;
     if (subs && !window.confirm(`Delete the task ${t.name} and its ${subs} sub-task(s)?`)) return;
     setTasks(removeTask(ev!.tasks, t.id));
+    setOpen((list) => removeTask(list, t.id));
   };
   // clicking an event opens its quantity plan right under it; clicking it again closes it
   const pick = (id: string) => {
     setShowQty(id === selected ? !showQty : true);
     setSelected(id);
-    setEditTask(null);
-    setEditing(null);
   };
   const qty = ev && showQty && <QtyRows key={ev.id} ev={ev} days={days} product={model.name} onRows={setRows} onBom={(b, p) => fillBom(ev.id, b, p)} />;
 
@@ -462,6 +467,7 @@ export default function DevPlan(props: {
         <div className="pi-legend">
           {dirty && (failed === JSON.stringify(plan) ? <span className="pi-dirty">{tr("Not saved")}</span> : <span className="pi-msg">{tr("Saving…")}</span>)}
           {msg && !dirty && <span className="pi-msg">{msg}</span>}
+          {notKept > 0 && <span className="pi-dirty" title="Rows still open are saved once kept">{notKept} {tr("row(s) not kept")}</span>}
           {freeNames > 0 && (
             <button className="btn sm" disabled={!!tidy} title="Give the events and tasks written in their own words the standard names"
               onClick={() => setTidy(tidyRows(plan, vocab))}>{tr("Standard names")} <span className="cnt">{freeNames}</span></button>
@@ -504,14 +510,14 @@ export default function DevPlan(props: {
                 <tr><th className="fit"></th>{(["Done", "Task", "Start", "End", "Actual start", "Actual end", "Owner", "Note"] as const).map((h) => <th key={h} className={h === "Task" || h === "Note" ? "l" : "fit"}>{tr(h)}</th>)}<th className="fit"></th></tr>
               </thead>
               <tbody>
-                {shownTasks.map((t) => (editTask?.id === t.id
-                  ? <TaskEdit key={t.id} value={editTask} onKeep={keepTask} onCancel={() => setEditTask(null)} vocab={vocab} />
-                  : editing?.includes(t.id)
-                    // the tasks changed together are rows one after another, from the first of them
-                    ? (t.id === editing[0] && <TaskEdits key={t.id} value={ev.tasks.filter((y) => editing.includes(y.id))} onKeep={keepTasks} onCancel={() => setEditing(null)} vocab={vocab} />)
+                {shownTasks.map((t) => {
+                  const o = rowsOpen.find((x) => x.id === t.id);
+                  return o
+                    ? <TaskEditRow key={t.id} value={o} vocab={vocab} onKeep={keepTask}
+                      onChange={(n) => setOpen((list) => list.map((x) => (x.id === n.id ? n : x)))} onCancel={() => setOpen((list) => list.filter((x) => x.id !== t.id))} />
                     : (
                     <tr key={t.id} className={(t.parentId ? "sub" : "") + (t.done ? " done" : "") + (dropOn === t.id && dragTask ? (ev.tasks.findIndex((y) => y.id === dragTask) < ev.tasks.indexOf(t) ? " drop-below" : " drop-above") : "")}
-                      draggable={!changing} onDragStart={(x) => { x.dataTransfer.effectAllowed = "move"; x.dataTransfer.setData("text/plain", t.name); setDragTask(t.id); }}
+                      draggable onDragStart={(x) => { x.dataTransfer.effectAllowed = "move"; x.dataTransfer.setData("text/plain", t.name); setDragTask(t.id); }}
                       onDragOver={(x) => {
                         // a task goes among the tasks, a sub-task among the sub-tasks of its parent
                         if (!dragged || (dragged.parentId ?? "") !== (t.parentId ?? "")) return;
@@ -530,30 +536,36 @@ export default function DevPlan(props: {
                       <td>{t.owner || "—"}</td>
                       <td className="l muted">{tr(t.note)}</td>
                       <td className="act">
-                        {!t.parentId && <button className="wk-link" disabled={changing} onClick={() => setEditTask({ ...blankTask(), parentId: t.id })}>+ Sub</button>}
-                        <button className="wk-link" disabled={changing} title={ev.tasks.some((y) => y.parentId === t.id) ? "Edit this task and its sub-tasks together" : undefined}
-                          onClick={() => setEditing(editGroup(ev.tasks, t.id).map((y) => y.id))}>Edit</button>
-                        <button className="wk-link bad" disabled={changing} onClick={() => removeOne(t)}>Delete</button>
+                        {!t.parentId && <button className="wk-link" onClick={() => setOpen((list) => [...list, { ...blankTask(), parentId: t.id }])}>+ Sub</button>}
+                        <button className="wk-link" title={ev.tasks.some((y) => y.parentId === t.id) ? "Edit this task and its sub-tasks together" : undefined}
+                          onClick={() => setOpen((list) => openRows(list, editGroup(ev.tasks, t.id)))}>Edit</button>
+                        <button className="wk-link bad" onClick={() => removeOne(t)}>Delete</button>
                       </td>
                     </tr>
-                  )))}
-                {newTask && !editTask!.parentId && <TaskEdit key={editTask!.id} value={editTask!} onKeep={keepTask} onCancel={() => setEditTask(null)} vocab={vocab} />}
-                {!ev.tasks.length && !newTask && <tr><td colSpan={10} className="wk-it-empty">No detailed schedule yet.</td></tr>}
+                  );
+                })}
+                {!shownTasks.length && <tr><td colSpan={10} className="wk-it-empty">No detailed schedule yet.</td></tr>}
               </tbody>
             </table>
-            {!changing && (
-              <div className="wk-dp-adds">
-                <button className="btn sm wk-dp-add" onClick={() => setEditTask(blankTask())}>+ Task</button>
-                {ev.tasks.length > 1 && (
-                  <button className="btn sm wk-dp-add" title="Change every task of this event at once" onClick={() => setEditing(ev.tasks.map((y) => y.id))}>Edit all</button>
-                )}
-                {standard.length > 0 && (
-                  <button className="btn sm wk-dp-add" title={standard.map((t) => t.name).join(", ")} onClick={() => setTasks([...ev.tasks, ...standard])}>
-                    + {tr("Standard tasks of")} {itemOf(ev.stage, vocab.stages)?.name} ({standard.length})
+            <div className="wk-dp-adds">
+              <button className="btn sm wk-dp-add" onClick={() => setOpen((list) => [...list, blankTask()])}>+ Task</button>
+              {ev.tasks.length > 1 && ev.tasks.some((y) => !rowsOpen.some((x) => x.id === y.id)) && (
+                <button className="btn sm wk-dp-add" title="Change every task of this event at once" onClick={() => setOpen((list) => openRows(list, ev.tasks))}>Edit all</button>
+              )}
+              {rowsOpen.length > 1 && (
+                <>
+                  <button className="btn sm wk-dp-add" onClick={() => setOpen(() => [])}>Cancel all</button>
+                  <button className="btn sm primary" disabled={keptOpen.some((k) => k.problem)} title="Keep every open row (off while a row has a problem)" onClick={keepAll}>
+                    Keep all ({rowsOpen.length})
                   </button>
-                )}
-              </div>
-            )}
+                </>
+              )}
+              {standard.length > 0 && (
+                <button className="btn sm wk-dp-add" title={standard.map((t) => t.name).join(", ")} onClick={() => setTasks([...ev.tasks, ...standard])}>
+                  + {tr("Standard tasks of")} {itemOf(ev.stage, vocab.stages)?.name} ({standard.length})
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
