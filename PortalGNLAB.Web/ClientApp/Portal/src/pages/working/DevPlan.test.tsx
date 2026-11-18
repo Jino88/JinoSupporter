@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { addDays } from "./dates";
-import DevPlan, { afterSave, autoSaveDue, editGroup, EventEdit, Gantt, keptTask, TaskEdit, TaskEdits, TidyNames } from "./DevPlan";
+import DevPlan, { afterSave, autoSaveDue, editGroup, EventEdit, Gantt, keptTask, openRows, TaskEdit, TaskEditRow, TidyNames, withRows } from "./DevPlan";
 import { tidyRows } from "./planNames";
 import { DEFAULT_VOCAB } from "./planVocab";
 import type { DevPlan as Plan, PlanEvent } from "./plan";
@@ -64,15 +64,28 @@ describe("sub-tasks in the detailed schedule", () => {
     expect(editGroup(tasks, "a2").map((x) => x.id)).toEqual(["a2"]);
   });
 
-  it("edits several tasks at once with one Keep all, kept only when every row is right", () => {
-    const rows = [t("a", "SETUP", "2026-11-01", "2026-11-28"), t("a1", "Line A ", "", "", "a"), t("a2", "Line B", "", "", "a")];
-    const html = renderToStaticMarkup(<table><tbody><TaskEdits value={rows} vocab={DEFAULT_VOCAB} onKeep={() => {}} onCancel={() => {}} /></tbody></table>);
-    expect([...html.matchAll(/aria-label="Task name" value="([^"]*)"/g)].map((m) => m[1])).toEqual(["SETUP", "Line A ", "Line B"]);
-    expect([...html.matchAll(/>Cancel</g)]).toHaveLength(1);
-    expect(html).toMatch(/Line B"[^]*>Keep all \(3\)<\/button><\/td><\/tr><\/tbody>/);
-    expect(keptTask(rows[1], DEFAULT_VOCAB).task.name).toBe("Line A");
-    const wrong = renderToStaticMarkup(<table><tbody><TaskEdits value={[rows[0], { ...rows[1], start: "2026-12-05", end: "2026-12-01" }]} vocab={DEFAULT_VOCAB} onKeep={() => {}} onCancel={() => {}} /></tbody></table>);
-    expect(wrong).toMatch(/<button class="btn sm primary" disabled="">Keep all \(2\)<\/button>/);
+  it("keeps Edit, + Sub and Delete on for the other rows, and + Task and Edit all under the schedule", () => {
+    expect(table).not.toMatch(/class="wk-link[^"]*" disabled/);
+    expect(table).toMatch(/<div class="wk-dp-adds"><button class="btn sm wk-dp-add">\+ Task<\/button>/);
+  });
+
+  it("opens rows at once: a new sub-task under its task while the task is being changed, and more on top without losing what is typed", () => {
+    const tasks = [t("a", "JIG/MC Receive", "2026-11-01", "2026-11-28"), t("a1", "Line A", "", "", "a"), t("b", "Report", "", "")];
+    const sub = t("n", "Rack", "", "", "a");
+    const typed = { ...tasks[0], name: "JIG/MC Receive 2" };
+    const open = openRows(openRows([sub], [typed]), editGroup(tasks, "a"));
+    expect(open.map((x) => `${x.id} ${x.name}`)).toEqual(["n Rack", "a JIG/MC Receive 2", "a1 Line A"]);
+    expect(withRows(tasks, open).map((x) => `${x.id} ${x.name}`)).toEqual(["a JIG/MC Receive 2", "a1 Line A", "n Rack", "b Report"]);
+    expect(withRows(tasks, [t("z", "New", "", "")]).map((x) => x.id)).toEqual(["a", "a1", "b", "z"]);
+  });
+
+  it("gives each open row its own Cancel and Keep, Keep off while that row has a problem", () => {
+    const row = (v: ReturnType<typeof t>) => renderToStaticMarkup(<table><tbody><TaskEditRow value={v} vocab={DEFAULT_VOCAB} onChange={() => {}} onKeep={() => {}} onCancel={() => {}} /></tbody></table>);
+    const ok = row(t("n", "Rack", "", "", "a"));
+    expect(ok).toMatch(/aria-label="Task name" value="Rack"/);
+    expect(ok).toMatch(/>Cancel<\/button> <button class="btn sm primary">Keep<\/button><\/td><\/tr>/);
+    expect(row({ ...t("n", "Rack", "2026-12-05", "2026-12-01", "a") })).toMatch(/<button class="btn sm primary" disabled="">Keep<\/button>/);
+    expect(keptTask(t("a1", "Line A ", "", "", "a"), DEFAULT_VOCAB).task.name).toBe("Line A");
   });
 
   it("puts the sub-tasks on the calendar under their task, the task over their days when it has none", () => {
