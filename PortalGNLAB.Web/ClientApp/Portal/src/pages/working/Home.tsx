@@ -397,8 +397,10 @@ function PlanTimeline(props: {
                           {!t.span && <span className="wk-hm-st undated">{tr("No date")}</span>}
                         </div>
                         {track((tb || t.actual) && (
-                          <Bar className={"wk-hm-tbar " + state} bar={tb} text={taskSpanText(t)} actual={actualBar(t.actual, range)} title={`${t.name}: ${taskSpanText(t)}${t.owner ? ` · ${t.owner}` : ""}${t.done ? " · done" : ""}`}
-                            style={t.done ? { background: e.color, borderColor: e.color } : { background: tint(e.color, "26"), borderColor: e.color }} />
+                          <Bar className={"wk-hm-tbar " + state + (t.parent ? " sub" : "")} bar={tb} text={taskSpanText(t)} actual={actualBar(t.actual, range)} title={`${t.name}: ${taskSpanText(t)}${t.owner ? ` · ${t.owner}` : ""}${t.done ? " · done" : ""}`}
+                            style={t.done ? { background: e.color, borderColor: e.color }
+                              // a sub-task: a thin filled line in a lighter shade, not an outlined bar like its task
+                              : t.parent ? { background: tint(e.color, "80"), borderColor: "transparent" } : { background: tint(e.color, "26"), borderColor: e.color }} />
                         ))}
                       </div>
                     );
