@@ -4,7 +4,7 @@ import { addDays } from "./dates";
 import DevPlan, { afterSave, autoSaveDue, editGroup, EventEdit, Gantt, keptTask, openRows, TaskEdit, TaskEditRow, TidyNames, tint, withRows } from "./DevPlan";
 import { tidyRows } from "./planNames";
 import { DEFAULT_VOCAB } from "./planVocab";
-import type { DevPlan as Plan, PlanEvent } from "./plan";
+import type { DevPlan as Plan, PlanEvent, PlanTask } from "./plan";
 
 const event = (f: Partial<PlanEvent>): PlanEvent =>
   ({ id: "e", name: "DR build", start: "", end: "", color: "#2563eb", tasks: [], rows: [], bomFrom: "", ...f });
@@ -143,10 +143,10 @@ describe("standard names in the Dev Plan", () => {
   it("picks a task from the standard tasks with a detail, or a name of its own", () => {
     const t = { id: "t", name: "Sample shipment · 300ea", start: "", end: "", owner: "", done: false, note: "", code: "sample-send", detail: "300ea" };
     const std = renderToStaticMarkup(<table><tbody><TaskEdit value={t} vocab={DEFAULT_VOCAB} onKeep={() => {}} onCancel={() => {}} /></tbody></table>);
-    expect(sel(std, "Standard task")).toContain('<option value="sample-send" selected="">Sample shipment</option>');
+    expect(sel(std, "Category")).toContain('<option value="sample-send" selected="">Sample shipment</option>');
     expect(std).toMatch(/aria-label="Detail" value="300ea"/);
     const own = renderToStaticMarkup(<table><tbody><TaskEdit value={{ ...t, name: "Report", code: undefined, detail: undefined }} vocab={DEFAULT_VOCAB} onKeep={() => {}} onCancel={() => {}} /></tbody></table>);
-    expect(sel(own, "Standard task")).toContain('<option value="" selected="">Other (own name)</option>');
+    expect(sel(own, "Category")).toContain('<option value="" selected="">Other (own name)</option>');
     expect(own).toMatch(/aria-label="Task name" value="Report"/);
   });
 
@@ -193,5 +193,55 @@ describe("saving the plan by itself", () => {
   it("no longer says a change waits for Save", () => {
     const t = renderToStaticMarkup(<TidyNames rows={[]} vocab={DEFAULT_VOCAB} onRows={() => {}} onApply={() => {}} onCancel={() => {}} />);
     expect(t).not.toContain("Not saved until Save.");
+  });
+});
+
+describe("task category and samples counted day by day", () => {
+  const t = (id: string, name: string, start: string, end: string, f: Partial<PlanTask> = {}): PlanTask =>
+    ({ id, name, start, end, owner: "", done: false, note: "", ...f });
+  const tasks: PlanTask[] = [
+    t("a", "Setup", "2026-12-14", "2026-12-14", { code: "setup" }),
+    t("b", "Sample making · 400pcs", "2026-12-15", "2026-12-17", { code: "sample-make", detail: "400pcs", qty: { "2026-12-15": 100, "2026-12-16": 300 } }),
+    t("c", "GN→AS 샘플발송", "2026-12-19", "2026-12-19", { code: "sample-send", qty: { "2026-12-16": 50, "2026-12-19": 300 } }),
+    t("d", "개발라인 준비", "2026-12-13", "2026-12-13"),
+  ];
+  const render = (list: unknown[]) => renderToStaticMarkup(<DevPlan onDirty={() => {}} onSaved={() => {}} onError={() => {}} vocab={DEFAULT_VOCAB}
+    model={{ name: "M", revision: 1, updatedAt: "", updatedBy: "", info: { devPlan: { events: [{ ...event({ name: "ER" }), tasks: list }] } } }} />);
+  const html = render(tasks);
+  const table = html.slice(html.indexOf("wk-dp-tasks"));
+  const cal = html.slice(html.indexOf("Detailed schedule"), html.indexOf("wk-dp-tasks"));
+
+  it("shows the category of each task in its own column, — for a name of its own", () => {
+    expect(table).toMatch(/<th class="l">Task<\/th><th class="fit">Category<\/th><th class="fit">Start<\/th>/);
+    expect([...table.matchAll(/<td class="l wk-dp-cat">(?:<span class="wk-dp-catv( sample)?">([^<]+)<\/span>|<span class="muted">(—)<\/span>)<\/td>/g)]
+      .map((m) => (m[2] ?? m[3]) + (m[1] ? " (sample)" : ""))).toEqual(["Setup", "Sample making (sample)", "Sample shipment (sample)", "—"]);
+  });
+
+  it("turns the calendar row of a sample task into a count for each day, typed in place, its total by its name", () => {
+    const qty = [...cal.matchAll(/aria-label="([^"]+) (\d{4}-\d\d-\d\d)" value="(\d+)"/g)].map((m) => `${m[1]} ${m[2]} ${m[3]}`);
+    expect(qty).toEqual(["Sample making · 400pcs 2026-12-15 100", "Sample making · 400pcs 2026-12-16 300", "GN→AS 샘플발송 2026-12-16 50", "GN→AS 샘플발송 2026-12-19 300"]);
+    expect(cal).toContain('class="wk-gantt qopen"');
+    expect(cal).not.toMatch(/aria-label="Setup \d{4}/);
+    expect(table).toContain('<span class="wk-dp-qtot" title="Samples of the days typed in the calendar above">Σ 400</span>');
+  });
+
+  it("charts the samples of each day above the calendar, made and shipped stacked with their sum", () => {
+    expect(cal.indexOf('class="wk-chart"')).toBeGreaterThan(-1);
+    expect(cal.indexOf('class="wk-chart"')).toBeLessThan(cal.indexOf("Sample making · 400pcs"));
+    expect(cal).toMatch(/title="2026-12-16 · Sample making 300 · Sample shipment 50"><div class="col"><span class="v">350<\/span><i style="background:#eb6834;height:8px"><\/i><i style="background:#2a78d6;height:48px"><\/i>/);
+    expect(cal).toMatch(/<i style="background:#2a78d6"><\/i>Sample making <b>400<\/b>/);
+    expect(cal).toMatch(/<i style="background:#eb6834"><\/i>Sample shipment <b>350<\/b>/);
+  });
+
+  it("has no chart and no count cells without a sample task", () => {
+    const none = render(tasks.filter((x) => !x.code?.startsWith("sample")));
+    expect(none).not.toContain("wk-chart");
+    expect(none).not.toContain("wk-qty-in");
+  });
+
+  it("keeps the counts with a sample task only", () => {
+    const s = tasks[1];
+    expect(keptTask(s, DEFAULT_VOCAB).task.qty).toEqual({ "2026-12-15": 100, "2026-12-16": 300 });
+    expect("qty" in keptTask({ ...s, code: "setup" }, DEFAULT_VOCAB).task).toBe(false);
   });
 });
