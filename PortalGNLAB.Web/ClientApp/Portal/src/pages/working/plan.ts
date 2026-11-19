@@ -21,6 +21,8 @@ export interface PlanTask {
   parentId?: string;
   /** The materials of the model (Model Info › Material) picked for a material task; absent when none. */
   materials?: TaskMaterial[];
+  /** How many samples a sample task makes or ships each day (yyyy-MM-dd -> count); absent when none. */
+  qty?: Record<string, number>;
 }
 
 /** A material picked for a task, as the Material tab of the model lists it. */
@@ -32,6 +34,29 @@ export interface TaskMaterial {
 /** Standard task whose materials are picked from the model's material list. */
 export const MATERIAL_TASK = "material-in";
 export const isMaterialTask = (t: PlanTask) => t.code === MATERIAL_TASK;
+
+/** Standard tasks whose samples are counted day by day (made, shipped), in the order the chart stacks them. */
+export const SAMPLE_TASKS = ["sample-make", "sample-send"] as const;
+export const isSampleTask = (t: PlanTask) => (SAMPLE_TASKS as readonly string[]).includes(t.code ?? "");
+
+/** The task with the count of a day set (none or 0: the day goes; no day left: the field goes). */
+export function setTaskQty(t: PlanTask, day: string, n: number | undefined): PlanTask {
+  const qty = setQty({ id: t.id, name: t.name, group: "making", qty: t.qty ?? {} }, day, n).qty;
+  const { qty: _, ...rest } = t;
+  return Object.keys(qty).length ? { ...rest, qty } : rest;
+}
+
+export const taskTotal = (t: PlanTask) => Object.values(t.qty ?? {}).reduce((a, b) => a + b, 0);
+
+/** The samples of each day, per sample task code, summed over the sample tasks (and sub-tasks) of an event. */
+export function sampleByDay(tasks: PlanTask[]): Record<string, Record<string, number>> {
+  const out: Record<string, Record<string, number>> = {};
+  for (const t of tasks) {
+    if (!isSampleTask(t)) continue;
+    for (const [d, n] of Object.entries(t.qty ?? {})) (out[d] ??= {})[t.code!] = (out[d][t.code!] ?? 0) + n;
+  }
+  return out;
+}
 
 /** Group of a quantity row: the materials to get in (from the BOM) or the stages to make (SPK Assy, Function, ...). */
 export type QtyGroup = "material" | "making";
@@ -282,6 +307,12 @@ export function planDays(events: PlanEvent[]): string[] {
   return calendarDays([...events.map(eventSpan), ...filled]);
 }
 
+/** Counts by day read leniently: real dates with a number above 0, in date order. */
+function readQtyMap(v: unknown): Record<string, number> {
+  return Object.fromEntries(Object.entries((v && typeof v === "object" ? v : {}) as Record<string, unknown>)
+    .filter((x): x is [string, number] => isDate(x[0]) && typeof x[1] === "number" && Number.isFinite(x[1]) && x[1] > 0).sort(([a], [b]) => a.localeCompare(b)));
+}
+
 /** The materials saved on a task, as `{ materials }`, or nothing when there are none. */
 function readTaskMaterials(v: unknown): { materials?: TaskMaterial[] } {
   const str = (x: unknown) => (typeof x === "string" ? x.trim() : "");
@@ -314,13 +345,13 @@ export function readDevPlan(v: unknown): DevPlan {
         ...(str(t.detail) ? { detail: str(t.detail) } : {}),
         ...(str(t.parentId) ? { parentId: str(t.parentId) } : {}),
         ...readTaskMaterials(t.materials),
+        ...(Object.keys(readQtyMap(t.qty)).length ? { qty: readQtyMap(t.qty) } : {}),
       }))),
       rows: list(e.rows).filter((r) => r && typeof r === "object").map((r) => ({
         id: str(r.id) || newId(),
         name: str(r.name),
         group: (r.group === "material" ? "material" : "making") as QtyGroup,
-        qty: Object.fromEntries(Object.entries((r.qty && typeof r.qty === "object" ? r.qty : {}) as Record<string, unknown>)
-          .filter((x): x is [string, number] => isDate(x[0]) && typeof x[1] === "number" && Number.isFinite(x[1]) && x[1] > 0).sort(([a], [b]) => a.localeCompare(b))),
+        qty: readQtyMap(r.qty),
       })),
     })),
   };

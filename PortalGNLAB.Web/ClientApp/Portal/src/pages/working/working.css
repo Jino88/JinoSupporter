@@ -398,7 +398,6 @@ table.wk-dp-tasks .inp.sm.wk-dp-owner { width: 90px; }
 .wk-datebox.sm, table.wk-dp-tasks .wk-datebox.sm { width: 80px; }
 /* standard names: a task picked from the list with its detail beside it, the tidy-up of names of their own */
 .wk-dp-name { display: flex; gap: 6px; }
-.wk-dp-name select { flex: 0 0 auto; width: auto; max-width: 180px; }
 .wk-dp-form .wk-dp-qty { width: 110px; }
 .wk-dp-adds { display: flex; gap: 8px; }
 .wk-dp-tidy { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; background: #fafbff; }
@@ -618,3 +617,20 @@ table.wk-mat-t tr.mold-sample > td:nth-child(6) .inp { background: #fffbeb; colo
 .wk-mpick .wk-mpick-q { margin: 6px 0 8px; }
 .wk-mpick-t .mono { font-family: Consolas, monospace; }
 .wk-mpick-t tr.gone td { color: var(--muted, #64748b); font-style: italic; }
+/* Dev Plan: the category of each task, and the samples of a sample task counted day by day with their chart above the calendar */
+table.wk-dp-tasks td.wk-dp-cat { white-space: nowrap; }
+table.wk-dp-tasks td.wk-dp-cat .inp.sm { width: auto; max-width: 180px; }
+.wk-dp-catv { padding: 1px 7px; border-radius: 9px; background: #f1f5f9; color: var(--ink-2); font-size: 11px; }
+.wk-dp-catv.sample { background: #fff7ed; color: #9a3412; }
+.wk-dp-qtot { margin-left: 8px; font-size: 11px; font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+table.wk-gantt > * > tr > td.q.has { font-weight: 600; }
+table.wk-gantt > * > tr.wk-chart > td { border-bottom: 1px solid var(--line); }
+table.wk-gantt > * > tr.wk-chart > td.g { height: 76px; padding: 0; vertical-align: bottom; }
+table.wk-gantt > * > tr.wk-chart > td.g.hint { height: 30px; padding: 0 10px; vertical-align: middle; color: var(--muted); }
+table.wk-gantt > * > tr.wk-chart .col { display: flex; flex-direction: column; align-items: center; gap: 2px; padding-bottom: 1px; }
+table.wk-gantt > * > tr.wk-chart .col i { display: block; width: 20px; }
+table.wk-gantt > * > tr.wk-chart .col i:nth-of-type(1) { border-top-left-radius: 4px; border-top-right-radius: 4px; }
+table.wk-gantt > * > tr.wk-chart .col .v { font-size: 10px; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.wk-chart-lg { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 3px; font-size: 10.5px; color: var(--muted); }
+.wk-chart-lg i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+.wk-chart-lg b { color: var(--ink-2); font-size: 10.5px; }

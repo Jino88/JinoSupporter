@@ -8,7 +8,8 @@ import { bmesApi } from "./bmes";
 import type { BomRow } from "./bmes";
 import {
   COLORS, QTY_GROUPS, addBomRows, addSubTask, blankEvent, blankRow, blankTask, calendarDays, eventSpan, groupSpan, inSpan, bomRowNames, monthRuns, moveInGroup, moveTask,
-  isMaterialTask, markDone, planDays, planProblem, progress, readDevPlan, readQty, removeTask, rowTotal, setQty, taskSpan,
+  isMaterialTask, isSampleTask, markDone, planDays, planProblem, progress, readDevPlan, readQty, removeTask, rowTotal, sampleByDay, setQty, setTaskQty,
+  SAMPLE_TASKS, taskSpan, taskTotal,
 } from "./plan";
 import type { DevPlan as Plan, PlanEvent, PlanTask, QtyGroup, QtyRow, TaskMaterial } from "./plan";
 import { applyTidy, freeEvent, freeTask, itemOf, templateTasks, tidyRows, withCode, withStage, type TidyRow } from "./planNames";
@@ -17,7 +18,12 @@ import MaterialPick from "./MaterialPick";
 import { readMaterials, type MaterialList } from "./materialList";
 import type { WorkingModel } from "./types";
 
-interface Row { id: string; label: string; sub: string; span: [string, string] | null; color: string; done?: boolean; child?: boolean }
+interface Row {
+  id: string; label: string; sub: string; span: [string, string] | null; color: string; done?: boolean; child?: boolean;
+  /** A row counted by day (a sample task): its day cells are the counts, typed in place, its days underlined in its color. */
+  qty?: Record<string, number>;
+  onQty?: (day: string, n: number | undefined) => void;
+}
 
 export const dates = (span: [string, string] | null) => (span ? (span[0] === span[1] ? span[0].slice(5) : `${span[0].slice(5)} – ${span[1].slice(5)}`) : "no date");
 
@@ -32,16 +38,18 @@ export function tint(color: string, k: number): string {
 /**
  * Horizontal calendar: a column per day, a row per item, the days of each item filled in its color. `expand` (rows of
  * the same day columns) opens right under the selected row; its day columns are then wide enough for a quantity
- * ("1,000"), so the calendar scrolls instead of fitting the width.
+ * ("1,000"), so the calendar scrolls instead of fitting the width; so are they when a row is counted by day. `top`:
+ * rows put first (a chart of the days).
  */
-export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; onPick?: (id: string) => void; expand?: ReactNode }) {
+export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; onPick?: (id: string) => void; expand?: ReactNode; top?: ReactNode }) {
   const tr = useTr();
   const today = localToday();
   const { rows, days } = props;
+  const wide = !!props.expand || rows.some((r) => r.onQty);
   return (
     <div className="wk-gantt-wrap">
       {/* a short calendar fills the width; a long one, or one with quantities open, scrolls */}
-      <table className={"wk-gantt" + (props.expand ? " qopen" : days.length <= 60 ? " fill" : "")}>
+      <table className={"wk-gantt" + (wide ? " qopen" : days.length <= 60 ? " fill" : "")}>
         <thead>
           <tr>
             <th className="nm" rowSpan={2}></th>
@@ -56,6 +64,7 @@ export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; o
           </tr>
         </thead>
         <tbody>
+          {props.top}
           {rows.map((r) => {
             // a sub-task: a smaller row with a thinner bar in a lighter shade of its task's color
             const color = r.child ? tint(r.done ? "#94a3b8" : r.color, 0.45) : r.done ? "#94a3b8" : r.color;
@@ -73,6 +82,14 @@ export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; o
                   const on = inSpan(d, r.span);
                   const cls = "c" + (d === today ? " today" : weekday(d) % 6 === 0 ? " we" : "")
                     + (on ? " on" + (d === r.span![0] ? " s" : "") + (d === r.span![1] ? " e" : "") : "");
+                  if (r.onQty) {
+                    return (
+                      <td key={d} className={"q" + (d === today ? " today" : weekday(d) % 6 === 0 ? " we" : "") + (on ? " in" : "") + (r.qty?.[d] ? " has" : "")}
+                        style={on ? { boxShadow: `inset 0 -3px 0 ${color}` } : undefined}>
+                        <QtyCell value={r.qty?.[d]} label={`${r.label} ${d}`} onKeep={(n) => r.onQty!(d, n)} onPaste={() => false} />
+                      </td>
+                    );
+                  }
                   if (r.child) return <td key={d} className={cls}>{on && <i className="bar" style={{ background: color }} />}</td>;
                   return <td key={d} className={cls} style={on ? { background: color } : undefined} />;
                 })}
@@ -88,6 +105,54 @@ export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; o
 }
 
 const num = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 3 });
+
+/** Colors of the sample tasks in the chart (made, shipped). */
+export const SAMPLE_COLORS: Record<string, string> = { "sample-make": "#2a78d6", "sample-send": "#eb6834" };
+/** Height (px) of the tallest column of the chart. */
+const CHART_H = 56;
+
+/**
+ * Samples of each day over the detailed schedule, a row of the calendar so each column stands under its day: the samples
+ * made and shipped that day stacked, their sum on top, each sample task's total in the legend.
+ */
+export function SampleChart(props: { tasks: PlanTask[]; days: string[]; vocab: PlanVocab }) {
+  const tr = useTr();
+  const today = localToday();
+  const by = sampleByDay(props.tasks);
+  const sum = (d: string) => Object.values(by[d] ?? {}).reduce((a, b) => a + b, 0);
+  const max = Math.max(0, ...props.days.map(sum));
+  const name = (code: string) => tr(itemOf(code, props.vocab.tasks)?.name ?? code);
+  const totals = SAMPLE_TASKS.map((c) => [c, Object.values(by).reduce((a, x) => a + (x[c] ?? 0), 0)] as const);
+  return (
+    <tr className="wk-chart">
+      <td className="nm">
+        <b>{tr("Samples per day")}</b>
+        <span className="wk-chart-lg">
+          {totals.map(([c, n]) => <span key={c}><i style={{ background: SAMPLE_COLORS[c] }} />{name(c)} <b>{num(n)}</b></span>)}
+        </span>
+      </td>
+      {max
+        ? props.days.map((d) => {
+          const n = sum(d);
+          return (
+            <td key={d} className={"g" + (d === today ? " today" : weekday(d) % 6 === 0 ? " we" : "")}
+              title={n ? `${d} · ` + SAMPLE_TASKS.filter((c) => by[d]?.[c]).map((c) => `${name(c)} ${num(by[d][c])}`).join(" · ") : d}>
+              {n > 0 && (
+                <div className="col">
+                  <span className="v">{num(n)}</span>
+                  {/* made at the bottom, shipped on top */}
+                  {[...SAMPLE_TASKS].reverse().filter((c) => by[d]?.[c]).map((c) => (
+                    <i key={c} style={{ background: SAMPLE_COLORS[c], height: Math.max(2, Math.round((by[d][c] / max) * CHART_H)) }} />
+                  ))}
+                </div>
+              )}
+            </td>
+          );
+        })
+        : <td className="g hint" colSpan={props.days.length}>{tr("Type how many samples are made or shipped each day in their rows below.")}</td>}
+    </tr>
+  );
+}
 
 /** One day of a quantity row: typed freely, kept when it leaves the cell (Enter or Tab), put back when not a number. */
 function QtyCell(props: { value: number | undefined; label: string; onKeep: (n: number | undefined) => void; onPaste: (text: string) => boolean }) {
@@ -275,9 +340,15 @@ export function keptTask(t: PlanTask, vocab: PlanVocab): { task: PlanTask; probl
   const std = itemOf(t.code, vocab.tasks);
   const kept = std ? withCode(t, std, (t.detail ?? "").trim()) : { ...t, name: t.name.trim() };
   const problem = planProblem(kept) || (t.actualStart && t.actualEnd && t.actualEnd < t.actualStart ? "Actual end is before actual start." : "");
-  // materials stay with a material task only
-  const { materials, ...rest } = kept;
-  return { task: { ...rest, ...(isMaterialTask(kept) && materials?.length ? { materials } : {}), owner: t.owner.trim(), note: t.note.trim() }, problem };
+  // materials stay with a material task only, the counts of the days with a sample task only
+  const { materials, qty, ...rest } = kept;
+  return {
+    task: {
+      ...rest, ...(isMaterialTask(kept) && materials?.length ? { materials } : {}), ...(isSampleTask(kept) && qty && Object.keys(qty).length ? { qty } : {}),
+      owner: t.owner.trim(), note: t.note.trim(),
+    },
+    problem,
+  };
 }
 
 /** The task with these materials picked (none: the field goes). */
@@ -342,16 +413,6 @@ export function TaskEditRow(props: {
       <td className="l">
         {t.parentId && <span className="wk-dp-sub">↳</span>}
         <span className="wk-dp-name">
-          <select className="inp sm" value={std?.code ?? ""} aria-label="Standard task"
-            onChange={(x) => {
-              const s = itemOf(x.target.value, props.vocab.tasks);
-              const n = s ? withCode(t, s, t.detail ?? "") : freeTask(t);
-              setT(n);
-              if (isMaterialTask(n) && !isMaterialTask(t)) setPicking(true);
-            }}>
-            <option value="">Other (own name)</option>
-            {props.vocab.tasks.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
-          </select>
           {std
             ? <input className="inp sm" value={t.detail ?? ""} placeholder="Detail, e.g. 300ea Bringup" aria-label="Detail" onChange={(x) => setT(withCode(t, std, x.target.value))} />
             : <input className="inp sm" value={t.name} placeholder={t.parentId ? "Sub-task" : "Task"} autoFocus={!t.name} aria-label="Task name" onChange={(x) => set({ name: x.target.value })} />}
@@ -361,6 +422,18 @@ export function TaskEditRow(props: {
           <MaterialPick title={t.name || "Material in"} materials={props.materials ?? {}} value={t.materials ?? []}
             onPick={(list) => { setT(withMaterials(t, list)); setPicking(false); }} onClose={() => setPicking(false)} />
         )}
+      </td>
+      <td className="l wk-dp-cat">
+        <select className="inp sm" value={std?.code ?? ""} aria-label="Category"
+          onChange={(x) => {
+            const s = itemOf(x.target.value, props.vocab.tasks);
+            const n = s ? withCode(t, s, t.detail ?? "") : freeTask(t);
+            setT(n);
+            if (isMaterialTask(n) && !isMaterialTask(t)) setPicking(true);
+          }}>
+          <option value="">Other (own name)</option>
+          {props.vocab.tasks.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
+        </select>
       </td>
       <td><DateBox className="sm" value={t.start} label="Start" onChange={(start) => set({ start })} /></td>
       <td><DateBox className="sm" value={t.end} label="End" onChange={(end) => set({ end })} /></td>
@@ -442,7 +515,9 @@ export default function DevPlan(props: {
   const notKept = events.reduce((n, e) => n + (open[e.id]?.length ?? 0), 0);
   useEffect(() => props.onDirty(dirty || notKept > 0), [dirty, notKept, model]);
   const days = useMemo(() => planDays(events), [events]);
-  const evDays = useMemo(() => (ev ? calendarDays([eventSpan(ev), ...ev.tasks.map(taskSpan)], 1) : []), [ev]);
+  const evDays = useMemo(() => (ev
+    ? calendarDays([eventSpan(ev), ...ev.tasks.map(taskSpan), ...ev.tasks.flatMap((t) => Object.keys(t.qty ?? {}).map((d): [string, string] => [d, d]))], 1)
+    : []), [ev]);
 
   const setEvents = (list: PlanEvent[]) => setPlan({ ...plan, events: list });
   const keepEvent = (e: PlanEvent) => {
@@ -562,11 +637,18 @@ export default function DevPlan(props: {
             </div>
             <div className="wk-qty-h static">{tr("Detailed schedule")}</div>
             {evDays.length > 0 && ev.tasks.length > 0 && (
-              <Gantt days={evDays} rows={ev.tasks.map((t) => ({ id: t.id, label: t.name, sub: dates(groupSpan(ev.tasks, t)) + (t.owner ? " · " + t.owner : ""), span: groupSpan(ev.tasks, t), color: ev.color, done: t.done, child: !!t.parentId }))} />
+              <Gantt days={evDays}
+                top={ev.tasks.some(isSampleTask) ? <SampleChart tasks={ev.tasks} days={evDays} vocab={vocab} /> : undefined}
+                rows={ev.tasks.map((t) => ({
+                  id: t.id, label: t.name, sub: dates(groupSpan(ev.tasks, t)) + (t.owner ? " · " + t.owner : "") + (taskTotal(t) ? ` · Σ ${num(taskTotal(t))}` : ""),
+                  span: groupSpan(ev.tasks, t), color: ev.color, done: t.done, child: !!t.parentId,
+                  // a sample task: how many each day, typed in its day cells
+                  ...(isSampleTask(t) ? { qty: t.qty ?? {}, onQty: (d: string, n: number | undefined) => setTasks(ev.tasks.map((y) => (y.id === t.id ? setTaskQty(y, d, n) : y))) } : {}),
+                }))} />
             )}
             <table className="wk-it wk-dp-tasks">
               <thead>
-                <tr><th className="fit"></th>{(["Done", "Task", "Start", "End", "Actual start", "Actual end", "Owner", "Note"] as const).map((h) => <th key={h} className={h === "Task" || h === "Note" ? "l" : "fit"}>{tr(h)}</th>)}<th className="fit"></th></tr>
+                <tr><th className="fit"></th>{(["Done", "Task", "Category", "Start", "End", "Actual start", "Actual end", "Owner", "Note"] as const).map((h) => <th key={h} className={h === "Task" || h === "Note" ? "l" : "fit"}>{tr(h)}</th>)}<th className="fit"></th></tr>
               </thead>
               <tbody>
                 {shownTasks.map((t) => {
@@ -590,7 +672,9 @@ export default function DevPlan(props: {
                       <td className="l">
                         {t.parentId && <span className="wk-dp-sub">↳</span>}<b>{tr(t.name)}</b>
                         <TaskMaterials task={t} onPick={isMaterialTask(t) ? () => setPickFor(t.id) : undefined} />
+                        {isSampleTask(t) && <span className="wk-dp-qtot" title="Samples of the days typed in the calendar above">Σ {num(taskTotal(t))}</span>}
                       </td>
+                      <td className="l wk-dp-cat">{itemOf(t.code, vocab.tasks) ? <span className={"wk-dp-catv" + (isSampleTask(t) ? " sample" : "")}>{tr(itemOf(t.code, vocab.tasks)!.name)}</span> : <span className="muted">—</span>}</td>
                       <td>{t.start || "—"}</td>
                       <td>{t.end || "—"}</td>
                       <td className="wk-dp-real">{t.actualStart || "—"}</td>
@@ -606,7 +690,7 @@ export default function DevPlan(props: {
                     </tr>
                   );
                 })}
-                {!shownTasks.length && <tr><td colSpan={10} className="wk-it-empty">No detailed schedule yet.</td></tr>}
+                {!shownTasks.length && <tr><td colSpan={11} className="wk-it-empty">No detailed schedule yet.</td></tr>}
               </tbody>
             </table>
             {(() => {

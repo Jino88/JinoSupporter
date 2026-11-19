@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   actualSpan, markDone, blankEvent, blankRow, blankTask, addBomRows, addSubTask, bomRowNames, calendarDays, eventSpan, groupSpan, inSpan, monthDayText, monthRuns, moveInGroup, moveTask, moveTo, planProblem,
-  progress, planDays, readDevPlan, readMonthDay, readQty, readYearMonthDay, removeTask, rowTotal, setQty, taskTree,
+  progress, planDays, readDevPlan, readMonthDay, readQty, readYearMonthDay, removeTask, rowTotal, sampleByDay, setQty, setTaskQty, taskTotal, taskTree,
 } from "./plan";
 import type { PlanEvent, PlanTask } from "./plan";
 
@@ -193,5 +193,37 @@ describe("actual start and end of a task", () => {
     expect(markDone(t({}), true, "2026-11-16")).toMatchObject({ done: true, actualEnd: "2026-11-16" });
     expect(markDone(t({ actualEnd: "2026-11-12" }), true, "2026-11-16").actualEnd).toBe("2026-11-12");
     expect(markDone(t({ done: true, actualEnd: "2026-11-12" }), false, "2026-11-16")).toMatchObject({ done: false, actualEnd: "2026-11-12" });
+  });
+});
+
+describe("samples of a sample task counted day by day", () => {
+  const t = (f: Partial<PlanTask>) => ({ ...blankTask(), name: "T", ...f });
+  it("sets and clears the count of a day, in date order, the field gone with the last day", () => {
+    let s = setTaskQty(t({ code: "sample-make" }), "2026-12-17", 400);
+    s = setTaskQty(s, "2026-12-15", 100);
+    expect(s.qty).toEqual({ "2026-12-15": 100, "2026-12-17": 400 });
+    expect(Object.keys(s.qty!)).toEqual(["2026-12-15", "2026-12-17"]);
+    expect(taskTotal(s)).toBe(500);
+    s = setTaskQty(setTaskQty(s, "2026-12-15", undefined), "2026-12-17", 0);
+    expect("qty" in s).toBe(false);
+  });
+
+  it("sums each day per sample task over the sample tasks only", () => {
+    const tasks = [
+      t({ code: "sample-make", qty: { "2026-12-15": 100, "2026-12-16": 200 } }),
+      t({ code: "sample-make", parentId: "x", qty: { "2026-12-16": 50 } }),
+      t({ code: "sample-send", qty: { "2026-12-16": 300 } }),
+      t({ code: "setup", qty: { "2026-12-16": 999 } }),
+    ];
+    expect(sampleByDay(tasks)).toEqual({ "2026-12-15": { "sample-make": 100 }, "2026-12-16": { "sample-make": 250, "sample-send": 300 } });
+  });
+
+  it("are kept when saved and read back, days not dates or counts not above 0 dropped", () => {
+    const p = readDevPlan({ events: [{ name: "E", tasks: [
+      { id: "a", name: "A", code: "sample-send", qty: { "2026-12-19": 300, x: 5, "2026-12-20": 0, "2026-12-21": "7" } },
+      { id: "b", name: "B", code: "sample-send", qty: { x: 1 } },
+    ] }] });
+    expect(p.events[0].tasks[0].qty).toEqual({ "2026-12-19": 300 });
+    expect("qty" in p.events[0].tasks[1]).toBe(false);
   });
 });
