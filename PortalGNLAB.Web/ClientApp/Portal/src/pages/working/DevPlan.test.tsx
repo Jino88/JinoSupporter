@@ -34,6 +34,12 @@ describe("calendar with an event's quantities open", () => {
     expect(open).toContain('class="wk-gantt qopen"');
     expect(open).not.toContain(" fill");
   });
+
+  it("names a month of a day or two by its month only, so it does not run into the next", () => {
+    const html = renderToStaticMarkup(<Gantt rows={rows} days={["2026-10-31", ...days.slice(0, 5)]} />);
+    expect([...html.matchAll(/<th colSpan="(\d+)" class="mon" title="([^"]+)">([^<]+)<\/th>/g)].map((m) => `${m[2]}:${m[1]}:${m[3]}`))
+      .toEqual(["2026-10:1:10", "2026-11:5:2026-11"]);
+  });
 });
 
 describe("sub-tasks in the detailed schedule", () => {
@@ -220,7 +226,9 @@ describe("task category and samples counted day by day", () => {
   it("turns the calendar row of a sample task into a count for each day, typed in place, its total by its name", () => {
     const qty = [...cal.matchAll(/aria-label="([^"]+) (\d{4}-\d\d-\d\d)" value="(\d+)"/g)].map((m) => `${m[1]} ${m[2]} ${m[3]}`);
     expect(qty).toEqual(["Sample making · 400pcs 2026-12-15 100", "Sample making · 400pcs 2026-12-16 300", "GN→AS 샘플발송 2026-12-16 50", "GN→AS 샘플발송 2026-12-19 300"]);
-    expect(cal).toContain('class="wk-gantt qopen"');
+    // the calendar still fits the width (no scrolling), its count cells compact
+    expect(cal).toContain('class="wk-gantt fill counts"');
+    expect(cal).not.toContain("qopen");
     expect(cal).not.toMatch(/aria-label="Setup \d{4}/);
     expect(table).toContain('<span class="wk-dp-qtot" title="Samples of the days typed in the calendar above">Σ 400</span>');
   });
