@@ -31,13 +31,32 @@ export interface TaskMaterial {
   name: string;
 }
 
+/**
+ * The built-in task a task code stands for (planVocab builtinTask with the list in use, so a list saved with codes of
+ * its own still has its material and sample tasks); the code itself when not given.
+ */
+export type TaskKind = (code: string | undefined) => string | undefined;
+const asIs: TaskKind = (code) => code;
+
 /** Standard task whose materials are picked from the model's material list. */
 export const MATERIAL_TASK = "material-in";
-export const isMaterialTask = (t: PlanTask) => t.code === MATERIAL_TASK;
+export const isMaterialTask = (t: PlanTask, kind: TaskKind = asIs) => kind(t.code) === MATERIAL_TASK;
 
 /** Standard tasks whose samples are counted day by day (made, shipped), in the order the chart stacks them. */
 export const SAMPLE_TASKS = ["sample-make", "sample-send"] as const;
-export const isSampleTask = (t: PlanTask) => (SAMPLE_TASKS as readonly string[]).includes(t.code ?? "");
+export type SampleTask = (typeof SAMPLE_TASKS)[number];
+
+/** The sample task a task counts samples for: its own category, or, a sub-task without one, the category of its task. */
+export function sampleKind(t: PlanTask, tasks: PlanTask[], kind: TaskKind = asIs): SampleTask | undefined {
+  const of = (x: PlanTask) => SAMPLE_TASKS.find((c) => c === kind(x.code));
+  if (t.code || !t.parentId) return of(t);
+  const parent = tasks.find((p) => p.id === t.parentId);
+  return parent && !parent.parentId ? of(parent) : undefined;
+}
+
+/** The sample sub-tasks of a task, typed in their own rows (the task then shows their sum). */
+export const sampleSubs = (t: PlanTask, tasks: PlanTask[], kind: TaskKind = asIs) =>
+  tasks.filter((s) => s.parentId === t.id && sampleKind(s, tasks, kind));
 
 /** The task with the count of a day set (none or 0: the day goes; no day left: the field goes). */
 export function setTaskQty(t: PlanTask, day: string, n: number | undefined): PlanTask {
@@ -46,14 +65,22 @@ export function setTaskQty(t: PlanTask, day: string, n: number | undefined): Pla
   return Object.keys(qty).length ? { ...rest, qty } : rest;
 }
 
+/** The counts of a task with the ones of its sample sub-tasks added, day by day (yyyy-MM-dd order). */
+export function groupQty(t: PlanTask, tasks: PlanTask[], kind: TaskKind = asIs): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const x of [t, ...sampleSubs(t, tasks, kind)]) for (const [d, n] of Object.entries(x.qty ?? {})) out[d] = (out[d] ?? 0) + n;
+  return Object.fromEntries(Object.entries(out).sort(([a], [b]) => a.localeCompare(b)));
+}
+
 export const taskTotal = (t: PlanTask) => Object.values(t.qty ?? {}).reduce((a, b) => a + b, 0);
 
-/** The samples of each day, per sample task code, summed over the sample tasks (and sub-tasks) of an event. */
-export function sampleByDay(tasks: PlanTask[]): Record<string, Record<string, number>> {
+/** The samples of each day, per sample task, summed over the sample tasks and sample sub-tasks of an event. */
+export function sampleByDay(tasks: PlanTask[], kind: TaskKind = asIs): Record<string, Record<string, number>> {
   const out: Record<string, Record<string, number>> = {};
   for (const t of tasks) {
-    if (!isSampleTask(t)) continue;
-    for (const [d, n] of Object.entries(t.qty ?? {})) (out[d] ??= {})[t.code!] = (out[d][t.code!] ?? 0) + n;
+    const c = sampleKind(t, tasks, kind);
+    if (!c) continue;
+    for (const [d, n] of Object.entries(t.qty ?? {})) (out[d] ??= {})[c] = (out[d][c] ?? 0) + n;
   }
   return out;
 }

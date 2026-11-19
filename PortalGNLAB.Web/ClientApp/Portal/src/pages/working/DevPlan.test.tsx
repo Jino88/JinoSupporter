@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { addDays } from "./dates";
 import DevPlan, { afterSave, autoSaveDue, editGroup, EventEdit, Gantt, keptTask, openRows, TaskEdit, TaskEditRow, TidyNames, tint, withRows } from "./DevPlan";
 import { tidyRows } from "./planNames";
-import { DEFAULT_VOCAB } from "./planVocab";
+import { DEFAULT_VOCAB, type PlanVocab } from "./planVocab";
 import type { DevPlan as Plan, PlanEvent, PlanTask } from "./plan";
 
 const event = (f: Partial<PlanEvent>): PlanEvent =>
@@ -212,7 +212,7 @@ describe("task category and samples counted day by day", () => {
   const cal = html.slice(html.indexOf("Detailed schedule"), html.indexOf("wk-dp-tasks"));
 
   it("shows the category of each task in its own column, — for a name of its own", () => {
-    expect(table).toMatch(/<th class="l">Task<\/th><th class="fit">Category<\/th><th class="fit">Start<\/th>/);
+    expect(table).toMatch(/<th class="fit">Done<\/th><th class="fit">Category<\/th><th class="l">Task<\/th><th class="fit">Start<\/th>/);
     expect([...table.matchAll(/<td class="l wk-dp-cat">(?:<span class="wk-dp-catv( sample)?">([^<]+)<\/span>|<span class="muted">(—)<\/span>)<\/td>/g)]
       .map((m) => (m[2] ?? m[3]) + (m[1] ? " (sample)" : ""))).toEqual(["Setup", "Sample making (sample)", "Sample shipment (sample)", "—"]);
   });
@@ -243,5 +243,61 @@ describe("task category and samples counted day by day", () => {
     const s = tasks[1];
     expect(keptTask(s, DEFAULT_VOCAB).task.qty).toEqual({ "2026-12-15": 100, "2026-12-16": 300 });
     expect("qty" in keptTask({ ...s, code: "setup" }, DEFAULT_VOCAB).task).toBe(false);
+  });
+});
+
+describe("sample and material tasks of a list saved with codes of its own, sample sub-tasks counted day by day", () => {
+  // the list as saved on the server (Setting › Dev Plan standard names): its own codes and Korean names
+  const vocab: PlanVocab = {
+    stages: DEFAULT_VOCAB.stages, templates: {},
+    tasks: [
+      { code: "SETUP LINE", name: "SETUP LINE", aliases: [] },
+      { code: "Make Sample", name: "샘플 제작", aliases: [] },
+      { code: "Send Sample", name: "샘플 발송", aliases: [] },
+      { code: "Materials", name: "자재", aliases: [] },
+    ],
+  };
+  const t = (id: string, name: string, f: Partial<PlanTask> = {}): PlanTask =>
+    ({ id, name, start: "2026-12-03", end: "2026-12-10", owner: "", done: false, note: "", ...f });
+  const tasks: PlanTask[] = [
+    t("m", "샘플 제작 · 800SET", { code: "Make Sample", detail: "800SET" }),
+    t("m1", "1차 400SET", { parentId: "m", qty: { "2026-12-04": 150, "2026-12-05": 250 } }),
+    t("m2", "2차 400SET", { parentId: "m", qty: { "2026-12-05": 100 } }),
+    t("m3", "자재 확인", { parentId: "m", code: "Materials", qty: { "2026-12-05": 999 } }),
+    t("s", "샘플 발송 · 500SET", { code: "Send Sample", detail: "500SET", qty: { "2026-12-10": 500 } }),
+    t("x", "자재", { code: "Materials" }),
+  ];
+  const html = renderToStaticMarkup(<DevPlan onDirty={() => {}} onSaved={() => {}} onError={() => {}} vocab={vocab}
+    model={{ name: "M", revision: 1, updatedAt: "", updatedBy: "", info: { devPlan: { events: [{ ...event({ name: "ER" }), tasks }] } } }} />);
+  const table = html.slice(html.indexOf("wk-dp-tasks"));
+  const cal = html.slice(html.indexOf("Detailed schedule"), html.indexOf("wk-dp-tasks"));
+  const typed = [...cal.matchAll(/aria-label="([^"]+) (\d{4}-\d\d-\d\d)" value="(\d+)"/g)].map((m) => `${m[1]} ${m[2]} ${m[3]}`);
+
+  it("knows the sample tasks by their names (Make Sample, 샘플 제작), so their days are counted and charted", () => {
+    expect(typed).toContain("샘플 발송 · 500SET 2026-12-10 500");
+    expect(cal).toContain('class="wk-chart"');
+    expect(cal).toMatch(/<i style="background:#2a78d6"><\/i>샘플 제작 <b>500<\/b>/);
+    expect(cal).toMatch(/<i style="background:#eb6834"><\/i>샘플 발송 <b>500<\/b>/);
+  });
+
+  it("gives a sub-task of a sample task (no category of its own) its count cells, the task the sum of them", () => {
+    expect(typed).toEqual(expect.arrayContaining(["1차 400SET 2026-12-04 150", "1차 400SET 2026-12-05 250", "2차 400SET 2026-12-05 100"]));
+    // the task itself: the sum of its sample sub-tasks each day, shown only
+    expect(typed.some((x) => x.startsWith("샘플 제작 · 800SET"))).toBe(false);
+    expect(cal).toContain('<td class="q sum in has" style="box-shadow:inset 0 -3px 0 #');
+    expect([...cal.matchAll(/<td class="q sum[^"]*"[^>]*>(\d[\d,]*)<\/td>/g)].map((m) => m[1])).toEqual(["150", "350"]);
+    // a sub-task with a category of its own that is no sample task is not counted
+    expect(cal).not.toMatch(/aria-label="자재 확인 \d{4}/);
+    expect(table).toContain("Σ 500</span>");
+    expect(cal).toMatch(/title="2026-12-05 · 샘플 제작 350">/);
+  });
+
+  it("knows the material task by its name (Materials, 자재): its row has the button to pick materials", () => {
+    expect(table).toContain("+ Materials");
+  });
+
+  it("keeps the counts of a sub-task of a sample task", () => {
+    expect(keptTask(tasks[1], vocab, tasks).task.qty).toEqual({ "2026-12-04": 150, "2026-12-05": 250 });
+    expect("qty" in keptTask(tasks[3], vocab, tasks).task).toBe(false);
   });
 });

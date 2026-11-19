@@ -8,19 +8,22 @@ import { bmesApi } from "./bmes";
 import type { BomRow } from "./bmes";
 import {
   COLORS, QTY_GROUPS, addBomRows, addSubTask, blankEvent, blankRow, blankTask, calendarDays, eventSpan, groupSpan, inSpan, bomRowNames, monthRuns, moveInGroup, moveTask,
-  isMaterialTask, isSampleTask, markDone, planDays, planProblem, progress, readDevPlan, readQty, removeTask, rowTotal, sampleByDay, setQty, setTaskQty,
-  SAMPLE_TASKS, taskSpan, taskTotal,
+  groupQty, isMaterialTask, markDone, planDays, planProblem, progress, readDevPlan, readQty, removeTask, rowTotal, sampleByDay, setQty, setTaskQty,
+  SAMPLE_TASKS, sampleKind, sampleSubs, taskSpan, type TaskKind,
 } from "./plan";
 import type { DevPlan as Plan, PlanEvent, PlanTask, QtyGroup, QtyRow, TaskMaterial } from "./plan";
 import { applyTidy, freeEvent, freeTask, itemOf, templateTasks, tidyRows, withCode, withStage, type TidyRow } from "./planNames";
-import { DEFAULT_VOCAB, planVocabApi, type PlanVocab } from "./planVocab";
+import { builtinTask, DEFAULT_VOCAB, planVocabApi, type PlanVocab } from "./planVocab";
 import MaterialPick from "./MaterialPick";
 import { readMaterials, type MaterialList } from "./materialList";
 import type { WorkingModel } from "./types";
 
 interface Row {
   id: string; label: string; sub: string; span: [string, string] | null; color: string; done?: boolean; child?: boolean;
-  /** A row counted by day (a sample task): its day cells are the counts, typed in place, its days underlined in its color. */
+  /**
+   * A row counted by day (a sample task): its day cells are the counts, typed in place (onQty), or only shown (a task
+   * whose sub-tasks are counted: their sum); its days underlined in its color.
+   */
   qty?: Record<string, number>;
   onQty?: (day: string, n: number | undefined) => void;
 }
@@ -45,7 +48,7 @@ export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; o
   const tr = useTr();
   const today = localToday();
   const { rows, days } = props;
-  const wide = !!props.expand || rows.some((r) => r.onQty);
+  const wide = !!props.expand || rows.some((r) => r.qty);
   return (
     <div className="wk-gantt-wrap">
       {/* a short calendar fills the width; a long one, or one with quantities open, scrolls */}
@@ -82,11 +85,13 @@ export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; o
                   const on = inSpan(d, r.span);
                   const cls = "c" + (d === today ? " today" : weekday(d) % 6 === 0 ? " we" : "")
                     + (on ? " on" + (d === r.span![0] ? " s" : "") + (d === r.span![1] ? " e" : "") : "");
-                  if (r.onQty) {
+                  if (r.qty) {
                     return (
-                      <td key={d} className={"q" + (d === today ? " today" : weekday(d) % 6 === 0 ? " we" : "") + (on ? " in" : "") + (r.qty?.[d] ? " has" : "")}
+                      <td key={d} className={"q" + (r.onQty ? "" : " sum") + (d === today ? " today" : weekday(d) % 6 === 0 ? " we" : "") + (on ? " in" : "") + (r.qty[d] ? " has" : "")}
                         style={on ? { boxShadow: `inset 0 -3px 0 ${color}` } : undefined}>
-                        <QtyCell value={r.qty?.[d]} label={`${r.label} ${d}`} onKeep={(n) => r.onQty!(d, n)} onPaste={() => false} />
+                        {r.onQty
+                          ? <QtyCell value={r.qty[d]} label={`${r.label} ${d}`} onKeep={(n) => r.onQty!(d, n)} onPaste={() => false} />
+                          : r.qty[d] ? num(r.qty[d]) : null}
                       </td>
                     );
                   }
@@ -115,13 +120,14 @@ const CHART_H = 56;
  * Samples of each day over the detailed schedule, a row of the calendar so each column stands under its day: the samples
  * made and shipped that day stacked, their sum on top, each sample task's total in the legend.
  */
-export function SampleChart(props: { tasks: PlanTask[]; days: string[]; vocab: PlanVocab }) {
+export function SampleChart(props: { tasks: PlanTask[]; days: string[]; vocab: PlanVocab; kind: TaskKind }) {
   const tr = useTr();
   const today = localToday();
-  const by = sampleByDay(props.tasks);
+  const by = sampleByDay(props.tasks, props.kind);
   const sum = (d: string) => Object.values(by[d] ?? {}).reduce((a, b) => a + b, 0);
   const max = Math.max(0, ...props.days.map(sum));
-  const name = (code: string) => tr(itemOf(code, props.vocab.tasks)?.name ?? code);
+  // named as the list in use names it (its own code or the built-in one)
+  const name = (code: string) => tr(props.vocab.tasks.find((i) => props.kind(i.code) === code)?.name ?? itemOf(code, DEFAULT_VOCAB.tasks)?.name ?? code);
   const totals = SAMPLE_TASKS.map((c) => [c, Object.values(by).reduce((a, x) => a + (x[c] ?? 0), 0)] as const);
   return (
     <tr className="wk-chart">
@@ -336,15 +342,16 @@ export function EventEdit(props: { value: PlanEvent; onKeep: (e: PlanEvent) => v
 }
 
 /** A task as it is kept from its edit row (the standard name with its detail, or its own name; owner and note trimmed), and what stops keeping it. */
-export function keptTask(t: PlanTask, vocab: PlanVocab): { task: PlanTask; problem: string } {
+export function keptTask(t: PlanTask, vocab: PlanVocab, tasks: PlanTask[] = []): { task: PlanTask; problem: string } {
+  const kind: TaskKind = (c) => builtinTask(c, vocab.tasks);
   const std = itemOf(t.code, vocab.tasks);
   const kept = std ? withCode(t, std, (t.detail ?? "").trim()) : { ...t, name: t.name.trim() };
   const problem = planProblem(kept) || (t.actualStart && t.actualEnd && t.actualEnd < t.actualStart ? "Actual end is before actual start." : "");
-  // materials stay with a material task only, the counts of the days with a sample task only
+  // materials stay with a material task only, the counts of the days with a sample task (or its sub-task) only
   const { materials, qty, ...rest } = kept;
   return {
     task: {
-      ...rest, ...(isMaterialTask(kept) && materials?.length ? { materials } : {}), ...(isSampleTask(kept) && qty && Object.keys(qty).length ? { qty } : {}),
+      ...rest, ...(isMaterialTask(kept, kind) && materials?.length ? { materials } : {}), ...(sampleKind(kept, tasks, kind) && qty && Object.keys(qty).length ? { qty } : {}),
       owner: t.owner.trim(), note: t.note.trim(),
     },
     problem,
@@ -357,11 +364,11 @@ export const withMaterials = (t: PlanTask, list: TaskMaterial[]): PlanTask => {
   return list.length ? { ...rest, materials: list } : rest;
 };
 
-/** The materials picked for a task, shown under its name; a button to pick them on a material task. */
+/** The materials picked for a task, shown under its name; a button to pick them (onPick) on a material task. */
 export function TaskMaterials(props: { task: PlanTask; onPick?: () => void }) {
   const tr = useTr();
   const list = props.task.materials ?? [];
-  if (!isMaterialTask(props.task) && !list.length) return null;
+  if (!props.onPick && !list.length) return null;
   return (
     <span className="wk-dp-mats">
       {list.map((m) => <span key={(m.code || m.name)} className="wk-dp-mat" title={m.name}>{m.code || m.name}</span>)}
@@ -398,18 +405,33 @@ export function TaskEditRow(props: {
   value: PlanTask; onChange: (t: PlanTask) => void; onKeep: (t: PlanTask) => void; onCancel: () => void; vocab: PlanVocab;
   /** The model's material list (Model Info › Material) a material task picks from. */
   materials?: MaterialList;
+  /** The tasks of the event (a sub-task of a sample task keeps its counts). */
+  tasks?: PlanTask[];
 }) {
   const t = props.value;
+  const kind: TaskKind = (c) => builtinTask(c, props.vocab.tasks);
   // choosing the material category opens the popup to pick its materials
   const [picking, setPicking] = useState(false);
   const setT = props.onChange;
   const set = (f: Partial<PlanTask>) => setT({ ...t, ...f });
   const std = itemOf(t.code, props.vocab.tasks);
-  const { task, problem } = keptTask(t, props.vocab);
+  const { task, problem } = keptTask(t, props.vocab, props.tasks);
   return (
     <tr className={"wk-dp-edit" + (t.parentId ? " sub" : "")}>
       <td></td>
       <td><input type="checkbox" checked={t.done} aria-label="Done" onChange={(x) => setT(markDone(t, x.target.checked, localToday()))} /></td>
+      <td className="l wk-dp-cat">
+        <select className="inp sm" value={std?.code ?? ""} aria-label="Category"
+          onChange={(x) => {
+            const s = itemOf(x.target.value, props.vocab.tasks);
+            const n = s ? withCode(t, s, t.detail ?? "") : freeTask(t);
+            setT(n);
+            if (isMaterialTask(n, kind) && !isMaterialTask(t, kind)) setPicking(true);
+          }}>
+          <option value="">Other (own name)</option>
+          {props.vocab.tasks.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
+        </select>
+      </td>
       <td className="l">
         {t.parentId && <span className="wk-dp-sub">↳</span>}
         <span className="wk-dp-name">
@@ -417,23 +439,11 @@ export function TaskEditRow(props: {
             ? <input className="inp sm" value={t.detail ?? ""} placeholder="Detail, e.g. 300ea Bringup" aria-label="Detail" onChange={(x) => setT(withCode(t, std, x.target.value))} />
             : <input className="inp sm" value={t.name} placeholder={t.parentId ? "Sub-task" : "Task"} autoFocus={!t.name} aria-label="Task name" onChange={(x) => set({ name: x.target.value })} />}
         </span>
-        {isMaterialTask(t) && <TaskMaterials task={t} onPick={() => setPicking(true)} />}
+        {isMaterialTask(t, kind) && <TaskMaterials task={t} onPick={() => setPicking(true)} />}
         {picking && (
           <MaterialPick title={t.name || "Material in"} materials={props.materials ?? {}} value={t.materials ?? []}
             onPick={(list) => { setT(withMaterials(t, list)); setPicking(false); }} onClose={() => setPicking(false)} />
         )}
-      </td>
-      <td className="l wk-dp-cat">
-        <select className="inp sm" value={std?.code ?? ""} aria-label="Category"
-          onChange={(x) => {
-            const s = itemOf(x.target.value, props.vocab.tasks);
-            const n = s ? withCode(t, s, t.detail ?? "") : freeTask(t);
-            setT(n);
-            if (isMaterialTask(n) && !isMaterialTask(t)) setPicking(true);
-          }}>
-          <option value="">Other (own name)</option>
-          {props.vocab.tasks.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
-        </select>
       </td>
       <td><DateBox className="sm" value={t.start} label="Start" onChange={(start) => set({ start })} /></td>
       <td><DateBox className="sm" value={t.end} label="End" onChange={(end) => set({ end })} /></td>
@@ -484,6 +494,7 @@ export default function DevPlan(props: {
   const { model } = props;
   const [vocab, setVocab] = useState<PlanVocab>(props.vocab ?? DEFAULT_VOCAB);
   useEffect(() => { if (!props.vocab) planVocabApi.get().then(setVocab, () => { /* the default list stays */ }); }, []);
+  const kind: TaskKind = (c) => builtinTask(c, vocab.tasks);
   const [tidy, setTidy] = useState<TidyRow[] | null>(null);
   const savedPlan = useMemo(() => readDevPlan(model.info.devPlan), [model]);
   const [plan, setPlan] = useState<Plan>(savedPlan);
@@ -547,7 +558,7 @@ export default function DevPlan(props: {
     setTasks(withRows(ev.tasks, [t]));
     setOpen((list) => list.filter((x) => x.id !== t.id));
   };
-  const keptOpen = rowsOpen.map((t) => keptTask(t, vocab));
+  const keptOpen = rowsOpen.map((t) => keptTask(t, vocab, ev?.tasks));
   const keepAll = () => {
     if (!ev || keptOpen.some((k) => k.problem)) return;
     setTasks(withRows(ev.tasks, keptOpen.map((k) => k.task)));
@@ -580,6 +591,8 @@ export default function DevPlan(props: {
   });
   // a new row is typed in its place: a sub-task right after the last sub-task of its parent, a task at the end
   const shownTasks = ev ? withRows(ev.tasks, rowsOpen) : [];
+  // the samples of a sample task, with the ones of its sample sub-tasks
+  const sampleTotal = (t: PlanTask) => (ev ? Object.values(groupQty(t, ev.tasks, kind)).reduce((a, b) => a + b, 0) : 0);
   const dragged = ev?.tasks.find((t) => t.id === dragTask);
   const removeOne = (t: PlanTask) => {
     const subs = ev!.tasks.filter((y) => y.parentId === t.id).length;
@@ -638,23 +651,29 @@ export default function DevPlan(props: {
             <div className="wk-qty-h static">{tr("Detailed schedule")}</div>
             {evDays.length > 0 && ev.tasks.length > 0 && (
               <Gantt days={evDays}
-                top={ev.tasks.some(isSampleTask) ? <SampleChart tasks={ev.tasks} days={evDays} vocab={vocab} /> : undefined}
-                rows={ev.tasks.map((t) => ({
-                  id: t.id, label: t.name, sub: dates(groupSpan(ev.tasks, t)) + (t.owner ? " · " + t.owner : "") + (taskTotal(t) ? ` · Σ ${num(taskTotal(t))}` : ""),
-                  span: groupSpan(ev.tasks, t), color: ev.color, done: t.done, child: !!t.parentId,
-                  // a sample task: how many each day, typed in its day cells
-                  ...(isSampleTask(t) ? { qty: t.qty ?? {}, onQty: (d: string, n: number | undefined) => setTasks(ev.tasks.map((y) => (y.id === t.id ? setTaskQty(y, d, n) : y))) } : {}),
-                }))} />
+                top={ev.tasks.some((t) => sampleKind(t, ev.tasks, kind)) ? <SampleChart tasks={ev.tasks} days={evDays} vocab={vocab} kind={kind} /> : undefined}
+                rows={ev.tasks.map((t) => {
+                  const total = sampleTotal(t);
+                  return {
+                    id: t.id, label: t.name, sub: dates(groupSpan(ev.tasks, t)) + (t.owner ? " · " + t.owner : "") + (total ? ` · Σ ${num(total)}` : ""),
+                    span: groupSpan(ev.tasks, t), color: ev.color, done: t.done, child: !!t.parentId,
+                    // a sample task (or its sub-task): how many each day, typed in its day cells; one whose sub-tasks are
+                    // counted shows their sum
+                    ...(!sampleKind(t, ev.tasks, kind) ? {}
+                      : sampleSubs(t, ev.tasks, kind).length ? { qty: groupQty(t, ev.tasks, kind) }
+                      : { qty: t.qty ?? {}, onQty: (d: string, n: number | undefined) => setTasks(ev.tasks.map((y) => (y.id === t.id ? setTaskQty(y, d, n) : y))) }),
+                  };
+                })} />
             )}
             <table className="wk-it wk-dp-tasks">
               <thead>
-                <tr><th className="fit"></th>{(["Done", "Task", "Category", "Start", "End", "Actual start", "Actual end", "Owner", "Note"] as const).map((h) => <th key={h} className={h === "Task" || h === "Note" ? "l" : "fit"}>{tr(h)}</th>)}<th className="fit"></th></tr>
+                <tr><th className="fit"></th>{(["Done", "Category", "Task", "Start", "End", "Actual start", "Actual end", "Owner", "Note"] as const).map((h) => <th key={h} className={h === "Task" || h === "Note" ? "l" : "fit"}>{tr(h)}</th>)}<th className="fit"></th></tr>
               </thead>
               <tbody>
                 {shownTasks.map((t) => {
                   const o = rowsOpen.find((x) => x.id === t.id);
                   return o
-                    ? <TaskEditRow key={t.id} value={o} vocab={vocab} materials={materials} onKeep={keepTask}
+                    ? <TaskEditRow key={t.id} value={o} vocab={vocab} materials={materials} tasks={shownTasks} onKeep={keepTask}
                       onChange={(n) => setOpen((list) => list.map((x) => (x.id === n.id ? n : x)))} onCancel={() => setOpen((list) => list.filter((x) => x.id !== t.id))} />
                     : (
                     <tr key={t.id} className={(t.parentId ? "sub" : "") + (t.done ? " done" : "") + (dropOn === t.id && dragTask ? (ev.tasks.findIndex((y) => y.id === dragTask) < ev.tasks.indexOf(t) ? " drop-below" : " drop-above") : "")}
@@ -669,12 +688,12 @@ export default function DevPlan(props: {
                       onDragEnd={endDrag}>
                       <td className="wk-dp-grip" title="Drag to move">⠿</td>
                       <td><input type="checkbox" checked={t.done} aria-label={`${t.name} done`} onChange={(x) => setTasks(ev.tasks.map((y) => (y.id === t.id ? markDone(y, x.target.checked, localToday()) : y)))} /></td>
+                      <td className="l wk-dp-cat">{itemOf(t.code, vocab.tasks) ? <span className={"wk-dp-catv" + (sampleKind(t, ev.tasks, kind) ? " sample" : "")}>{tr(itemOf(t.code, vocab.tasks)!.name)}</span> : <span className="muted">—</span>}</td>
                       <td className="l">
                         {t.parentId && <span className="wk-dp-sub">↳</span>}<b>{tr(t.name)}</b>
-                        <TaskMaterials task={t} onPick={isMaterialTask(t) ? () => setPickFor(t.id) : undefined} />
-                        {isSampleTask(t) && <span className="wk-dp-qtot" title="Samples of the days typed in the calendar above">Σ {num(taskTotal(t))}</span>}
+                        <TaskMaterials task={t} onPick={isMaterialTask(t, kind) ? () => setPickFor(t.id) : undefined} />
+                        {sampleKind(t, ev.tasks, kind) && <span className="wk-dp-qtot" title="Samples of the days typed in the calendar above">Σ {num(sampleTotal(t))}</span>}
                       </td>
-                      <td className="l wk-dp-cat">{itemOf(t.code, vocab.tasks) ? <span className={"wk-dp-catv" + (isSampleTask(t) ? " sample" : "")}>{tr(itemOf(t.code, vocab.tasks)!.name)}</span> : <span className="muted">—</span>}</td>
                       <td>{t.start || "—"}</td>
                       <td>{t.end || "—"}</td>
                       <td className="wk-dp-real">{t.actualStart || "—"}</td>

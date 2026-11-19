@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   actualSpan, markDone, blankEvent, blankRow, blankTask, addBomRows, addSubTask, bomRowNames, calendarDays, eventSpan, groupSpan, inSpan, monthDayText, monthRuns, moveInGroup, moveTask, moveTo, planProblem,
-  progress, planDays, readDevPlan, readMonthDay, readQty, readYearMonthDay, removeTask, rowTotal, sampleByDay, setQty, setTaskQty, taskTotal, taskTree,
+  progress, planDays, readDevPlan, readMonthDay, readQty, readYearMonthDay, removeTask, rowTotal, groupQty, sampleByDay, sampleKind, setQty, setTaskQty, taskTotal, taskTree,
 } from "./plan";
 import type { PlanEvent, PlanTask } from "./plan";
 
@@ -216,6 +216,24 @@ describe("samples of a sample task counted day by day", () => {
       t({ code: "setup", qty: { "2026-12-16": 999 } }),
     ];
     expect(sampleByDay(tasks)).toEqual({ "2026-12-15": { "sample-make": 100 }, "2026-12-16": { "sample-make": 250, "sample-send": 300 } });
+  });
+
+  it("counts a sub-task without a category of its own for the sample task it is under", () => {
+    const tasks = [
+      t({ id: "p", code: "sample-send", qty: { "2026-12-16": 10 } }),
+      t({ id: "a", parentId: "p", qty: { "2026-12-16": 20, "2026-12-17": 5 } }),
+      t({ id: "b", parentId: "p", code: "setup", qty: { "2026-12-16": 999 } }),
+      t({ id: "c", parentId: "q", qty: { "2026-12-16": 999 } }),
+    ];
+    expect(tasks.map((x) => sampleKind(x, tasks) ?? "-")).toEqual(["sample-send", "sample-send", "-", "-"]);
+    expect(sampleByDay(tasks)).toEqual({ "2026-12-16": { "sample-send": 30 }, "2026-12-17": { "sample-send": 5 } });
+    expect(groupQty(tasks[0], tasks)).toEqual({ "2026-12-16": 30, "2026-12-17": 5 });
+  });
+
+  it("reads a task code through the list in use (its own codes for the built-in tasks)", () => {
+    const kind = (c: string | undefined) => (c === "Make Sample" ? "sample-make" : c);
+    expect(sampleKind(t({ code: "Make Sample" }), [], kind)).toBe("sample-make");
+    expect(sampleKind(t({ code: "Make Sample" }), [])).toBeUndefined();
   });
 
   it("are kept when saved and read back, days not dates or counts not above 0 dropped", () => {
