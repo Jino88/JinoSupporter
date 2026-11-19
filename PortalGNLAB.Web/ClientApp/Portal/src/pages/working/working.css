@@ -637,3 +637,8 @@ table.wk-gantt > * > tr.wk-chart .col .v { font-size: 10px; font-weight: 600; co
 /* a sample task whose sub-tasks are counted: their sum each day, shown only (typed in the sub-task rows) */
 table.wk-gantt > * > tr > td.q.sum { padding: 0 4px; text-align: right; font-size: 11px; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 table.wk-gantt > * > tr > td.q.sum.has { background: #eef2f7; }
+/* a calendar with rows counted by day still fits the width: counts set compactly in the narrow day cells, chart columns as narrow */
+table.wk-gantt.counts > * > tr > th.day { min-width: 26px; }
+table.wk-gantt.counts .wk-qty-in { padding: 4px 1px; font-size: 10.5px; text-align: center; }
+table.wk-gantt.counts > * > tr > td.q.sum { padding: 0 1px; font-size: 10.5px; text-align: center; }
+table.wk-gantt > * > tr.wk-chart .col i { width: 70%; max-width: 20px; }

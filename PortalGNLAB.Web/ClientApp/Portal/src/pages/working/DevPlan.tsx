@@ -41,22 +41,25 @@ export function tint(color: string, k: number): string {
 /**
  * Horizontal calendar: a column per day, a row per item, the days of each item filled in its color. `expand` (rows of
  * the same day columns) opens right under the selected row; its day columns are then wide enough for a quantity
- * ("1,000"), so the calendar scrolls instead of fitting the width; so are they when a row is counted by day. `top`:
- * rows put first (a chart of the days).
+ * ("1,000"), so the calendar scrolls instead of fitting the width. Rows counted by day keep the calendar fitting the
+ * width (counts set compactly in their day cells), so it scrolls only when it is long. `top`: rows put first (a chart of
+ * the days).
  */
 export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; onPick?: (id: string) => void; expand?: ReactNode; top?: ReactNode }) {
   const tr = useTr();
   const today = localToday();
   const { rows, days } = props;
-  const wide = !!props.expand || rows.some((r) => r.qty);
+  const wide = !!props.expand;
+  const counts = rows.some((r) => r.qty);
   return (
     <div className="wk-gantt-wrap">
       {/* a short calendar fills the width; a long one, or one with quantities open, scrolls */}
-      <table className={"wk-gantt" + (wide ? " qopen" : days.length <= 60 ? " fill" : "")}>
+      <table className={"wk-gantt" + (wide ? " qopen" : days.length <= 60 ? " fill" : "") + (counts ? " counts" : "")}>
         <thead>
           <tr>
             <th className="nm" rowSpan={2}></th>
-            {monthRuns(days).map(([m, n]) => <th key={m} colSpan={n} className="mon">{m}</th>)}
+            {/* a month of a day or two: only its month, so it does not run into the next */}
+            {monthRuns(days).map(([m, n]) => <th key={m} colSpan={n} className="mon" title={m}>{n < 3 ? m.slice(5) : m}</th>)}
           </tr>
           <tr>
             {days.map((d) => (
