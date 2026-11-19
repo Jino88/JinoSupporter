@@ -48,6 +48,29 @@ export const DEFAULT_VOCAB: PlanVocab = {
   },
 };
 
+/** A name compared without case, spaces and punctuation ("Make Sample" = "make-sample"). */
+const nameKey = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+
+/** More names a built-in task goes by in a list saved with codes of its own. */
+const BUILTIN_NAMES: Record<string, string[]> = {
+  "material-in": ["material", "materials", "자재"],
+  "sample-make": ["sample make", "sample making"],
+  "sample-send": ["sample send", "sample shipment"],
+};
+
+/**
+ * The built-in task (a code of the default list) a task code of `items` stands for: the code itself when it is one,
+ * else the built-in task one of its code, name or other names is ("Make Sample" / "샘플 제작" is sample-make); none
+ * when it is no built-in task.
+ */
+export function builtinTask(code: string | undefined, items: VocabItem[]): string | undefined {
+  if (!code) return undefined;
+  if (DEFAULT_VOCAB.tasks.some((d) => d.code === code)) return code;
+  const it = items.find((i) => i.code === code);
+  const own = new Set([code, ...(it ? [it.name, ...it.aliases] : [])].map(nameKey).filter(Boolean));
+  return DEFAULT_VOCAB.tasks.find((d) => [d.code, d.name, ...d.aliases, ...(BUILTIN_NAMES[d.code] ?? [])].some((n) => own.has(nameKey(n))))?.code;
+}
+
 /** A saved list read leniently; nothing saved (null) or nothing usable = the default. */
 export function readVocab(v: unknown): PlanVocab {
   const o = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
