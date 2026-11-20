@@ -329,10 +329,26 @@ export function materialRows(open: PlanTask[], before: PlanTask, after: PlanTask
   if (after.parentId) return open;
   const picked = [...new Set((after.materials ?? []).map(materialLabel))];
   const dropped = (before.materials ?? []).map(materialLabel).filter((n) => !picked.includes(n));
-  const blank = (s: PlanTask) => !s.start && !s.end && !s.actualStart && !s.actualEnd && !s.done && !s.code && !s.owner.trim() && !s.note.trim();
-  const rows = open.filter((s) => !(s.parentId === after.id && dropped.includes(s.name.trim()) && blank(s) && !kept.some((k) => k.id === s.id)));
+  const rows = open.filter((s) => !(s.parentId === after.id && dropped.includes(s.name.trim()) && untouched(s) && !kept.some((k) => k.id === s.id)));
   const have = [...kept, ...rows].filter((s) => s.parentId === after.id).map((s) => s.name.trim());
   return [...rows, ...picked.filter((n) => !have.includes(n)).map((name) => ({ ...blankTask(), name, parentId: after.id }))];
+}
+
+/** A row with nothing typed in it but its name. */
+const untouched = (s: PlanTask) => !s.start && !s.end && !s.actualStart && !s.actualEnd && !s.done && !s.code && !s.owner.trim() && !s.note.trim();
+
+/** The open edit rows with tasks opened by Edit: a material task with a new row for each picked material that has no sub-task yet. */
+export const editRows = (open: PlanTask[], more: PlanTask[], kept: PlanTask[]) =>
+  more.reduce((list, t) => (t.materials?.length ? materialRows(list, t, t, kept) : list), openRows(open, more));
+
+/**
+ * The open edit rows without a cancelled one: a task not kept yet goes with its new sub-task rows, a kept one with the
+ * new rows of its materials still untouched.
+ */
+export function cancelRows(open: PlanTask[], t: PlanTask, kept: PlanTask[]): PlanTask[] {
+  const isNew = (s: PlanTask) => !kept.some((k) => k.id === s.id);
+  const mats = (t.materials ?? []).map(materialLabel);
+  return open.filter((s) => s.id !== t.id && !(s.parentId === t.id && isNew(s) && (isNew(t) || (mats.includes(s.name.trim()) && untouched(s)))));
 }
 
 /** The materials picked for a task, shown under its name; a button to pick them (onPick) on a material task. */
@@ -658,8 +674,7 @@ export default function DevPlan(props: {
                     ? <TaskEditRow key={t.id} value={o} vocab={vocab} materials={materials} tasks={shownTasks} onKeep={keepTask}
                       onMaterials={(n) => pickMaterials(o, n)} blocked={newParent(o)?.problem ? "Its task above is not right yet." : ""}
                       onChange={(n) => setOpen((list) => list.map((x) => (x.id === n.id ? n : x)))}
-                      // a task not kept yet goes with its sub-task rows
-                      onCancel={() => setOpen((list) => list.filter((x) => x.id !== t.id && !(x.parentId === t.id && !ev.tasks.some((y) => y.id === t.id))))} />
+                      onCancel={() => setOpen((list) => cancelRows(list, o, ev.tasks))} />
                     : (
                     <tr key={t.id} className={(t.parentId ? "sub" : "") + (t.done ? " done" : "") + (dropOn === t.id && dragTask ? (ev.tasks.findIndex((y) => y.id === dragTask) < ev.tasks.indexOf(t) ? " drop-below" : " drop-above") : "")}
                       draggable onDragStart={(x) => { x.dataTransfer.effectAllowed = "move"; x.dataTransfer.setData("text/plain", t.name); setDragTask(t.id); }}
@@ -688,7 +703,7 @@ export default function DevPlan(props: {
                       <td className="act">
                         {!t.parentId && <button className="wk-link" onClick={() => setOpen((list) => [...list, { ...blankTask(), parentId: t.id }])}>+ Sub</button>}
                         <button className="wk-link" title={ev.tasks.some((y) => y.parentId === t.id) ? "Edit this task and its sub-tasks together" : undefined}
-                          onClick={() => setOpen((list) => openRows(list, editGroup(ev.tasks, t.id)))}>Edit</button>
+                          onClick={() => setOpen((list) => editRows(list, editGroup(ev.tasks, t.id), ev.tasks))}>Edit</button>
                         <button className="wk-link bad" onClick={() => removeOne(t)}>Delete</button>
                       </td>
                     </tr>
@@ -712,7 +727,7 @@ export default function DevPlan(props: {
             <div className="wk-dp-adds">
               <button className="btn sm wk-dp-add" onClick={() => setOpen((list) => [...list, blankTask()])}>+ Task</button>
               {ev.tasks.length > 1 && ev.tasks.some((y) => !rowsOpen.some((x) => x.id === y.id)) && (
-                <button className="btn sm wk-dp-add" title="Change every task of this event at once" onClick={() => setOpen((list) => openRows(list, ev.tasks))}>Edit all</button>
+                <button className="btn sm wk-dp-add" title="Change every task of this event at once" onClick={() => setOpen((list) => editRows(list, ev.tasks, ev.tasks))}>Edit all</button>
               )}
               {rowsOpen.length > 1 && (
                 <>
