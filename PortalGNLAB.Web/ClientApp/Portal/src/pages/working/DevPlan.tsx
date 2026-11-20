@@ -8,8 +8,8 @@ import { bmesApi } from "./bmes";
 import type { BomRow } from "./bmes";
 import {
   COLORS, QTY_GROUPS, addBomRows, addSubTask, blankEvent, blankRow, blankTask, calendarDays, eventSpan, groupSpan, inSpan, bomRowNames, monthRuns, moveInGroup, moveTask,
-  groupQty, isMaterialTask, markDone, planDays, planProblem, progress, readDevPlan, readQty, removeTask, rowTotal, sampleByDay, setQty, setTaskQty,
-  SAMPLE_TASKS, sampleKind, sampleSubs, taskSpan, type TaskKind,
+  groupQty, isMaterialTask, markDone, planDays, planProblem, progress, readDevPlan, readQty, removeTask, rowTotal, setQty, setTaskQty,
+  sampleKind, sampleSubs, taskSpan, type TaskKind,
 } from "./plan";
 import type { DevPlan as Plan, PlanEvent, PlanTask, QtyGroup, QtyRow, TaskMaterial } from "./plan";
 import { applyTidy, freeEvent, freeTask, itemOf, templateTasks, tidyRows, withCode, withStage, type TidyRow } from "./planNames";
@@ -42,10 +42,9 @@ export function tint(color: string, k: number): string {
  * Horizontal calendar: a column per day, a row per item, the days of each item filled in its color. `expand` (rows of
  * the same day columns) opens right under the selected row; its day columns are then wide enough for a quantity
  * ("1,000"), so the calendar scrolls instead of fitting the width. Rows counted by day keep the calendar fitting the
- * width (counts set compactly in their day cells), so it scrolls only when it is long. `top`: rows put first (a chart of
- * the days).
+ * width (counts set compactly in their day cells), so it scrolls only when it is long.
  */
-export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; onPick?: (id: string) => void; expand?: ReactNode; top?: ReactNode }) {
+export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; onPick?: (id: string) => void; expand?: ReactNode }) {
   const tr = useTr();
   const today = localToday();
   const { rows, days } = props;
@@ -70,7 +69,6 @@ export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; o
           </tr>
         </thead>
         <tbody>
-          {props.top}
           {rows.map((r) => {
             // a sub-task: a smaller row with a thinner bar in a lighter shade of its task's color
             const color = r.child ? tint(r.done ? "#94a3b8" : r.color, 0.45) : r.done ? "#94a3b8" : r.color;
@@ -113,55 +111,6 @@ export function Gantt(props: { rows: Row[]; days: string[]; selected?: string; o
 }
 
 const num = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 3 });
-
-/** Colors of the sample tasks in the chart (made, shipped). */
-export const SAMPLE_COLORS: Record<string, string> = { "sample-make": "#2a78d6", "sample-send": "#eb6834" };
-/** Height (px) of the tallest column of the chart. */
-const CHART_H = 56;
-
-/**
- * Samples of each day over the detailed schedule, a row of the calendar so each column stands under its day: the samples
- * made and shipped that day stacked, their sum on top, each sample task's total in the legend.
- */
-export function SampleChart(props: { tasks: PlanTask[]; days: string[]; vocab: PlanVocab; kind: TaskKind }) {
-  const tr = useTr();
-  const today = localToday();
-  const by = sampleByDay(props.tasks, props.kind);
-  const sum = (d: string) => Object.values(by[d] ?? {}).reduce((a, b) => a + b, 0);
-  const max = Math.max(0, ...props.days.map(sum));
-  // named as the list in use names it (its own code or the built-in one)
-  const name = (code: string) => tr(props.vocab.tasks.find((i) => props.kind(i.code) === code)?.name ?? itemOf(code, DEFAULT_VOCAB.tasks)?.name ?? code);
-  const totals = SAMPLE_TASKS.map((c) => [c, Object.values(by).reduce((a, x) => a + (x[c] ?? 0), 0)] as const);
-  return (
-    <tr className="wk-chart">
-      <td className="nm">
-        <b>{tr("Samples per day")}</b>
-        <span className="wk-chart-lg">
-          {totals.map(([c, n]) => <span key={c}><i style={{ background: SAMPLE_COLORS[c] }} />{name(c)} <b>{num(n)}</b></span>)}
-        </span>
-      </td>
-      {max
-        ? props.days.map((d) => {
-          const n = sum(d);
-          return (
-            <td key={d} className={"g" + (d === today ? " today" : weekday(d) % 6 === 0 ? " we" : "")}
-              title={n ? `${d} · ` + SAMPLE_TASKS.filter((c) => by[d]?.[c]).map((c) => `${name(c)} ${num(by[d][c])}`).join(" · ") : d}>
-              {n > 0 && (
-                <div className="col">
-                  <span className="v">{num(n)}</span>
-                  {/* made at the bottom, shipped on top */}
-                  {[...SAMPLE_TASKS].reverse().filter((c) => by[d]?.[c]).map((c) => (
-                    <i key={c} style={{ background: SAMPLE_COLORS[c], height: Math.max(2, Math.round((by[d][c] / max) * CHART_H)) }} />
-                  ))}
-                </div>
-              )}
-            </td>
-          );
-        })
-        : <td className="g hint" colSpan={props.days.length}>{tr("Type how many samples are made or shipped each day in their rows below.")}</td>}
-    </tr>
-  );
-}
 
 /** One day of a quantity row: typed freely, kept when it leaves the cell (Enter or Tab), put back when not a number. */
 function QtyCell(props: { value: number | undefined; label: string; onKeep: (n: number | undefined) => void; onPaste: (text: string) => boolean }) {
@@ -654,7 +603,6 @@ export default function DevPlan(props: {
             <div className="wk-qty-h static">{tr("Detailed schedule")}</div>
             {evDays.length > 0 && ev.tasks.length > 0 && (
               <Gantt days={evDays}
-                top={ev.tasks.some((t) => sampleKind(t, ev.tasks, kind)) ? <SampleChart tasks={ev.tasks} days={evDays} vocab={vocab} kind={kind} /> : undefined}
                 rows={ev.tasks.map((t) => {
                   const total = sampleTotal(t);
                   return {
