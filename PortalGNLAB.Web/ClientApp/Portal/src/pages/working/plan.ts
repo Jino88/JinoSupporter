@@ -42,7 +42,7 @@ const asIs: TaskKind = (code) => code;
 export const MATERIAL_TASK = "material-in";
 export const isMaterialTask = (t: PlanTask, kind: TaskKind = asIs) => kind(t.code) === MATERIAL_TASK;
 
-/** Standard tasks whose samples are counted day by day (made, shipped), in the order the chart stacks them. */
+/** Standard tasks whose samples are counted day by day (made, shipped). */
 export const SAMPLE_TASKS = ["sample-make", "sample-send"] as const;
 export type SampleTask = (typeof SAMPLE_TASKS)[number];
 
@@ -73,17 +73,6 @@ export function groupQty(t: PlanTask, tasks: PlanTask[], kind: TaskKind = asIs):
 }
 
 export const taskTotal = (t: PlanTask) => Object.values(t.qty ?? {}).reduce((a, b) => a + b, 0);
-
-/** The samples of each day, per sample task, summed over the sample tasks and sample sub-tasks of an event. */
-export function sampleByDay(tasks: PlanTask[], kind: TaskKind = asIs): Record<string, Record<string, number>> {
-  const out: Record<string, Record<string, number>> = {};
-  for (const t of tasks) {
-    const c = sampleKind(t, tasks, kind);
-    if (!c) continue;
-    for (const [d, n] of Object.entries(t.qty ?? {})) (out[d] ??= {})[c] = (out[d][c] ?? 0) + n;
-  }
-  return out;
-}
 
 /** Group of a quantity row: the materials to get in (from the BOM) or the stages to make (SPK Assy, Function, ...). */
 export type QtyGroup = "material" | "making";

@@ -233,17 +233,13 @@ describe("task category and samples counted day by day", () => {
     expect(table).toContain('<span class="wk-dp-qtot" title="Samples of the days typed in the calendar above">Σ 400</span>');
   });
 
-  it("charts the samples of each day above the calendar, made and shipped stacked with their sum", () => {
-    expect(cal.indexOf('class="wk-chart"')).toBeGreaterThan(-1);
-    expect(cal.indexOf('class="wk-chart"')).toBeLessThan(cal.indexOf("Sample making · 400pcs"));
-    expect(cal).toMatch(/title="2026-12-16 · Sample making 300 · Sample shipment 50"><div class="col"><span class="v">350<\/span><i style="background:#eb6834;height:8px"><\/i><i style="background:#2a78d6;height:48px"><\/i>/);
-    expect(cal).toMatch(/<i style="background:#2a78d6"><\/i>Sample making <b>400<\/b>/);
-    expect(cal).toMatch(/<i style="background:#eb6834"><\/i>Sample shipment <b>350<\/b>/);
+  it("has no chart of the samples per day above the calendar, the counts only in their rows", () => {
+    expect(cal).not.toContain("wk-chart");
+    expect(cal).not.toContain("Samples per day");
   });
 
-  it("has no chart and no count cells without a sample task", () => {
+  it("has no count cells without a sample task", () => {
     const none = render(tasks.filter((x) => !x.code?.startsWith("sample")));
-    expect(none).not.toContain("wk-chart");
     expect(none).not.toContain("wk-qty-in");
   });
 
@@ -281,11 +277,8 @@ describe("sample and material tasks of a list saved with codes of its own, sampl
   const cal = html.slice(html.indexOf("Detailed schedule"), html.indexOf("wk-dp-tasks"));
   const typed = [...cal.matchAll(/aria-label="([^"]+) (\d{4}-\d\d-\d\d)" value="(\d+)"/g)].map((m) => `${m[1]} ${m[2]} ${m[3]}`);
 
-  it("knows the sample tasks by their names (Make Sample, 샘플 제작), so their days are counted and charted", () => {
+  it("knows the sample tasks by their names (Make Sample, 샘플 제작), so their days are counted", () => {
     expect(typed).toContain("샘플 발송 · 500SET 2026-12-10 500");
-    expect(cal).toContain('class="wk-chart"');
-    expect(cal).toMatch(/<i style="background:#2a78d6"><\/i>샘플 제작 <b>500<\/b>/);
-    expect(cal).toMatch(/<i style="background:#eb6834"><\/i>샘플 발송 <b>500<\/b>/);
   });
 
   it("gives a sub-task of a sample task (no category of its own) its count cells, the task the sum of them", () => {
@@ -297,7 +290,6 @@ describe("sample and material tasks of a list saved with codes of its own, sampl
     // a sub-task with a category of its own that is no sample task is not counted
     expect(cal).not.toMatch(/aria-label="자재 확인 \d{4}/);
     expect(table).toContain("Σ 500</span>");
-    expect(cal).toMatch(/title="2026-12-05 · 샘플 제작 350">/);
   });
 
   it("knows the material task by its name (Materials, 자재): its row has the button to pick materials", () => {
