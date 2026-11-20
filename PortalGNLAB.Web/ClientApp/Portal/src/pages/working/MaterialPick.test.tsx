@@ -97,9 +97,21 @@ describe("the materials picked for a material task get a sub-task row each", () 
     expect(rows.map((r) => r.id)).toEqual(["p", "b", "x"]);
   });
 
-  it("adds none under a sub-task (sub-tasks are one level deep)", () => {
+  it("puts the rows of a sub-task's materials beside it under its parent (sub-tasks are one level deep)", () => {
     const before = task({ id: "c", code: "material-in", parentId: "p" });
-    expect(materialRows([before], before, withMaterials(before, mats("C1")), [])).toEqual([before]);
+    const rows = materialRows([before], before, withMaterials(before, mats("C1")), []);
+    expect(rows.map((r) => [r.name, r.parentId])).toEqual([["GN 자재 도착", "p"], ["C1", "p"]]);
+    expect(rows.some((r) => r.parentId === "c")).toBe(false);
+  });
+
+  it("opens the material rows of a sub-task when it is edited, and cancels the untouched ones with it", () => {
+    const p = task({ id: "p", name: "GN 자재 도착" });
+    const c = task({ id: "c", name: "자재", code: "material-in", parentId: "p", materials: mats("C1", "Screw") });
+    const kept = [p, c, task({ id: "k", name: "C1", parentId: "p" })];
+    const rows = editRows([], editGroup(kept, "c"), kept);
+    expect(rows.map((r) => [r.name, r.parentId])).toEqual([["자재", "p"], ["Screw", "p"]]);
+    expect(subs(editRows(rows, editGroup(kept, "p"), kept))).toEqual(["자재", "Screw", "C1"]);
+    expect(cancelRows(rows, c, kept)).toEqual([]);
   });
 
   it("opens a row for each picked material with no sub-task yet when the task is edited", () => {

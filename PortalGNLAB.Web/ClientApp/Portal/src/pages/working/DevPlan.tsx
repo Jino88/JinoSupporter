@@ -319,19 +319,22 @@ export const withMaterials = (t: PlanTask, list: TaskMaterial[]): PlanTask => {
 /** The name a picked material is shown by, and its sub-task named. */
 export const materialLabel = (m: TaskMaterial) => m.code || m.name;
 
+/** The task the material rows of a material task go under: the task itself, or for a sub-task (one level deep) its parent. */
+const materialHost = (t: PlanTask) => t.parentId ?? t.id;
+
 /**
- * The open edit rows with the sub-tasks of a material task (a task of the event, not a sub-task) following the materials
- * picked for it (before: as it was, after: with the new pick): a new sub-task row for each material that has none among
- * the kept tasks and open rows yet, named as the material, so its own dates are typed under the task; a new row of a
- * material no longer picked taken out while nothing is typed in it (a kept sub-task stays to be deleted by hand).
+ * The open edit rows with the sub-tasks of a material task following the materials picked for it (before: as it was,
+ * after: with the new pick): a new sub-task row for each material that has none among the kept tasks and open rows yet,
+ * named as the material, so its own dates are typed under the task (under its parent for a sub-task, beside it); a new
+ * row of a material no longer picked taken out while nothing is typed in it (a kept sub-task stays to be deleted by hand).
  */
 export function materialRows(open: PlanTask[], before: PlanTask, after: PlanTask, kept: PlanTask[]): PlanTask[] {
-  if (after.parentId) return open;
+  const host = materialHost(after);
   const picked = [...new Set((after.materials ?? []).map(materialLabel))];
   const dropped = (before.materials ?? []).map(materialLabel).filter((n) => !picked.includes(n));
-  const rows = open.filter((s) => !(s.parentId === after.id && dropped.includes(s.name.trim()) && untouched(s) && !kept.some((k) => k.id === s.id)));
-  const have = [...kept, ...rows].filter((s) => s.parentId === after.id).map((s) => s.name.trim());
-  return [...rows, ...picked.filter((n) => !have.includes(n)).map((name) => ({ ...blankTask(), name, parentId: after.id }))];
+  const rows = open.filter((s) => !(s.id !== after.id && s.parentId === host && dropped.includes(s.name.trim()) && untouched(s) && !kept.some((k) => k.id === s.id)));
+  const have = [...kept, ...rows].filter((s) => s.id !== after.id && s.parentId === host).map((s) => s.name.trim());
+  return [...rows, ...picked.filter((n) => !have.includes(n)).map((name) => ({ ...blankTask(), name, parentId: host }))];
 }
 
 /** A row with nothing typed in it but its name. */
@@ -342,13 +345,13 @@ export const editRows = (open: PlanTask[], more: PlanTask[], kept: PlanTask[]) =
   more.reduce((list, t) => (t.materials?.length ? materialRows(list, t, t, kept) : list), openRows(open, more));
 
 /**
- * The open edit rows without a cancelled one: a task not kept yet goes with its new sub-task rows, a kept one with the
- * new rows of its materials still untouched.
+ * The open edit rows without a cancelled one: a task not kept yet goes with its new sub-task rows, a kept one (or a
+ * sub-task) with the new rows of its materials still untouched.
  */
 export function cancelRows(open: PlanTask[], t: PlanTask, kept: PlanTask[]): PlanTask[] {
   const isNew = (s: PlanTask) => !kept.some((k) => k.id === s.id);
   const mats = (t.materials ?? []).map(materialLabel);
-  return open.filter((s) => s.id !== t.id && !(s.parentId === t.id && isNew(s) && (isNew(t) || (mats.includes(s.name.trim()) && untouched(s)))));
+  return open.filter((s) => s.id !== t.id && !(s.parentId === materialHost(t) && isNew(s) && ((isNew(t) && !t.parentId) || (mats.includes(s.name.trim()) && untouched(s)))));
 }
 
 /** The materials picked for a task, shown under its name; a button to pick them (onPick) on a material task. */
