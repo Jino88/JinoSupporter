@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import DevPlan, { keptTask, materialRows, TaskEdit, withMaterials } from "./DevPlan";
+import DevPlan, { cancelRows, editGroup, editRows, keptTask, materialRows, TaskEdit, withMaterials } from "./DevPlan";
 import MaterialPick, { pickedMaterials } from "./MaterialPick";
 import { materialOptions, type MaterialItem, type MaterialList } from "./materialList";
 import { readDevPlan, type PlanTask } from "./plan";
@@ -100,5 +100,22 @@ describe("the materials picked for a material task get a sub-task row each", () 
   it("adds none under a sub-task (sub-tasks are one level deep)", () => {
     const before = task({ id: "c", code: "material-in", parentId: "p" });
     expect(materialRows([before], before, withMaterials(before, mats("C1")), [])).toEqual([before]);
+  });
+
+  it("opens a row for each picked material with no sub-task yet when the task is edited", () => {
+    const p = task({ id: "p", code: "material-in", materials: mats("C1", "Screw") });
+    const kept = [p, task({ id: "k", name: "C1", parentId: "p" }), task({ id: "q", name: "Report" })];
+    const rows = editRows([], editGroup(kept, "p"), kept);
+    expect(rows.map((r) => r.id).slice(0, 2)).toEqual(["p", "k"]);
+    expect(subs(rows)).toEqual(["C1", "Screw"]);
+    expect(subs(editRows(rows, kept, kept))).toEqual(["C1", "Screw"]);
+  });
+
+  it("cancels a task with its untouched material rows, a new task with all its new rows", () => {
+    const p = task({ id: "p", code: "material-in", materials: mats("C1", "Screw") });
+    const open = [p, task({ id: "a", name: "C1", parentId: "p" }), task({ id: "b", name: "Screw", parentId: "p", owner: "Kim" }), task({ id: "s", name: "Extra", parentId: "p" }), task({ id: "k", name: "T1", parentId: "p" })];
+    const kept = [p, task({ id: "k", name: "T1", parentId: "p" })];
+    expect(cancelRows(open, p, kept).map((r) => r.id)).toEqual(["b", "s", "k"]);
+    expect(cancelRows(open, p, []).map((r) => r.id)).toEqual([]);
   });
 });
