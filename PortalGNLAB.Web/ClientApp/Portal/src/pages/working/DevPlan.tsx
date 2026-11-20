@@ -316,6 +316,25 @@ export const withMaterials = (t: PlanTask, list: TaskMaterial[]): PlanTask => {
   return list.length ? { ...rest, materials: list } : rest;
 };
 
+/** The name a picked material is shown by, and its sub-task named. */
+export const materialLabel = (m: TaskMaterial) => m.code || m.name;
+
+/**
+ * The open edit rows with the sub-tasks of a material task (a task of the event, not a sub-task) following the materials
+ * picked for it (before: as it was, after: with the new pick): a new sub-task row for each material that has none among
+ * the kept tasks and open rows yet, named as the material, so its own dates are typed under the task; a new row of a
+ * material no longer picked taken out while nothing is typed in it (a kept sub-task stays to be deleted by hand).
+ */
+export function materialRows(open: PlanTask[], before: PlanTask, after: PlanTask, kept: PlanTask[]): PlanTask[] {
+  if (after.parentId) return open;
+  const picked = [...new Set((after.materials ?? []).map(materialLabel))];
+  const dropped = (before.materials ?? []).map(materialLabel).filter((n) => !picked.includes(n));
+  const blank = (s: PlanTask) => !s.start && !s.end && !s.actualStart && !s.actualEnd && !s.done && !s.code && !s.owner.trim() && !s.note.trim();
+  const rows = open.filter((s) => !(s.parentId === after.id && dropped.includes(s.name.trim()) && blank(s) && !kept.some((k) => k.id === s.id)));
+  const have = [...kept, ...rows].filter((s) => s.parentId === after.id).map((s) => s.name.trim());
+  return [...rows, ...picked.filter((n) => !have.includes(n)).map((name) => ({ ...blankTask(), name, parentId: after.id }))];
+}
+
 /** The materials picked for a task, shown under its name; a button to pick them (onPick) on a material task. */
 export function TaskMaterials(props: { task: PlanTask; onPick?: () => void }) {
   const tr = useTr();
@@ -359,6 +378,10 @@ export function TaskEditRow(props: {
   materials?: MaterialList;
   /** The tasks of the event (a sub-task of a sample task keeps its counts). */
   tasks?: PlanTask[];
+  /** The task with its materials picked (the caller adds their sub-task rows); else it is only changed. */
+  onMaterials?: (t: PlanTask) => void;
+  /** Why it cannot be kept yet besides its own problem (a sub-task of a task not kept yet that has one). */
+  blocked?: string;
 }) {
   const t = props.value;
   const kind: TaskKind = (c) => builtinTask(c, props.vocab.tasks);
@@ -367,7 +390,8 @@ export function TaskEditRow(props: {
   const setT = props.onChange;
   const set = (f: Partial<PlanTask>) => setT({ ...t, ...f });
   const std = itemOf(t.code, props.vocab.tasks);
-  const { task, problem } = keptTask(t, props.vocab, props.tasks);
+  const kept = keptTask(t, props.vocab, props.tasks);
+  const { task } = kept, problem = kept.problem || props.blocked || "";
   return (
     <tr className={"wk-dp-edit" + (t.parentId ? " sub" : "")}>
       <td></td>
@@ -394,7 +418,7 @@ export function TaskEditRow(props: {
         {isMaterialTask(t, kind) && <TaskMaterials task={t} onPick={() => setPicking(true)} />}
         {picking && (
           <MaterialPick title={t.name || "Material in"} materials={props.materials ?? {}} value={t.materials ?? []}
-            onPick={(list) => { setT(withMaterials(t, list)); setPicking(false); }} onClose={() => setPicking(false)} />
+            onPick={(list) => { (props.onMaterials ?? setT)(withMaterials(t, list)); setPicking(false); }} onClose={() => setPicking(false)} />
         )}
       </td>
       <td><DateBox className="sm" value={t.start} label="Start" onChange={(start) => set({ start })} /></td>
@@ -505,12 +529,19 @@ export default function DevPlan(props: {
   const fillBom = (evId: string, bom: BomRow[], product: string) =>
     setPlan((p) => ({ ...p, events: p.events.map((e) => (e.id === evId ? addBomRows(e, bomRowNames(e.rows, bom), product) : e)) }));
   const setTasks = (tasks: PlanTask[]) => ev && setEvents(events.map((x) => (x.id === ev.id ? { ...x, tasks } : x)));
+  const keptOpen = rowsOpen.map((t) => keptTask(t, vocab, ev?.tasks));
+  // a sub-task row of a task not kept yet (a new material task's material) is kept with its task
+  const newParent = (t: PlanTask) => (t.parentId && !ev?.tasks.some((y) => y.id === t.parentId) ? keptOpen.find((k) => k.task.id === t.parentId) : undefined);
   const keepTask = (t: PlanTask) => {
     if (!ev) return;
-    setTasks(withRows(ev.tasks, [t]));
-    setOpen((list) => list.filter((x) => x.id !== t.id));
+    const p = newParent(t);
+    if (p?.problem) return;
+    const rows = p ? [p.task, t] : [t];
+    setTasks(withRows(ev.tasks, rows));
+    setOpen((list) => list.filter((x) => !rows.some((r) => r.id === x.id)));
   };
-  const keptOpen = rowsOpen.map((t) => keptTask(t, vocab, ev?.tasks));
+  // the materials picked for a task bring a sub-task row for each under it
+  const pickMaterials = (before: PlanTask, after: PlanTask) => ev && setOpen((list) => materialRows(list.map((x) => (x.id === after.id ? after : x)), before, after, ev.tasks));
   const keepAll = () => {
     if (!ev || keptOpen.some((k) => k.problem)) return;
     setTasks(withRows(ev.tasks, keptOpen.map((k) => k.task)));
@@ -625,7 +656,10 @@ export default function DevPlan(props: {
                   const o = rowsOpen.find((x) => x.id === t.id);
                   return o
                     ? <TaskEditRow key={t.id} value={o} vocab={vocab} materials={materials} tasks={shownTasks} onKeep={keepTask}
-                      onChange={(n) => setOpen((list) => list.map((x) => (x.id === n.id ? n : x)))} onCancel={() => setOpen((list) => list.filter((x) => x.id !== t.id))} />
+                      onMaterials={(n) => pickMaterials(o, n)} blocked={newParent(o)?.problem ? "Its task above is not right yet." : ""}
+                      onChange={(n) => setOpen((list) => list.map((x) => (x.id === n.id ? n : x)))}
+                      // a task not kept yet goes with its sub-task rows
+                      onCancel={() => setOpen((list) => list.filter((x) => x.id !== t.id && !(x.parentId === t.id && !ev.tasks.some((y) => y.id === t.id))))} />
                     : (
                     <tr key={t.id} className={(t.parentId ? "sub" : "") + (t.done ? " done" : "") + (dropOn === t.id && dragTask ? (ev.tasks.findIndex((y) => y.id === dragTask) < ev.tasks.indexOf(t) ? " drop-below" : " drop-above") : "")}
                       draggable onDragStart={(x) => { x.dataTransfer.effectAllowed = "move"; x.dataTransfer.setData("text/plain", t.name); setDragTask(t.id); }}
@@ -667,7 +701,12 @@ export default function DevPlan(props: {
               const pt = ev.tasks.find((y) => y.id === pickFor);
               return pt && (
                 <MaterialPick title={pt.name} materials={materials} value={pt.materials ?? []} onClose={() => setPickFor("")}
-                  onPick={(list) => { setTasks(ev.tasks.map((y) => (y.id === pt.id ? withMaterials(y, list) : y))); setPickFor(""); }} />
+                  onPick={(list) => {
+                    const n = withMaterials(pt, list);
+                    setTasks(ev.tasks.map((y) => (y.id === pt.id ? n : y)));
+                    pickMaterials(pt, n);
+                    setPickFor("");
+                  }} />
               );
             })()}
             <div className="wk-dp-adds">

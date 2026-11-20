@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import DevPlan, { keptTask, TaskEdit, withMaterials } from "./DevPlan";
+import DevPlan, { keptTask, materialRows, TaskEdit, withMaterials } from "./DevPlan";
 import MaterialPick, { pickedMaterials } from "./MaterialPick";
 import { materialOptions, type MaterialItem, type MaterialList } from "./materialList";
 import { readDevPlan, type PlanTask } from "./plan";
@@ -70,5 +70,35 @@ describe("a material task keeps its materials", () => {
     expect(html).toContain('<span class="wk-dp-mats"><span class="wk-dp-mat" title="Cover">C1</span><span class="wk-dp-mat" title="Screw">Screw</span><button type="button" class="wk-link"');
     expect(html).toContain(">Change materials</button>");
     expect(html).toContain(">+ Materials</button>");
+  });
+});
+
+describe("the materials picked for a material task get a sub-task row each", () => {
+  const mats = (...names: string[]) => names.map((n) => ({ code: n === "Screw" ? "" : n, name: n }));
+  const subs = (rows: PlanTask[]) => rows.filter((r) => r.parentId === "p").map((r) => r.name);
+
+  it("adds a sub-task row under the task for each picked material without one, named as it is shown", () => {
+    const before = task({ id: "p", code: "material-in" });
+    const after = withMaterials(before, mats("C1", "Screw", "T1"));
+    const kept = [task({ id: "k", name: "T1", parentId: "p" })];
+    const rows = materialRows([before], before, after, kept);
+    expect(rows[0]).toBe(before);
+    expect(subs(rows)).toEqual(["C1", "Screw"]);
+    expect(rows.slice(1).every((r) => r.id && r.id !== "p" && !r.start && !r.code)).toBe(true);
+    // picking again adds none twice
+    expect(subs(materialRows(rows, after, after, kept))).toEqual(["C1", "Screw"]);
+  });
+
+  it("takes out a new row of a material no longer picked unless something is typed in it, and keeps a kept one", () => {
+    const before = task({ id: "p", code: "material-in", materials: mats("C1", "Screw", "T1") });
+    const open = [before, task({ id: "a", name: "C1", parentId: "p" }), task({ id: "b", name: "Screw", parentId: "p", start: "2026-11-21" }), task({ id: "x", name: "", parentId: "p" })];
+    const kept = [task({ id: "k", name: "T1", parentId: "p" })];
+    const rows = materialRows(open, before, withMaterials(before, []), [...kept, task({ id: "b", name: "Screw", parentId: "p" })]);
+    expect(rows.map((r) => r.id)).toEqual(["p", "b", "x"]);
+  });
+
+  it("adds none under a sub-task (sub-tasks are one level deep)", () => {
+    const before = task({ id: "c", code: "material-in", parentId: "p" });
+    expect(materialRows([before], before, withMaterials(before, mats("C1")), [])).toEqual([before]);
   });
 });
